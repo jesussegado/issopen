@@ -1,0 +1,40 @@
+name: issopen
+
+services:
+  app:
+    build:
+      context: .
+      target: runtime
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: "8080"
+      DATABASE_URL: postgresql://${POSTGRES_USER:-issopen}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-issopen}
+      ISSOPEN_BASE_URL: ${ISSOPEN_BASE_URL:-http://localhost:${ISSOPEN_PORT:-8080}}
+      ISSOPEN_TRUSTED_ORIGINS: ${ISSOPEN_TRUSTED_ORIGINS:-}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET in .env}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${ISSOPEN_PORT:-8080}:8080"
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:18.6-alpine@sha256:d3e1620b530c944afa6e887d22eb899824da68e19c52024bf98f5220c88a65b2
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-issopen}
+      POSTGRES_USER: ${POSTGRES_USER:-issopen}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - issopen_postgres:/var/lib/postgresql
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+
+volumes:
+  issopen_postgres:

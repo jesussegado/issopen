@@ -1,0 +1,28 @@
+# Entorno local y secretos
+.env
+.env.*
+!.env.example
+!.env.*.example
+.local/
+*.key
+*.pem
+*.p12
+*.pfx
+*.kubeconfig
+
+# Dependencias, caches y salidas
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.angular/
+.godot/
+.pio/
+.next/
+.build/
+build/
+dist/
+coverage/
+*.log

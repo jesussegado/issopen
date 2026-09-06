@@ -1,0 +1,1 @@
+ALTER TYPE "public"."agent_scope_value" ADD VALUE 'issues:create' BEFORE 'issues:claim';

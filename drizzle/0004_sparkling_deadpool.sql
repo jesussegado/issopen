@@ -1,0 +1,2 @@
+ALTER TABLE "agent_identity" ADD COLUMN "oauth_client_id" varchar(2048);--> statement-breakpoint
+CREATE UNIQUE INDEX "agent_identity_workspace_oauth_client_uidx" ON "agent_identity" USING btree ("workspace_id","oauth_client_id");

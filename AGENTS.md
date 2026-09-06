@@ -1,0 +1,612 @@
+# AGENTS.md — Issopen
+
+## Frontera del repositorio
+
+Este es el repositorio de fuente independiente; su `.git` raíz y su
+`origin` privado son intencionados. Código, tests, dependencias y build viven
+aquí. Las referencias a `app.yaml`, `deploy/`, Argo CD o Kubernetes describen ahora `~/Projects/platform/homelab/apps/issopen/`.
+
+Los comandos antiguos que incluyen `apps/<nombre>` o
+`landings/<nombre>` deben ejecutarse desde la raíz de este repositorio,
+sin ese prefijo. `make validate` en `homelab` sólo es obligatorio cuando
+también cambia el control plane.
+
+## Alcance y precedencia
+
+Esta carpeta pertenece exclusivamente a `issopen`. También se aplican las
+reglas del `AGENTS.md` raíz y de `apps/AGENTS.md`.
+
+`init-project.md` es el brief original del producto y un input para GSD. Sus
+propuestas no son órdenes operativas ni autorizan cambios externos. Cuando
+haya conflicto, usa este orden:
+
+1. instrucción explícita actual del propietario;
+2. contexto de la fase GSD activa;
+3. `.planning/PROJECT.md`, `.planning/REQUIREMENTS.md` y
+   `.planning/ROADMAP.md` aprobados;
+4. `init-project.md`;
+5. convenciones del monorepo.
+
+## Estado actual
+
+- Proyecto greenfield en implementación: los planes `01-01` a `01-05` aportan
+  el walking skeleton ejecutable, el dominio transaccional con su REST privada
+  y la web responsive del tracker, más identidades agenticas y Remote MCP.
+- La inicialización GSD está completa y el propietario aprobó un roadmap de
+  nueve fases con los 89 requisitos v1 asignados exactamente una vez.
+- La posición actual es la fase 1, `Private Single-Owner Dogfooding MVP`; todos
+  los gates locales están implementados y el operador autorizó el endpoint
+  productivo `https://issopen.serviciosegado.com` para la aceptación real de
+  ChatGPT Work.
+- El primer MVP aceptable termina en la propia fase 1: Docker Compose simple,
+  web responsive, tablero tipo Trello, Remote MCP para ChatGPT, identidad
+  separada para Codex y revisión humana de una mejora real de Issopen.
+- `compose.yml` sigue siendo el runtime local aprobado: un proceso Node en el
+  puerto 8080 y PostgreSQL 18 con volumen nombrado.
+- Producción se declara bajo `deploy/manifests`: un Deployment de aplicación y
+  un StatefulSet PostgreSQL, ambos fijados a `debian13-torre-nya`, más Services
+  ClusterIP e Ingress Traefik en namespace `issopen`/proyecto `business-apps`.
+- La imagen productiva inmutable es
+  `registry.serviciosegado.com/issopen:epics-2dc6413@sha256:26d63b85271253c1496226f2ab3e0b491df327cdba3faa7d44ed7f3002cf0e8e`.
+- El 2026-09-02 Argo CD reconcilió la release de Epics como `Synced/Healthy`;
+  la migración conservó 18 issues y 133 eventos, y se verificaron readiness,
+  HSTS, discovery OAuth/MCP y el bundle público sin mutar datos del owner.
+- El tablero permite plegar cada columna de estado y muestra las tarjetas en
+  modo compacto con su clave visible; cada tarjeta puede desplegar una vista
+  previa con descripción, prioridad, preguntas y cambio de estado antes de
+  abrir el detalle completo.
+- La release productiva incorpora Epics ligeros por proyecto: un issue pertenece a
+  cero o uno, el tablero filtra por todos/sin Epic/Epic concreto mediante URL,
+  y el detalle del Epic deriva progreso y recuentos de sus tickets. Esta
+  capacidad conserva el aislamiento por workspace/proyecto y los scopes
+  agenticos existentes.
+- El detalle muestra la actividad y los comentarios más recientes primero.
+  REST y MCP conservan el orden cronológico ascendente estable requerido por
+  la paginación; la inversión pertenece únicamente a la presentación web.
+- Los valores de runtime viven sólo en los Secrets externos `issopen-env`,
+  `issopen-postgres-env` y `registry-serviciosegado`; la fuente de recuperación
+  ignorada y con modo `0600` es `.local/secrets/issopen-production.env`.
+- La exposición pública usa el camino Caddy/túnel/Traefik existente. No afirmar
+  el gate ChatGPT hasta observar DNS, HTTPS, OAuth/uso de tools y revocación.
+- El 2026-08-31 Argo CD quedó `Synced/Healthy`, aplicación y PostgreSQL quedaron
+  `Ready` en el master, y se verificaron DNS público, certificado Let's Encrypt,
+  readiness y discovery OAuth/MCP en `https://issopen.serviciosegado.com`.
+  El owner y el workspace ya existen, y el MCP con PAT separado se ha usado
+  para leer, crear y reclamar tickets reales. Consentimiento, tool call y
+  revocación desde ChatGPT Work siguen siendo el checkpoint humano pendiente.
+- `init-project.md` procede de
+  `/home/jsegado/Downloads/issopen-init-project.md`; se conserva como brief,
+  no como código ejecutable.
+
+No escribas código de producto, instales dependencias ni habilites despliegues
+fuera de un plan de fase discutido y aprobado.
+
+## Producto y bucle principal aprobados
+
+Issopen es un issue tracker abierto y self-hostable para desarrolladores
+individuales, mantenedores open source y sus colaboradores. Su primer bucle
+diferenciador es:
+
+```text
+crear y priorizar un issue desde el tablero o ChatGPT
+  -> un agente de código externo lo reclama mediante MCP
+  -> trabaja en el repositorio y enlaza branch, commit o PR
+  -> lo devuelve a Ready for Review
+  -> una persona revisa y decide el cierre
+```
+
+Issopen debe usar este bucle para dirigir sus propias mejoras. La captura
+Chromium segura enriquece el producto después de validar ese MVP agentico.
+
+El producto completo será open source y estará disponible como Community
+self-hosted y Cloud Free con paridad funcional. Cloud monetiza capacidad,
+retención, operación y soporte, no funciones cerradas. Issopen no aloja
+agentes ni inferencia: coordina agentes externos BYO-AI mediante MCP.
+
+## Flujo GSD obligatorio
+
+La inicialización ya está aprobada. No la repitas ni sustituyas sus decisiones
+por las propuestas del brief. La memoria canónica está en:
+
+```text
+.planning/PROJECT.md
+.planning/config.json
+.planning/research/SUMMARY.md
+.planning/REQUIREMENTS.md
+.planning/ROADMAP.md
+.planning/STATE.md
+```
+
+Antes de trabajar en una fase:
+
+- lee `STATE.md`, la fase de `ROADMAP.md` y sus requisitos trazados;
+- no crees un `.git` anidado: todo se versiona desde la raíz del monorepo;
+- no conviertas una fase del roadmap directamente en código;
+- conserva las reglas manuales de este archivo cuando GSD regenere sus bloques;
+- actualiza `STATE.md`, trazabilidad y documentación al cerrar cada fase.
+
+El siguiente flujo es:
+
+```text
+$gsd-plan-phase 1
+$gsd-execute-phase 1
+```
+
+Ejecuta `$gsd-ui-phase N` antes del plan sólo cuando la fase tenga
+`**UI hint**: yes` en el roadmap.
+
+No ejecutes una fase sin contexto, plan verificable y criterios de aceptación.
+
+## Evidencias pendientes por resolver en sus fases
+
+- Validar en la fase 1 ChatGPT Work y Codex con una mejora real de Issopen,
+  manteniendo repositorio, CI, merge y despliegue fuera del servidor.
+- Convertir en la fase 5 la privacidad del DOM y la redacción destructiva en un
+  contrato probado frente a páginas hostiles.
+- Validar semántica y utilidad de las auditorías con usuarios en la fase 7.
+- Resolver la revisión legal de la licencia AGPLv3 antes de la release pública
+  Community de la fase 8.
+- Medir costes reales antes de publicar cuotas de Cloud Free en la fase 9.
+
+## Arquitectura planificada y estado de implementación
+
+La investigación selecciona un monolito modular desplegable sobre Node.js y
+TypeScript: SPA React/Vite, backend Hono para REST, auth y MCP, extensión WXT
+Manifest V3, PostgreSQL con migraciones Drizzle, Better Auth y almacenamiento
+S3-compatible. Community y Cloud deben usar los mismos artefactos y contratos.
+
+Next.js y los SDK de aplicación de Supabase se descartaron para evitar un
+servidor duplicado y dependencia propietaria. Las versiones de
+`.planning/research/STACK.md` son baselines investigadas, no dependencias
+instaladas: la fase 1 debe comprobarlas y fijarlas como cohorte. No crees
+microservicios ni paquetes sin una responsabilidad real.
+
+El plan `01-01` implementa un único paquete ESM: `src/server/` sirve la SPA de
+`src/web/`, monta Better Auth y opera sobre PostgreSQL mediante Drizzle. Las
+migraciones SQL viven en `drizzle/`; `scripts/owner.ts` es la única vía de
+bootstrap y recovery. El plan `01-02` añade `src/server/domain/` como única
+fuente de mutaciones transaccionales de proyectos, issues, claims, enlaces de
+código, revisión y actividad append-only; `src/server/http/` expone esas mismas
+operaciones a la sesión owner con aislamiento por workspace. MCP y agentes
+llegan en planes posteriores y deben reutilizar esos servicios, no duplicar
+reglas de dominio ni aceptar actor, origen, fecha o diff desde el cliente.
+
+El plan `01-03` implementa la SPA de `src/web/` sin router ni biblioteca de
+componentes externa: `components/` contiene primitivas semánticas locales,
+`routes/` monta formularios, tablero, detalle, revisión y actividad, y `lib/`
+centraliza navegación, estado online y el corte de sesión ante `401`. El estado
+remoto no se persiste en almacenamiento del navegador; las mutaciones esperan
+la respuesta autoritativa antes de mover tarjetas o anunciar resultados. Los
+tests de `tests/web/` usan Testing Library y los de `tests/e2e/` levantan una
+PostgreSQL efímera para verificar Chromium desktop y móvil, incluido teclado.
+
+El plan `01-04` añade identidades agenticas con scopes y allowlist por proyecto,
+PAT de revelado único guardados sólo como Argon2id y revocación inmediata. El
+servidor `src/server/mcp/` expone una superficie acotada de herramientas tipadas sobre
+los servicios de dominio existentes mediante MCP 2.0 stateless. Better Auth,
+`@better-auth/mcp` y `@better-auth/cimd` están fijados conjuntamente en `1.7.2`;
+el SDK MCP está fijado en `2.0.0`. ChatGPT usa authorization code con PKCE S256,
+discovery RFC 9728 y consentimiento owner; Codex usa PAT. Las identidades Codex
+reciben `issues:create` por defecto, pero sólo pueden crear en proyectos de su
+allowlist y siempre en Backlog; el owner humano sigue siendo el propietario y
+la actividad conserva el agente autor. `questions:write` permite añadir
+preguntas con recomendación y opciones, pero sólo el owner humano puede guardar
+o cambiar respuestas. Ninguna identidad recibe `issues:close` por defecto y el
+dominio vuelve a comprobar ese permiso.
+
+Los grants de agente se pueden reducir mediante
+`PATCH /api/v1/agents/:agentId/access`, nunca ampliar. Cada petición MCP vuelve
+a resolver desde PostgreSQL la identidad, scopes y allowlist, aunque el cliente
+ya estuviera conectado. `agent_identity` conserva `last_used_at` y
+`revoked_at`; la UI expone sólo metadatos seguros de acceso. Revocar una
+identidad invalida su PAT o, para OAuth, sus access tokens, refresh tokens y
+consentimiento. La actividad histórica mantiene la instantánea de ID y nombre
+del actor. `offline_access` es un scope OAuth de conexión, no un permiso de
+producto y no debe persistirse en `agent_scope`.
+
+Los comentarios viven en `issue_comment` y son append-only también a nivel de
+PostgreSQL. REST permite al owner añadirlos y MCP expone `add_comment` sólo con
+`comments:write`; autor, nombre visible, origen y fecha se derivan siempre de la
+sesión o principal autenticado. `get_issue` los devuelve en orden cronológico y
+React muestra el cuerpo como texto no confiable, sin renderizar Markdown/HTML.
+No existen edición, borrado, menciones ni notificaciones implícitas en el MVP.
+
+Todas las mutaciones MCP actuales exigen `idempotencyKey`. El servicio
+`src/server/domain/idempotency.ts` acota la clave por workspace, identidad y
+tool, normaliza y hashea el payload, serializa concurrencia mediante advisory
+lock de PostgreSQL y guarda la respuesta junto al efecto en la misma
+transacción. Un replay idéntico durante 24 horas devuelve la respuesta original
+sin duplicar actividad; reutilizar la clave con otro payload devuelve conflicto.
+No persistir tokens, cabeceras ni secretos en esos registros. Toda nueva tool
+MCP mutante debe atravesar este servicio.
+
+Los listados MCP se versionan con `schemaVersion: 1` y usan paginación keyset:
+50 elementos por defecto, máximo 100 y cursores opacos ligados a la tool, los
+filtros y la allowlist efectiva. `list_projects`, `list_issues` y
+`list_activity` devuelven sólo resúmenes acotados; no incluyen descripciones
+completas ni el payload `changes` de actividad. `list_issues` filtra por
+proyecto, estado, prioridad y claim (`any`, `claimed`, `unclaimed`, `mine`).
+`get_issue` conserva el paquete detallado autorizado. No conviertas los
+cursores en offsets ni filtres después de paginar: ambas cosas romperían el
+aislamiento y la estabilidad del recorrido.
+
+Los tickets pueden contener varias preguntas. Cada una mantiene una única
+respuesta actual editable —opción predefinida u `Other`— y cada cambio queda
+registrado en actividad append-only. Los recuentos se derivan en servidor; una
+pregunta bloqueante sin responder activa el warning y el filtro del tablero, y
+el dominio impide mover el ticket a `ready_for_review` hasta responderlas todas.
+
+Los Epics viven en `epic` y sólo agrupan tickets del mismo proyecto/workspace.
+La asociación nullable `issue.epic_id` usa una FK compuesta para que ni REST ni
+MCP puedan cruzar esas fronteras. `TrackerService` es la única vía para crear o
+editar Epics y asociar tickets; los recuentos por estado y el progreso no se
+persisten, se derivan de los issues reales. La web gestiona los Epics en
+`routes/EpicRoutes.tsx` y conserva el filtro del tablero en `?epic=`. MCP no
+añade privilegios nuevos: `get_issue` devuelve el contexto, `list_issues`
+acepta `epicId`, y `create_issue`/`update_issue` validan la asociación usando
+los scopes y la allowlist de proyecto existentes.
+
+El plan `01-05` añade `scripts/dogfood.ts`: un cliente operador idempotente que
+usa exclusivamente REST y MCP para dirigir una mejora de Issopen desde la
+priorización hasta la revisión humana. Recibe la credencial owner y una URL de
+resultado por entorno efímero, mantiene el PAT sólo en memoria, lo revoca al
+terminar y produce evidencia sin secretos. `tests/e2e/dogfood.spec.ts` ejecuta
+ese mismo cliente contra Hono y PostgreSQL reales, verifica atribución, rechazo
+de cierre agentico, request-changes, aceptación e idempotencia. No hay imports,
+procesos ni credenciales de Git, CI, merge o despliegue en ese camino.
+
+## Invariantes de seguridad
+
+- Nunca guardes secretos, tokens, cookies, credenciales o kubeconfigs en Git.
+- No captures contraseñas, valores de formularios sensibles, almacenamiento
+  del navegador, cabeceras de autorización ni el DOM completo.
+- Todo contexto DOM debe sanearse y limitarse antes de salir del navegador.
+- La autorización se comprueba en servidor y debe aislar workspaces.
+- Los PAT se generan con 256 bits, se muestran una sola vez y se almacenan con
+  Argon2id, fingerprint seguro, scopes, expiración, último uso y revocación.
+- Los permisos persistidos de una identidad sólo pueden reducirse. La siguiente
+  petición revalida identidad, scopes, proyectos y revocación; nunca confía sólo
+  en una conexión abierta o en claims OAuth antiguos.
+- Los adjuntos son privados y se sirven mediante autorización o URLs firmadas
+  de vida corta.
+- MCP no permite parches arbitrarios de base de datos ni acceso implícito a
+  otros proyectos.
+- Un issue sólo puede apuntar a un Epic de su mismo workspace y proyecto; esta
+  regla se aplica en dominio y mediante FK compuesta, no sólo en la interfaz.
+- Los listados MCP aplican workspace y allowlist dentro de la consulta, limitan
+  cada página a 100 filas y atan el cursor a los filtros autorizados.
+- Los comentarios son inmutables, conservan una instantánea atribuida del autor
+  y nunca aceptan identidad, origen o fecha enviados por el cliente.
+- MCP acepta sólo `POST`, verifica issuer/audience/expiry y PKCE S256 para OAuth,
+  y registra un conjunto fijo de herramientas cuyos argumentos valida con Zod.
+- Toda mutación MCP exige una clave idempotente; efecto, actividad y respuesta
+  se confirman atómicamente, y un mismo agente no puede reutilizar la clave para
+  otro payload dentro de la retención de 24 horas.
+- Issopen coordina agentes externos; no aloja ni paga inferencia en el MVP.
+
+Estas invariantes sólo pueden relajarse mediante una decisión explícita,
+documentada y revisada.
+
+## Desarrollo, despliegue y validación
+
+Los comandos reales se ejecutan desde `apps/issopen`:
+
+```bash
+corepack pnpm@11.22.0 install --frozen-lockfile
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm test:web
+pnpm test:e2e -- tracker
+pnpm test:integration
+pnpm build
+pnpm dogfood
+pnpm test:secrets
+pnpm validate
+docker compose config --quiet
+pnpm test:compose
+```
+
+`README.md` documenta la generación local de `.env`, el arranque, bootstrap,
+recovery, restart y parada. Los únicos secretos de este corte son
+`POSTGRES_PASSWORD` y `BETTER_AUTH_SECRET`; los comandos de owner reciben
+`ISSOPEN_OWNER_EMAIL` y `ISSOPEN_OWNER_PASSWORD` sólo en el entorno efímero del
+proceso. No los imprimas ni los persistas fuera del `.env` ignorado.
+El dogfood añade `ISSOPEN_DOGFOOD_CODE_URL` y, opcionalmente,
+`ISSOPEN_DOGFOOD_CODE_TYPE`; son referencias de resultado, no autorización para
+acceder al repositorio.
+
+Desde la raíz también es obligatorio:
+
+```bash
+make validate
+```
+
+Los cambios productivos deben seguir siendo GitOps. Argo consume
+`deploy/argocd.yaml` y `deploy/manifests`; `deploy/values.yaml` es un contrato de
+referencia veraz, no el renderer activo. No ejecutes `kubectl apply`, patch ni
+upgrades Helm para esta app. Los Secrets se provisionan únicamente mediante
+`scripts/provision-production-secrets.sh` desde la fuente ignorada con modo
+`0600`; ese comando puede crear Secrets ausentes, pero nunca rotarlos ni
+sobrescribirlos. El claim PostgreSQL usa `local-path` con retención de
+StatefulSet `Retain`; no es HA ni un backup. Las migraciones siguen siendo
+forward-only y el restore productivo continúa diferido, así que conserva el
+claim y valida compatibilidad de esquema antes de revertir binarios.
+
+<!-- GSD:project-start source:PROJECT.md -->
+## Project
+
+**Issopen**
+
+Issopen es un issue tracker abierto y self-hostable para desarrolladores
+individuales, mantenedores de proyectos abiertos y sus colaboradores. Comienza
+como un tablero sencillo tipo Trello conectado por MCP con ChatGPT y agentes de
+programación externos, de modo que una persona pueda convertir una intención en
+trabajo trazable, delegarlo y revisar el resultado.
+
+Issopen debe poder gestionar su propio backlog para mejorar mediante el mismo
+bucle que ofrece a otros proyectos. Sobre esa base añade captura visual segura,
+epics de auditoría y un servicio Cloud que cobra por operación y capacidad, no
+por ocultar el flujo principal.
+
+**Core Value:** Convertir una intención humana en trabajo estructurado y seguro que ChatGPT y
+agentes de código externos puedan entender, ejecutar y devolver a revisión
+dentro de un único flujo trazable.
+
+### Constraints
+
+- **Proceso**: no comienza la implementación hasta aprobar PROJECT.md,
+  REQUIREMENTS.md y ROADMAP.md — evita convertir el brief en código sin validar.
+- **Open source**: todo el producto será abierto; AGPLv3 es la licencia objetivo
+  pendiente de revisión legal — no diseñar fronteras artificiales de código
+  cerrado.
+- **Modelo de IA**: Issopen coordina agentes externos mediante MCP y BYO-AI — no
+  ejecuta ni financia inferencia en el MVP.
+- **Autoprogramación**: significa dogfooding agentico gobernado — Issopen
+  conserva backlog, permisos y auditoría, pero no se modifica, fusiona código
+  ni se despliega a sí mismo sin sistemas externos y aprobación explícita.
+- **Autorización**: las identidades agenticas usan permisos configurables,
+  scopes y alcance por proyecto — la autonomía total nunca es acceso implícito.
+- **Privacidad**: capturas y DOM se revisan, sanean y minimizan antes de enviarse
+  — nunca se capturan secretos, cookies, tokens ni valores sensibles por defecto.
+- **Colaboración**: workspaces con roles humanos sencillos y agentes separados —
+  organizaciones y políticas enterprise quedan fuera de v1.
+- **Navegador**: la primera extensión cubre Chromium Manifest V3 — no asumir
+  compatibilidad Firefox/Safari sin una fase propia.
+- **Arquitectura**: empezar con un backend desplegable y cortes verticales
+  pequeños — no microservicios ni paquetes sin responsabilidad real.
+- **Git**: un único repositorio en la raíz del homelab — nunca crear `.git`
+  dentro de `apps/issopen`.
+- **Despliegue**: no existe todavía imagen, puerto real, dominio ni producción —
+  se decidirán después de investigar stack y operación.
+<!-- GSD:project-end -->
+
+<!-- GSD:stack-start source:research/STACK.md -->
+## Technology Stack
+
+## Recomendación ejecutiva
+## Decisiones que deben fijarse ahora
+| Área | Decisión | Motivo y efecto sobre self-hosting | Confianza |
+|---|---|---|---|
+| Runtime | Node.js 24 LTS, ESM | Es la línea LTS actual; Node 26 sigue en `Current` hasta octubre de 2026. Un runtime único reduce diferencias entre Cloud, Compose y homelab. | HIGH |
+| Lenguaje | TypeScript 6.0.x inicialmente | TS 7.0 es estable y mucho más rápido, pero todavía no expone una API programática estable. TS 6 es el ancla compatible para WXT y tooling hasta probar TS 7.1. | HIGH |
+| Web | React SPA + Vite; no Next.js | No hay requisito SSR/SEO en el producto autenticado. El resultado estático se sirve desde el backend y funciona igual en cualquier host. | HIGH |
+| Backend | Hono sobre Node; REST `/api/v1` + `/mcp` en el mismo proceso | Hono usa `Request`/`Response` Web Standard y tiene adaptador oficial Node y adaptador oficial MCP. Un solo deployable, sin microservicios. | HIGH |
+| Contratos | Zod 4 como validación en frontera + OpenAPI 3.1 como contrato externo | Web y extensión pueden compartir schemas publicados; clientes externos no dependen de inferencia TypeScript interna. | HIGH |
+| MCP | Especificación `2026-07-28`, SDK TypeScript v2, Streamable HTTP stateless | Es el transporte Remote MCP vigente; el modo stateless evita afinidad de sesión/Redis y escala igual en Compose o Cloud. | HIGH |
+| Auth web | Better Auth sobre las tablas PostgreSQL de Issopen | Soporta GitHub, magic link y adaptador Drizzle sin un servicio de identidad propietario. | HIGH |
+| Auth MCP | Better Auth MCP + CIMD + OAuth 2.1/RFC 9728; PAT como vía adicional, no sustitutiva | Entrega discovery y tokens ligados al recurso. Community opera su propio authorization server dentro del mismo backend. | MEDIUM-HIGH |
+| Datos | PostgreSQL 18; Drizzle ORM y migraciones SQL versionadas | Es portable entre contenedor y proveedores gestionados. No se requiere extensión propietaria. | HIGH |
+| Ficheros | API S3 mediante AWS SDK v3; SeaweedFS sólo como default de Compose | El código funciona con SeaweedFS, S3, R2, B2 u otro S3 compatible. El proveedor está fuera del dominio. | HIGH para el contrato; MEDIUM para SeaweedFS como default |
+| Monorepo | pnpm workspaces + Turborepo | Hay tres artefactos reales y contratos compartidos. Turbo sólo coordina tareas/caché; no define arquitectura ni exige cache remoto. | HIGH |
+| Observabilidad | JSON a stdout con Pino + trazas/métricas OTLP opcionales | Funciona sin SaaS y puede conectarse a cualquier collector. Los eventos de auditoría siguen siendo datos del producto. | HIGH |
+| Distribución | Una imagen OCI para web/API/MCP; ZIP/CRX separado para la extensión | Cloud y Community prueban el mismo binario. Las migraciones se ejecutan como comando/job explícito. | HIGH |
+## Versiones de referencia verificadas
+### Runtime y toolchain
+| Tecnología | Baseline exacto | Política de adopción | Uso |
+|---|---:|---|---|
+| Node.js | `24.19.0` LTS | Adoptar ahora; `engines: >=24 <25`; imagen exacta y digest | Runtime de API, build web/extension, migraciones y tests |
+| pnpm | `11.22.0` | Fijar en `packageManager` con hash de integridad | Instalación reproducible y workspaces |
+| TypeScript | `6.0.3` | Fijar ahora; reevaluar TS `7.1+`, no TS `7.0.2` en foundation | Typecheck y emisión del backend |
+| Turborepo | `2.10.11` | Fijar patch; caché local/CI, sin dependencia de Vercel Remote Cache | Grafo `dev/build/test/typecheck` |
+| Biome | `2.5.10` | Fijar patch | Formato y lint sintáctico; `tsc` conserva el typecheck |
+### Aplicación web
+| Tecnología | Baseline exacto | Uso | Nota de portabilidad |
+|---|---:|---|---|
+| React / React DOM | `19.2.8` | UI de web y extensión | Misma versión exacta en ambos artefactos |
+| Vite | `8.2.2` | Dev server y build SPA | Produce estáticos; no impone plataforma de hosting |
+| `@vitejs/plugin-react` | `6.1.0` | React Refresh/transform | Fijar junto con Vite |
+| TanStack Router | `1.170.32` | Routing tipado de la SPA | Sólo cliente; las reglas de acceso siguen en API |
+| TanStack Query | `5.102.1` | Estado remoto, invalidación y mutaciones | No usarlo como estado de dominio |
+| Tailwind CSS | `4.3.3` | Estilos | Build local; ninguna CDN runtime |
+| shadcn CLI | `4.19.0` | Copiar componentes iniciales | Ejecutar sólo al incorporar componentes y versionar el código generado |
+| Radix primitives | familia `1.x` | Accesibilidad de componentes complejos | Añadir únicamente primitivas realmente usadas |
+| dnd-kit | `@dnd-kit/core 6.3.1`, `@dnd-kit/sortable 10.0.0` | Kanban accesible por puntero/teclado | Debe verificarse con Playwright y teclado real |
+### API, contratos y dominio
+| Tecnología | Baseline exacto | Uso | Regla |
+|---|---:|---|---|
+| Hono | `4.13.3` | Router HTTP y middleware | El dominio no importa tipos de Hono |
+| `@hono/node-server` | `2.1.1` | Adaptador Node y servicio de estáticos | Único entrypoint de producción |
+| Zod | `4.4.3` | Validación de env, requests, responses, payloads MCP | Parsear en toda frontera; tipos TS no sustituyen validación |
+| `@hono/zod-openapi` | `1.6.1` | REST versionada y OpenAPI | Generar y comprobar el documento en CI |
+| Pino | `10.3.1` | Logs JSON estructurados | Redactar cookies, authorization, tokens, DOM y URLs firmadas |
+### Remote MCP
+| Tecnología | Baseline exacto | Uso | Regla |
+|---|---:|---|---|
+| MCP protocol | `2026-07-28` | Revisión de protocolo ofrecida por `/mcp` | Conservar compatibilidad legacy stateless mientras los clientes reales la necesiten |
+| `@modelcontextprotocol/server` | `2.0.0` | `McpServer`, tools y `createMcpHandler` | No usar el monolítico `@modelcontextprotocol/sdk` v1 |
+| `@modelcontextprotocol/hono` | `2.0.0` | Adaptador oficial del handler Web Standard a Hono | Misma versión que server/core/client |
+| `@modelcontextprotocol/client` | `2.0.0` | Tests automáticos de interoperabilidad | No es dependencia de producción del servidor |
+| `@better-auth/mcp` | `1.7.1` | Authorization server/protected resource MCP | Fijar junto con todo Better Auth |
+| `@better-auth/cimd` | `1.7.1` | Client ID Metadata Documents | Usar perfil `mcp-2026-07-28` |
+### Extensión Chromium
+| Tecnología | Baseline exacto | Uso | Regla |
+|---|---:|---|---|
+| WXT | `0.21.4` | Build, entrypoints, manifest y packaging | Target único MV3/Chromium en v1 |
+| `@wxt-dev/module-react` | `1.2.2` | React dentro de popup/editor/content UI | React exacto compartido con web |
+| Manifest | `manifest_version: 3` | Service worker y content scripts | Nada de background page persistente ni código remoto |
+| Chrome APIs | `activeTab`, `scripting`, `tabs.captureVisibleTab`, `identity.launchWebAuthFlow` | Captura iniciada por gesto y login | No pedir `<all_urls>` por defecto |
+### PostgreSQL, ORM y migraciones
+| Tecnología | Baseline exacto | Uso | Regla |
+|---|---:|---|---|
+| PostgreSQL | `18.6` | Estado transaccional, auth, cuotas, auditoría | Misma major en dev/CI/Compose; Cloud puede ser servicio gestionado compatible |
+| Drizzle ORM | `0.45.2` | Schema y queries tipadas | No esconder SQL complejo; constraints viven en DB |
+| Drizzle Kit | `0.31.10` | Generación/check/aplicación de migraciones | `generate` + revisión + `migrate`; nunca `push` en entornos compartidos |
+| Postgres.js | `3.4.9` | Driver PostgreSQL de Node | Pool limitado y configurable; una sola implementación de driver |
+### Autenticación humana, agentes y correo
+| Tecnología | Baseline exacto | Uso | Regla |
+|---|---:|---|---|
+| Better Auth | `1.7.1` | Sesiones web, GitHub OAuth, magic link y OAuth MCP | Tablas en el mismo PostgreSQL; secretos sólo por entorno |
+| Nodemailer | `9.0.5` | Transporte SMTP para magic links | Community configura cualquier SMTP; Mailpit en local |
+### Almacenamiento de capturas y adjuntos
+| Tecnología | Baseline exacto | Uso | Regla |
+|---|---:|---|---|
+| `@aws-sdk/client-s3` | `3.1116.0` | Cliente S3 portable | Fijar toda la cohorte AWS SDK en el mismo release |
+| `@aws-sdk/s3-request-presigner` | `3.1116.0` | PUT/GET firmados de vida corta | Bucket siempre privado; el API decide key, tamaño y TTL |
+| `file-type` | `22.0.2` | Comprobación de tipo por contenido | No confiar en extensión ni `Content-Type` del cliente |
+| Sharp | `0.35.3` | Re-encode/normalización de imágenes | Validar binarios amd64/arm64 en CI antes de adoptarlo |
+| SeaweedFS | `4.41` | Proveedor S3 incluido en Docker Compose Community | Servicio interno; no publicar UIs/admin al exterior |
+### Testing
+| Tecnología | Baseline exacto | Cobertura prioritaria |
+|---|---:|---|
+| Vitest | `4.1.11` | Dominio, authz, cuotas, sanitización DOM, selectors y handlers |
+| `@vitest/browser-playwright` | `4.1.11` | Componentes con navegador real cuando aporte valor |
+| Playwright | `1.62.1` | E2E web y extensión MV3 empaquetada |
+| Testcontainers PostgreSQL | `12.1.0` | Integración con PostgreSQL 18 real y migraciones desde cero |
+| MSW | `2.15.0` | Simular API sólo en tests de UI/extension, no en aceptación E2E |
+| MCP client SDK | `2.0.0` | Tests de initialize/discovery, auth, tools, errores y scopes |
+### Observabilidad
+| Tecnología | Baseline exacto | Uso | Regla |
+|---|---:|---|---|
+| Pino | `10.3.1` | Logs JSON stdout | Siempre disponible, incluso sin collector |
+| OpenTelemetry API | `1.9.1` | API neutral de instrumentación | No acoplar el dominio al SDK |
+| OpenTelemetry Node SDK | `0.221.0` | Trazas y métricas | Activación por env; export OTLP configurable |
+| OTel auto-instrumentations | `0.79.0` | HTTP/PostgreSQL y runtime | Lista explícita de instrumentaciones, no “todo” sin revisar |
+## Layout recomendado
+## Topología portable
+### Community / Docker Compose
+- Una imagen `issopen` contiene el JS del backend y los estáticos Vite.
+- `postgres:18.6` usa volumen y healthcheck; backup/restore se documenta antes del release Community.
+- `seaweedfs:4.41` ejecuta el modo S3 single-node con volumen; sólo el endpoint S3 queda accesible a la red interna.
+- Mailpit se habilita sólo con perfil de desarrollo; producción exige SMTP real.
+- El comando de migración es explícito e idempotente; la app no modifica el schema en startup.
+- Ningún dominio, GitHub OAuth app, SMTP ni storage credential viene hardcodeado.
+### Issopen Cloud
+- Ejecuta la misma imagen y el mismo comando de migración.
+- Puede usar PostgreSQL y S3 gestionados, pero sólo mediante los contratos estándar.
+- CDN, WAF, backups, autoscaling y lifecycle del bucket son infraestructura, no imports del producto.
+- Multi-tenancy se mantiene lógica por workspace en las mismas tablas; no se crea una variante Cloud del dominio.
+### Homelab / Kubernetes posterior
+## Configuración portable mínima
+## Cohortes que deben actualizarse juntas
+| Cohorte | Paquetes/versiones de referencia | Verificación obligatoria |
+|---|---|---|
+| React | `react`, `react-dom` `19.2.8` | Build web + extension, hydration no aplica |
+| Vite | `vite 8.2.2`, plugin React `6.1.0` | Build production y HMR web |
+| MCP | todos `@modelcontextprotocol/* 2.0.0` | protocolo moderno + fallback legacy decidido explícitamente |
+| Better Auth | `better-auth`, `@better-auth/mcp`, `@better-auth/cimd` `1.7.1` | migración schema, web login, consent y cliente MCP real |
+| AWS SDK | S3 client/presigner `3.1116.0` | SeaweedFS + proveedor Cloud elegido |
+| OTel | SDK/exporters `0.221.0`; API `1.9.1` | startup ESM, shutdown y export deshabilitado |
+| Vitest | core/browser `4.1.11` | unit + browser mode |
+| Drizzle | ORM `0.45.2`, Kit `0.31.10`, driver `3.4.9` | generar, DB vacía, upgrade y rollback ensayado |
+## Dependencias iniciales propuestas
+# Workspace tooling
+# API/domain
+# Database/auth/MCP/storage
+# Web
+# Extension
+## Qué evitar explícitamente
+| Evitar | Por qué | Usar en su lugar |
+|---|---|---|
+| Next.js 16 como web principal | Duplica servidor/routing/caché y no evita la API requerida por extensión/MCP; SSR no valida el producto. | React 19 SPA + Vite 8, servida por Hono |
+| Supabase Auth/Storage/RLS como arquitectura | Convierte Community en una instalación de Supabase o en una implementación distinta; reparte authz entre API y políticas proveedor-específicas. | Better Auth + PostgreSQL normal + S3 API; Supabase sólo podría ser un PG gestionado |
+| MinIO Community en Compose | Proyecto archivado/source-only y releases finales con vulnerabilidad sin parche Community. | SeaweedFS 4.41 por defecto; cualquier S3 externo soportado |
+| Node 26 en producción ahora | Sigue en Current el 2026-08-23. | Node 24 LTS; evaluar Node 26 tras LTS y matriz de dependencias |
+| TypeScript 7.0.2 en foundation | No tiene todavía API programática estable; riesgo innecesario con tooling. | TS 6.0.3; spike de TS 7.1 cuando exista |
+| SDK MCP v1 / endpoint SSE antiguo | Es la línea/protocolo anterior y obliga a migración inmediata. | Paquetes v2 + Streamable HTTP `2026-07-28` |
+| OAuth MCP casero o PAT-only | Reduce interoperabilidad, discovery y seguridad; construir un AS correcto es trabajo especializado. | Better Auth MCP/CIMD; PAT adicional con hash/scopes |
+| Hono RPC como único contrato | Acopla cliente y servidor a la misma versión/tipos y no sirve a terceros. | REST OpenAPI + Zod compartido; MCP schemas separados |
+| `drizzle-kit push` en staging/prod | Cambia schema sin historial SQL revisable ni plan de rollout. | `generate`, revisar, commit, `migrate` explícito |
+| SQLite en tests de persistencia | Oculta comportamiento PostgreSQL y aislamiento real. | Testcontainers con PostgreSQL 18.6 |
+| Bun/Deno/Workers como runtime canónico | Aumenta la matriz de auth/driver/storage sin aportar al MVP. | Node 24; Hono conserva una posible portabilidad futura |
+| Bucket público o proxy de base64 por MCP | Rompe privacidad y dispara memoria/ancho de banda. | Bucket privado + URLs firmadas cortas + metadata MCP |
+| `<all_urls>` en la extensión | Acceso persistente excesivo y warning de instalación. | `activeTab` + `scripting` después de gesto explícito |
+| Service worker MV3 como estado durable | Chrome puede terminarlo; produce pérdidas y carreras. | Estado transitorio en `chrome.storage`/IndexedDB y servidor como autoridad |
+| Sentry u otro SaaS obligatorio | Community deja de ser autónomo. | stdout JSON + OTLP opcional; adaptadores Cloud opcionales |
+| Kubernetes/microservicios/colas en el producto inicial | No validan captura → issue → MCP y empeoran Community. | Un proceso Node y jobs DB-driven sólo cuando haya necesidad medida |
+## Política de pinning para la implementación
+## Riesgos y comprobaciones pendientes
+| Tema | Riesgo | Acción antes de adoptar | Confianza |
+|---|---|---|---|
+| Better Auth 1.7 + MCP SDK 2 | Ambos releases son recientes y la superficie OAuth/CIMD es sensible. | Spike con Codex y Claude reales, consent, refresh, revocación, scopes y DPoP; revisar migrations generadas. | MEDIUM |
+| TypeScript 7 | TS 7.0 no tiene API programática; retrasarlo pierde rendimiento, adoptarlo puede romper tooling. | Repetir matriz con WXT, Drizzle, Vite, Biome y SDK MCP cuando 7.1 sea estable. | HIGH sobre el riesgo |
+| SeaweedFS `weed mini` | Adecuado para dev/single-node, no demuestra HA ni hardening; UIs administrativas requieren aislamiento. | Compose sólo publica app; backup/restore y upgrade probados; documentar S3 externo para producción seria. | MEDIUM |
+| S3 compatibility | “S3-compatible” no garantiza idéntico CORS, checksums, signed POST, path-style o multipart. | Suite contractual contra SeaweedFS y el proveedor Cloud elegido. | HIGH |
+| WXT 0.x | Sigue antes de 1.0 y puede introducir cambios de tooling. | Pin exacto; fixture build/package y upgrade notes antes de actualizar. | MEDIUM-HIGH |
+| Drizzle ORM 0.x | API aún 0.x y Kit tiene versionado separado. | Pin cohortes, revisar SQL y no dejar migrations en manos del startup. | MEDIUM-HIGH |
+| Sharp | Binarios nativos y formatos de imagen amplían superficie. | Probar amd64/arm64; límites de pixels, decode time y memoria; considerar omitirlo en el primer upload vertical. | MEDIUM |
+## Fuentes primarias adicionales
+- [Node.js releases](https://nodejs.org/en/about/previous-releases)
+- [pnpm releases](https://github.com/pnpm/pnpm/releases)
+- [TypeScript 6.0](https://devblogs.microsoft.com/typescript/announcing-typescript-6-0/)
+- [React versions](https://react.dev/versions)
+- [Vite releases](https://vite.dev/blog)
+- [Hono releases](https://github.com/honojs/hono/releases)
+- [WXT releases](https://github.com/wxt-dev/wxt/releases)
+- [Zod releases](https://github.com/colinhacks/zod/releases)
+- [Drizzle repository/releases](https://github.com/drizzle-team/drizzle-orm)
+- [Better Auth releases](https://github.com/better-auth/better-auth/releases)
+- [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk)
+- [PostgreSQL supported versions](https://www.postgresql.org/support/versioning/)
+- [Vitest releases](https://vitest.dev/blog)
+- [OpenTelemetry JavaScript](https://opentelemetry.io/docs/languages/js/)
+## Confidence assessment
+| Área | Nivel | Motivo |
+|---|---|---|
+| Runtime/toolchain | HIGH | LTS y releases oficiales claros; TS 7 documenta explícitamente su límite de API. |
+| Web/API | HIGH | React/Vite/Hono son estables; la elección SPA deriva directamente del producto autenticado y del backend obligatorio. |
+| Extension | MEDIUM-HIGH | WXT está activo y Chrome APIs están documentadas, pero WXT sigue 0.x y las políticas Web Store evolucionan. |
+| Database/migrations | HIGH | PostgreSQL 18.6 y el flujo de migraciones están documentados oficialmente. |
+| Auth | MEDIUM-HIGH | Better Auth cubre el alcance y es portable, pero 1.7/MCP requieren spike de seguridad e interoperabilidad. |
+| MCP | MEDIUM-HIGH | Spec y SDK v2 son actuales y oficiales, pero muy recientes al 2026-08-23. |
+| Storage | HIGH para S3; MEDIUM para el default Compose | El contrato AWS es estable; SeaweedFS debe validarse operacionalmente y no prometer HA con `weed mini`. |
+| Testing/observability | HIGH | Herramientas y límites están documentados; OTel browser se excluye por su estado experimental. |
+<!-- GSD:stack-end -->
+
+<!-- GSD:conventions-start source:CONVENTIONS.md -->
+## Conventions
+
+Conventions not yet established. Will populate as patterns emerge during development.
+<!-- GSD:conventions-end -->
+
+<!-- GSD:architecture-start source:ARCHITECTURE.md -->
+## Architecture
+
+Architecture not yet mapped. Follow existing patterns found in the codebase.
+<!-- GSD:architecture-end -->
+
+<!-- GSD:skills-start source:skills/ -->
+## Project Skills
+
+No project skills found. Add skills to any of: `.claude/skills/`, `.agents/skills/`, `.cursor/skills/`, `.github/skills/`, or `.codex/skills/` with a `SKILL.md` index file.
+<!-- GSD:skills-end -->
+
+<!-- GSD:workflow-start source:GSD defaults -->
+## GSD Workflow Enforcement
+
+Before using Edit, Write, or other file-changing tools, start work through a GSD command so planning artifacts and execution context stay in sync.
+
+Use these entry points:
+- `/gsd-quick` for small fixes, doc updates, and ad-hoc tasks
+- `/gsd-debug` for investigation and bug fixing
+- `/gsd-execute-phase` for planned phase work
+
+Do not make direct repo edits outside a GSD workflow unless the user explicitly asks to bypass it.
+<!-- GSD:workflow-end -->
+
+<!-- GSD:profile-start -->
+## Developer Profile
+
+> Profile not yet configured. Run `/gsd-profile-user` to generate your developer profile.
+> This section is managed by `generate-claude-profile` -- do not edit manually.
+<!-- GSD:profile-end -->

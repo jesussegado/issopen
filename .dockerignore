@@ -1,0 +1,13 @@
+.git
+.planning
+.env
+.env.*
+!.env.example
+node_modules
+dist
+coverage
+tests
+deploy
+*.log
+README.md
+init-project.md
