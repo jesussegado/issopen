@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Issopen · Exploración de apertura</title>
+    <style>
+      :root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, sans-serif; background: #f4f3f8; color: #242135; --preview: #ffffff; --pattern: none; --ink: #5e586f; }
+      * { box-sizing: border-box; }
+      body { margin: 0; padding: 36px clamp(18px, 4vw, 64px) 48px; }
+      header, main, footer { max-width: 1180px; margin-inline: auto; }
+      header { display: flex; justify-content: space-between; align-items: center; gap: 32px; margin-bottom: 28px; }
+      .eyebrow { font-size: 12px; letter-spacing: .16em; font-weight: 700; color: #7858a6; margin: 0 0 9px; }
+      h1 { font-size: clamp(25px, 3vw, 38px); letter-spacing: -.045em; line-height: 1.15; margin: 0 0 10px; }
+      .intro { margin: 0; color: #696476; font-size: 14px; max-width: 650px; line-height: 1.5; }
+      .reference { display: flex; align-items: center; gap: 12px; padding: 12px 18px; background: white; border: 1px solid #e1ddea; border-radius: 16px; flex-shrink: 0; color: #696476; font-size: 12px; text-decoration: none; }
+      figure img { display: block; object-fit: contain; margin-inline: auto; }
+      .reference img { width: 62px; height: 62px; }
+      .reference strong { color: #332c48; display: block; margin-bottom: 3px; }
+      .toolbar { max-width: 1180px; margin: 0 auto 18px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 12px; color: #696476; }
+      h2 span { color: #8b779f; margin-right: 6px; }
+      .toolbar span { margin-right: 4px; }
+      button { border: 1px solid #d7d0e2; background: transparent; color: #554968; font: inherit; font-weight: 600; padding: 8px 15px; border-radius: 20px; cursor: pointer; }
+      button[aria-pressed="true"] { background: #35234e; color: white; border-color: #35234e; }
+      a:focus-visible, button:focus-visible { outline: 3px solid #7c3aed; outline-offset: 4px; }
+      main { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+      article { overflow: hidden; border: 1px solid #e1ddea; border-radius: 18px; background: white; }
+      .preview { display: grid; place-items: center; height: 232px; background: var(--preview); background-image: var(--pattern); background-size: 20px 20px; }
+      .preview img { display: block; width: 208px; height: 208px; object-fit: contain; }
+      .meta { padding: 17px 20px 16px; border-top: 1px solid #eeebf3; }
+      h2 { font-size: 13px; margin: 0 0 8px; letter-spacing: .025em; }
+      .meta p { color: #746b81; font-size: 12px; line-height: 1.4; margin: 0; min-height: 34px; }
+      .sizes { display: flex; gap: 24px; align-items: end; margin-top: 12px; padding: 10px; border-radius: 9px; background: var(--preview); background-image: var(--pattern); background-size: 20px 20px; }
+      figure { margin: 0; text-align: center; }
+      figcaption { font-size: 10px; color: var(--ink); margin-top: 5px; }
+      footer { display: flex; justify-content: space-between; gap: 20px; color: #807589; font-size: 12px; padding-top: 22px; }
+      footer a { color: #6d28d9; }
+      body[data-surface="dark"] { --preview: #151320; --ink: #c6bed6; }
+      body[data-surface="checker"] { --preview: white; --pattern: conic-gradient(#e9e6ee 25%, transparent 0 50%, #e9e6ee 0 75%, transparent 0); }
+      @media (max-width: 860px) { main { grid-template-columns: repeat(2, minmax(0, 1fr)); } header { align-items: flex-start; } .reference { padding: 10px; } .reference span { display: none; } }
+      @media (max-width: 540px) { main { grid-template-columns: 1fr; } body { padding-top: 24px; } header { gap: 12px; } .reference img { width: 46px; height: 46px; } footer { flex-direction: column; gap: 8px; } }
+    </style>
+  </head>
+  <body data-surface="light">
+    <header>
+      <div><p class="eyebrow">ISSOPEN / EXPLORACIÓN 02</p><h1>Una apertura. Seis direcciones.</h1><p class="intro">Verde, morado y nuevas formas de integrar el check. Abre cada imagen para verla a tamaño completo.</p></div>
+      <a class="reference" href="../issopen-icon-06-aperture-check.png"><img src="../issopen-icon-06-aperture-check.png" alt="Concepto 06 original en azul y turquesa" width="62" height="62" /><span><strong>Punto de partida</strong>06 · Aperture check</span></a>
+    </header>
+    <nav class="toolbar" aria-label="Fondo de comparación"><span>Comparar sobre</span><button type="button" data-surface="light" aria-pressed="true">Claro</button><button type="button" data-surface="dark" aria-pressed="false">Oscuro</button><button type="button" data-surface="checker" aria-pressed="false">Transparencia</button></nav>
+    <main>
+      <article>
+        <a class="preview" href="issopen-aperture-01-esmeralda.png" aria-label="Abrir esmeralda a tamaño completo"><img src="issopen-aperture-01-esmeralda.png" alt="Icono Issopen: La estructura original en esmeralda y menta." width="1024" height="1024" /></a>
+        <div class="meta"><h2><span>01</span> ESMERALDA</h2><p>La estructura original en esmeralda y menta.</p>
+          <div class="sizes"><figure><img src="issopen-aperture-01-esmeralda.png" width="64" height="64" alt="esmeralda a 64 píxeles" /><figcaption>64 px</figcaption></figure><figure><img src="issopen-aperture-01-esmeralda.png" width="32" height="32" alt="esmeralda a 32 píxeles" /><figcaption>32 px</figcaption></figure><figure><img src="issopen-aperture-01-esmeralda.png" width="16" height="16" alt="esmeralda a 16 píxeles" /><figcaption>16 px</figcaption></figure></div>
+        </div>
+      </article>
+      <article>
+        <a class="preview" href="issopen-aperture-02-morado.png" aria-label="Abrir morado a tamaño completo"><img src="issopen-aperture-02-morado.png" alt="Icono Issopen: La estructura original en violeta y lavanda." width="1024" height="1024" /></a>
+        <div class="meta"><h2><span>02</span> MORADO</h2><p>La estructura original en violeta y lavanda.</p>
+          <div class="sizes"><figure><img src="issopen-aperture-02-morado.png" width="64" height="64" alt="morado a 64 píxeles" /><figcaption>64 px</figcaption></figure><figure><img src="issopen-aperture-02-morado.png" width="32" height="32" alt="morado a 32 píxeles" /><figcaption>32 px</figcaption></figure><figure><img src="issopen-aperture-02-morado.png" width="16" height="16" alt="morado a 16 píxeles" /><figcaption>16 px</figcaption></figure></div>
+        </div>
+      </article>
+      <article>
+        <a class="preview" href="issopen-aperture-03-cuatro-aspas.png" aria-label="Abrir cuatro aspas a tamaño completo"><img src="issopen-aperture-03-cuatro-aspas.png" alt="Icono Issopen: Apertura más simple, con cuatro piezas en verde y morado." width="1024" height="1024" /></a>
+        <div class="meta"><h2><span>03</span> CUATRO ASPAS</h2><p>Apertura más simple, con cuatro piezas en verde y morado.</p>
+          <div class="sizes"><figure><img src="issopen-aperture-03-cuatro-aspas.png" width="64" height="64" alt="cuatro aspas a 64 píxeles" /><figcaption>64 px</figcaption></figure><figure><img src="issopen-aperture-03-cuatro-aspas.png" width="32" height="32" alt="cuatro aspas a 32 píxeles" /><figcaption>32 px</figcaption></figure><figure><img src="issopen-aperture-03-cuatro-aspas.png" width="16" height="16" alt="cuatro aspas a 16 píxeles" /><figcaption>16 px</figcaption></figure></div>
+        </div>
+      </article>
+      <article>
+        <a class="preview" href="issopen-aperture-04-check-integrado.png" aria-label="Abrir check integrado a tamaño completo"><img src="issopen-aperture-04-check-integrado.png" alt="Icono Issopen: El check pasa a formar parte del contorno." width="1024" height="1024" /></a>
+        <div class="meta"><h2><span>04</span> CHECK INTEGRADO</h2><p>El check pasa a formar parte del contorno.</p>
+          <div class="sizes"><figure><img src="issopen-aperture-04-check-integrado.png" width="64" height="64" alt="check integrado a 64 píxeles" /><figcaption>64 px</figcaption></figure><figure><img src="issopen-aperture-04-check-integrado.png" width="32" height="32" alt="check integrado a 32 píxeles" /><figcaption>32 px</figcaption></figure><figure><img src="issopen-aperture-04-check-integrado.png" width="16" height="16" alt="check integrado a 16 píxeles" /><figcaption>16 px</figcaption></figure></div>
+        </div>
+      </article>
+      <article>
+        <a class="preview" href="issopen-aperture-05-apertura-suave.png" aria-label="Abrir apertura suave a tamaño completo"><img src="issopen-aperture-05-apertura-suave.png" alt="Icono Issopen: Cinco piezas curvas, en verde bosque y salvia." width="1024" height="1024" /></a>
+        <div class="meta"><h2><span>05</span> APERTURA SUAVE</h2><p>Cinco piezas curvas, en verde bosque y salvia.</p>
+          <div class="sizes"><figure><img src="issopen-aperture-05-apertura-suave.png" width="64" height="64" alt="apertura suave a 64 píxeles" /><figcaption>64 px</figcaption></figure><figure><img src="issopen-aperture-05-apertura-suave.png" width="32" height="32" alt="apertura suave a 32 píxeles" /><figcaption>32 px</figcaption></figure><figure><img src="issopen-aperture-05-apertura-suave.png" width="16" height="16" alt="apertura suave a 16 píxeles" /><figcaption>16 px</figcaption></figure></div>
+        </div>
+      </article>
+      <article>
+        <a class="preview" href="issopen-aperture-06-orbita-abierta.png" aria-label="Abrir orbita abierta a tamaño completo"><img src="issopen-aperture-06-orbita-abierta.png" alt="Icono Issopen: Tres arcos abiertos, con morado y lima." width="1024" height="1024" /></a>
+        <div class="meta"><h2><span>06</span> ORBITA ABIERTA</h2><p>Tres arcos abiertos, con morado y lima.</p>
+          <div class="sizes"><figure><img src="issopen-aperture-06-orbita-abierta.png" width="64" height="64" alt="orbita abierta a 64 píxeles" /><figcaption>64 px</figcaption></figure><figure><img src="issopen-aperture-06-orbita-abierta.png" width="32" height="32" alt="orbita abierta a 32 píxeles" /><figcaption>32 px</figcaption></figure><figure><img src="issopen-aperture-06-orbita-abierta.png" width="16" height="16" alt="orbita abierta a 16 píxeles" /><figcaption>16 px</figcaption></figure></div>
+        </div>
+      </article>
+    </main>
+    <footer><span>Propuestas para elegir dirección visual · PNG originales con transparencia</span><span><a href="../gallery.html">Ver los 20 conceptos iniciales</a></span></footer>
+    <script>
+      for (const button of document.querySelectorAll("button[data-surface]")) {
+        button.addEventListener("click", () => {
+          document.body.dataset.surface = button.dataset.surface;
+          for (const item of document.querySelectorAll("button[data-surface]")) item.setAttribute("aria-pressed", String(item === button));
+        });
+      }
+    </script>
+  </body>
+</html>

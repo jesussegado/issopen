@@ -7,6 +7,9 @@ unwired from the product until a direction is selected.
 Open [`gallery.html`](./gallery.html) for a checkerboard comparison at several
 sizes.
 
+The selected aperture-check direction has a second exploration with six green,
+purple and structural variants: [open the comparison gallery](./aperture-variants/gallery.html).
+
 | 01–05 | 06–10 | 11–15 | 16–20 |
 | --- | --- | --- | --- |
 | <img src="issopen-icon-01-open-ticket-check.png" width="128" alt="01 open ticket check"><br>**01 · Open ticket check** | <img src="issopen-icon-06-aperture-check.png" width="128" alt="06 aperture check"><br>**06 · Aperture check** | <img src="issopen-icon-11-open-box-check.png" width="128" alt="11 open box check"><br>**11 · Open box check** | <img src="issopen-icon-16-bug-check.png" width="128" alt="16 bug check"><br>**16 · Bug check** |
