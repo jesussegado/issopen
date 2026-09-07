@@ -1,0 +1,125 @@
+{
+  "environment": "Ephemeral local PostgreSQL, synthetic owner and tracker data",
+  "checks": [
+    {
+      "route": "board",
+      "width": 1440,
+      "scrollWidth": 1440
+    },
+    {
+      "route": "issue",
+      "width": 1440,
+      "scrollWidth": 1440
+    },
+    {
+      "route": "epic",
+      "width": 1440,
+      "scrollWidth": 1440
+    },
+    {
+      "route": "agents",
+      "width": 1440,
+      "scrollWidth": 1440
+    },
+    {
+      "route": "connect",
+      "width": 1440,
+      "scrollWidth": 1440
+    },
+    {
+      "route": "settings",
+      "width": 1440,
+      "scrollWidth": 1440
+    },
+    {
+      "route": "board",
+      "width": 768,
+      "scrollWidth": 768
+    },
+    {
+      "route": "issue",
+      "width": 768,
+      "scrollWidth": 768
+    },
+    {
+      "route": "epic",
+      "width": 768,
+      "scrollWidth": 768
+    },
+    {
+      "route": "agents",
+      "width": 768,
+      "scrollWidth": 768
+    },
+    {
+      "route": "connect",
+      "width": 768,
+      "scrollWidth": 768
+    },
+    {
+      "route": "settings",
+      "width": 768,
+      "scrollWidth": 768
+    },
+    {
+      "route": "board",
+      "width": 360,
+      "scrollWidth": 360
+    },
+    {
+      "route": "issue",
+      "width": 360,
+      "scrollWidth": 360
+    },
+    {
+      "route": "epic",
+      "width": 360,
+      "scrollWidth": 360
+    },
+    {
+      "route": "agents",
+      "width": 360,
+      "scrollWidth": 360
+    },
+    {
+      "route": "connect",
+      "width": 360,
+      "scrollWidth": 360
+    },
+    {
+      "route": "settings",
+      "width": 360,
+      "scrollWidth": 360
+    },
+    {
+      "route": "board",
+      "width": 320,
+      "scrollWidth": 320
+    },
+    {
+      "route": "issue",
+      "width": 320,
+      "scrollWidth": 320
+    },
+    {
+      "route": "epic",
+      "width": 320,
+      "scrollWidth": 320
+    },
+    {
+      "route": "agents",
+      "width": 320,
+      "scrollWidth": 320
+    },
+    {
+      "route": "connect",
+      "width": 320,
+      "scrollWidth": 320
+    },
+    {
+      "route": "settings",
+      "width": 320,
+      "scrollWidth": 320
+    }
+  ]
+}
