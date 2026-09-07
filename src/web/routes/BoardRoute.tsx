@@ -222,7 +222,7 @@ export function BoardRoute({ projectId }: { projectId: string }) {
   );
   const repository = repositoryLabel(project.repositoryUrl);
   return (
-    <div className="detail-column">
+    <div className="detail-column board-page">
       <div className="page-header">
         <div>
           <PageHeading>{project.name}</PageHeading>

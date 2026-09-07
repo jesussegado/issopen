@@ -148,6 +148,10 @@ ol {
   width: min(100%, 1200px);
   margin: 0 auto;
 }
+.board-page {
+  width: 100%;
+  max-width: none;
+}
 .nav-heading {
   margin: 0 8px 8px;
   color: var(--color-muted);
@@ -483,13 +487,12 @@ textarea:disabled {
 }
 .board {
   display: grid;
-  grid-template-columns: repeat(5, minmax(280px, 1fr));
+  grid-template-columns: repeat(5, minmax(208px, 1fr));
   gap: 16px;
-  min-width: 1400px;
+  min-width: 1120px;
 }
 .board-column {
-  min-width: 280px;
-  max-width: 360px;
+  min-width: 0;
 }
 .board-column-header {
   display: flex;

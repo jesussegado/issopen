@@ -110,6 +110,19 @@ test("owner completes the tracker loop with native keyboard controls", async ({
   await expect(
     epicOverview.getByRole("link", { name: epicTitle }),
   ).toBeVisible();
+  if (!mobile) {
+    const boardRegion = page.getByRole("region", {
+      name: `${projectName} issue board`,
+    });
+    await expect
+      .poll(() =>
+        boardRegion.evaluate(
+          (element) => element.scrollWidth <= element.clientWidth,
+        ),
+      )
+      .toBe(true);
+    await expect(page.getByRole("heading", { name: "Done" })).toBeInViewport();
+  }
   await expect
     .poll(() =>
       page.evaluate(
