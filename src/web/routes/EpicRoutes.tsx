@@ -290,18 +290,34 @@ export function EpicDetailRoute({ epicId }: { epicId: string }) {
           />
         ) : (
           <ul className="epic-issue-list">
-            {issues.map((issue) => (
-              <li key={issue.id}>
-                <div className="epic-issue-heading">
-                  <Badge mono>{issue.key}</Badge>
-                  <AppLink href={`/issues/${issue.id}`}>{issue.title}</AppLink>
-                </div>
-                <div className="issue-metadata">
-                  <Badge>{statusLabels[issue.status]}</Badge>
-                  <Badge>{priorityLabels[issue.priority]}</Badge>
-                </div>
-              </li>
-            ))}
+            {issues.map((issue) => {
+              const pendingQuestions = Math.max(
+                0,
+                (issue.questionSummary?.total ?? 0) -
+                  (issue.questionSummary?.answered ?? 0),
+              );
+              return (
+                <li key={issue.id}>
+                  <div className="epic-issue-heading">
+                    <Badge mono>{issue.key}</Badge>
+                    <AppLink href={`/issues/${issue.id}`}>
+                      {issue.title}
+                    </AppLink>
+                  </div>
+                  <div className="issue-metadata">
+                    <Badge>{statusLabels[issue.status]}</Badge>
+                    <Badge>{priorityLabels[issue.priority]}</Badge>
+                    {pendingQuestions > 0 ? (
+                      <span className="badge warning-badge">
+                        <span aria-hidden="true">⚠</span> {pendingQuestions}{" "}
+                        unanswered{" "}
+                        {pendingQuestions === 1 ? "question" : "questions"}
+                      </span>
+                    ) : null}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
