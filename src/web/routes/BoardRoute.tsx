@@ -28,6 +28,62 @@ function repositoryLabel(repositoryUrl: string | null) {
   }
 }
 
+function EpicOverview({ epics }: { epics: Epic[] }) {
+  return (
+    <section className="project-epics" aria-labelledby="project-epics-heading">
+      <div className="project-epics-header">
+        <h2 id="project-epics-heading">Epics</h2>
+        <Badge>{epics.length}</Badge>
+      </div>
+      {epics.length === 0 ? (
+        <p className="metadata">No Epics yet.</p>
+      ) : (
+        <ul className="project-epic-list">
+          {epics.map((epic) => {
+            const { doneIssues, totalIssues } = epic.summary;
+            return (
+              <li className="project-epic-card" key={epic.id}>
+                <div className="project-epic-title-row">
+                  <AppLink
+                    className="epic-card-title"
+                    href={`/epics/${epic.id}`}
+                  >
+                    {epic.title}
+                  </AppLink>
+                  <Badge>
+                    {totalIssues} {totalIssues === 1 ? "ticket" : "tickets"}
+                  </Badge>
+                </div>
+                <p className="metadata">
+                  {epic.description || "No description"}
+                </p>
+                <div className="epic-progress">
+                  <div className="epic-progress-label">
+                    <span>
+                      {doneIssues}/{totalIssues} done
+                    </span>
+                    <span>
+                      {totalIssues === 0
+                        ? 0
+                        : Math.round((doneIssues / totalIssues) * 100)}
+                      %
+                    </span>
+                  </div>
+                  <progress
+                    max={Math.max(totalIssues, 1)}
+                    value={doneIssues}
+                    aria-label={`${epic.title}: ${doneIssues} of ${totalIssues} tickets done`}
+                  />
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 export function BoardRoute({ projectId }: { projectId: string }) {
   const location = useLocation();
   const epicParameter = new URLSearchParams(location.split("?")[1] ?? "").get(
@@ -207,6 +263,7 @@ export function BoardRoute({ projectId }: { projectId: string }) {
           {error}
         </StatusBanner>
       ) : null}
+      <EpicOverview epics={epics} />
       {issueCount === 0 && epicFilter === "all" ? (
         <EmptyState
           heading="No issues yet"

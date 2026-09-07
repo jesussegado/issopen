@@ -106,6 +106,10 @@ test("owner completes the tracker loop with native keyboard controls", async ({
     await page.getByRole("button", { name: "Open navigation" }).click();
   }
   await projectLink.click();
+  const epicOverview = page.getByRole("region", { name: "Epics" });
+  await expect(
+    epicOverview.getByRole("link", { name: epicTitle }),
+  ).toBeVisible();
   await expect
     .poll(() =>
       page.evaluate(

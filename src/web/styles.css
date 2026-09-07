@@ -429,6 +429,54 @@ textarea:disabled {
 .board-toolbar .field {
   min-width: min(100%, 220px);
 }
+.project-epics {
+  margin-bottom: 24px;
+  padding: 20px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+}
+.project-epics > .metadata {
+  margin: 0;
+}
+.project-epics-header,
+.project-epic-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.project-epics-header {
+  margin-bottom: 16px;
+}
+.project-epics-header h2 {
+  margin: 0;
+}
+.project-epic-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.project-epic-card {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-subtle);
+}
+.project-epic-card .metadata {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
 .board-region {
   overflow-x: auto;
   padding: 4px;
@@ -590,6 +638,10 @@ textarea:disabled {
 .epic-card-title {
   font-size: 18px;
   font-weight: 700;
+}
+.project-epic-title-row .epic-card-title {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .epic-card p {
   margin: 4px 0 0;

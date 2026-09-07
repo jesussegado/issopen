@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { BoardRoute } from "../../src/web/routes/BoardRoute.js";
@@ -213,6 +219,12 @@ describe("tracker web routes", () => {
     render(<BoardRoute projectId={project.id} />);
 
     await screen.findByRole("heading", { name: project.name });
+    const epicOverview = screen.getByRole("region", { name: "Epics" });
+    expect(
+      within(epicOverview).getByRole("link", { name: epic.title }),
+    ).toHaveAttribute("href", `/epics/${epic.id}`);
+    expect(within(epicOverview).getByText("1 ticket")).toBeVisible();
+    expect(within(epicOverview).getByText("0/1 done")).toBeVisible();
     await user.selectOptions(screen.getByLabelText("Show Epic"), epic.id);
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith(
@@ -224,10 +236,49 @@ describe("tracker web routes", () => {
     await user.click(
       screen.getByRole("button", { name: "Show details for PRI-1" }),
     );
-    expect(screen.getByRole("link", { name: epic.title })).toHaveAttribute(
-      "href",
-      `/epics/${epic.id}`,
+    expect(screen.getAllByRole("link", { name: epic.title })).toHaveLength(2);
+  });
+
+  it("lists project Epics when the issue board is empty", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        if (String(input).endsWith("/board")) {
+          return json({
+            project,
+            epics: [
+              {
+                ...epic,
+                summary: {
+                  ...epic.summary,
+                  totalIssues: 0,
+                  statusCounts: {
+                    backlog: 0,
+                    ready: 0,
+                    in_progress: 0,
+                    ready_for_review: 0,
+                    done: 0,
+                  },
+                },
+              },
+            ],
+            columns: issueStatuses.map((status) => ({ status, issues: [] })),
+          });
+        }
+        throw new Error(`Unexpected request: ${String(input)}`);
+      }),
     );
+
+    render(<BoardRoute projectId={project.id} />);
+
+    const epicOverview = await screen.findByRole("region", { name: "Epics" });
+    expect(
+      within(epicOverview).getByRole("link", { name: epic.title }),
+    ).toBeVisible();
+    expect(within(epicOverview).getByText("0 tickets")).toBeVisible();
+    expect(
+      screen.getByRole("heading", { name: "No issues yet" }),
+    ).toBeVisible();
   });
 
   it("creates an Epic without leaving the panel and exposes its related tickets", async () => {
