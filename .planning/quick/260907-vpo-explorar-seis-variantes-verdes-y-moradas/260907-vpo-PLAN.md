@@ -38,3 +38,12 @@ las propuestas como conceptos sin conectarlas al producto ni desplegar.
 Flujo GSD quick en el agente actual, sin agentes adicionales. Se usa el helper
 local `gsd-tools.cjs init quick`, disponible en esta instalación, porque
 `gsd-sdk` no está en PATH. No se instalan dependencias.
+
+## Refinamiento solicitado por el propietario
+
+Crear una nueva versión de la propuesta 05 con exactamente seis piezas curvas
+alrededor del check. Conservar el verde bosque y el verde menta de la imagen
+seleccionada, alternando tres piezas de cada color, y el check verde oscuro.
+Guardar el resultado como variante 07 y conservar las seis propuestas previas.
+Verificar visualmente el recuento, colores y transparencia; registrar prompt
+y resultado sin cambiar el icono activo ni desplegar.

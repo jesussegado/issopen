@@ -53,3 +53,24 @@ La decisión visual queda en manos del propietario, sin bloquear esta entrega.
 
 Rollback: revertir el commit de assets elimina los conceptos nuevos y su
 enlace, sin efecto en datos o producción.
+
+## Refinamiento 07 · Seis piezas
+
+A petición del propietario se conserva la paleta de verdes de la propuesta 05
+y se cambia su apertura a seis piezas curvas, tres oscuras y tres menta
+alternadas, con check verde oscuro independiente. Archivo:
+`src/web/public/assets/branding/icon-concepts/aperture-variants/issopen-aperture-07-seis-piezas-verde-bosque.png`.
+Los prompts exactos de generación, reparación y extracción con `image_gen`
+integrado se guardan en `issopen-aperture-07-prompts.json` y el README enlaza
+ambos archivos. La variante 05 permanece idéntica a Git.
+
+Se inspeccionaron las seis piezas y los colores; se comprobó PNG 1254 × 1254,
+RGBA, alpha real 0–255 y la reparación de una zona interior que el generador
+había erosionado. El interior revisado de esa pieza tiene alpha 253–254.
+Biome y diff-check pasan. Se repitió `homelab/make validate` (190 tests OK,
+Ansible y Helm ausentes) y `workspace validate --checkouts` (31 repos OK).
+No cambió lógica de aplicación y no se ejecutó su suite funcional.
+
+Commit del refinamiento: `cfe220d`, local, sin push ni despliegue. Para revertir
+solamente esta iteración, revertir ese commit; las propuestas anteriores quedan
+conservadas.
