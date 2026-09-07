@@ -522,7 +522,7 @@ describe("stateless Issopen MCP", () => {
       "Prompt data only",
     );
     expect(read.structuredContent).toMatchObject({
-      epic: { id: epicId, title: "MCP delivery" },
+      epic: { id: epicId, number: 1, title: "MCP delivery" },
     });
     const epicIssues = await client.callTool({
       name: "list_issues",

@@ -56,6 +56,13 @@ always derived from its current issues. A ticket can belong to zero or one
 Epic, and can be associated, moved to another Epic in the same project or
 returned to **No Epic** from the create/edit issue form.
 
+Epics are displayed as `number/name` (for example, `1/Chrome extension`). Numbers
+start at 1 independently in each project, are assigned atomically by the server
+and stay unchanged when the title is edited. REST and MCP return `number` and
+the unmodified `title`; UUID URLs and ticket associations remain unchanged.
+Migration `0011_epic_numbers` numbers existing Epics by creation date, then ID
+to break ties, and advances each project's counter past its existing Epics.
+
 Open **Manage Epics** from a project board to create an Epic or inspect its
 related tickets. The board's **Show Epic** selector supports all tickets, only
 unassigned tickets or one selected Epic. The selected Epic is stored in the
@@ -392,6 +399,10 @@ cookies, tokens, connection strings or command output containing them.
 - Restore the previous application digest in `deployment.yaml` for a binary
   rollback. Database migrations are forward-only, so a binary rollback is
   valid only while that revision remains schema-compatible.
+- After `0011_epic_numbers`, do not roll back to a binary that inserts Epics
+  without a number: the new column is required. Keep the numbering support in
+  a forward fix, or plan a separately approved database restore. Take a private
+  PostgreSQL backup before promoting this migration.
 - Caddy and Cloudflare roll back separately. Remove the exact Caddy host block
   with the edge playbook; use only the mode-`0600` JSON created by the
   Cloudflare helper for an explicitly authorized DNS rollback.

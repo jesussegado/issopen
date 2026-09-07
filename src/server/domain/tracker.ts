@@ -341,17 +341,17 @@ export class TrackerService {
     const values = parseInput(createEpicSchema, input);
 
     return this.transaction(async (tx) => {
-      const [foundProject] = await tx
-        .select({ id: project.id })
-        .from(project)
+      const [numberedProject] = await tx
+        .update(project)
+        .set({ nextEpicNumber: sql`${project.nextEpicNumber} + 1` })
         .where(
           and(
             eq(project.workspaceId, context.workspaceId),
             eq(project.id, values.projectId),
           ),
         )
-        .limit(1);
-      if (!foundProject)
+        .returning({ number: sql<number>`${project.nextEpicNumber} - 1` });
+      if (!numberedProject)
         throw new DomainError("not_found", "Project not found");
 
       const [created] = await tx
@@ -360,6 +360,7 @@ export class TrackerService {
           id: randomUUID(),
           workspaceId: context.workspaceId,
           ...values,
+          number: numberedProject.number,
         })
         .returning();
       if (!created) throw new Error("Epic insert returned no row");
@@ -367,9 +368,10 @@ export class TrackerService {
       await recordActivity(tx, context, {
         projectId: created.projectId,
         type: "epic.created",
-        summary: `Created epic ${created.title}`,
+        summary: `Created epic ${created.number}/${created.title}`,
         changes: {
           epicId: { from: null, to: created.id },
+          number: { from: null, to: created.number },
           title: { from: null, to: created.title },
         },
       });
@@ -384,7 +386,7 @@ export class TrackerService {
       .where(
         and(eq(epic.workspaceId, workspaceId), eq(epic.projectId, projectId)),
       )
-      .orderBy(asc(epic.createdAt), asc(epic.id));
+      .orderBy(asc(epic.number));
     if (epics.length === 0) return [];
 
     const counts = await this.db
@@ -479,7 +481,7 @@ export class TrackerService {
       await recordActivity(tx, context, {
         projectId: current.projectId,
         type: "epic.updated",
-        summary: `Updated epic ${updated.title}`,
+        summary: `Updated epic ${updated.number}/${updated.title}`,
         changes: { epicId, ...changes },
       });
       return updated;

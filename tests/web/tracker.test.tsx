@@ -55,6 +55,7 @@ const epic = {
   id: "55555555-5555-4555-8555-555555555555",
   workspaceId: project.workspaceId,
   projectId: project.id,
+  number: 7,
   title: "MCP foundations",
   description: "Close the first usable agent workflow.",
   version: 1,
@@ -221,7 +222,7 @@ describe("tracker web routes", () => {
     await screen.findByRole("heading", { name: project.name });
     const epicOverview = screen.getByRole("region", { name: "Epics" });
     expect(
-      within(epicOverview).getByRole("link", { name: epic.title }),
+      within(epicOverview).getByRole("link", { name: `7/${epic.title}` }),
     ).toHaveAttribute("href", `/epics/${epic.id}`);
     expect(within(epicOverview).getByText("1 ticket")).toBeVisible();
     expect(within(epicOverview).getByText("0/1 done")).toBeVisible();
@@ -236,7 +237,9 @@ describe("tracker web routes", () => {
     await user.click(
       screen.getByRole("button", { name: "Show details for PRI-1" }),
     );
-    expect(screen.getAllByRole("link", { name: epic.title })).toHaveLength(2);
+    expect(
+      screen.getAllByRole("link", { name: `7/${epic.title}` }),
+    ).toHaveLength(2);
   });
 
   it("lists project Epics when the issue board is empty", async () => {
@@ -273,7 +276,7 @@ describe("tracker web routes", () => {
 
     const epicOverview = await screen.findByRole("region", { name: "Epics" });
     expect(
-      within(epicOverview).getByRole("link", { name: epic.title }),
+      within(epicOverview).getByRole("link", { name: `7/${epic.title}` }),
     ).toBeVisible();
     expect(within(epicOverview).getByText("0 tickets")).toBeVisible();
     expect(
@@ -304,7 +307,9 @@ describe("tracker web routes", () => {
     window.history.replaceState({}, "", `/projects/${project.id}/epics`);
     render(<EpicsRoute projectId={project.id} />);
 
-    expect(await screen.findByRole("link", { name: epic.title })).toBeVisible();
+    expect(
+      await screen.findByRole("link", { name: `7/${epic.title}` }),
+    ).toBeVisible();
     expect(screen.getByText("0 done")).toBeVisible();
     expect(screen.getByText("1 tickets · 0%")).toBeVisible();
     await user.type(
@@ -319,7 +324,7 @@ describe("tracker web routes", () => {
     expect(await screen.findByText("Epic created")).toBeVisible();
     expect(window.location.pathname).toBe(`/projects/${project.id}/epics`);
     expect(
-      screen.getByRole("link", { name: "Release readiness" }),
+      screen.getByRole("link", { name: "7/Release readiness" }),
     ).toHaveAttribute("href", `/epics/${epic.id}`);
     expect(screen.getByLabelText("Title (required)")).toHaveValue("");
     expect(screen.getByLabelText(/^Description/)).toHaveValue("");
@@ -338,7 +343,7 @@ describe("tracker web routes", () => {
     );
     render(<EpicDetailRoute epicId={epic.id} />);
     expect(
-      await screen.findByRole("heading", { name: epic.title }),
+      await screen.findByRole("heading", { name: `7/${epic.title}` }),
     ).toBeVisible();
     expect(screen.getByRole("link", { name: issue.title })).toHaveAttribute(
       "href",

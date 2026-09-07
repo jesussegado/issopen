@@ -35,6 +35,7 @@ import type {
 import {
   codeLinkLabels,
   codeLinkTypes,
+  epicLabel,
   issueStatuses,
   priorityLabels,
   statusLabels,
@@ -385,7 +386,7 @@ export function IssueDetailRoute({ issueId }: { issueId: string }) {
             <span>Owner: You</span>
             {epic ? (
               <AppLink className="badge epic-badge" href={`/epics/${epic.id}`}>
-                Epic: {epic.title}
+                Epic: {epicLabel(epic)}
               </AppLink>
             ) : null}
             {issue.claimedByAgentId ? (

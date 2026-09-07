@@ -8,6 +8,7 @@ test("owner completes the tracker loop with native keyboard controls", async ({
   const projectName = mobile ? "Mobile tracker" : "Desktop tracker";
   const issueTitle = `${projectName} keyboard workflow`;
   const epicTitle = `${projectName} MVP`;
+  const epicDisplayName = `1/${epicTitle}`;
 
   await page.goto("/sign-in");
   await page.getByLabel("Email (required)").fill(e2eOwner.email);
@@ -54,8 +55,10 @@ test("owner completes the tracker loop with native keyboard controls", async ({
   await page.getByRole("button", { name: "Create Epic" }).click();
   await expect(page.getByText("Epic created")).toBeVisible();
   await expect(page).toHaveURL(/\/projects\/[^/]+\/epics$/);
-  await page.getByRole("link", { name: epicTitle }).click();
-  await expect(page.getByRole("heading", { name: epicTitle })).toBeVisible();
+  await page.getByRole("link", { name: epicDisplayName }).click();
+  await expect(
+    page.getByRole("heading", { name: epicDisplayName }),
+  ).toBeVisible();
   await page.getByRole("link", { name: "Create ticket in Epic" }).click();
   await expect(
     page.getByRole("heading", { name: "Create issue" }),
@@ -69,7 +72,7 @@ test("owner completes the tracker loop with native keyboard controls", async ({
   await page.getByRole("button", { name: "Create issue" }).click();
   await expect(page.getByText("Issue created")).toBeVisible();
   await expect(
-    page.getByRole("link", { name: `Epic: ${epicTitle}` }),
+    page.getByRole("link", { name: `Epic: ${epicDisplayName}` }),
   ).toBeVisible();
   const issueKey = await page
     .locator(".issue-metadata .badge.mono")
@@ -108,7 +111,7 @@ test("owner completes the tracker loop with native keyboard controls", async ({
   await projectLink.click();
   const epicOverview = page.getByRole("region", { name: "Epics" });
   await expect(
-    epicOverview.getByRole("link", { name: epicTitle }),
+    epicOverview.getByRole("link", { name: epicDisplayName }),
   ).toBeVisible();
   if (!mobile) {
     const boardRegion = page.getByRole("region", {
@@ -133,7 +136,7 @@ test("owner completes the tracker loop with native keyboard controls", async ({
     )
     .toBe(true);
   await expect(page.getByLabel("Show questions")).toBeVisible();
-  await page.getByLabel("Show Epic").selectOption({ label: epicTitle });
+  await page.getByLabel("Show Epic").selectOption({ label: epicDisplayName });
   await expect(page).toHaveURL(/\?epic=/);
   await expect(page.getByRole("link", { name: issueTitle })).toBeVisible();
   await expect(page.getByText("⚠ 1 unanswered")).toBeVisible();

@@ -97,6 +97,7 @@ async function createEpicFixture(projectId: string) {
     await body<{
       epic: {
         id: string;
+        number: number;
         title: string;
         summary: {
           totalIssues: number;
@@ -340,6 +341,7 @@ describe("protected tracker REST API", () => {
 
     const createdEpic = await createEpicFixture(createdProject.id);
     expect(createdEpic.title).toBe("Private MVP");
+    expect(createdEpic.number).toBe(1);
     const createdIssue = await createIssueFixture(
       createdProject.id,
       "backlog",
@@ -358,6 +360,7 @@ describe("protected tracker REST API", () => {
       epics: [
         {
           id: createdEpic.id,
+          number: 1,
           summary: {
             totalIssues: 1,
             doneIssues: 0,
@@ -371,7 +374,7 @@ describe("protected tracker REST API", () => {
       `/api/v1/epics/${createdEpic.id}`,
     );
     expect(await body(epicDetail)).toMatchObject({
-      epic: { id: createdEpic.id },
+      epic: { id: createdEpic.id, number: 1 },
       issues: [{ id: createdIssue.id }],
     });
 
@@ -383,7 +386,7 @@ describe("protected tracker REST API", () => {
       },
     );
     expect(await body(updatedEpic)).toMatchObject({
-      epic: { title: "MVP acceptance", version: 2 },
+      epic: { number: 1, title: "MVP acceptance", version: 2 },
     });
 
     const issueList = await authenticatedRequest(

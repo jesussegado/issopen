@@ -513,6 +513,7 @@ export const project = pgTable(
     defaultBranch: varchar("default_branch", { length: 255 }),
     repositorySubdirectory: varchar("repository_subdirectory", { length: 512 }),
     nextIssueNumber: integer("next_issue_number").default(1).notNull(),
+    nextEpicNumber: integer("next_epic_number").default(1).notNull(),
     version: integer("version").default(1).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
@@ -530,6 +531,7 @@ export const project = pgTable(
       sql`${table.key} ~ '^[A-Z][A-Z0-9]{1,9}$'`,
     ),
     check("project_next_issue_number_check", sql`${table.nextIssueNumber} > 0`),
+    check("project_next_epic_number_check", sql`${table.nextEpicNumber} > 0`),
     check("project_version_check", sql`${table.version} > 0`),
   ],
 );
@@ -542,6 +544,7 @@ export const epic = pgTable(
       .notNull()
       .references(() => workspace.id, { onDelete: "restrict" }),
     projectId: text("project_id").notNull(),
+    number: integer("number").notNull(),
     title: varchar("title", { length: 240 }).notNull(),
     description: text("description").default("").notNull(),
     version: integer("version").default(1).notNull(),
@@ -564,7 +567,9 @@ export const epic = pgTable(
       table.projectId,
     ),
     index("epic_project_created_idx").on(table.projectId, table.createdAt),
+    uniqueIndex("epic_project_number_uidx").on(table.projectId, table.number),
     index("epic_workspace_id_idx").on(table.workspaceId),
+    check("epic_number_check", sql`${table.number} > 0`),
     check("epic_version_check", sql`${table.version} > 0`),
   ],
 );

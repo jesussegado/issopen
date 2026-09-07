@@ -13,7 +13,12 @@ import { ApiError, apiRequest, unavailable } from "../lib/api.js";
 import { navigate, useLocation } from "../lib/navigation.js";
 import { useOnlineStatus } from "../lib/online.js";
 import type { Epic, Issue, IssueStatus, Project } from "../types.js";
-import { issueStatuses, priorityLabels, statusLabels } from "../types.js";
+import {
+  epicLabel,
+  issueStatuses,
+  priorityLabels,
+  statusLabels,
+} from "../types.js";
 import { UnavailableRoute } from "./TrackerForms.js";
 
 type BoardColumn = { status: IssueStatus; issues: Issue[] };
@@ -48,7 +53,7 @@ function EpicOverview({ epics }: { epics: Epic[] }) {
                     className="epic-card-title"
                     href={`/epics/${epic.id}`}
                   >
-                    {epic.title}
+                    {epicLabel(epic)}
                   </AppLink>
                   <Badge>
                     {totalIssues} {totalIssues === 1 ? "ticket" : "tickets"}
@@ -72,7 +77,7 @@ function EpicOverview({ epics }: { epics: Epic[] }) {
                   <progress
                     max={Math.max(totalIssues, 1)}
                     value={doneIssues}
-                    aria-label={`${epic.title}: ${doneIssues} of ${totalIssues} tickets done`}
+                    aria-label={`${epicLabel(epic)}: ${doneIssues} of ${totalIssues} tickets done`}
                   />
                 </div>
               </li>
@@ -298,7 +303,7 @@ export function BoardRoute({ projectId }: { projectId: string }) {
                 <option value="unassigned">No Epic</option>
                 {epics.map((epic) => (
                   <option key={epic.id} value={epic.id}>
-                    {epic.title}
+                    {epicLabel(epic)}
                   </option>
                 ))}
               </Select>
@@ -404,6 +409,9 @@ export function BoardRoute({ projectId }: { projectId: string }) {
                         ) : (
                           <ul className="issue-list">
                             {visibleIssues.map((issue) => {
+                              const issueEpic = epics.find(
+                                (epic) => epic.id === issue.epicId,
+                              );
                               const issueExpanded = expandedIssues.has(
                                 issue.id,
                               );
@@ -455,9 +463,9 @@ export function BoardRoute({ projectId }: { projectId: string }) {
                                           className="badge epic-badge"
                                           href={`/epics/${issue.epicId}`}
                                         >
-                                          {epics.find(
-                                            (epic) => epic.id === issue.epicId,
-                                          )?.title ?? "Epic"}
+                                          {issueEpic
+                                            ? epicLabel(issueEpic)
+                                            : "Epic"}
                                         </AppLink>
                                       ) : null}
                                       <Badge>

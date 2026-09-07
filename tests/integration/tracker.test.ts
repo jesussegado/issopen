@@ -120,6 +120,57 @@ describe("transactional tracker domain", () => {
     ).rejects.toMatchObject({ code: "invalid" });
   });
 
+  it("assigns stable project-local Epic numbers under concurrent creation", async () => {
+    const firstProject = await tracker.createProject(ownerContext, {
+      name: "Epics",
+      key: "EP",
+    });
+    const secondProject = await tracker.createProject(ownerContext, {
+      name: "Independent numbers",
+      key: "IN",
+    });
+    const created = await Promise.all(
+      Array.from({ length: 12 }, (_, index) =>
+        tracker.createEpic(ownerContext, {
+          projectId: firstProject.id,
+          title: `Epic ${index + 1}`,
+        }),
+      ),
+    );
+    expect(created.map((item) => item.number).sort((a, b) => a - b)).toEqual(
+      Array.from({ length: 12 }, (_, index) => index + 1),
+    );
+    expect(
+      (await tracker.listEpics(workspaceId, firstProject.id)).map(
+        (item) => item.number,
+      ),
+    ).toEqual(Array.from({ length: 12 }, (_, index) => index + 1));
+    const first = created.find((item) => item.number === 1);
+    if (!first) throw new Error("Expected first Epic");
+    expect(
+      await tracker.updateEpic(ownerContext, first.id, { title: "Renamed" }),
+    ).toMatchObject({
+      id: first.id,
+      number: 1,
+      title: "Renamed",
+    });
+    await expect(
+      tracker.updateEpic(ownerContext, first.id, { number: 9 } as never),
+    ).rejects.toMatchObject({ code: "invalid" });
+    expect(
+      await tracker.createEpic(ownerContext, {
+        projectId: secondProject.id,
+        title: "First here",
+      }),
+    ).toMatchObject({ number: 1 });
+    expect(
+      await tracker.createIssue(ownerContext, {
+        projectId: firstProject.id,
+        title: "Independent issue counter",
+      }),
+    ).toMatchObject({ number: 1 });
+  });
+
   it("groups issues in project-scoped epics with deterministic summaries", async () => {
     const firstProject = await tracker.createProject(ownerContext, {
       name: "Issopen",

@@ -42,6 +42,7 @@ export type Epic = {
   id: string;
   workspaceId: string;
   projectId: string;
+  number: number;
   title: string;
   description: string;
   version: number;
@@ -49,6 +50,10 @@ export type Epic = {
   updatedAt: string;
   summary: EpicSummary;
 };
+
+export function epicLabel(epic: Pick<Epic, "number" | "title">) {
+  return `${epic.number}/${epic.title}`;
+}
 
 export const agentScopes = [
   "issues:read",

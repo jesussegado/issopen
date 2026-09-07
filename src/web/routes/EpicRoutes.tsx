@@ -17,7 +17,12 @@ import { ApiError, apiRequest, unavailable } from "../lib/api.js";
 import { navigate } from "../lib/navigation.js";
 import { useOnlineStatus } from "../lib/online.js";
 import type { Epic, Issue, Project } from "../types.js";
-import { issueStatuses, priorityLabels, statusLabels } from "../types.js";
+import {
+  epicLabel,
+  issueStatuses,
+  priorityLabels,
+  statusLabels,
+} from "../types.js";
 import { UnavailableRoute } from "./TrackerForms.js";
 
 const saveError =
@@ -46,7 +51,7 @@ function Progress({ epic }: { epic: Epic }) {
       <progress
         max={Math.max(total, 1)}
         value={done}
-        aria-label={`${epic.title}: ${done} of ${total} tickets done`}
+        aria-label={`${epicLabel(epic)}: ${done} of ${total} tickets done`}
       />
     </div>
   );
@@ -144,7 +149,7 @@ export function EpicsRoute({ projectId }: { projectId: string }) {
                       className="epic-card-title"
                       href={`/epics/${epic.id}`}
                     >
-                      {epic.title}
+                      {epicLabel(epic)}
                     </AppLink>
                     <p className="metadata">
                       {epic.description || "No description"}
@@ -239,7 +244,7 @@ export function EpicDetailRoute({ epicId }: { epicId: string }) {
             <Badge>Epic</Badge>
             <span>{project.name}</span>
           </div>
-          <PageHeading>{epic.title}</PageHeading>
+          <PageHeading>{epicLabel(epic)}</PageHeading>
         </div>
         <div className="page-actions">
           <AppLink
@@ -378,6 +383,7 @@ export function EpicFormRoute({ epicId }: { epicId: string }) {
   return (
     <div className="reading-column">
       <PageHeading>Edit Epic</PageHeading>
+      <p className="metadata">{epicLabel(epic)}</p>
       {!online ? <OfflineBanner /> : null}
       <ErrorSummary errors={errors} />
       <form className="form-panel form-stack" onSubmit={save}>

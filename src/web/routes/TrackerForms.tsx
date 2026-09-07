@@ -25,6 +25,7 @@ import type {
   Session,
 } from "../types.js";
 import {
+  epicLabel,
   issuePriorities,
   issueStatuses,
   priorityLabels,
@@ -568,7 +569,7 @@ export function IssueFormRoute({
             <option value="">No Epic</option>
             {epics.map((epic) => (
               <option key={epic.id} value={epic.id}>
-                {epic.title}
+                {epicLabel(epic)}
               </option>
             ))}
           </Select>
