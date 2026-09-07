@@ -237,11 +237,21 @@ export function IssueDetailRoute({ issueId }: { issueId: string }) {
             : { kind: "other", text: answerOtherText },
         ),
       });
-      setQuestions((current) =>
-        current.map((question) =>
-          question.id === response.question.id ? response.question : question,
-        ),
+      const updatedQuestions = questions.map((question) =>
+        question.id === response.question.id ? response.question : question,
       );
+      setQuestions(updatedQuestions);
+      const nextUnanswered = updatedQuestions.findIndex(
+        (question, index) => index > questionIndex && !question.answeredAt,
+      );
+      const firstUnanswered = updatedQuestions.findIndex(
+        (question) => !question.answeredAt,
+      );
+      if (nextUnanswered !== -1 || firstUnanswered !== -1) {
+        setQuestionIndex(
+          nextUnanswered !== -1 ? nextUnanswered : firstUnanswered,
+        );
+      }
       setQuestionSummary(response.questionSummary);
       setIssue((current) =>
         current
@@ -500,7 +510,7 @@ export function IssueDetailRoute({ issueId }: { issueId: string }) {
                   <Button
                     type="button"
                     variant="secondary"
-                    disabled={questionIndex === 0}
+                    disabled={questionIndex === 0 || submitting === "question"}
                     onClick={() => setQuestionIndex((current) => current - 1)}
                   >
                     Previous
@@ -511,13 +521,19 @@ export function IssueDetailRoute({ issueId }: { issueId: string }) {
                   <Button
                     type="button"
                     variant="secondary"
-                    disabled={questionIndex === questions.length - 1}
+                    disabled={
+                      questionIndex === questions.length - 1 ||
+                      submitting === "question"
+                    }
                     onClick={() => setQuestionIndex((current) => current + 1)}
                   >
                     Next
                   </Button>
                 </div>
-                <fieldset className="question-fieldset">
+                <fieldset
+                  className="question-fieldset"
+                  disabled={submitting === "question"}
+                >
                   <legend>{currentQuestion.prompt}</legend>
                   <div className="recommendation">
                     <strong>Recommendation</strong>

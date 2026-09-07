@@ -235,6 +235,9 @@ respuesta actual editable —opción predefinida u `Other`— y cada cambio qued
 registrado en actividad append-only. Los recuentos se derivan en servidor; una
 pregunta bloqueante sin responder activa el warning y el filtro del tablero, y
 el dominio impide mover el ticket a `ready_for_review` hasta responderlas todas.
+Al guardar una respuesta, la web avanza a la siguiente pregunta pendiente del
+ticket y vuelve al principio si hace falta. Si todas están respondidas, conserva
+la actual. Un guardado fallido mantiene la pregunta y su borrador.
 
 Los Epics viven en `epic` y sólo agrupan tickets del mismo proyecto/workspace.
 La asociación nullable `issue.epic_id` usa una FK compuesta para que ni REST ni
