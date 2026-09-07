@@ -1,4 +1,4 @@
-import { readdir, readFile } from "node:fs/promises";
+import { access, readdir, readFile } from "node:fs/promises";
 import { extname, join, relative } from "node:path";
 
 const roots = ["src", "scripts", "tests", ".planning", "deploy"];
@@ -39,9 +39,26 @@ async function filesUnder(path: string): Promise<string[]> {
   return files;
 }
 
+async function existingPath(path: string): Promise<string[]> {
+  try {
+    await access(path);
+    return [path];
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
+    throw error;
+  }
+}
+
 const files = [
-  ...topLevelFiles,
-  ...(await Promise.all(roots.map((root) => filesUnder(root)))).flat(),
+  ...(await Promise.all(topLevelFiles.map(existingPath))).flat(),
+  ...(
+    await Promise.all(
+      roots.map(async (root) => {
+        if ((await existingPath(root)).length === 0) return [];
+        return filesUnder(root);
+      }),
+    )
+  ).flat(),
 ];
 const findings: string[] = [];
 for (const file of files) {
