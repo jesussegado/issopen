@@ -297,6 +297,16 @@ documentada y revisada.
 
 ## Desarrollo, despliegue y validación
 
+### Identidad visual aprobada
+
+La [decisión de diseño 0001](docs/design/0001-brand-identity.md), aprobada por el
+propietario el 2026-09-07, fija la apertura de seis piezas (variante 07), verde
+bosque `#027067` y menta `#6FD9B5`. La fuente de tokens es `src/web/styles.css`;
+las cabeceras reutilizan `Brand` y el asset `issopen-icon-v1.png` también sirve
+de favicon. Conservar colores semánticos de error/advertencia, contraste y
+etiquetas textuales. Esta decisión sustituye el azul y wordmark sin logo del
+contrato UI inicial; no reinventar la marca en pantallas nuevas.
+
 Los comandos reales se ejecutan desde `apps/issopen`:
 
 ```bash

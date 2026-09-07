@@ -164,6 +164,7 @@ dentro de un único flujo trazable.
 | Desarrolladores individuales y mantenedores open source son el primer público | Permite validar el producto con equipos pequeños y agentes que ya controlan | — Pending |
 | La fase 1 es el MVP privado single-owner completo | Evita cinco fases de prerrequisitos y permite dogfooding real desde el primer corte | ✓ Confirmed 2026-08-31 |
 | La interfaz v1 es web HTML responsive, sin app de escritorio | Funciona en navegador de escritorio y móvil sin añadir otro artefacto ni ciclo de release | ✓ Confirmed 2026-08-31 |
+| Identidad aperture de seis piezas con verde bosque `#027067` y menta `#6FD9B5` | Unifica logo, favicon y paleta de toda la web con la variante elegida por el propietario; [decisión 0001](../docs/design/0001-brand-identity.md) | ✓ Confirmed 2026-09-07 |
 | ChatGPT y el agente de código usan autenticación e identidades separadas | Un Remote MCP de escritura no puede ser anónimo ni atribuir dos actores a una misma credencial | ✓ Confirmed 2026-08-31 |
 | Docker Compose simple precede a portabilidad y compatibilidad amplias | El primer objetivo es operar un despliegue privado real, no cerrar una matriz de proveedores antes del MVP | ✓ Confirmed 2026-08-31 |
 | Los agentes pueden tener autonomía completa mediante permisos configurables | Permite trabajo sin intervención sin entregar acceso global por defecto | — Pending |

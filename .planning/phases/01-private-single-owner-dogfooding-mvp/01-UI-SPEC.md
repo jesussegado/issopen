@@ -62,7 +62,7 @@ No design system or component library exists in the greenfield codebase. The own
 - Functional, compact, and calm: a small engineering tracker, not an analytics dashboard.
 - After a project is selected, its board is the primary visual anchor: it receives the widest content area, and `Create issue` is its single dominant accent action.
 - Use borders and surface contrast to establish hierarchy. Cards have no default shadow.
-- Use a text wordmark, `Issopen`; do not spend this phase on a logo or brand illustration.
+- Use the approved six-piece aperture icon with the `Issopen` wordmark through the shared `Brand` component. The 2026-09-07 owner decision supersedes the original text-only identity; see [design decision 0001](../../../docs/design/0001-brand-identity.md).
 - Default radius is `8px`; large page panels use `12px`; pills use a full radius.
 - Borders are `1px`. Focus rings are `2px` with a `2px` offset.
 - Motion is limited to opacity or color transitions of `120ms`; honor `prefers-reduced-motion` by removing transitions.
@@ -135,17 +135,24 @@ Use exactly four text sizes and exactly two weights throughout Phase 1.
 
 | Role | Value | Usage |
 |------|-------|-------|
-| Dominant (60%) | `#F8FAFC` | Application and board background |
-| Secondary (30%) | `#FFFFFF` | Header, sidebar, cards, forms, detail panels |
-| Accent (10%) | `#1D4ED8` | Primary CTA, active navigation marker, current selection, text links, focus ring |
-| Accent soft | `#DBEAFE` | Active-navigation and selected-item background only |
-| Destructive | `#B91C1C` | Agent credential revocation and destructive error text only |
-| Text | `#0F172A` | Primary content |
-| Muted text | `#475569` | Helper copy, metadata, timestamps |
-| Border | `#CBD5E1` | Dividers, cards, fields |
-| Subtle surface | `#E2E8F0` | Neutral badges and disabled surfaces |
+| Application | `#F3FAF7` | Application and board background |
+| Surface | `#FFFFFF` | Header, cards, forms, detail panels |
+| Forest / accent | `#027067` | Primary CTA, active navigation marker, links, progress |
+| Mint | `#6FD9B5` | Selected navigation, brand details, text selection |
+| Accent hover / focus | `#01534C` | Hovered primary actions and focus rings |
+| Accent active | `#01443E` | Pressed primary actions and text on mint |
+| Accent soft | `#E3F7EE` | Hovered or selected items and success feedback |
+| On accent | `#FFFFFF` | Text on forest primary actions |
+| Destructive / soft | `#B91C1C` / `#FEF2F2` | Errors and destructive actions |
+| Warning / border / soft | `#9A3412` / `#B45309` / `#FFF7ED` | Warnings requiring attention |
+| Text | `#142F29` | Primary content |
+| Muted text | `#46635B` | Helper copy, metadata, timestamps |
+| Border | `#C5D9D1` | Decorative dividers and cards |
+| Control border | `#6F8A80` | Interactive control boundaries |
+| Subtle surface | `#EEF7F3` | Sidebar, badges and low-emphasis surfaces |
+| Disabled surface | `#DCE9E3` | Disabled controls |
 
-Accent is reserved for primary CTAs, active navigation, the focused/current status selection, links, focus indicators, and the readiness marker. It is not a generic decoration color.
+Forest and mint are the approved brand colors. Derived green-tinted neutrals keep the interface calm. Use white text on forest and dark text on mint; mint must not carry white text or small text on white. Canonical values live in `src/web/styles.css` and [design decision 0001](../../../docs/design/0001-brand-identity.md).
 
 The five workflow states and four priority values use neutral surfaces plus explicit text. Do not assign a unique color to each status or priority. Errors and revocation use the destructive color plus an icon and text. Success uses the accent plus explicit success copy; do not add a green semantic token in this phase.
 
@@ -163,8 +170,8 @@ All text/control combinations must meet WCAG 2.2 AA contrast. Do not lower text 
 
 ### App Shell
 
-- Header: Issopen wordmark, current workspace name, owner menu with `Workspace settings` and `Sign out`.
-- Desktop sidebar: project links, `Create project`, `Agents`, and `Connect ChatGPT`. The current route uses accent text, an accent-soft background, and `aria-current="page"`.
+- Header: approved icon with Issopen wordmark, current workspace name, owner menu with `Workspace settings` and `Sign out`. At `420px` and below, the authenticated header shows the icon alone while retaining the accessible `Issopen home` link name.
+- Desktop sidebar: project links, `Create project`, `Agents`, and `Connect ChatGPT`. The current route uses dark accent text, a mint background, a forest marker, and `aria-current="page"`.
 - Main content starts with a page title, one-sentence context when needed, and no more than one primary CTA.
 - The selected project's board is the authenticated product's primary visual anchor. `Create issue` is the only dominant accent action in its header; project settings and navigation remain secondary.
 - Provide a visible-on-focus `Skip to main content` link.
@@ -403,8 +410,8 @@ No registry, copied block, or third-party component package is approved by this 
 | `REQUIREMENTS.md` / `ROADMAP.md` | All 30 Phase 1 IDs and five success criteria; deferred surfaces were excluded |
 | `SUMMARY.md` / `STACK.md` | React/Vite SPA, Tailwind styling, one deployable, semantic accessible Kanban, no Next.js, server-authoritative policy/activity, phase-local UI ownership |
 | `AGENTS.md` / root `ARCHITECTURE.md` | Greenfield state, application boundary, no secrets, no production/exposure changes, no speculative shared packages |
-| Owner input | No shadcn and no replacement component library |
-| Researcher defaults | Light neutral palette, four-size/two-weight type scale, native-control strategy, responsive breakpoints, full-page forms, English Phase 1 copy |
+| Owner input | No shadcn and no replacement component library; approved six-piece aperture, forest and mint identity on 2026-09-07 ([decision 0001](../../../docs/design/0001-brand-identity.md)) |
+| Researcher defaults | Four-size/two-weight type scale, native-control strategy, responsive breakpoints, full-page forms, English Phase 1 copy |
 
 ---
 
@@ -418,3 +425,5 @@ No registry, copied block, or third-party component package is approved by this 
 - [x] Dimension 6 Registry Safety: PASS
 
 **Approval:** approved on 2026-08-31 after one directed revision; no remaining recommendations
+
+**Brand amendment:** identity, color and header contracts updated on 2026-09-07 following explicit owner approval. The checker sign-off above records the original phase contract; current branding validation is recorded in quick task `260907-wrj`.

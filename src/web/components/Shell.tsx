@@ -1,6 +1,7 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { apiRequest } from "../lib/api.js";
 import type { Project, Session } from "../types.js";
+import { Brand } from "./Brand.js";
 import { AppLink, Button } from "./ui.js";
 
 export function PublicShell({ children }: { children: ReactNode }) {
@@ -10,9 +11,7 @@ export function PublicShell({ children }: { children: ReactNode }) {
         Skip to main content
       </a>
       <header className="app-header">
-        <AppLink className="wordmark" href="/" aria-label="Issopen home">
-          Issopen
-        </AppLink>
+        <Brand />
       </header>
       <main id="main-content" className="centered-page">
         <section className="page-panel">{children}</section>
@@ -117,9 +116,7 @@ export function AuthenticatedShell({
         Skip to main content
       </a>
       <header className="app-header authenticated-header">
-        <AppLink className="wordmark" href="/">
-          Issopen
-        </AppLink>
+        <Brand />
         <span className="workspace-name">{session.workspace.name}</span>
         <MobileNavigation>{navigation}</MobileNavigation>
         <details className="owner-menu">

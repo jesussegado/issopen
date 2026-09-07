@@ -2,7 +2,9 @@
 
 Twenty exploratory PNG marks for choosing the initial Issopen logo and favicon.
 Every source image is square (`1254 × 1254`), uses an alpha channel, and remains
-unwired from the product until a direction is selected.
+preserved as an exploration source. The six-piece green refinement of concept
+06 was selected on 2026-09-07 and promoted to the product identity as
+[`issopen-icon-v1.png`](../issopen-icon-v1.png).
 
 Open [`gallery.html`](./gallery.html) for a checkerboard comparison at several
 sizes.

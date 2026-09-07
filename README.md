@@ -33,6 +33,11 @@ repository, run CI, merge or deploy code.
 
 ## Architecture and data flow
 
+La identidad visual aprobada usa el icono de apertura de seis piezas y la
+paleta verde bosque/menta. La [decisión de diseño](docs/design/0001-brand-identity.md)
+documenta el logo, favicon, tokens, semántica y contraste. Los estilos viven en
+`src/web/styles.css` y el componente de marca en `src/web/components/Brand.tsx`.
+
 ```text
 browser owner ── session cookie ──> Hono /api/v1 ─┐
 ChatGPT ── OAuth 2.1 PKCE ────────> POST /mcp     ├─> shared tracker domain

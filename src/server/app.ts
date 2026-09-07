@@ -214,7 +214,10 @@ export function createApp({
   );
 
   app.use("/assets/*", serveStatic({ root: webRoot }));
-  app.get("/favicon.ico", serveStatic({ root: webRoot, path: "favicon.ico" }));
+  app.get(
+    "/favicon.ico",
+    serveStatic({ root: webRoot, path: "assets/branding/issopen-icon-v1.png" }),
+  );
   app.get("*", serveStatic({ root: webRoot, path: "index.html" }));
 
   app.notFound((context) => context.json({ error: "Not found" }, 404));

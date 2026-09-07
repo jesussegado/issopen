@@ -43,6 +43,9 @@ test("owner completes the tracker loop with native keyboard controls", async ({
     .fill("https://git.example.test/owner/tracker");
   await page.getByRole("button", { name: "Create project" }).click();
   await expect(page.getByRole("heading", { name: projectName })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Issopen home" }).locator("img"),
+  ).toBeVisible();
 
   await page.getByRole("link", { name: "Manage Epics" }).click();
   await expect(

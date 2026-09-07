@@ -25,15 +25,19 @@ paleta y el check oscuro de la apertura suave (05), con seis piezas curvas:
 tres verdes oscuras y tres menta, alternadas. La versión de cinco piezas se
 conserva para comparar. [Prompts de esta edición](./issopen-aperture-07-prompts.json).
 
-Son conceptos raster para elegir una dirección visual. El original se conserva;
-ninguna propuesta está conectada al favicon o a la interfaz del producto.
+La variante 07 fue aprobada el 2026-09-07 como identidad de Issopen y se usa,
+sin modificar su imagen, en el logo y favicon a través de la copia canónica
+[`issopen-icon-v1.png`](../../issopen-icon-v1.png). El resto se conserva como
+exploración; la galería compara las seis propuestas iniciales.
 
 ## Generación
 
 Herramienta integrada `image_gen`, con una petición independiente por variante
 y el PNG original como referencia. Los prompts exactos se conservan en
 [prompts.json](./prompts.json). Los valores hexadecimales son objetivos del
-brief; los colores raster generados no son todavía tokens canónicos de marca.
+brief. Tras aprobar la variante 07, la paleta de la web se normalizó a verde
+bosque `#027067` y menta `#6FD9B5`, muestreados de esa imagen; sus variaciones
+raster se conservan en el icono.
 
 Las variantes 03–06 recibieron una segunda edición de extracción de fondo
 mediante la misma herramienta para sustituir el damero dibujado por alpha real.
