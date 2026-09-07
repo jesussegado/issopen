@@ -52,6 +52,9 @@ test("owner completes the tracker loop with native keyboard controls", async ({
     .getByLabel("Description")
     .fill("Group the complete private MVP workflow.");
   await page.getByRole("button", { name: "Create Epic" }).click();
+  await expect(page.getByText("Epic created")).toBeVisible();
+  await expect(page).toHaveURL(/\/projects\/[^/]+\/epics$/);
+  await page.getByRole("link", { name: epicTitle }).click();
   await expect(page.getByRole("heading", { name: epicTitle })).toBeVisible();
   await page.getByRole("link", { name: "Create ticket in Epic" }).click();
   await expect(

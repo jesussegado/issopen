@@ -373,7 +373,7 @@ export class TrackerService {
           title: { from: null, to: created.title },
         },
       });
-      return created;
+      return { ...created, summary: emptyEpicSummary() };
     });
   }
 

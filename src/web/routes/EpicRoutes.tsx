@@ -62,6 +62,7 @@ export function EpicsRoute({ projectId }: { projectId: string }) {
   const [errors, setErrors] = useState<{ field: string; message: string }[]>(
     [],
   );
+  const [notice, setNotice] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const online = useOnlineStatus();
 
@@ -85,6 +86,7 @@ export function EpicsRoute({ projectId }: { projectId: string }) {
     event.preventDefault();
     setSubmitting(true);
     setErrors([]);
+    setNotice(null);
     try {
       const response = await apiRequest<{ epic: Epic }>(
         `/api/v1/projects/${projectId}/epics`,
@@ -93,9 +95,10 @@ export function EpicsRoute({ projectId }: { projectId: string }) {
           body: JSON.stringify({ title, description }),
         },
       );
-      navigate(
-        `/epics/${response.epic.id}?notice=${encodeURIComponent("Epic created")}`,
-      );
+      setEpics((current) => [...current, response.epic]);
+      setTitle("");
+      setDescription("");
+      setNotice("Epic created");
     } catch (error) {
       setErrors(errorDetails(error));
     } finally {
@@ -123,6 +126,7 @@ export function EpicsRoute({ projectId }: { projectId: string }) {
       </div>
       {!online ? <OfflineBanner /> : null}
       <ErrorSummary errors={errors} />
+      {notice ? <StatusBanner focus>{notice}</StatusBanner> : null}
       <div className="epic-layout">
         <section className="detail-panel" aria-labelledby="epic-list-heading">
           <h2 id="epic-list-heading">Project Epics</h2>

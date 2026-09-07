@@ -93,7 +93,31 @@ async function createEpicFixture(projectId: string) {
     },
   );
   expect(response.status).toBe(201);
-  return (await body<{ epic: { id: string; title: string } }>(response)).epic;
+  const created = (
+    await body<{
+      epic: {
+        id: string;
+        title: string;
+        summary: {
+          totalIssues: number;
+          doneIssues: number;
+          statusCounts: Record<string, number>;
+        };
+      };
+    }>(response)
+  ).epic;
+  expect(created.summary).toEqual({
+    totalIssues: 0,
+    doneIssues: 0,
+    statusCounts: {
+      backlog: 0,
+      ready: 0,
+      in_progress: 0,
+      ready_for_review: 0,
+      done: 0,
+    },
+  });
+  return created;
 }
 
 async function createIssueFixture(

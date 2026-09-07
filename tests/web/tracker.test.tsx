@@ -230,7 +230,7 @@ describe("tracker web routes", () => {
     );
   });
 
-  it("creates an Epic and exposes its related tickets and progress", async () => {
+  it("creates an Epic without leaving the panel and exposes its related tickets", async () => {
     const fetchMock = vi.fn(
       async (input: RequestInfo | URL, init?: RequestInit) => {
         const path = String(input);
@@ -250,6 +250,7 @@ describe("tracker web routes", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
     const user = userEvent.setup();
+    window.history.replaceState({}, "", `/projects/${project.id}/epics`);
     render(<EpicsRoute projectId={project.id} />);
 
     expect(await screen.findByRole("link", { name: epic.title })).toBeVisible();
@@ -264,9 +265,13 @@ describe("tracker web routes", () => {
       "Group the closing work",
     );
     await user.click(screen.getByRole("button", { name: "Create Epic" }));
-    await waitFor(() =>
-      expect(window.location.pathname).toBe(`/epics/${epic.id}`),
-    );
+    expect(await screen.findByText("Epic created")).toBeVisible();
+    expect(window.location.pathname).toBe(`/projects/${project.id}/epics`);
+    expect(
+      screen.getByRole("link", { name: "Release readiness" }),
+    ).toHaveAttribute("href", `/epics/${epic.id}`);
+    expect(screen.getByLabelText("Title (required)")).toHaveValue("");
+    expect(screen.getByLabelText(/^Description/)).toHaveValue("");
 
     cleanup();
     window.history.replaceState({}, "", `/epics/${epic.id}`);
