@@ -18,6 +18,13 @@ abrir su PNG completo.
 | APERTURA SUAVE | Cinco piezas curvas, en verde bosque y salvia. | [05-apertura-suave](./issopen-aperture-05-apertura-suave.png) |
 | ORBITA ABIERTA | Tres arcos abiertos, con morado y lima. | [06-orbita-abierta](./issopen-aperture-06-orbita-abierta.png) |
 
+## Refinamiento 07 · Seis piezas en verde bosque y menta
+
+La [variante 07](./issopen-aperture-07-seis-piezas-verde-bosque.png) conserva la
+paleta y el check oscuro de la apertura suave (05), con seis piezas curvas:
+tres verdes oscuras y tres menta, alternadas. La versión de cinco piezas se
+conserva para comparar. [Prompts de esta edición](./issopen-aperture-07-prompts.json).
+
 Son conceptos raster para elegir una dirección visual. El original se conserva;
 ninguna propuesta está conectada al favicon o a la interfaz del producto.
 
