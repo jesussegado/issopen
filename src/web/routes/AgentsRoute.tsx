@@ -432,7 +432,7 @@ export function AgentsRoute({ projects }: { projects: Project[] }) {
               <div>
                 <dt>Allowed projects</dt>
                 <dd>
-                  {agent.projects.map((project) => project.key).join(", ")}
+                  {agent.projects.map((project) => project.name).join(", ")}
                 </dd>
               </div>
               <div>

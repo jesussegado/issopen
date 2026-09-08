@@ -36,6 +36,9 @@ import {
   codeLinkLabels,
   codeLinkTypes,
   epicLabel,
+  issueActivitySummary,
+  issueLabel,
+  issueReference,
   issueStatuses,
   priorityLabels,
   statusLabels,
@@ -197,7 +200,7 @@ export function IssueDetailRoute({ issueId }: { issueId: string }) {
       setIssue({ ...response.issue, questionSummary });
       setNotice("Issue updated");
       setAnnouncement(
-        `${response.issue.key} moved to ${statusLabels[response.issue.status]}`,
+        `${issueReference(response.issue)} moved to ${statusLabels[response.issue.status]}`,
       );
       await refreshActivity();
     } catch (caught) {
@@ -325,7 +328,7 @@ export function IssueDetailRoute({ issueId }: { issueId: string }) {
       setCommentBody("");
       setNotice("Comment added");
       setAnnouncement(
-        `Comment added to ${issue.key} by ${commentAuthorLabel(response.comment)}`,
+        `Comment added to ${issueReference(issue)} by ${commentAuthorLabel(response.comment)}`,
       );
       await refreshActivity();
     } catch (caught) {
@@ -357,7 +360,7 @@ export function IssueDetailRoute({ issueId }: { issueId: string }) {
       setReason("");
       setNotice(outcome === "accept" ? "Result accepted" : "Changes requested");
       setAnnouncement(
-        `${response.issue.key} moved to ${statusLabels[response.issue.status]}`,
+        `${issueReference(response.issue)} moved to ${statusLabels[response.issue.status]}`,
       );
       await refreshActivity();
     } catch (caught) {
@@ -378,10 +381,9 @@ export function IssueDetailRoute({ issueId }: { issueId: string }) {
       <div className="page-header">
         <div>
           <div className="issue-metadata">
-            <Badge mono>{issue.key}</Badge>
             <Badge>{priorityLabels[issue.priority]}</Badge>
           </div>
-          <PageHeading>{issue.title}</PageHeading>
+          <PageHeading>{issueLabel(issue)}</PageHeading>
           <div className="issue-metadata">
             <span>Owner: You</span>
             {epic ? (
@@ -430,7 +432,7 @@ export function IssueDetailRoute({ issueId }: { issueId: string }) {
           >
             <h2 id="issue-status-heading">Status</h2>
             <Field
-              label={`Change status for ${issue.key}`}
+              label={`Change status for ${issueReference(issue)}`}
               htmlFor="issue-status"
             >
               <Select
@@ -830,7 +832,7 @@ export function IssueDetailRoute({ issueId }: { issueId: string }) {
             <ol className="activity-list">
               {newestActivityFirst.map((item) => (
                 <li className="activity-item" key={item.id}>
-                  <p>{item.summary}</p>
+                  <p>{issueActivitySummary(item.summary, issue)}</p>
                   <div className="activity-identity">
                     <Badge>{actorLabel(item)}</Badge>
                     <Badge>{item.actorType}</Badge>

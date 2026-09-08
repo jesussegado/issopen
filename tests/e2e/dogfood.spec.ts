@@ -78,18 +78,17 @@ test("dogfoods one real Issopen improvement through owner and Codex boundaries",
     page.getByRole("heading", { name: "Sign in to Issopen" }),
   ).toBeHidden();
   await page.goto(`/issues/${first.issueId}`);
+  const issueRef = `[${first.issueKey.split("-").at(-1)}]`;
   await expect(
     page.getByRole("heading", {
-      name: "Make Phase 1 dogfooding reproducible and secret-safe",
+      name: `${issueRef}-Make Phase 1 dogfooding reproducible and secret-safe`,
     }),
   ).toBeVisible();
-  await expect(
-    page.getByLabel(`Change status for ${first.issueKey}`),
-  ).toHaveValue("done");
+  await expect(page.getByLabel(`Change status for ${issueRef}`)).toHaveValue(
+    "done",
+  );
   await expect(page.getByText(codeUrl)).toBeVisible();
-  await expect(
-    page.getByText(`Accepted result for ${first.issueKey}`),
-  ).toBeVisible();
+  await expect(page.getByText(`Accepted result for ${issueRef}`)).toBeVisible();
   await expect(page.getByText(/Agent · Codex dogfood/).first()).toBeVisible();
 
   await page.goto("/agents");

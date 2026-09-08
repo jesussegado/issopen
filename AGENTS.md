@@ -242,8 +242,12 @@ la actual. Un guardado fallido mantiene la pregunta y su borrador.
 Los Epics viven en `epic` y sólo agrupan tickets del mismo proyecto/workspace.
 Cada Epic tiene un `number` positivo, único y estable dentro de su proyecto;
 `project.next_epic_number` lo asigna transaccionalmente, separado del contador
-de issues. La web usa `epicLabel` para mostrar `número/título` sin modificar el
-título almacenado ni las URLs UUID. La migración `0011_epic_numbers` numera los
+de issues. La web usa `epicLabel` e `issueLabel` para mostrar `[número]-título`,
+sin prefijos de proyecto. Las claves se conservan en API/MCP y se generan
+automáticamente para proyectos nuevos creados en la web. No se muestran en
+formularios, badges, referencias de actividad ni etiquetas accesibles; los
+textos escritos por usuarios no se reescriben. No cambian títulos almacenados
+ni URLs UUID. La migración `0011_epic_numbers` numera los
 existentes por `created_at`/`id`, conserva sus relaciones y actualiza contadores.
 La asociación nullable `issue.epic_id` usa una FK compuesta para que ni REST ni
 MCP puedan cruzar esas fronteras. `TrackerService` es la única vía para crear o

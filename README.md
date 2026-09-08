@@ -61,7 +61,12 @@ always derived from its current issues. A ticket can belong to zero or one
 Epic, and can be associated, moved to another Epic in the same project or
 returned to **No Epic** from the create/edit issue form.
 
-Epics are displayed as `number/name` (for example, `1/Chrome extension`). Numbers
+Epics and issues are displayed as `[number]-name` (for example,
+`[1]-Chrome extension`). Internal project prefixes and issue keys are not shown
+in the web UI, including activity references, forms and accessibility labels.
+New projects created from the web receive an automatically generated internal
+key; existing keys, UUID links and API/MCP contracts remain unchanged. User-written
+descriptions and comments are not rewritten. Epic numbers
 start at 1 independently in each project, are assigned atomically by the server
 and stay unchanged when the title is edited. REST and MCP return `number` and
 the unmodified `title`; UUID URLs and ticket associations remain unchanged.

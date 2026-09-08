@@ -67,6 +67,7 @@ function mockQuestions() {
             id: "issue-1",
             projectId: "project-1",
             key: "WEB-1",
+            number: 1,
             title: "Answer navigation",
             description: "",
             priority: "medium",

@@ -52,7 +52,7 @@ export type Epic = {
 };
 
 export function epicLabel(epic: Pick<Epic, "number" | "title">) {
-  return `${epic.number}/${epic.title}`;
+  return `[${epic.number}]-${epic.title}`;
 }
 
 export const agentScopes = [
@@ -118,6 +118,25 @@ export type QuestionSummary = {
   answered: number;
   unansweredBlocking: number;
 };
+
+export function issueReference(issue: Pick<Issue, "number">) {
+  return `[${issue.number}]`;
+}
+
+export function issueLabel(issue: Pick<Issue, "number" | "title">) {
+  return `${issueReference(issue)}-${issue.title}`;
+}
+
+export function issueActivitySummary(
+  summary: string,
+  issue: Pick<Issue, "key" | "number">,
+) {
+  const escapedKey = issue.key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return summary.replace(
+    new RegExp(`(?<![\\w-])${escapedKey}(?![\\w-])`),
+    issueReference(issue),
+  );
+}
 
 export type IssueQuestionOption = {
   id: string;

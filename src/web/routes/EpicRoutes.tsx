@@ -19,6 +19,7 @@ import { useOnlineStatus } from "../lib/online.js";
 import type { Epic, Issue, Project } from "../types.js";
 import {
   epicLabel,
+  issueLabel,
   issueStatuses,
   priorityLabels,
   statusLabels,
@@ -304,9 +305,8 @@ export function EpicDetailRoute({ epicId }: { epicId: string }) {
               return (
                 <li key={issue.id}>
                   <div className="epic-issue-heading">
-                    <Badge mono>{issue.key}</Badge>
                     <AppLink href={`/issues/${issue.id}`}>
-                      {issue.title}
+                      {issueLabel(issue)}
                     </AppLink>
                   </div>
                   <div className="issue-metadata">

@@ -149,14 +149,6 @@ const emptyProject: ProjectFormState = {
   repositorySubdirectory: "",
 };
 
-function suggestKey(name: string) {
-  const key = name
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g, "")
-    .slice(0, 10);
-  return /^[A-Z]/.test(key) ? key : "";
-}
-
 export function ProjectFormRoute({
   projectId,
   onProjectsChanged,
@@ -165,10 +157,14 @@ export function ProjectFormRoute({
   onProjectsChanged: () => Promise<void>;
 }) {
   const editing = Boolean(projectId);
-  const [form, setForm] = useState<ProjectFormState>(emptyProject);
+  const [form, setForm] = useState<ProjectFormState>(() => ({
+    ...emptyProject,
+    key: editing
+      ? ""
+      : `P${crypto.randomUUID().replaceAll("-", "").slice(0, 9).toUpperCase()}`,
+  }));
   const [loading, setLoading] = useState(editing);
   const [missing, setMissing] = useState(false);
-  const [keyTouched, setKeyTouched] = useState(false);
   const [errors, setErrors] = useState<{ field: string; message: string }[]>(
     [],
   );
@@ -201,9 +197,6 @@ export function ProjectFormRoute({
     setForm((current) => ({
       ...current,
       [field]: value,
-      ...(field === "name" && !keyTouched && !editing
-        ? { key: suggestKey(value) }
-        : {}),
     }));
   }
 
@@ -260,35 +253,6 @@ export function ProjectFormRoute({
             maxLength={120}
             value={form.name}
             onChange={(event) => update("name", event.currentTarget.value)}
-          />
-        </Field>
-        <Field
-          label="Project key"
-          htmlFor="key"
-          required
-          helper={
-            editing
-              ? "Issue keys keep this stable project key."
-              : "Use 2–10 uppercase letters or digits, starting with a letter."
-          }
-          error={errors.find((item) => item.field === "key")?.message}
-        >
-          <TextInput
-            id="key"
-            className="mono"
-            required={!editing}
-            readOnly={editing}
-            maxLength={10}
-            value={form.key}
-            onChange={(event) => {
-              setKeyTouched(true);
-              update(
-                "key",
-                event.currentTarget.value
-                  .toUpperCase()
-                  .replace(/[^A-Z0-9]/g, ""),
-              );
-            }}
           />
         </Field>
         <Field
@@ -516,11 +480,7 @@ export function IssueFormRoute({
       <ErrorSummary errors={errors} />
       <form className="form-panel form-stack" onSubmit={submit}>
         <Field label="Project" htmlFor="project">
-          <TextInput
-            id="project"
-            value={`${project.name} (${project.key})`}
-            readOnly
-          />
+          <TextInput id="project" value={project.name} readOnly />
         </Field>
         <Field
           label="Title"

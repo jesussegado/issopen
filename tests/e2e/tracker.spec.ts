@@ -8,7 +8,7 @@ test("owner completes the tracker loop with native keyboard controls", async ({
   const projectName = mobile ? "Mobile tracker" : "Desktop tracker";
   const issueTitle = `${projectName} keyboard workflow`;
   const epicTitle = `${projectName} MVP`;
-  const epicDisplayName = `1/${epicTitle}`;
+  const epicDisplayName = `[1]-${epicTitle}`;
 
   await page.goto("/sign-in");
   await page.getByLabel("Email (required)").fill(e2eOwner.email);
@@ -77,13 +77,19 @@ test("owner completes the tracker loop with native keyboard controls", async ({
   await expect(
     page.getByRole("link", { name: `Epic: ${epicDisplayName}` }),
   ).toBeVisible();
-  const issueKey = await page
-    .locator(".issue-metadata .badge.mono")
-    .first()
-    .textContent();
-  expect(issueKey).toBeTruthy();
   const issueId = new URL(page.url()).pathname.split("/").at(-1);
   if (!issueId) throw new Error("Expected issue identifier in detail URL");
+  const issueResponse = await page.request.get(
+    `${e2eBaseUrl}/api/v1/issues/${issueId}`,
+  );
+  const { issue } = await issueResponse.json();
+  const issueRef = `[${issue.number}]`;
+  const issueDisplayName = `${issueRef}-${issueTitle}`;
+  expect(issue.key).toMatch(/^P[A-F0-9]{9}-1$/);
+  await expect(
+    page.getByRole("heading", { name: issueDisplayName }),
+  ).toBeVisible();
+  await expect(page.getByText(issue.key, { exact: true })).toHaveCount(0);
   const question = await page.request.post(
     `${e2eBaseUrl}/api/v1/issues/${issueId}/questions`,
     {
@@ -141,35 +147,41 @@ test("owner completes the tracker loop with native keyboard controls", async ({
   await expect(page.getByLabel("Show questions")).toBeVisible();
   await page.getByLabel("Show Epic").selectOption({ label: epicDisplayName });
   await expect(page).toHaveURL(/\?epic=/);
-  await expect(page.getByRole("link", { name: issueTitle })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: issueDisplayName }),
+  ).toBeVisible();
   await expect(page.getByText("⚠ 1 unanswered")).toBeVisible();
   await page.getByLabel("Show questions").selectOption("warnings");
-  await expect(page.getByRole("link", { name: issueTitle })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: issueDisplayName }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Collapse Backlog column" }).click();
-  await expect(page.getByRole("link", { name: issueTitle })).toBeHidden();
+  await expect(page.getByRole("link", { name: issueDisplayName })).toBeHidden();
   await page.getByRole("button", { name: "Expand Backlog column" }).click();
-  await expect(page.getByRole("link", { name: issueTitle })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: issueDisplayName }),
+  ).toBeVisible();
   await page
-    .getByRole("button", { name: `Show details for ${issueKey}` })
+    .getByRole("button", { name: `Show details for ${issueRef}` })
     .click();
   await expect(
     page.getByText("A plain-text result must remain accessible."),
   ).toBeVisible();
 
   const status = page.getByRole("combobox", {
-    name: `Change status for ${issueKey}`,
+    name: `Change status for ${issueRef}`,
   });
   await status.focus();
   for (const label of ["Ready", "In Progress"]) {
     await page.keyboard.press("ArrowDown");
-    await expect(page.getByText(`${issueKey} moved to ${label}`)).toBeVisible();
+    await expect(page.getByText(`${issueRef} moved to ${label}`)).toBeVisible();
     await expect(status).toBeFocused();
   }
   await expect(
     status.locator('option[value="ready_for_review"]'),
   ).toHaveAttribute("disabled", "");
 
-  await page.getByRole("link", { name: issueTitle }).click();
+  await page.getByRole("link", { name: issueDisplayName }).click();
   await expect
     .poll(() =>
       page.evaluate(
@@ -188,13 +200,13 @@ test("owner completes the tracker loop with native keyboard controls", async ({
   await expect(
     page.getByText("Questions are blocking this ticket", { exact: false }),
   ).toBeHidden();
-  const answeredStatus = page.getByLabel(`Change status for ${issueKey}`);
+  const answeredStatus = page.getByLabel(`Change status for ${issueRef}`);
   await expect(
     answeredStatus.locator('option[value="ready_for_review"]'),
   ).not.toHaveAttribute("disabled", "");
   await answeredStatus.selectOption("ready_for_review");
   await expect(
-    page.getByText(`${issueKey} moved to Ready for Review`),
+    page.getByText(`${issueRef} moved to Ready for Review`),
   ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Review result" }),
@@ -212,20 +224,20 @@ test("owner completes the tracker loop with native keyboard controls", async ({
     .fill("Please add the missing regression test.");
   await page.getByRole("button", { name: "Request changes" }).last().click();
   await expect(page.getByText("Changes requested")).toBeVisible();
-  await expect(page.getByLabel(`Change status for ${issueKey}`)).toHaveValue(
+  await expect(page.getByLabel(`Change status for ${issueRef}`)).toHaveValue(
     "in_progress",
   );
 
-  const detailStatus = page.getByLabel(`Change status for ${issueKey}`);
+  const detailStatus = page.getByLabel(`Change status for ${issueRef}`);
   await detailStatus.focus();
   await page.keyboard.press("ArrowDown");
   await expect(
-    page.getByText(`${issueKey} moved to Ready for Review`),
+    page.getByText(`${issueRef} moved to Ready for Review`),
   ).toBeVisible();
   await page.getByRole("button", { name: "Accept result" }).click();
   await expect(page.getByText("Result accepted")).toBeVisible();
-  await expect(page.getByLabel(`Change status for ${issueKey}`)).toHaveValue(
+  await expect(page.getByLabel(`Change status for ${issueRef}`)).toHaveValue(
     "done",
   );
-  await expect(page.getByText(`Accepted result for ${issueKey}`)).toBeVisible();
+  await expect(page.getByText(`Accepted result for ${issueRef}`)).toBeVisible();
 });

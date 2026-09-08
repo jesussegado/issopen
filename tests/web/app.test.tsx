@@ -118,9 +118,10 @@ describe("owner web entry", () => {
       await screen.findByRole("heading", { name: "Create project" }),
     ).toHaveFocus();
     const labels = screen.getAllByText(
-      /Project name|Project key|Description|Repository URL|Default branch|Repository subdirectory/,
+      /Project name|Description|Repository URL|Default branch|Repository subdirectory/,
     );
-    expect(labels.length).toBeGreaterThanOrEqual(6);
+    expect(labels.length).toBeGreaterThanOrEqual(5);
+    expect(screen.queryByLabelText(/Project key/)).not.toBeInTheDocument();
     expect(
       screen.getByText(
         "Plain reference data only. Issopen does not access or clone the repository.",

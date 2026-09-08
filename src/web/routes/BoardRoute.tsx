@@ -15,6 +15,8 @@ import { useOnlineStatus } from "../lib/online.js";
 import type { Epic, Issue, IssueStatus, Project } from "../types.js";
 import {
   epicLabel,
+  issueLabel,
+  issueReference,
   issueStatuses,
   priorityLabels,
   statusLabels,
@@ -186,7 +188,7 @@ export function BoardRoute({ projectId }: { projectId: string }) {
         return next;
       });
       setAnnouncement(
-        `${updatedIssue.key} moved to ${statusLabels[updatedIssue.status]}`,
+        `${issueReference(updatedIssue)} moved to ${statusLabels[updatedIssue.status]}`,
       );
       setFocusIssueId(response.issue.id);
     } catch (caught) {
@@ -232,7 +234,6 @@ export function BoardRoute({ projectId }: { projectId: string }) {
         <div>
           <PageHeading>{project.name}</PageHeading>
           <div className="issue-metadata">
-            <Badge mono>{project.key}</Badge>
             {repository ? <span className="mono">{repository}</span> : null}
           </div>
         </div>
@@ -418,19 +419,18 @@ export function BoardRoute({ projectId }: { projectId: string }) {
                               return (
                                 <li className="issue-card" key={issue.id}>
                                   <div className="issue-card-summary">
-                                    <Badge mono>{issue.key}</Badge>
                                     <AppLink
                                       className="issue-card-title"
                                       href={`/issues/${issue.id}`}
                                     >
-                                      {issue.title}
+                                      {issueLabel(issue)}
                                     </AppLink>
                                     <button
                                       className="disclosure-button"
                                       type="button"
                                       aria-expanded={issueExpanded}
                                       aria-controls={`issue-preview-${issue.id}`}
-                                      aria-label={`${issueExpanded ? "Hide" : "Show"} details for ${issue.key}`}
+                                      aria-label={`${issueExpanded ? "Hide" : "Show"} details for ${issueReference(issue)}`}
                                       onClick={() => toggleIssue(issue.id)}
                                     >
                                       <span aria-hidden="true">
@@ -504,7 +504,7 @@ export function BoardRoute({ projectId }: { projectId: string }) {
                                                 issue.id,
                                               );
                                           }}
-                                          aria-label={`Change status for ${issue.key}`}
+                                          aria-label={`Change status for ${issueReference(issue)}`}
                                           aria-describedby={
                                             (issue.questionSummary
                                               ?.unansweredBlocking ?? 0) > 0 &&
