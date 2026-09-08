@@ -104,9 +104,13 @@ export const updateEpicSchema = z
   .object({
     title: z.string().trim().min(1).max(240).optional(),
     description: z.string().trim().max(20_000).optional(),
+    expectedVersion: z.number().int().positive().optional(),
   })
   .strict()
-  .refine((value) => Object.keys(value).length > 0, "No changes supplied");
+  .refine(
+    (value) => value.title !== undefined || value.description !== undefined,
+    "No changes supplied",
+  );
 
 export const createIssueSchema = z
   .object({
@@ -119,6 +123,16 @@ export const createIssueSchema = z
   })
   .strict();
 
+export const questionVersionsSchema = z
+  .array(
+    z.object({ id: z.uuid(), version: z.number().int().positive() }).strict(),
+  )
+  .max(1000)
+  .refine(
+    (values) => new Set(values.map((item) => item.id)).size === values.length,
+    "Question IDs must be unique",
+  );
+
 export const updateIssueSchema = z
   .object({
     title: z.string().trim().min(1).max(240).optional(),
@@ -126,9 +140,17 @@ export const updateIssueSchema = z
     priority: issuePrioritySchema.optional(),
     status: issueStatusSchema.optional(),
     epicId: z.uuid().nullable().optional(),
+    expectedVersion: z.number().int().positive().optional(),
+    questionVersions: questionVersionsSchema.optional(),
   })
   .strict()
-  .refine((value) => Object.keys(value).length > 0, "No changes supplied");
+  .refine(
+    (value) =>
+      Object.keys(value).some(
+        (key) => key !== "expectedVersion" && key !== "questionVersions",
+      ),
+    "No changes supplied",
+  );
 
 export const addCodeLinkSchema = z
   .object({

@@ -70,6 +70,100 @@ afterAll(async () => {
 });
 
 describe("transactional tracker domain", () => {
+  it("atomically rejects concurrent stale issue and Epic drafts", async () => {
+    const p = await tracker.createProject(ownerContext, {
+      name: "Concurrency",
+      key: "CAS",
+    });
+    const i = await tracker.createIssue(ownerContext, {
+      projectId: p.id,
+      title: "Original",
+    });
+    const e = await tracker.createEpic(ownerContext, {
+      projectId: p.id,
+      title: "Original Epic",
+    });
+    const edits = await Promise.allSettled([
+      tracker.updateIssue(ownerContext, i.id, {
+        description: "Editor A",
+        expectedVersion: i.version,
+        questionVersions: [],
+      }),
+      tracker.updateIssue(ownerContext, i.id, {
+        description: "Editor B",
+        expectedVersion: i.version,
+        questionVersions: [],
+      }),
+    ]);
+    expect(
+      edits.filter((result) => result.status === "fulfilled"),
+    ).toHaveLength(1);
+    expect(edits.filter((result) => result.status === "rejected")).toHaveLength(
+      1,
+    );
+    const epics = await Promise.allSettled([
+      tracker.updateEpic(ownerContext, e.id, {
+        description: "A",
+        expectedVersion: e.version,
+      }),
+      tracker.updateEpic(ownerContext, e.id, {
+        description: "B",
+        expectedVersion: e.version,
+      }),
+    ]);
+    expect(
+      epics.filter((result) => result.status === "fulfilled"),
+    ).toHaveLength(1);
+    expect(epics.filter((result) => result.status === "rejected")).toHaveLength(
+      1,
+    );
+    expect((await tracker.getIssue(workspaceId, i.id)).version).toBe(
+      i.version + 1,
+    );
+    expect((await tracker.getEpic(workspaceId, e.id)).version).toBe(
+      e.version + 1,
+    );
+  });
+
+  it("detects changed and newly added questions even when issue.version stays unchanged", async () => {
+    const p = await tracker.createProject(ownerContext, {
+      name: "Questions",
+      key: "QV",
+    });
+    const i = await tracker.createIssue(ownerContext, {
+      projectId: p.id,
+      title: "Plan",
+    });
+    const question = {
+      prompt: "Decision?",
+      recommendation: "Choose A",
+      options: [{ label: "A" }, { label: "B" }],
+      recommendedOptionIndex: 0,
+    };
+    const q = await tracker.createIssueQuestion(ownerContext, i.id, question);
+    await tracker.answerIssueQuestion(ownerContext, i.id, q.id, {
+      kind: "other",
+      text: "Keep existing UI",
+    });
+    expect((await tracker.getIssue(workspaceId, i.id)).version).toBe(i.version);
+    await expect(
+      tracker.updateIssue(ownerContext, i.id, {
+        description: "Stale decision",
+        expectedVersion: i.version,
+        questionVersions: [{ id: q.id, version: q.version }],
+      }),
+    ).rejects.toMatchObject({ code: "conflict" });
+    const current = await tracker.listIssueQuestions(workspaceId, i.id);
+    await tracker.createIssueQuestion(ownerContext, i.id, question);
+    await expect(
+      tracker.updateIssue(ownerContext, i.id, {
+        description: "Incomplete decisions",
+        expectedVersion: i.version,
+        questionVersions: current.map(({ id, version }) => ({ id, version })),
+      }),
+    ).rejects.toMatchObject({ code: "conflict" });
+    expect((await tracker.getIssue(workspaceId, i.id)).description).toBe("");
+  });
   it("keeps project and monotonic issue keys stable through edits", async () => {
     const createdProject = await tracker.createProject(ownerContext, {
       name: "Issopen",

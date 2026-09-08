@@ -10,6 +10,7 @@ import {
   idempotencyKeySchema,
   McpIdempotencyService,
   type MutationContext,
+  questionVersionsSchema,
   TrackerService,
   updateEpicSchema,
 } from "../domain/index.js";
@@ -626,7 +627,7 @@ export function createIssopenMcpServer(
     "update_issue",
     {
       description:
-        "Update bounded issue fields. Use move_issue for workflow status.",
+        "Update bounded issue fields with expectedVersion and the complete questionVersions snapshot to reject stale plans. Use move_issue for workflow status.",
       inputSchema: z
         .object({
           idempotencyKey: idempotencyKeySchema,
@@ -635,6 +636,8 @@ export function createIssopenMcpServer(
           description: z.string().trim().max(50_000).optional(),
           priority: z.enum(issuePriorityValues).optional(),
           epicId: z.uuid().nullable().optional(),
+          expectedVersion: z.number().int().positive().optional(),
+          questionVersions: questionVersionsSchema.optional(),
         })
         .strict()
         .refine(
@@ -642,7 +645,10 @@ export function createIssopenMcpServer(
             issueId: _issueId,
             idempotencyKey: _idempotencyKey,
             ...changes
-          }) => Object.keys(changes).length > 0,
+          }) =>
+            Object.keys(changes).some(
+              (key) => key !== "expectedVersion" && key !== "questionVersions",
+            ),
           "At least one issue field is required",
         ),
       annotations: { destructiveHint: true },
@@ -778,11 +784,19 @@ export function createIssopenMcpServer(
           idempotencyKey: idempotencyKeySchema,
           issueId: z.uuid(),
           status: z.enum(issueStatusValues),
+          expectedVersion: z.number().int().positive().optional(),
+          questionVersions: questionVersionsSchema.optional(),
         })
         .strict(),
       annotations: { destructiveHint: true },
     },
-    async ({ idempotencyKey, issueId, status }) => {
+    async ({
+      idempotencyKey,
+      issueId,
+      status,
+      expectedVersion,
+      questionVersions,
+    }) => {
       agents.requireScope(principal, "issues:review");
       if (status === "done") agents.requireScope(principal, "issues:close");
       await allowedIssue(issueId);
@@ -791,12 +805,21 @@ export function createIssopenMcpServer(
           principal,
           "move_issue",
           idempotencyKey,
-          { issueId, status },
+          {
+            issueId,
+            status,
+            ...(expectedVersion !== undefined ? { expectedVersion } : {}),
+            ...(questionVersions ? { questionVersions } : {}),
+          },
           async (transactionalTracker) => ({
             issue: await transactionalTracker.updateIssue(
               mutationContext(principal),
               issueId,
-              { status },
+              {
+                status,
+                ...(expectedVersion !== undefined ? { expectedVersion } : {}),
+                ...(questionVersions ? { questionVersions } : {}),
+              },
             ),
           }),
         ),

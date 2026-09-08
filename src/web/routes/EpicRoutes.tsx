@@ -1,4 +1,5 @@
 import { type FormEvent, useEffect, useState } from "react";
+import { ConflictReview } from "../components/ConflictReview.js";
 import {
   AppLink,
   Badge,
@@ -340,6 +341,7 @@ export function EpicFormRoute({ epicId }: { epicId: string }) {
     [],
   );
   const [submitting, setSubmitting] = useState(false);
+  const [conflict, setConflict] = useState(false);
   const online = useOnlineStatus();
 
   useEffect(() => {
@@ -365,13 +367,18 @@ export function EpicFormRoute({ epicId }: { epicId: string }) {
         `/api/v1/epics/${epicId}`,
         {
           method: "PATCH",
-          body: JSON.stringify({ title, description }),
+          body: JSON.stringify({
+            title,
+            description,
+            expectedVersion: epic?.version,
+          }),
         },
       );
       navigate(
         `/epics/${response.epic.id}?notice=${encodeURIComponent("Epic updated")}`,
       );
     } catch (error) {
+      if (error instanceof ApiError && error.status === 409) setConflict(true);
       setErrors(errorDetails(error));
     } finally {
       setSubmitting(false);
@@ -386,6 +393,17 @@ export function EpicFormRoute({ epicId }: { epicId: string }) {
       <p className="metadata">{epicLabel(epic)}</p>
       {!online ? <OfflineBanner /> : null}
       <ErrorSummary errors={errors} />
+      {conflict ? (
+        <ConflictReview
+          url={`/api/v1/epics/${epicId}`}
+          kind="epic"
+          onUseBase={({ item }) => {
+            setEpic(item as Epic);
+            setConflict(false);
+            setErrors([]);
+          }}
+        />
+      ) : null}
       <form className="form-panel form-stack" onSubmit={save}>
         <Field
           label="Title"

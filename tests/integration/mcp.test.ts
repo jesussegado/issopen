@@ -236,6 +236,69 @@ afterAll(async () => {
 });
 
 describe("stateless Issopen MCP", () => {
+  it("replays a guarded mutation before checking later versions and rejects new stale operations", async () => {
+    const agent = await new AgentService(connection.db).createAgent(
+      workspaceId,
+      {
+        name: "Guarded plans",
+        projectIds: [projectId],
+        scopes: ["issues:read", "issues:write", "epics:write"],
+      },
+    );
+    const client = await mcpClient(agent.token);
+    try {
+      const before = await tracker.getIssue(workspaceId, issueId);
+      const args = {
+        issueId,
+        description: "Agent plan",
+        expectedVersion: before.version,
+        questionVersions: [],
+        idempotencyKey: "guarded-edit",
+      };
+      const first = await client.callTool({
+        name: "update_issue",
+        arguments: args,
+      });
+      expect(first.isError).not.toBe(true);
+      await tracker.updateIssue(mutationContext(), issueId, {
+        description: "New human plan",
+      });
+      expect(
+        (await client.callTool({ name: "update_issue", arguments: args }))
+          .structuredContent,
+      ).toEqual(first.structuredContent);
+      expect((await tracker.getIssue(workspaceId, issueId)).description).toBe(
+        "New human plan",
+      );
+      expect(
+        (
+          await client.callTool({
+            name: "update_issue",
+            arguments: { ...args, idempotencyKey: "new-stale-operation" },
+          })
+        ).isError,
+      ).toBe(true);
+      const e = await tracker.getEpic(workspaceId, epicId);
+      await tracker.updateEpic(mutationContext(), epicId, {
+        title: "Human Epic",
+      });
+      expect(
+        (
+          await client.callTool({
+            name: "update_epic",
+            arguments: {
+              epicId,
+              title: "Stale",
+              expectedVersion: e.version,
+              idempotencyKey: "stale-epic",
+            },
+          })
+        ).isError,
+      ).toBe(true);
+    } finally {
+      await client.close();
+    }
+  });
   it("discovers empty Epics and repository context; Epic writes require opt-in and are idempotent", async () => {
     const agents = new AgentService(connection.db);
     await tracker.updateProject(mutationContext(), projectId, {

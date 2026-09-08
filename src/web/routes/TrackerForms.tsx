@@ -1,4 +1,5 @@
 import { type FormEvent, useEffect, useState } from "react";
+import { ConflictReview } from "../components/ConflictReview.js";
 import {
   AppLink,
   Button,
@@ -20,6 +21,7 @@ import type {
   Epic,
   Issue,
   IssuePriority,
+  IssueQuestion,
   IssueStatus,
   Project,
   Session,
@@ -375,6 +377,11 @@ export function IssueFormRoute({
   const editing = Boolean(issueId);
   const [project, setProject] = useState<Project | null>(null);
   const [epics, setEpics] = useState<Epic[]>([]);
+  const [expectedVersion, setExpectedVersion] = useState<number | undefined>();
+  const [questionVersions, setQuestionVersions] = useState<
+    { id: string; version: number }[]
+  >([]);
+  const [conflict, setConflict] = useState(false);
   const [form, setForm] = useState<IssueFormState>({
     title: "",
     description: "",
@@ -394,9 +401,11 @@ export function IssueFormRoute({
     async function load() {
       try {
         if (issueId) {
-          const detail = await apiRequest<{ issue: Issue; epic: Epic | null }>(
-            `/api/v1/issues/${issueId}`,
-          );
+          const detail = await apiRequest<{
+            issue: Issue;
+            epic: Epic | null;
+            questions?: IssueQuestion[];
+          }>(`/api/v1/issues/${issueId}`);
           const [projectResponse, epicResponse] = await Promise.all([
             apiRequest<{ project: Project }>(
               `/api/v1/projects/${detail.issue.projectId}`,
@@ -407,6 +416,13 @@ export function IssueFormRoute({
           ]);
           setProject(projectResponse.project);
           setEpics(epicResponse.epics);
+          setExpectedVersion(detail.issue.version);
+          setQuestionVersions(
+            (detail.questions ?? []).map(({ id, version }) => ({
+              id,
+              version,
+            })),
+          );
           setForm({
             title: detail.issue.title,
             description: detail.issue.description,
@@ -458,6 +474,7 @@ export function IssueFormRoute({
           body: JSON.stringify({
             ...form,
             epicId: form.epicId || null,
+            ...(editing ? { expectedVersion, questionVersions } : {}),
           }),
         },
       );
@@ -465,6 +482,7 @@ export function IssueFormRoute({
         `/issues/${response.issue.id}?notice=${encodeURIComponent(editing ? "Issue updated" : "Issue created")}`,
       );
     } catch (error) {
+      if (error instanceof ApiError && error.status === 409) setConflict(true);
       setErrors(errorDetails(error));
     } finally {
       setSubmitting(false);
@@ -478,6 +496,20 @@ export function IssueFormRoute({
       <PageHeading>{editing ? "Edit issue" : "Create issue"}</PageHeading>
       {!online ? <OfflineBanner /> : null}
       <ErrorSummary errors={errors} />
+      {conflict && issueId ? (
+        <ConflictReview
+          url={`/api/v1/issues/${issueId}`}
+          kind="issue"
+          onUseBase={({ item, questions }) => {
+            setExpectedVersion(item.version);
+            setQuestionVersions(
+              questions.map(({ id, version }) => ({ id, version })),
+            );
+            setConflict(false);
+            setErrors([]);
+          }}
+        />
+      ) : null}
       <form className="form-panel form-stack" onSubmit={submit}>
         <Field label="Project" htmlFor="project">
           <TextInput id="project" value={project.name} readOnly />

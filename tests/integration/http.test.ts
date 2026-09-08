@@ -197,6 +197,43 @@ afterAll(async () => {
 });
 
 describe("protected tracker REST API", () => {
+  it("returns HTTP 409 for stale web issue and Epic plans without overwriting saved data", async () => {
+    const p = await createProjectFixture();
+    const i = await createIssueFixture(p.id);
+    const e = await createEpicFixture(p.id);
+    for (const [kind, entity] of [
+      ["issues", i],
+      ["epics", e],
+    ] as const) {
+      const path = `/api/v1/${kind}/${entity.id}`;
+      const first = await authenticatedRequest(path, {
+        method: "PATCH",
+        body: JSON.stringify({
+          description: "First editor",
+          expectedVersion: 1,
+        }),
+      });
+      expect(first.status).toBe(200);
+      const stale = await authenticatedRequest(path, {
+        method: "PATCH",
+        body: JSON.stringify({
+          description: "Stale editor",
+          expectedVersion: 1,
+        }),
+      });
+      expect(stale.status).toBe(409);
+      expect(await stale.json()).toMatchObject({
+        error: expect.stringContaining("draft is preserved"),
+      });
+      const saved = await authenticatedRequest(path);
+      expect(await saved.json()).toMatchObject({
+        [kind === "issues" ? "issue" : "epic"]: {
+          description: "First editor",
+          version: 2,
+        },
+      });
+    }
+  });
   it("denies anonymous reads and mutations before resolving tracker data", async () => {
     const resourceId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
     const requests: Array<[string, RequestInit | undefined]> = [

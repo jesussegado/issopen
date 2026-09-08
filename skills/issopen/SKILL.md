@@ -60,6 +60,8 @@ Para resolver repositorio, proyecto y referencias usa [contexto](references/cont
 
 ## Entrega
 
+Toda escritura y reanudación sigue [guards, reintentos y seguridad](references/safety.md).
+
 Informa qué está verificado, qué falta y el siguiente paso, con enlaces reales.
 No marques resultados de una simulación como pruebas nativas de Codex, de la web
 productiva o de un piloto. Conserva los cambios del usuario. Las preguntas reales

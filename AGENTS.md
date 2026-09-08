@@ -283,6 +283,15 @@ dejan ambos scopes desmarcados. Un rollback de binario conserva el enum ampliado
 no intentar borrar valores usados. Las credenciales nuevas con permisos Epic no
 deben utilizarse contra un binario anterior al soporte de esas herramientas.
 
+La edición de planes acepta `expectedVersion` en REST/MCP para issues y Epics;
+las issues aceptan además el conjunto completo `questionVersions` (`id/version`).
+Los guards son opcionales durante la transición, pero la web y la skill los usan.
+La escritura SQL comprueba versión; cambios/preguntas/respuestas bloquean la fila
+padre durante la transacción para validar decisiones sin una carrera intermedia.
+Un conflicto devuelve 409 sin modificar datos/actividad. La web conserva el
+borrador y permite comparar antes de adoptar explícitamente una base nueva.
+El replay idempotente confirmado se resuelve antes de volver a evaluar el guard.
+
 El plan `01-05` añade `scripts/dogfood.ts`: un cliente operador idempotente que
 usa exclusivamente REST y MCP para dirigir una mejora de Issopen desde la
 priorización hasta la revisión humana. Recibe la credencial owner y una URL de

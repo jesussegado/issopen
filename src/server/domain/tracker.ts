@@ -512,7 +512,7 @@ export class TrackerService {
     input: UpdateEpicInput,
   ) {
     const context = parseInput(mutationContextSchema, contextInput);
-    const values = parseInput(updateEpicSchema, input);
+    const { expectedVersion, ...values } = parseInput(updateEpicSchema, input);
 
     return this.transaction(async (tx) => {
       const [current] = await tx
@@ -521,8 +521,14 @@ export class TrackerService {
         .where(
           and(eq(epic.workspaceId, context.workspaceId), eq(epic.id, epicId)),
         )
-        .limit(1);
+        .limit(1)
+        .for("update");
       if (!current) throw new DomainError("not_found", "Epic not found");
+      if (expectedVersion !== undefined && current.version !== expectedVersion)
+        throw new DomainError(
+          "conflict",
+          "This Epic changed. Your draft is preserved; read the latest version before merging and retrying.",
+        );
       const changes = changedFields(current, values);
       if (Object.keys(changes).length === 0) return current;
 
@@ -534,10 +540,18 @@ export class TrackerService {
           updatedAt: new Date(),
         })
         .where(
-          and(eq(epic.workspaceId, context.workspaceId), eq(epic.id, epicId)),
+          and(
+            eq(epic.workspaceId, context.workspaceId),
+            eq(epic.id, epicId),
+            eq(epic.version, expectedVersion ?? current.version),
+          ),
         )
         .returning();
-      if (!updated) throw new DomainError("not_found", "Epic not found");
+      if (!updated)
+        throw new DomainError(
+          "conflict",
+          "Epic changed; read it again before retrying",
+        );
 
       await recordActivity(tx, context, {
         projectId: current.projectId,
@@ -923,7 +937,8 @@ export class TrackerService {
             eq(issue.id, issueId),
           ),
         )
-        .limit(1);
+        .limit(1)
+        .for("update");
       if (!currentIssue) throw new DomainError("not_found", "Issue not found");
 
       const options = values.options.map((option) => ({
@@ -985,7 +1000,8 @@ export class TrackerService {
             eq(issue.id, issueId),
           ),
         )
-        .limit(1);
+        .limit(1)
+        .for("update");
       if (!currentIssue) throw new DomainError("not_found", "Issue not found");
 
       const [current] = await tx
@@ -1076,7 +1092,10 @@ export class TrackerService {
     input: UpdateIssueInput,
   ) {
     const context = parseInput(mutationContextSchema, contextInput);
-    const values = parseInput(updateIssueSchema, input);
+    const { expectedVersion, questionVersions, ...values } = parseInput(
+      updateIssueSchema,
+      input,
+    );
 
     if (
       context.actor.type === "agent" &&
@@ -1099,8 +1118,36 @@ export class TrackerService {
             eq(issue.id, issueId),
           ),
         )
-        .limit(1);
+        .limit(1)
+        .for("update");
       if (!current) throw new DomainError("not_found", "Issue not found");
+      if (expectedVersion !== undefined && current.version !== expectedVersion)
+        throw new DomainError(
+          "conflict",
+          "This issue changed. Your draft is preserved; read the latest version before merging and retrying.",
+        );
+      if (questionVersions !== undefined) {
+        const actual = await tx
+          .select({ id: issueQuestion.id, version: issueQuestion.version })
+          .from(issueQuestion)
+          .where(
+            and(
+              eq(issueQuestion.workspaceId, context.workspaceId),
+              eq(issueQuestion.issueId, issueId),
+            ),
+          );
+        const versions = new Map(
+          questionVersions.map((item) => [item.id, item.version]),
+        );
+        if (
+          actual.length !== questionVersions.length ||
+          actual.some((item) => versions.get(item.id) !== item.version)
+        )
+          throw new DomainError(
+            "conflict",
+            "Questions or answers changed. Your draft is preserved; read the current answers before merging and retrying.",
+          );
+      }
 
       if (values.epicId) {
         const [foundEpic] = await tx
@@ -1155,10 +1202,15 @@ export class TrackerService {
           and(
             eq(issue.workspaceId, context.workspaceId),
             eq(issue.id, issueId),
+            eq(issue.version, expectedVersion ?? current.version),
           ),
         )
         .returning();
-      if (!updated) throw new DomainError("not_found", "Issue not found");
+      if (!updated)
+        throw new DomainError(
+          "conflict",
+          "Issue changed; read it again before retrying",
+        );
 
       await recordActivity(tx, context, {
         projectId: current.projectId,

@@ -195,7 +195,17 @@ export function IssueDetailRoute({ issueId }: { issueId: string }) {
     try {
       const response = await apiRequest<{ issue: Issue }>(
         `/api/v1/issues/${issue.id}`,
-        { method: "PATCH", body: JSON.stringify({ status }) },
+        {
+          method: "PATCH",
+          body: JSON.stringify({
+            status,
+            expectedVersion: issue?.version,
+            questionVersions: questions.map(({ id, version }) => ({
+              id,
+              version,
+            })),
+          }),
+        },
       );
       setIssue({ ...response.issue, questionSummary });
       setNotice("Issue updated");

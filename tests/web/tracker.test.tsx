@@ -12,9 +12,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { BoardRoute } from "../../src/web/routes/BoardRoute.js";
 import {
   EpicDetailRoute,
+  EpicFormRoute,
   EpicsRoute,
 } from "../../src/web/routes/EpicRoutes.js";
 import { IssueDetailRoute } from "../../src/web/routes/IssueDetailRoute.js";
+import { IssueFormRoute } from "../../src/web/routes/TrackerForms.js";
 import { issueStatuses } from "../../src/web/types.js";
 
 const project = {
@@ -90,6 +92,85 @@ afterEach(() => {
 });
 
 describe("tracker web routes", () => {
+  it.each(["issue", "epic"] as const)(
+    "preserves a %s draft on 409 and compares before adopting a fresh base",
+    async (kind) => {
+      let reads = 0;
+      const patches: Record<string, unknown>[] = [];
+      const entity = kind === "issue" ? issue : epic;
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+          const path = String(input);
+          if (path === `/api/v1/${kind}s/${entity.id}`) {
+            if (init?.method === "PATCH") {
+              patches.push(JSON.parse(String(init.body)));
+              return json(
+                {
+                  error: "This plan changed; your draft is preserved",
+                },
+                409,
+              );
+            }
+            reads++;
+            return json({
+              [kind]: {
+                ...entity,
+                version: reads === 1 ? 1 : 2,
+                description:
+                  reads === 1 ? entity.description : "Saved by another editor",
+              },
+              questions: [],
+            });
+          }
+          if (path.endsWith("/epics")) return json({ epics: [epic] });
+          if (path === `/api/v1/projects/${project.id}`)
+            return json({ project });
+          throw new Error(`Unexpected request ${path}`);
+        }),
+      );
+      render(
+        kind === "issue" ? (
+          <IssueFormRoute issueId={issue.id} />
+        ) : (
+          <EpicFormRoute epicId={epic.id} />
+        ),
+      );
+      const description = await screen.findByRole("textbox", {
+        name: /^Description/,
+      });
+      const user = userEvent.setup();
+      await user.clear(description);
+      await user.type(description, "My unsaved draft");
+      await user.click(
+        screen.getByRole("button", {
+          name: kind === "issue" ? "Save issue" : "Save Epic",
+        }),
+      );
+      expect(description).toHaveValue("My unsaved draft");
+      expect(patches[0]?.expectedVersion).toBe(1);
+      await user.click(
+        await screen.findByRole("button", { name: "Compare latest version" }),
+      );
+      expect(
+        await screen.findByText("Saved by another editor"),
+      ).toBeInTheDocument();
+      expect(description).toHaveValue("My unsaved draft");
+      expect(patches).toHaveLength(1);
+      await user.click(
+        screen.getByRole("button", {
+          name: "I have merged the changes; keep my draft",
+        }),
+      );
+      await user.click(
+        screen.getByRole("button", {
+          name: kind === "issue" ? "Save issue" : "Save Epic",
+        }),
+      );
+      expect(patches[1]?.expectedVersion).toBe(2);
+      expect(patches[1]?.description).toBe("My unsaved draft");
+    },
+  );
   it("renders server text safely and moves a card only after the authoritative response", async () => {
     const fetchMock = vi.fn(
       async (input: RequestInfo | URL, init?: RequestInit) => {
