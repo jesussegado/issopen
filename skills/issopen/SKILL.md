@@ -28,7 +28,7 @@ previa; si éstos se han perdido, acláralos. No transforma planificación en c�
 «Sigue implementando» sí pide ejecución, pero no selecciona por sí sola un
 proyecto, Epic o resultado: confirma el alcance si sólo había una consulta previa.
 No reclames trabajo ocupado por otro agente; elige otro Ready libre y elegible
-del mismo Epic, o explica el bloqueo. No inicies trabajo con preguntas bloqueantes
+del mismo Epic, o explica el bloqueo. No marques Ready ni inicies trabajo con preguntas bloqueantes
 sin responder ni con dependencias sin verificar.
 
 Un plan completo identifica objetivo, alcance/no alcance, decisiones humanas,
