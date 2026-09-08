@@ -65,6 +65,7 @@ Para resolver repositorio, proyecto y referencias usa [contexto](references/cont
 ## Entrega
 
 Toda escritura y reanudación sigue [guards, reintentos y seguridad](references/safety.md).
+Para publicar hitos o recuperar otra sesión usa [checkpoints](references/checkpoints.md).
 
 Informa qué está verificado, qué falta y el siguiente paso, con enlaces reales.
 No marques resultados de una simulación como pruebas nativas de Codex, de la web
