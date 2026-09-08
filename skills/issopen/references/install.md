@@ -12,3 +12,22 @@ deliberados. Detectar novedades sólo avisa, no cambia la versión en una tarea.
 Comprueba frontmatter y enlaces con el validador de skill-creator, y descubrimiento
 en una sesión nueva de Codex CLI/editor. Un validador estructural no demuestra que
 la conexión MCP funcione ni que los escenarios de trabajo se hayan completado.
+# Instalación repetible
+
+Desde el repositorio de Issopen, usa una revisión publicada concreta:
+
+```bash
+node scripts/install-skill.mjs <commit>
+```
+
+El instalador lee el árbol Git de esa revisión, no el checkout mutable. Copia a
+`~/.agents/skills/issopen` y registra revisión y hashes en `.issopen-install.json`.
+Repetir la misma revisión no cambia nada. Para actualizar o volver a una revisión
+anterior, ejecuta el mismo comando con su commit; las copias anteriores quedan
+en `~/.agents/issopen-skill-backups`, fuera del descubrimiento de skills.
+`node scripts/install-skill.mjs --uninstall` mueve sólo la instalación limpia a
+esa carpeta recuperable. No borra configuraciones MCP ni otras skills.
+
+Ante modificaciones locales, instalación no gestionada o duplicado legacy,
+se detiene sin reemplazarlos: conserva/compara esos cambios antes de continuar.
+Un segundo argumento permite probar en un directorio de skills aislado.
