@@ -18,6 +18,7 @@ con otras credenciales. Si falta conexión, explica cómo prepararla con
 - **Planificación** («desglosa esta mejora», «completa estos planes»): lee lo que
   existe y crea/completa sólo los tickets y preguntas del alcance pedido. El plan
   técnico completo vive en Issopen. Planear no inicia ejecución ni despliegue.
+  Sigue el flujo de [planificación](references/planning.md).
 - **Ejecución** («implementa este ticket», «sigue implementando»): valida el
   proyecto/Epic/repositorio, respuestas y dependencias; reclama el Ready elegido,
   implementa y verifica antes de entregar Ready for Review con evidencia.
@@ -29,7 +30,7 @@ previa; si éstos se han perdido, acláralos. No transforma planificación en c�
 proyecto, Epic o resultado: confirma el alcance si sólo había una consulta previa.
 No reclames trabajo ocupado por otro agente; elige otro Ready libre y elegible
 del mismo Epic, o explica el bloqueo. No marques Ready ni inicies trabajo con preguntas bloqueantes
-sin responder ni con dependencias sin verificar.
+sin responder ni con dependencias sin verificar o condiciones de desbloqueo pendientes.
 
 Un plan completo identifica objetivo, alcance/no alcance, decisiones humanas,
 diseño técnico, dependencias enlazadas, criterios de aceptación y pruebas. No basta
