@@ -5,6 +5,8 @@ description: Consultar Epics y tickets de Issopen, planear mejoras con preguntas
 
 # Issopen
 
+Al comenzar, comprueba novedades sin cambiar la instalación según [versiones](references/release.md).
+
 Usa el MCP de Issopen configurado en este host. Los nombres de herramientas son
 conceptuales: resuelve el prefijo real del conector y comprueba su catálogo.
 No inventes herramientas ausentes ni sustituyas MCP por sesión owner, SQL o HTTP
