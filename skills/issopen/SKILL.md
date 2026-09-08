@@ -23,6 +23,7 @@ con otras credenciales. Si falta conexión, explica cómo prepararla con
   proyecto/Epic/repositorio, respuestas y dependencias; reclama el Ready elegido,
   implementa y verifica antes de entregar Ready for Review con evidencia.
   Done requiere tanto permiso de cierre como autorización humana explícita.
+  Sigue [ejecución y entrega](references/execution.md), incluida la liberación del claim.
 
 Una petición que sólo dice «continúa» conserva el modo y alcance de la tarea
 previa; si éstos se han perdido, acláralos. No transforma planificación en código.
