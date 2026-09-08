@@ -15,9 +15,16 @@ La referencia aprobada es
 [`issopen-aperture-07-seis-piezas-verde-bosque.png`](../../src/web/public/assets/branding/icon-concepts/aperture-variants/issopen-aperture-07-seis-piezas-verde-bosque.png).
 El asset de producto es
 [`issopen-icon-v1.png`](../../src/web/public/assets/branding/issopen-icon-v1.png):
-una copia idéntica del PNG aprobado, 1254 × 1254, con alpha. Cabeceras, favicon
-y touch icon usan el mismo archivo; el navegador lo representa al tamaño
+una copia idéntica del PNG aprobado, 1254 × 1254, con alpha. Cabeceras
+y touch icon usan ese archivo; el navegador lo representa al tamaño
 necesario. No se redibuja ni se cambia el número de piezas al integrarlo.
+
+El 2026-09-08 el propietario solicita fondo blanco para mejorar la lectura del
+favicon sobre pestañas oscuras. Su variante independiente es
+[`issopen-favicon-v2-white.png`](../../src/web/public/assets/branding/issopen-favicon-v2-white.png),
+1254 × 1254, completamente opaca. Conserva seis piezas y check sobre blanco;
+el logo de la web y la paleta no cambian. Se editó mediante `image_gen` usando
+el icono aprobado como referencia; prompt y validación en quick `260908-kiy`.
 
 El componente `Brand` muestra símbolo y texto «Issopen» en ambas cabeceras.
 La imagen es decorativa dentro del enlace llamado «Issopen home». En la
@@ -91,7 +98,7 @@ de color no sustituye una auditoría completa de accesibilidad del producto.
 
 ## Entrega y evolución
 
-El favicon declarado es PNG. `/favicon.ico` sirve el mismo PNG con su MIME real
+El favicon declarado es el PNG con fondo blanco. `/favicon.ico` sirve ese PNG con su MIME real
 para clientes que consultan la ruta convencional. El nombre versionado del
 asset permite actualizar la identidad sin reutilizar una URL antigua.
 

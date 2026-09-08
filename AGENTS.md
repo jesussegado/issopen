@@ -315,8 +315,11 @@ documentada y revisada.
 La [decisión de diseño 0001](docs/design/0001-brand-identity.md), aprobada por el
 propietario el 2026-09-07, fija la apertura de seis piezas (variante 07), verde
 bosque `#027067` y menta `#6FD9B5`. La fuente de tokens es `src/web/styles.css`;
-las cabeceras reutilizan `Brand` y el asset `issopen-icon-v1.png` también sirve
-de favicon. Conservar colores semánticos de error/advertencia, contraste y
+las cabeceras reutilizan `Brand` con `issopen-icon-v1.png`; el touch icon usa
+ese mismo asset transparente.
+El favicon usa `issopen-favicon-v2-white.png`, con fondo blanco opaco aprobado
+el 2026-09-08 para su lectura en pestañas oscuras. Conservar colores semánticos
+de error/advertencia, contraste y
 etiquetas textuales. Esta decisión sustituye el azul y wordmark sin logo del
 contrato UI inicial; no reinventar la marca en pantallas nuevas.
 
