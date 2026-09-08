@@ -1,0 +1,74 @@
+{
+  "checkedAt": "2026-09-08T13:01:45.293Z",
+  "url": "https://issopen.serviciosegado.com",
+  "assets": [
+    {
+      "url": "/assets/branding/issopen-favicon-v2-white.png",
+      "status": 200,
+      "contentType": "image/png",
+      "sha256": "98e9965e4f229f6ee8188988ed58ca140ad647fe23b54422e19befb3ee148a0e",
+      "bytes": 925588
+    },
+    {
+      "url": "/favicon.ico",
+      "status": 200,
+      "contentType": "image/png",
+      "sha256": "98e9965e4f229f6ee8188988ed58ca140ad647fe23b54422e19befb3ee148a0e",
+      "bytes": 925588
+    },
+    {
+      "url": "/assets/branding/issopen-icon-v1.png",
+      "status": 200,
+      "contentType": "image/png",
+      "sha256": "dde3a1b048f27664a1fe195aef7bc56290f98eacfe296b4bf2a6f5c72cf5492c",
+      "bytes": 737125
+    }
+  ],
+  "browserAttempts": [
+    {
+      "attempt": 1,
+      "result": "passed",
+      "failures": []
+    }
+  ],
+  "health": {
+    "status": 200,
+    "body": {
+      "status": "ok"
+    }
+  },
+  "browser": {
+    "faviconHref": "/assets/branding/issopen-favicon-v2-white.png",
+    "decodedDimensions": [
+      1254,
+      1254
+    ],
+    "corners": [
+      [
+        254,
+        254,
+        254,
+        255
+      ],
+      [
+        255,
+        254,
+        255,
+        255
+      ],
+      [
+        254,
+        254,
+        254,
+        255
+      ],
+      [
+        254,
+        254,
+        254,
+        255
+      ]
+    ],
+    "bodyBackground": "rgb(243, 250, 247)"
+  }
+}

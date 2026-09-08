@@ -54,9 +54,10 @@ haya conflicto, usa este orden:
   `a1956385752a38bc8261ee9b4d6d5b27bfa7d299` como `Synced/Healthy`; se
   conservaron el pod PostgreSQL y su PVC, sin nuevas migraciones. La evidencia
   de publicación vive en quick `260908-ja5`.
-- La publicación posterior de etiquetas compactas, fuente `9bc53b9` y GitOps
-  `bb2da342`, incluye la identidad sin cambios y es la versión activa observada
-  al cerrar esa verificación, también `Synced/Healthy` y sin reinicios.
+- La corrección posterior del favicon blanco se publicó desde `5e2debd`,
+  GitOps `4527b882`, el 2026-09-08: `Synced/Healthy`, sin reinicios y con
+  PostgreSQL/PVC conservados. Incluye las etiquetas sin corchetes de
+  `aa52179`; evidencia y rollback en quick `260908-kiy`.
 - El 2026-09-02 Argo CD reconcilió la release de Epics como `Synced/Healthy`;
   la migración conservó 18 issues y 133 eventos, y se verificaron readiness,
   HSTS, discovery OAuth/MCP y el bundle público sin mutar datos del owner.

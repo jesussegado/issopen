@@ -1,0 +1,14 @@
+{
+  "sync": "Synced",
+  "health": "Healthy",
+  "revision": "4527b882f47a6697f44b406a4b6e75a42d2d3e84",
+  "image": "registry.serviciosegado.com/issopen:favicon-white-5e2debd@sha256:e94cd0b09ee2d961584ceb7b30151c3c5f621f4dd8486815498fcf1af2e66902",
+  "available": 1,
+  "webPod": "issopen-974549dc4-j8cn8",
+  "imageID": "registry.serviciosegado.com/issopen@sha256:e94cd0b09ee2d961584ceb7b30151c3c5f621f4dd8486815498fcf1af2e66902",
+  "restarts": 0,
+  "postgresUid": "ab78f6be-f08f-4d8b-a7ea-bc100a5ddfdc",
+  "postgresRestarts": 0,
+  "pvcUid": "cf93e0a7-b978-46c2-9c03-c77f902742b9",
+  "pvcPhase": "Bound"
+}

@@ -114,3 +114,8 @@ La identidad se publicó en producción el 2026-09-08 tras la autorización
 «despliega», mediante la fuente `2b0bb5a` y el commit GitOps `a1956385`.
 La evidencia y rollback se registran en
 [quick 260908-ja5](../../.planning/quick/260908-ja5-desplegar-la-identidad-bosque-y-menta-de/260908-ja5-SUMMARY.md).
+
+La corrección del favicon con fondo blanco se publicó el mismo día mediante
+fuente `5e2debd` y GitOps `4527b882`, conservando el logo transparente y la
+paleta. La verificación de HTTPS, opacidad y runtime está en
+[quick 260908-kiy](../../.planning/quick/260908-kiy-a-adir-fondo-blanco-al-favicon-de-issope/260908-kiy-SUMMARY.md).

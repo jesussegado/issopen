@@ -1,0 +1,8 @@
+{
+  "source": "5e2debde07edee5f3fc22aa5babd10fd99b3e3a0",
+  "image": "registry.serviciosegado.com/issopen:favicon-white-5e2debd",
+  "readiness": 200,
+  "faviconSha256": "98e9965e4f229f6ee8188988ed58ca140ad647fe23b54422e19befb3ee148a0e",
+  "faviconMime": "image/png",
+  "touchIconUnchanged": true
+}

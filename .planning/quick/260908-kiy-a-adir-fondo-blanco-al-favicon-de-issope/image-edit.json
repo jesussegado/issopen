@@ -1,0 +1,6 @@
+{
+  "tool": "image_gen built-in",
+  "input": "src/web/public/assets/branding/issopen-icon-v1.png",
+  "output": "src/web/public/assets/branding/issopen-favicon-v2-white.png",
+  "prompt": "Use case: precise-object-edit. Asset type: browser favicon for Issopen. The attached local PNG is the exact approved production logo and is the EDIT TARGET. Perform one strictly minimal edit: put a fully opaque, uniform pure white (#FFFFFF) square background behind the existing transparent PNG, including the gaps and the central aperture around the check. Preserve the existing logo with utmost fidelity: exactly six separate curved aperture blades (three dark forest/teal green and three mint, alternating), exact existing check shape, exact placement, proportions, rotation, silhouette, colors and existing edge detail. This is a white-background compositing operation, not a logo redesign. Keep the original square canvas and existing margins; do not make the symbol smaller. White must extend to all four corners and throughout the entire background, with no alpha transparency. No new outlines, shadows, gradients, borders, text, rounded frame, badges, or additional elements. The only intended difference from the input is transparent pixels becoming white."
+}

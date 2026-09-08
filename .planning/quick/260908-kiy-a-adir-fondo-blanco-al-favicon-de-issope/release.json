@@ -1,0 +1,15 @@
+{
+  "sourceRevision": "5e2debde07edee5f3fc22aa5babd10fd99b3e3a0",
+  "gitopsRevision": "4527b882f47a6697f44b406a4b6e75a42d2d3e84",
+  "canonicalControlPlaneCommit": "7cdc9facb0d3255013ebec50931a9e454c8b10c8",
+  "image": "registry.serviciosegado.com/issopen:favicon-white-5e2debd@sha256:e94cd0b09ee2d961584ceb7b30151c3c5f621f4dd8486815498fcf1af2e66902",
+  "amd64Manifest": "sha256:0264c3b3f7ef38485b9c3d5d297d1271e8e7ed9c7441fcc8428053af1d47c63b",
+  "homelabTestsPassed": 190,
+  "workspaceCheckouts": 31,
+  "kustomizeDiff": "Only Deployment/issopen webapp image changes",
+  "optionalToolsUnavailable": [
+    "ansible-playbook",
+    "helm"
+  ],
+  "rollbackImage": "registry.serviciosegado.com/issopen:plain-labels-aa52179@sha256:cbde4f9c6a2efd8c1bc6235cecb6d11b43641493300fa3391d95f051ec835015"
+}

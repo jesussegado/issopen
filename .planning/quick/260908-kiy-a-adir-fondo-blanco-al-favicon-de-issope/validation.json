@@ -1,0 +1,27 @@
+{
+  "sourceRevision": "5e2debde07edee5f3fc22aa5babd10fd99b3e3a0",
+  "lint": "passed",
+  "typecheck": "passed",
+  "build": "passed",
+  "brandingE2E": {
+    "desktop": "passed",
+    "mobile": "passed"
+  },
+  "secretScan": {
+    "passed": true,
+    "files": 120
+  },
+  "favicon": {
+    "width": 1254,
+    "height": 1254,
+    "bytes": 925588,
+    "alphaRange": [
+      255,
+      255
+    ],
+    "cornerRgbMinimum": 253
+  },
+  "originalLogoUnchanged": true,
+  "touchIconUnchanged": true,
+  "previousImage": "registry.serviciosegado.com/issopen:plain-labels-aa52179@sha256:cbde4f9c6a2efd8c1bc6235cecb6d11b43641493300fa3391d95f051ec835015"
+}

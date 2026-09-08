@@ -292,18 +292,22 @@ master `debian13-torre-nya`. The public path is Cloudflare DNS → Caddy → the
 existing restricted SSH tunnel → Traefik → Service → Issopen. Kubernetes does
 not terminate public TLS.
 
-The deployed application image is immutable:
+The application image verified on 2026-09-08 is immutable. The current desired
+revision is recorded in `../../homelab/apps/issopen/app.yaml` and must be
+compared with Argo CD when checking a later release:
 
 ```text
-registry.serviciosegado.com/issopen:ticket-labels-9bc53b9@sha256:333be885fbc215bf4db78a0be6c989c2b6124c3f06cf32cd097677c085623da4
+registry.serviciosegado.com/issopen:favicon-white-5e2debd@sha256:e94cd0b09ee2d961584ceb7b30151c3c5f621f4dd8486815498fcf1af2e66902
 ```
 
 The forest and mint identity was deployed on 2026-09-08 from source
 `2b0bb5a78b0e6847a3e1a694225db4371b86c671`, through GitOps commit
 `a1956385752a38bc8261ee9b4d6d5b27bfa7d299`. See the
 [release verification](.planning/quick/260908-ja5-desplegar-la-identidad-bosque-y-menta-de/260908-ja5-SUMMARY.md).
-The subsequent ticket-label release (`9bc53b9`, GitOps `bb2da342`) preserves
-that identity and is the active image shown above.
+The white-background favicon correction (`5e2debd`, GitOps `4527b882`) is the
+image shown above. It includes the plain ticket/Epic labels from `aa52179` and
+preserves the transparent header logo and touch icon. See its
+[production verification](.planning/quick/260908-kiy-a-adir-fondo-blanco-al-favicon-de-issope/260908-kiy-SUMMARY.md).
 
 Three Secrets exist outside Git in namespace `issopen`:
 
