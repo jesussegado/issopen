@@ -1,9 +1,17 @@
 import { access, readdir, readFile } from "node:fs/promises";
 import { extname, join, relative } from "node:path";
 
-const roots = ["src", "scripts", "tests", ".planning", "deploy"];
+const roots = ["src", "scripts", "tests", "skills", ".planning", "deploy"];
 const topLevelFiles = ["README.md", "AGENTS.md", "app.yaml", "compose.yml"];
-const extensions = new Set([".ts", ".tsx", ".md", ".yaml", ".yml", ".json"]);
+const extensions = new Set([
+  ".ts",
+  ".tsx",
+  ".mjs",
+  ".md",
+  ".yaml",
+  ".yml",
+  ".json",
+]);
 const skippedDirectories = new Set([
   "node_modules",
   "dist",

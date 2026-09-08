@@ -1,0 +1,6 @@
+interface:
+  display_name: "Issopen"
+  short_description: "Planes, preguntas y trabajo verificable en Issopen"
+  default_prompt: "Usa $issopen para revisar el Epic activo y preparar el siguiente trabajo autorizado."
+policy:
+  allow_implicit_invocation: true
