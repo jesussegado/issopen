@@ -78,6 +78,8 @@ describe("agent management", () => {
           expect(submitted.scopes).toContain("questions:write");
           expect(submitted.scopes).toContain("comments:write");
           expect(submitted.scopes).not.toContain("issues:close");
+          expect(submitted.scopes).not.toContain("epics:create");
+          expect(submitted.scopes).not.toContain("epics:write");
           return json({ agent, token });
         }
         if (init?.method === "PATCH" && String(_input).endsWith("/access")) {

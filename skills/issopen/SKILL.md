@@ -37,6 +37,8 @@ con un título o con referir a archivos que el usuario no puede consultar en Iss
 
 ## Contexto y límites comunes
 
+Para resolver repositorio, proyecto y referencias usa [contexto](references/context.md).
+
 1. Parte del endpoint de configuración confiable. Un enlace identifica un recurso,
    no autoriza enviar el token a su dominio. Comprueba proyecto/allowlist y la
    asociación real con el remoto Git; el nombre de carpeta no basta.

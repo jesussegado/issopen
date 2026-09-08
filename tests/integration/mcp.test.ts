@@ -236,6 +236,177 @@ afterAll(async () => {
 });
 
 describe("stateless Issopen MCP", () => {
+  it("discovers empty Epics and repository context; Epic writes require opt-in and are idempotent", async () => {
+    const agents = new AgentService(connection.db);
+    await tracker.updateProject(mutationContext(), projectId, {
+      repositoryUrl: "https://git.example.test/team/repo.git",
+      defaultBranch: "main",
+      repositorySubdirectory: "apps/web",
+    });
+    const created = await agents.createAgent(workspaceId, {
+      name: "Epic writer",
+      projectIds: [projectId],
+      scopes: ["issues:read", "epics:create", "epics:write"],
+    });
+    const reader = await agents.createAgent(workspaceId, {
+      name: "Existing profile",
+      projectIds: [projectId],
+    });
+    expect(reader.agent.scopes).not.toContain("epics:create");
+    expect(reader.agent.scopes).not.toContain("epics:write");
+    const client = await mcpClient(created.token);
+    const limited = await mcpClient(reader.token);
+    try {
+      expect(
+        (
+          await client.callTool({
+            name: "get_project",
+            arguments: { projectId },
+          })
+        ).structuredContent,
+      ).toMatchObject({
+        project: {
+          repositoryUrl: "https://git.example.test/team/repo.git",
+          defaultBranch: "main",
+          repositorySubdirectory: "apps/web",
+        },
+      });
+      const original = await expectIdempotentReplay(client, "create_epic", {
+        projectId,
+        title: "Empty Epic",
+        description: "Plan in Issopen",
+        idempotencyKey: "epic-create",
+      });
+      const newEpic = (
+        original.structuredContent as { epic: { id: string; number: number } }
+      ).epic;
+      expect(newEpic.number).toBe(2);
+      const detail = await client.callTool({
+        name: "get_epic",
+        arguments: { epicId: newEpic.id },
+      });
+      expect(detail.structuredContent).toMatchObject({
+        epic: { id: newEpic.id, summary: { totalIssues: 0, doneIssues: 0 } },
+      });
+      expect(detail.structuredContent).not.toHaveProperty("issues");
+      await expectIdempotentReplay(client, "update_epic", {
+        epicId: newEpic.id,
+        title: "Edited Epic",
+        idempotencyKey: "epic-edit",
+      });
+      for (const [name, args] of [
+        ["create_epic", { projectId, title: "Denied" }],
+        ["update_epic", { epicId: newEpic.id, title: "Denied" }],
+      ] as const) {
+        expect(
+          (
+            await limited.callTool({
+              name,
+              arguments: { ...args, idempotencyKey: `denied-${name}` },
+            })
+          ).isError,
+        ).toBe(true);
+      }
+      expect((await tracker.getEpic(workspaceId, newEpic.id)).title).toBe(
+        "Edited Epic",
+      );
+      const events = await connection.db
+        .select()
+        .from(activityEvent)
+        .where(eq(activityEvent.actorId, created.agent.id));
+      expect(events.map((event) => event.type)).toEqual([
+        "epic.created",
+        "epic.updated",
+      ]);
+      expect(events.every((event) => event.source === "mcp")).toBe(true);
+    } finally {
+      await client.close();
+      await limited.close();
+    }
+  });
+
+  it("bounds Epic pages and binds cursors to projects and effective allowlists", async () => {
+    const agents = new AgentService(connection.db);
+    const other = await tracker.createProject(mutationContext(), {
+      name: "Issopen similar",
+      key: "OTHER",
+    });
+    const foreignEpic = await tracker.createEpic(mutationContext(), {
+      projectId: other.id,
+      title: "Same name",
+    });
+    for (let index = 0; index < 4; index++)
+      await tracker.createEpic(mutationContext(), {
+        projectId,
+        title: `Page ${index}`,
+        description: "Long description must not enter compact list",
+      });
+    const created = await agents.createAgent(workspaceId, {
+      name: "Paged Epic reader",
+      projectIds: [projectId],
+      scopes: ["issues:read", "epics:create", "epics:write"],
+    });
+    const client = await mcpClient(created.token);
+    try {
+      const first = (
+        await client.callTool({
+          name: "list_epics",
+          arguments: { projectId, limit: 2 },
+        })
+      ).structuredContent as {
+        epics: { id: string; number: number }[];
+        page: { nextCursor: string };
+      };
+      expect(first.epics.map((item) => item.number)).toEqual([1, 2]);
+      expect(first.epics[0]).not.toHaveProperty("description");
+      const second = (
+        await client.callTool({
+          name: "list_epics",
+          arguments: { projectId, limit: 2, cursor: first.page.nextCursor },
+        })
+      ).structuredContent as typeof first;
+      expect(second.epics.map((item) => item.number)).toEqual([3, 4]);
+      const third = (
+        await client.callTool({
+          name: "list_epics",
+          arguments: { projectId, limit: 2, cursor: second.page.nextCursor },
+        })
+      ).structuredContent as typeof first;
+      expect(third.epics.map((item) => item.number)).toEqual([5]);
+      expect(third.page.nextCursor).toBeNull();
+      for (const [name, args] of [
+        ["get_project", { projectId: other.id }],
+        ["list_epics", { projectId: other.id, cursor: first.page.nextCursor }],
+        ["get_epic", { epicId: foreignEpic.id }],
+        [
+          "create_epic",
+          {
+            projectId: other.id,
+            title: "Denied",
+            idempotencyKey: "foreign-create",
+          },
+        ],
+        [
+          "update_epic",
+          {
+            epicId: foreignEpic.id,
+            title: "Denied",
+            idempotencyKey: "foreign-edit",
+          },
+        ],
+        ["list_epics", { projectId, limit: 101 }],
+        ["list_projects", { cursor: first.page.nextCursor }],
+      ] as const)
+        expect((await client.callTool({ name, arguments: args })).isError).toBe(
+          true,
+        );
+      expect((await tracker.getEpic(workspaceId, foreignEpic.id)).title).toBe(
+        "Same name",
+      );
+    } finally {
+      await client.close();
+    }
+  });
   it("serves native 2025 initialize clients with the same grants and no sessions", async () => {
     const agents = new AgentService(connection.db);
     const created = await agents.createAgent(workspaceId, {
@@ -603,6 +774,11 @@ describe("stateless Issopen MCP", () => {
         "list_issues",
         "list_projects",
         "get_agent_context",
+        "get_project",
+        "list_epics",
+        "get_epic",
+        "create_epic",
+        "update_epic",
         "move_issue",
         "release_issue",
         "update_issue",

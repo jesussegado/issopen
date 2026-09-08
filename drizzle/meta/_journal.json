@@ -85,6 +85,13 @@
       "when": 1788813851044,
       "tag": "0011_epic_numbers",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1788906137132,
+      "tag": "0012_giant_leo",
+      "breakpoints": true
     }
   ]
 }

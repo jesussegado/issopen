@@ -15,7 +15,9 @@ import { ApiError, apiRequest } from "../lib/api.js";
 import type { Agent, AgentScope, Project } from "../types.js";
 import { agentScopes } from "../types.js";
 
-const defaultScopes = agentScopes.filter((scope) => scope !== "issues:close");
+const defaultScopes = agentScopes.filter(
+  (scope) => scope !== "issues:close" && !scope.startsWith("epics:"),
+);
 const scopeLabels: Record<AgentScope, string> = {
   "issues:read": "Read issues",
   "issues:create": "Create issues",
@@ -26,6 +28,8 @@ const scopeLabels: Record<AgentScope, string> = {
   "code:link": "Link code results",
   "issues:review": "Move work through Ready for Review",
   "issues:close": "Close issues",
+  "epics:create": "Create Epics (explicit opt-in)",
+  "epics:write": "Edit Epics (explicit opt-in)",
 };
 
 function messageFor(error: unknown) {

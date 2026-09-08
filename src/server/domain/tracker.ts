@@ -432,6 +432,67 @@ export class TrackerService {
     return found;
   }
 
+  async listEpicPage(
+    workspaceId: string,
+    projectId: string,
+    options: { limit: number; after?: { number: number; id: string } },
+  ) {
+    const rows = await this.db
+      .select({
+        id: epic.id,
+        projectId: epic.projectId,
+        number: epic.number,
+        title: epic.title,
+        version: epic.version,
+        createdAt: epic.createdAt,
+        updatedAt: epic.updatedAt,
+      })
+      .from(epic)
+      .where(
+        and(
+          eq(epic.workspaceId, workspaceId),
+          eq(epic.projectId, projectId),
+          options.after
+            ? or(
+                gt(epic.number, options.after.number),
+                and(
+                  eq(epic.number, options.after.number),
+                  gt(epic.id, options.after.id),
+                ),
+              )
+            : undefined,
+        ),
+      )
+      .orderBy(asc(epic.number), asc(epic.id))
+      .limit(options.limit + 1);
+    return {
+      items: rows.slice(0, options.limit),
+      hasMore: rows.length > options.limit,
+    };
+  }
+
+  async getEpicSummary(workspaceId: string, epicId: string) {
+    const found = await this.getEpic(workspaceId, epicId);
+    const counts = await this.db
+      .select({ status: issue.status, count: sql<number>`count(*)::int` })
+      .from(issue)
+      .where(
+        and(
+          eq(issue.workspaceId, workspaceId),
+          eq(issue.projectId, found.projectId),
+          eq(issue.epicId, epicId),
+        ),
+      )
+      .groupBy(issue.status);
+    const summary = emptyEpicSummary();
+    for (const row of counts) {
+      summary.statusCounts[row.status] = row.count;
+      summary.totalIssues += row.count;
+      if (row.status === "done") summary.doneIssues += row.count;
+    }
+    return { ...found, summary };
+  }
+
   async getEpicDetail(workspaceId: string, epicId: string) {
     const foundEpic = await this.getEpic(workspaceId, epicId);
     const [issues, projectEpics] = await Promise.all([

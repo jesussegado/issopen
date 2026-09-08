@@ -270,9 +270,18 @@ MCP puedan cruzar esas fronteras. `TrackerService` es la única vía para crear 
 editar Epics y asociar tickets; los recuentos por estado y el progreso no se
 persisten, se derivan de los issues reales. La web gestiona los Epics en
 `routes/EpicRoutes.tsx` y conserva el filtro del tablero en `?epic=`. MCP no
-añade privilegios nuevos: `get_issue` devuelve el contexto, `list_issues`
+usa permisos explícitos: `get_issue` devuelve el contexto, `list_issues`
 acepta `epicId`, y `create_issue`/`update_issue` validan la asociación usando
 los scopes y la allowlist de proyecto existentes.
+
+`get_project`, `list_epics` y `get_epic` usan `issues:read`; el listado MCP de
+Epics es compacto y paginado, y su detalle agrega progreso sin cargar los hijos.
+`create_epic`/`update_epic` requieren respectivamente `epics:create`/`epics:write`,
+con idempotencia y atribución. La migración aditiva `0012_giant_leo` añade sólo
+valores al enum: no concede permisos ni cambia tokens. UI y perfil por defecto
+dejan ambos scopes desmarcados. Un rollback de binario conserva el enum ampliado;
+no intentar borrar valores usados. Las credenciales nuevas con permisos Epic no
+deben utilizarse contra un binario anterior al soporte de esas herramientas.
 
 El plan `01-05` añade `scripts/dogfood.ts`: un cliente operador idempotente que
 usa exclusivamente REST y MCP para dirigir una mejora de Issopen desde la

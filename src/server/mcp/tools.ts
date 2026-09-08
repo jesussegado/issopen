@@ -5,11 +5,13 @@ import { issuePriorityValues, issueStatusValues } from "../db/schema.js";
 import {
   type AgentPrincipal,
   AgentService,
+  createEpicSchema,
   DomainError,
   idempotencyKeySchema,
   McpIdempotencyService,
   type MutationContext,
   TrackerService,
+  updateEpicSchema,
 } from "../domain/index.js";
 import {
   decodeMcpCursor,
@@ -41,6 +43,10 @@ const activityCursorKeySchema = z
     createdAt: z.iso.datetime().transform((value) => new Date(value)),
     id: z.string().min(1),
   })
+  .strict();
+
+const epicCursorKeySchema = z
+  .object({ number: z.number().int().positive(), id: z.uuid() })
   .strict();
 
 function result(value: Record<string, unknown>) {
@@ -98,6 +104,189 @@ export function createIssopenMcpServer(
     agents.requireProject(principal, found.projectId);
     return found;
   }
+
+  async function allowedEpic(epicId: string) {
+    const found = await tracker.getEpic(principal.workspaceId, epicId);
+    agents.requireProject(principal, found.projectId);
+    return found;
+  }
+
+  server.registerTool(
+    "get_project",
+    {
+      description:
+        "Read an allowed project's repository URL, default branch and subdirectory. Missing or ambiguous associations need confirmation before execution.",
+      inputSchema: z.object({ projectId: z.uuid() }).strict(),
+      annotations: { readOnlyHint: true },
+    },
+    async ({ projectId }) => {
+      agents.requireScope(principal, "issues:read");
+      agents.requireProject(principal, projectId);
+      const found = await tracker.getProject(principal.workspaceId, projectId);
+      const {
+        id,
+        key,
+        name,
+        description,
+        repositoryUrl,
+        defaultBranch,
+        repositorySubdirectory,
+        version,
+        createdAt,
+        updatedAt,
+      } = found;
+      return result({
+        schemaVersion: 1,
+        project: {
+          id,
+          key,
+          name,
+          description,
+          repositoryUrl,
+          defaultBranch,
+          repositorySubdirectory,
+          version,
+          createdAt,
+          updatedAt,
+        },
+      });
+    },
+  );
+
+  server.registerTool(
+    "list_epics",
+    {
+      description:
+        "List a bounded page of Epic summaries, including empty Epics, inside one allowed project.",
+      inputSchema: z
+        .object({
+          projectId: z.uuid(),
+          limit: mcpPageLimitSchema,
+          cursor: mcpCursorSchema,
+        })
+        .strict(),
+      annotations: { readOnlyHint: true },
+    },
+    async ({ projectId, limit, cursor }) => {
+      agents.requireScope(principal, "issues:read");
+      agents.requireProject(principal, projectId);
+      await tracker.getProject(principal.workspaceId, projectId);
+      const query = paginationQueryFingerprint({
+        schemaVersion: 1,
+        tool: "list_epics",
+        projectId,
+        allowedProjectIds,
+      });
+      const after = decodeMcpCursor(
+        cursor,
+        "epics",
+        query,
+        epicCursorKeySchema,
+      );
+      const page = await tracker.listEpicPage(
+        principal.workspaceId,
+        projectId,
+        { limit, ...(after ? { after } : {}) },
+      );
+      const last = page.items.at(-1);
+      const nextCursor =
+        page.hasMore && last
+          ? encodeMcpCursor("epics", query, {
+              number: last.number,
+              id: last.id,
+            })
+          : null;
+      return result({
+        schemaVersion: 1,
+        epics: page.items,
+        page: mcpPage(page.items, limit, nextCursor),
+      });
+    },
+  );
+
+  server.registerTool(
+    "get_epic",
+    {
+      description:
+        "Read one allowed Epic and aggregate progress; page its tickets separately with list_issues(epicId).",
+      inputSchema: z.object({ epicId: z.uuid() }).strict(),
+      annotations: { readOnlyHint: true },
+    },
+    async ({ epicId }) => {
+      agents.requireScope(principal, "issues:read");
+      await allowedEpic(epicId);
+      return result({
+        schemaVersion: 1,
+        epic: await tracker.getEpicSummary(principal.workspaceId, epicId),
+      });
+    },
+  );
+
+  server.registerTool(
+    "create_epic",
+    {
+      description:
+        "Create an Epic in one allowed project; requires explicit epics:create permission and an idempotency key.",
+      inputSchema: z
+        .object({
+          ...createEpicSchema.shape,
+          idempotencyKey: idempotencyKeySchema,
+        })
+        .strict(),
+    },
+    async ({ idempotencyKey, ...input }) => {
+      agents.requireScope(principal, "epics:create");
+      agents.requireProject(principal, input.projectId);
+      return result(
+        await idempotency.execute(
+          principal,
+          "create_epic",
+          idempotencyKey,
+          input,
+          async (transactionalTracker) => ({
+            epic: await transactionalTracker.createEpic(
+              mutationContext(principal),
+              input,
+            ),
+          }),
+        ),
+      );
+    },
+  );
+
+  server.registerTool(
+    "update_epic",
+    {
+      description:
+        "Edit only an allowed Epic's title or description; requires explicit epics:write permission and an idempotency key.",
+      inputSchema: z
+        .object({
+          ...updateEpicSchema.shape,
+          epicId: z.uuid(),
+          idempotencyKey: idempotencyKeySchema,
+        })
+        .strict(),
+    },
+    async ({ epicId, idempotencyKey, ...input }) => {
+      agents.requireScope(principal, "epics:write");
+      await allowedEpic(epicId);
+      return result(
+        await idempotency.execute(
+          principal,
+          "update_epic",
+          idempotencyKey,
+          { epicId, ...input },
+          async (transactionalTracker) => ({
+            epic: await transactionalTracker.updateEpic(
+              mutationContext(principal),
+              epicId,
+              input,
+            ),
+          }),
+        ),
+      );
+    },
+  );
 
   server.registerTool(
     "list_projects",

@@ -373,6 +373,8 @@ export const agentScopeValues = [
   "code:link",
   "issues:review",
   "issues:close",
+  "epics:create",
+  "epics:write",
 ] as const;
 
 export const issueStatus = pgEnum("issue_status", issueStatusValues);

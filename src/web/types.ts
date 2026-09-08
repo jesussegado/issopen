@@ -65,6 +65,8 @@ export const agentScopes = [
   "code:link",
   "issues:review",
   "issues:close",
+  "epics:create",
+  "epics:write",
 ] as const;
 
 export type AgentScope = (typeof agentScopes)[number];

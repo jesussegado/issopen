@@ -5,12 +5,12 @@ import { DomainError } from "../domain/index.js";
 export const mcpPageLimitSchema = z.number().int().min(1).max(100).default(50);
 export const mcpCursorSchema = z.string().trim().min(1).max(2_048).optional();
 
-type CursorKind = "projects" | "issues" | "activity";
+type CursorKind = "projects" | "issues" | "activity" | "epics";
 
 const cursorEnvelopeSchema = z
   .object({
     version: z.literal(1),
-    kind: z.enum(["projects", "issues", "activity"]),
+    kind: z.enum(["projects", "issues", "activity", "epics"]),
     query: z.string().length(43),
     key: z.unknown(),
   })
