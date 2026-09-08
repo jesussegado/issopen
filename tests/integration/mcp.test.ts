@@ -236,6 +236,105 @@ afterAll(async () => {
 });
 
 describe("stateless Issopen MCP", () => {
+  it("serves native 2025 initialize clients with the same grants and no sessions", async () => {
+    const agents = new AgentService(connection.db);
+    const created = await agents.createAgent(workspaceId, {
+      name: "Native compatibility",
+      projectIds: [projectId],
+      scopes: ["issues:read"],
+    });
+    // The SDK default performs initialize using the same 2025 era as native Codex.
+    const client = new Client({ name: "native-era-test", version: "1.0.0" });
+    await client.connect(
+      new StreamableHTTPClientTransport(new URL(resource), {
+        fetch: appFetch,
+        authProvider: { token: async () => created.token },
+      }),
+    );
+    try {
+      expect(
+        (await client.callTool({ name: "get_agent_context", arguments: {} }))
+          .structuredContent,
+      ).toMatchObject({ scopes: ["issues:read"], projectIds: [projectId] });
+      expect(
+        (
+          await client.callTool({
+            name: "create_issue",
+            arguments: {
+              projectId,
+              title: "Forbidden",
+              idempotencyKey: "legacy-denied",
+            },
+          })
+        ).isError,
+      ).toBe(true);
+      for (const method of ["GET", "DELETE"])
+        expect(
+          (
+            await app.request("/mcp", {
+              method,
+              headers: { Authorization: `Bearer ${created.token}` },
+            })
+          ).status,
+        ).toBe(405);
+      await agents.revokeAgentAccess(workspaceId, created.agent.id);
+      await expect(
+        client.callTool({ name: "get_agent_context", arguments: {} }),
+      ).rejects.toThrow();
+    } finally {
+      await client.close();
+    }
+  });
+  it("reports only effective own grants and revalidates reduction and revocation", async () => {
+    const agents = new AgentService(connection.db);
+    const created = await agents.createAgent(workspaceId, {
+      name: "Preflight agent",
+      projectIds: [projectId],
+      scopes: ["issues:read", "issues:create"],
+    });
+    const client = await mcpClient(created.token);
+    try {
+      const context = await client.callTool({
+        name: "get_agent_context",
+        arguments: {},
+      });
+      expect(context.isError).not.toBe(true);
+      expect(context.structuredContent).toEqual({
+        schemaVersion: 1,
+        agent: { id: created.agent.id, name: "Preflight agent" },
+        workspaceId,
+        scopes: ["issues:create", "issues:read"],
+        projectIds: [projectId],
+      });
+      expect(JSON.stringify(context)).not.toContain(created.token);
+      await agents.updateAgentAccess(workspaceId, created.agent.id, {
+        projectIds: [projectId],
+        scopes: ["issues:read"],
+      });
+      expect(
+        (await client.callTool({ name: "get_agent_context", arguments: {} }))
+          .structuredContent,
+      ).toMatchObject({ scopes: ["issues:read"] });
+      expect(
+        (
+          await client.callTool({
+            name: "create_issue",
+            arguments: {
+              projectId,
+              title: "Denied",
+              idempotencyKey: "preflight-denied",
+            },
+          })
+        ).isError,
+      ).toBe(true);
+      await agents.revokeAgentAccess(workspaceId, created.agent.id);
+      await expect(
+        client.callTool({ name: "get_agent_context", arguments: {} }),
+      ).rejects.toThrow();
+    } finally {
+      await client.close();
+    }
+  });
   it("publishes OAuth discovery and challenges anonymous POST while rejecting session methods", async () => {
     const challenge = await app.request("/mcp", {
       method: "POST",
@@ -503,6 +602,7 @@ describe("stateless Issopen MCP", () => {
         "list_activity",
         "list_issues",
         "list_projects",
+        "get_agent_context",
         "move_issue",
         "release_issue",
         "update_issue",

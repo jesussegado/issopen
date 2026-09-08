@@ -55,7 +55,9 @@ function challenge(resource: string) {
 function serve(db: Database, principal: AgentPrincipal, request: Request) {
   const handler = createMcpHandler(
     () => createIssopenMcpServer(db, principal),
-    { legacy: "reject", responseMode: "json" },
+    // Codex native clients still use the 2025 initialize exchange. Both eras
+    // remain POST-only, stateless and authenticated on every request.
+    { legacy: "stateless", responseMode: "json" },
   );
   return handler.fetch(request, {
     authInfo: {

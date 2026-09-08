@@ -75,6 +75,24 @@ export function createIssopenMcpServer(
   const tracker = new TrackerService(db);
   const allowedProjectIds = [...principal.projectIds].sort();
 
+  server.registerTool(
+    "get_agent_context",
+    {
+      description:
+        "Return only this authenticated agent's effective identity, scopes and project allowlist. Tool discovery is not permission to execute tools.",
+      inputSchema: z.object({}).strict(),
+      annotations: { readOnlyHint: true },
+    },
+    async () =>
+      result({
+        schemaVersion: 1,
+        agent: principal.agent,
+        workspaceId: principal.workspaceId,
+        scopes: [...principal.scopes].sort(),
+        projectIds: allowedProjectIds,
+      }),
+  );
+
   async function allowedIssue(issueId: string) {
     const found = await tracker.getIssue(principal.workspaceId, issueId);
     agents.requireProject(principal, found.projectId);

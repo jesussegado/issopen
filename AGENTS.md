@@ -230,6 +230,12 @@ sin duplicar actividad; reutilizar la clave con otro payload devuelve conflicto.
 No persistir tokens, cabeceras ni secretos en esos registros. Toda nueva tool
 MCP mutante debe atravesar este servicio.
 
+`get_agent_context` devuelve sólo identidad, scopes y allowlist efectivos del
+agente autenticado; el catálogo de tools no equivale a permisos. El handler sirve
+también clientes nativos Codex de protocolo 2025 mediante el fallback stateless
+del SDK v2: ambas eras conservan POST-only, autenticación por petición y todos
+los controles de dominio. No habilitar sesiones ni el endpoint SSE antiguo.
+
 Los listados MCP se versionan con `schemaVersion: 1` y usan paginación keyset:
 50 elementos por defecto, máximo 100 y cursores opacos ligados a la tool, los
 filtros y la allowlist efectiva. `list_projects`, `list_issues` y
