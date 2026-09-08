@@ -9,6 +9,7 @@ export async function checkForUpdate(
   installedCommit,
   readPublished,
   timeoutMs = 8000,
+  installedVersion,
 ) {
   let timer;
   try {
@@ -22,9 +23,28 @@ export async function checkForUpdate(
     ]);
     if (!published || !/^[a-f0-9]{40}$/.test(published.commit))
       return { status: "unavailable", reason: "No published release" };
+    const parts = (version) =>
+      /^\d+\.\d+\.\d+$/.test(version ?? "")
+        ? version.split(".").map(Number)
+        : null;
+    const installedParts = parts(installedVersion);
+    const publishedParts = parts(published.version);
+    let status = "different_release";
+    if (published.commit === installedCommit) status = "current";
+    else if (installedParts && publishedParts) {
+      const order =
+        publishedParts[0] - installedParts[0] ||
+        publishedParts[1] - installedParts[1] ||
+        publishedParts[2] - installedParts[2];
+      status =
+        order > 0
+          ? "update_available"
+          : order < 0
+            ? "installed_ahead"
+            : "revision_mismatch";
+    }
     return {
-      status:
-        published.commit === installedCommit ? "current" : "update_available",
+      status,
       installedCommit,
       publishedCommit: published.commit,
       version: published.version,
@@ -124,9 +144,18 @@ if (
         "utf8",
       ),
     );
+    const { version } = JSON.parse(
+      readFileSync(
+        resolve(dirname(fileURLToPath(import.meta.url)), "../version.json"),
+        "utf8",
+      ),
+    );
     if (process.env.ISSOPEN_SKILL_SOURCE_REPO)
-      result = await checkForUpdate(marker.commit, () =>
-        readPublishedRelease(process.env.ISSOPEN_SKILL_SOURCE_REPO),
+      result = await checkForUpdate(
+        marker.commit,
+        () => readPublishedRelease(process.env.ISSOPEN_SKILL_SOURCE_REPO),
+        8000,
+        version,
       );
   } catch {
     /* Missing source or installation marker must never interrupt a task. */

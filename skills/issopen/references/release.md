@@ -16,6 +16,9 @@ consulta tags `issopen-skill-vMAJOR.MINOR.PATCH`, respeta timeout y no instala n
 No transmite ISSOPEN_AGENT_TOKEN al proceso Git. Si falta configuración, no hay
 release o falla red, informa brevemente cuando sea útil y sigue con la versión
 instalada. No hagas polling ni esperes una petición expresa sólo para comprobar.
+La versión propia vive en version.json. Sólo un tag con versión numéricamente
+superior se anuncia como actualización: una revisión diferente de igual versión,
+un tag anterior o una instalación sin versión no demuestran una novedad.
 
 Si hay novedad, avisa con versión/revisión y conserva la instalación actual durante
 la tarea. Sólo tras autorización y fuera de trabajo en curso se instala su commit

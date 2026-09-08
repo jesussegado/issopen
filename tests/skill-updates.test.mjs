@@ -12,7 +12,7 @@ describe("notify-only release checks", () => {
     const read = vi
       .fn()
       .mockResolvedValue({ commit: published, version: "0.2.0" });
-    expect(await checkForUpdate(installed, read)).toEqual({
+    expect(await checkForUpdate(installed, read, 8000, "0.1.0")).toEqual({
       status: "update_available",
       installedCommit: installed,
       publishedCommit: published,
@@ -28,6 +28,18 @@ describe("notify-only release checks", () => {
         }))
       ).status,
     ).toBe("current");
+  });
+  it("does not present an older tag, equal-version candidate or unknown revision as newer", async () => {
+    const read = async () => ({ commit: "b".repeat(40), version: "0.1.0" });
+    expect((await checkForUpdate(installed, read, 8000, "0.2.0")).status).toBe(
+      "installed_ahead",
+    );
+    expect((await checkForUpdate(installed, read, 8000, "0.1.0")).status).toBe(
+      "revision_mismatch",
+    );
+    expect((await checkForUpdate(installed, read)).status).toBe(
+      "different_release",
+    );
   });
   it("times out or fails without blocking work or exposing remote error text", async () => {
     expect(
