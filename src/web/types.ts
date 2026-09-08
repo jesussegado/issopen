@@ -52,7 +52,7 @@ export type Epic = {
 };
 
 export function epicLabel(epic: Pick<Epic, "number" | "title">) {
-  return `[${epic.number}]-${epic.title}`;
+  return `${epic.number}-${epic.title}`;
 }
 
 export const agentScopes = [
@@ -120,7 +120,7 @@ export type QuestionSummary = {
 };
 
 export function issueReference(issue: Pick<Issue, "number">) {
-  return `[${issue.number}]`;
+  return String(issue.number);
 }
 
 export function issueLabel(issue: Pick<Issue, "number" | "title">) {

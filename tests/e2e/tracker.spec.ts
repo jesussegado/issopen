@@ -8,7 +8,7 @@ test("owner completes the tracker loop with native keyboard controls", async ({
   const projectName = mobile ? "Mobile tracker" : "Desktop tracker";
   const issueTitle = `${projectName} keyboard workflow`;
   const epicTitle = `${projectName} MVP`;
-  const epicDisplayName = `[1]-${epicTitle}`;
+  const epicDisplayName = `1-${epicTitle}`;
 
   await page.goto("/sign-in");
   await page.getByLabel("Email (required)").fill(e2eOwner.email);
@@ -83,7 +83,7 @@ test("owner completes the tracker loop with native keyboard controls", async ({
     `${e2eBaseUrl}/api/v1/issues/${issueId}`,
   );
   const { issue } = await issueResponse.json();
-  const issueRef = `[${issue.number}]`;
+  const issueRef = String(issue.number);
   const issueDisplayName = `${issueRef}-${issueTitle}`;
   expect(issue.key).toMatch(/^P[A-F0-9]{9}-1$/);
   await expect(

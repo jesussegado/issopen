@@ -117,22 +117,22 @@ describe("tracker web routes", () => {
       await screen.findByRole("heading", { name: "Private tracker" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: `[1]-${issue.title}` }),
+      screen.getByRole("link", { name: `1-${issue.title}` }),
     ).toHaveTextContent("<img src=x onerror=alert(1)>");
     expect(document.querySelector("img")).toBeNull();
     expect(screen.getByText("First line", { exact: false })).not.toBeVisible();
     await user.click(
-      screen.getByRole("button", { name: "Show details for [1]" }),
+      screen.getByRole("button", { name: "Show details for 1" }),
     );
     expect(screen.getByText("First line", { exact: false })).toBeVisible();
     const status = screen.getByRole("combobox", {
-      name: "Change status for [1]",
+      name: "Change status for 1",
     });
     await user.selectOptions(status, "ready");
-    expect(await screen.findByText("[1] moved to Ready")).toBeInTheDocument();
+    expect(await screen.findByText("1 moved to Ready")).toBeInTheDocument();
     await waitFor(() =>
       expect(
-        screen.getByRole("combobox", { name: "Change status for [1]" }),
+        screen.getByRole("combobox", { name: "Change status for 1" }),
       ).toHaveFocus(),
     );
     expect(
@@ -160,7 +160,7 @@ describe("tracker web routes", () => {
     render(<BoardRoute projectId={project.id} />);
 
     const title = await screen.findByRole("link", {
-      name: `[1]-${issue.title}`,
+      name: `1-${issue.title}`,
     });
     expect(title).toBeVisible();
     expect(screen.queryByText(issue.key)).not.toBeInTheDocument();
@@ -178,14 +178,14 @@ describe("tracker web routes", () => {
     expect(title).toBeVisible();
 
     const showDetails = screen.getByRole("button", {
-      name: "Show details for [1]",
+      name: "Show details for 1",
     });
     expect(showDetails).toHaveAttribute("aria-expanded", "false");
     expect(screen.getByText("First line", { exact: false })).not.toBeVisible();
     await user.click(showDetails);
     expect(screen.getByText("First line", { exact: false })).toBeVisible();
     expect(
-      screen.getByRole("button", { name: "Hide details for [1]" }),
+      screen.getByRole("button", { name: "Hide details for 1" }),
     ).toHaveAttribute("aria-expanded", "true");
   });
 
@@ -225,7 +225,7 @@ describe("tracker web routes", () => {
     await screen.findByRole("heading", { name: project.name });
     const epicOverview = screen.getByRole("region", { name: "Epics" });
     expect(
-      within(epicOverview).getByRole("link", { name: `[7]-${epic.title}` }),
+      within(epicOverview).getByRole("link", { name: `7-${epic.title}` }),
     ).toHaveAttribute("href", `/epics/${epic.id}`);
     expect(within(epicOverview).getByText("1 ticket")).toBeVisible();
     expect(within(epicOverview).getByText("0/1 done")).toBeVisible();
@@ -238,10 +238,10 @@ describe("tracker web routes", () => {
     );
     expect(window.location.search).toBe(`?epic=${epic.id}`);
     await user.click(
-      screen.getByRole("button", { name: "Show details for [1]" }),
+      screen.getByRole("button", { name: "Show details for 1" }),
     );
     expect(
-      screen.getAllByRole("link", { name: `[7]-${epic.title}` }),
+      screen.getAllByRole("link", { name: `7-${epic.title}` }),
     ).toHaveLength(2);
   });
 
@@ -279,7 +279,7 @@ describe("tracker web routes", () => {
 
     const epicOverview = await screen.findByRole("region", { name: "Epics" });
     expect(
-      within(epicOverview).getByRole("link", { name: `[7]-${epic.title}` }),
+      within(epicOverview).getByRole("link", { name: `7-${epic.title}` }),
     ).toBeVisible();
     expect(within(epicOverview).getByText("0 tickets")).toBeVisible();
     expect(
@@ -311,7 +311,7 @@ describe("tracker web routes", () => {
     render(<EpicsRoute projectId={project.id} />);
 
     expect(
-      await screen.findByRole("link", { name: `[7]-${epic.title}` }),
+      await screen.findByRole("link", { name: `7-${epic.title}` }),
     ).toBeVisible();
     expect(screen.getByText("0 done")).toBeVisible();
     expect(screen.getByText("1 tickets · 0%")).toBeVisible();
@@ -327,7 +327,7 @@ describe("tracker web routes", () => {
     expect(await screen.findByText("Epic created")).toBeVisible();
     expect(window.location.pathname).toBe(`/projects/${project.id}/epics`);
     expect(
-      screen.getByRole("link", { name: "[7]-Release readiness" }),
+      screen.getByRole("link", { name: "7-Release readiness" }),
     ).toHaveAttribute("href", `/epics/${epic.id}`);
     expect(screen.getByLabelText("Title (required)")).toHaveValue("");
     expect(screen.getByLabelText(/^Description/)).toHaveValue("");
@@ -346,10 +346,10 @@ describe("tracker web routes", () => {
     );
     render(<EpicDetailRoute epicId={epic.id} />);
     expect(
-      await screen.findByRole("heading", { name: `[7]-${epic.title}` }),
+      await screen.findByRole("heading", { name: `7-${epic.title}` }),
     ).toBeVisible();
     expect(
-      screen.getByRole("link", { name: `[1]-${issue.title}` }),
+      screen.getByRole("link", { name: `1-${issue.title}` }),
     ).toHaveAttribute("href", `/issues/${issue.id}`);
     expect(screen.getByRole("link", { name: "View on board" })).toHaveAttribute(
       "href",
@@ -395,12 +395,12 @@ describe("tracker web routes", () => {
     render(<BoardRoute projectId={project.id} />);
 
     expect(await screen.findByText("⚠ 1 unanswered")).toBeInTheDocument();
-    expect(screen.getByText(`[2]-${clear.title}`)).toBeInTheDocument();
+    expect(screen.getByText(`2-${clear.title}`)).toBeInTheDocument();
     await user.click(
-      screen.getByRole("button", { name: "Show details for [1]" }),
+      screen.getByRole("button", { name: "Show details for 1" }),
     );
     const blockedStatus = screen.getByRole("combobox", {
-      name: "Change status for [1]",
+      name: "Change status for 1",
     });
     expect(
       blockedStatus.querySelector('option[value="ready_for_review"]'),
@@ -412,8 +412,8 @@ describe("tracker web routes", () => {
       screen.getByRole("combobox", { name: "Show questions" }),
       "warnings",
     );
-    expect(screen.getByText(`[1]-${blocked.title}`)).toBeInTheDocument();
-    expect(screen.queryByText(`[2]-${clear.title}`)).not.toBeInTheDocument();
+    expect(screen.getByText(`1-${blocked.title}`)).toBeInTheDocument();
+    expect(screen.queryByText(`2-${clear.title}`)).not.toBeInTheDocument();
     expect(screen.getAllByText("No tickets with warnings").length).toBe(4);
   });
 
@@ -504,7 +504,7 @@ describe("tracker web routes", () => {
     render(<IssueDetailRoute issueId={issue.id} />);
 
     expect(
-      await screen.findByRole("heading", { name: `[1]-${issue.title}` }),
+      await screen.findByRole("heading", { name: `1-${issue.title}` }),
     ).toBeInTheDocument();
     expect(document.querySelector(".description")).toHaveTextContent(
       "<script>alert(1)</script>",
@@ -533,13 +533,13 @@ describe("tracker web routes", () => {
     expect(
       screen.getByText("No code result is linked yet."),
     ).toBeInTheDocument();
-    expect(screen.getByText("Created [1]")).toBeInTheDocument();
+    expect(screen.getByText("Created 1")).toBeInTheDocument();
     const activityItems = document.querySelectorAll(
       ".activity-list .activity-item",
     );
     expect(activityItems).toHaveLength(2);
-    expect(activityItems[0]).toHaveTextContent("Accepted [1]");
-    expect(activityItems[1]).toHaveTextContent("Created [1]");
+    expect(activityItems[0]).toHaveTextContent("Accepted 1");
+    expect(activityItems[1]).toHaveTextContent("Created 1");
     expect(screen.getAllByText("You")).toHaveLength(3);
     expect(
       screen.queryByRole("button", { name: /delete activity/i }),
@@ -671,7 +671,7 @@ describe("tracker web routes", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("1 of 2 answered")).toBeInTheDocument();
     expect(screen.getByText("Recommended")).toBeInTheDocument();
-    const detailStatus = screen.getByLabelText("Change status for [1]");
+    const detailStatus = screen.getByLabelText("Change status for 1");
     expect(
       detailStatus.querySelector('option[value="ready_for_review"]'),
     ).toBeDisabled();

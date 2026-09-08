@@ -46,8 +46,9 @@ haya conflicto, usa este orden:
 - Producción se declara bajo `deploy/manifests`: un Deployment de aplicación y
   un StatefulSet PostgreSQL, ambos fijados a `debian13-torre-nya`, más Services
   ClusterIP e Ingress Traefik en namespace `issopen`/proyecto `business-apps`.
-- La imagen productiva inmutable es
-  `registry.serviciosegado.com/issopen:ticket-labels-9bc53b9@sha256:333be885fbc215bf4db78a0be6c989c2b6124c3f06cf32cd097677c085623da4`.
+- La revisión de fuente y la imagen productiva inmutable se declaran en
+  `~/Projects/platform/homelab/apps/issopen/app.yaml`; verificar su digest
+  contra Argo CD antes de afirmar qué versión está activa.
 - El 2026-09-08 se publicó la identidad de seis piezas, bosque y menta desde
   la fuente `2b0bb5a78b0e6847a3e1a694225db4371b86c671`. Argo CD reconcilió
   `a1956385752a38bc8261ee9b4d6d5b27bfa7d299` como `Synced/Healthy`; se
@@ -250,7 +251,7 @@ la actual. Un guardado fallido mantiene la pregunta y su borrador.
 Los Epics viven en `epic` y sólo agrupan tickets del mismo proyecto/workspace.
 Cada Epic tiene un `number` positivo, único y estable dentro de su proyecto;
 `project.next_epic_number` lo asigna transaccionalmente, separado del contador
-de issues. La web usa `epicLabel` e `issueLabel` para mostrar `[número]-título`,
+de issues. La web usa `epicLabel` e `issueLabel` para mostrar `número-título`, sin corchetes,
 sin prefijos de proyecto. Las claves se conservan en API/MCP y se generan
 automáticamente para proyectos nuevos creados en la web. No se muestran en
 formularios, badges, referencias de actividad ni etiquetas accesibles; los

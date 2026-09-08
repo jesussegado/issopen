@@ -61,8 +61,8 @@ always derived from its current issues. A ticket can belong to zero or one
 Epic, and can be associated, moved to another Epic in the same project or
 returned to **No Epic** from the create/edit issue form.
 
-Epics and issues are displayed as `[number]-name` (for example,
-`[1]-Chrome extension`). Internal project prefixes and issue keys are not shown
+Epics and issues are displayed as `number-name` (for example,
+`1-Chrome extension`), without brackets. Internal project prefixes and issue keys are not shown
 in the web UI, including activity references, forms and accessibility labels.
 New projects created from the web receive an automatically generated internal
 key; existing keys, UUID links and API/MCP contracts remain unchanged. User-written

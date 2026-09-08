@@ -78,7 +78,7 @@ test("dogfoods one real Issopen improvement through owner and Codex boundaries",
     page.getByRole("heading", { name: "Sign in to Issopen" }),
   ).toBeHidden();
   await page.goto(`/issues/${first.issueId}`);
-  const issueRef = `[${first.issueKey.split("-").at(-1)}]`;
+  const issueRef = `${first.issueKey.split("-").at(-1)}`;
   await expect(
     page.getByRole("heading", {
       name: `${issueRef}-Make Phase 1 dogfooding reproducible and secret-safe`,
