@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed quick task 260908-kiy
-last_updated: "2026-09-08T13:01:45.293Z"
-last_activity: 2026-09-08
+stopped_at: Epic 4 implementation checkpoint; native acceptance and pilot pending
+last_updated: "2026-09-08T23:04:46Z"
+last_activity: 2026-09-09
 progress:
   total_phases: 9
   completed_phases: 0
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-08-30)
 Phase: 1 (Private Single-Owner Dogfooding MVP) — EXECUTING
 Plan: 5 of 5
 Status: Ready to execute
-Last activity: 2026-09-08 - Completed quick task 260908-kiy: white favicon deployed through GitOps and verified in production
+Last activity: 2026-09-09 - Epic 4: tickets 13 and 34–42 implemented and Ready for Review; 43/44 acceptance and pilot gates pending. Server guards/Epic MCP deployed via GitOps. See ../docs/codex-skill-acceptance.md.
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -93,7 +93,12 @@ Decisions are logged in PROJECT.md Key Decisions table. Current roadmap-level st
 
 ### Pending Todos
 
-None.
+- Epic 4 / ticket 43: complete native write flow with interactive approval and
+  actual editor UI acceptance. The read-only fresh CLI session passed; the
+  execution fixture stopped safely before claim under approval policy never.
+- Epic 4 / ticket 44: owner authorization for limited production credential,
+  project/repository association, selected real improvement, then publication
+  and pilot. Existing grants and saved human answers remain unchanged.
 
 ### Completed Todos
 
@@ -135,6 +140,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-09-08T13:01:45.293Z
-Stopped at: Completed quick task 260908-kiy
-Resume file: None
+Last session: 2026-09-08T23:04:46Z
+Stopped at: Epic 4 acceptance checkpoint; no phase completion claimed
+Resume file: ../docs/codex-skill-acceptance.md (derived evidence; reread live tickets/answers)

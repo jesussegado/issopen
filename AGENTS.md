@@ -270,7 +270,7 @@ MCP puedan cruzar esas fronteras. `TrackerService` es la única vía para crear 
 editar Epics y asociar tickets; los recuentos por estado y el progreso no se
 persisten, se derivan de los issues reales. La web gestiona los Epics en
 `routes/EpicRoutes.tsx` y conserva el filtro del tablero en `?epic=`. MCP no
-usa permisos explícitos: `get_issue` devuelve el contexto, `list_issues`
+añade scopes para la asociación ticket–Epic: `get_issue` devuelve el contexto, `list_issues`
 acepta `epicId`, y `create_issue`/`update_issue` validan la asociación usando
 los scopes y la allowlist de proyecto existentes.
 
@@ -300,6 +300,23 @@ terminar y produce evidencia sin secretos. `tests/e2e/dogfood.spec.ts` ejecuta
 ese mismo cliente contra Hono y PostgreSQL reales, verifica atribución, rechazo
 de cierre agentico, request-changes, aceptación e idempotencia. No hay imports,
 procesos ni credenciales de Git, CI, merge o despliegue en ese camino.
+
+## Skill de Codex y aceptación actual
+
+El paquete reusable vive en `skills/issopen/` (instrucciones, referencias y
+helpers puros); `scripts/install-skill.mjs` instala una revisión Git fijada y
+protege cambios locales. No se distribuyen credenciales, datos del Epic ni
+configuración privada. Issopen sigue siendo el plan canónico, GSD una copia
+derivada con versiones de ticket y preguntas.
+
+El trabajo del Epic 4 se sigue en Issopen: tickets 13 y 34–42 listos para revisión;
+43 pendiente de aceptación nativa de escritura/editor, 44 pendiente de publicación
+y piloto autorizado. El detalle verificable y las limitaciones están en
+[docs/codex-skill-acceptance.md](docs/codex-skill-acceptance.md). No confundir
+descubrimiento por app-server con aceptación de la UI de Codex, ni los tests del
+SDK con una sesión nativa del modelo. No cambiar políticas de aprobación para
+sortear una prueba bloqueada. No declarar Done ni publicar el candidato hasta
+resolver los gates documentados.
 
 ## Invariantes de seguridad
 
