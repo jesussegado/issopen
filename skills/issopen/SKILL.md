@@ -52,6 +52,7 @@ Para resolver repositorio, proyecto y referencias usa [contexto](references/cont
 4. Una recomendación/preselección no es una respuesta. Usa la respuesta guardada,
    incluido Other, y la versión de cada pregunta; `issue.version` por sí sola
    no demuestra que las respuestas sigan iguales.
+   Para preguntar y retomar sigue [preguntas](references/questions.md).
 5. Issopen es la autoridad del plan. Si GSD necesita `.planning`, genera sólo una
    copia derivada trazada a IDs/versiones; nunca pierdas decisiones por no tener
    archivos locales. Respeta las instrucciones del repo y señala contradicciones.

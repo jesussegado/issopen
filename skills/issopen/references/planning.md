@@ -23,7 +23,7 @@
    atribuido. Para crear, usa `create_issue` con projectId/Epic correctos y clave
    estable; el estado inicial es Backlog. Relee antes de repetir el mismo encargo.
 6. Sólo crea preguntas que cambien el trabajo y aún no estén resueltas; sigue
-   el contrato de preguntas del MCP. No rellenes respuestas por el usuario ni uses
+   [preguntas](questions.md). No rellenes respuestas por el usuario ni uses
    recomendaciones como decisiones. Si falta permiso para comentar/preguntar,
    informa de la limitación; no cambies de identidad silenciosamente.
 7. Dependencias: enlaces UUID reales con etiqueta `número-título` y condición de
