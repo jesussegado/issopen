@@ -1,0 +1,14 @@
+{
+  "image": "registry.serviciosegado.com/issopen:brand-2b0bb5a",
+  "source": "2b0bb5a78b0e6847a3e1a694225db4371b86c671",
+  "readiness": 200,
+  "uid": 1001,
+  "anonymousRest": 401,
+  "iconSha256": "dde3a1b048f27664a1fe195aef7bc56290f98eacfe296b4bf2a6f5c72cf5492c",
+  "brandColors": [
+    "#027067",
+    "#6fd9b5"
+  ],
+  "shutdownExitCode": 0,
+  "environment": "Isolated local Docker network and ephemeral PostgreSQL"
+}

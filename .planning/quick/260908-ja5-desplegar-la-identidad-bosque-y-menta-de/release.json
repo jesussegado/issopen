@@ -1,0 +1,24 @@
+{
+  "sourceRevision": "2b0bb5a78b0e6847a3e1a694225db4371b86c671",
+  "gitopsRevision": "a1956385752a38bc8261ee9b4d6d5b27bfa7d299",
+  "canonicalControlPlaneCommit": "c17e6cbc00c475ddb401c6848e643e979ae884bd",
+  "image": "registry.serviciosegado.com/issopen:brand-2b0bb5a@sha256:33679a9e2c4edcdbeb8ee4064ca584dcadf011485df2404423f667506c2526b1",
+  "amd64ManifestDigest": "sha256:d6d12bd55c474760b6809d8e423ebcf68cb0ddb25889d731c0a00e673947bd96",
+  "previousImage": "registry.serviciosegado.com/issopen:epic-numbers-f79e305@sha256:61d2f3989b9fbbeccd48336c3534fa112334d9843641c0b6950f7d9d8e14b16d",
+  "postgresPodUidBefore": "ab78f6be-f08f-4d8b-a7ea-bc100a5ddfdc",
+  "postgresPvcUidBefore": "cf93e0a7-b978-46c2-9c03-c77f902742b9",
+  "renderedChanges": [
+    "Deployment/issopen spec.template.spec.containers[0].image"
+  ],
+  "schemaChanges": false,
+  "validation": {
+    "homelabTestsPassed": 190,
+    "workspaceCheckouts": 31,
+    "kustomize": "passed",
+    "gitDiffCheck": "passed",
+    "optionalToolsUnavailable": [
+      "ansible-playbook",
+      "helm"
+    ]
+  }
+}

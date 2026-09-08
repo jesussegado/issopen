@@ -1,0 +1,27 @@
+{
+  "url": "https://issopen.serviciosegado.com",
+  "verifiedAt": "2026-09-08T12:13:46.081Z",
+  "readiness": 200,
+  "anonymousRest": 401,
+  "hsts": true,
+  "iconSha256": "dde3a1b048f27664a1fe195aef7bc56290f98eacfe296b4bf2a6f5c72cf5492c",
+  "checks": [
+    {
+      "width": 1440,
+      "scrollWidth": 1440,
+      "logoLoaded": true,
+      "forestApplied": true,
+      "mintApplied": true,
+      "logoFullyDecoded": true
+    },
+    {
+      "width": 360,
+      "scrollWidth": 360,
+      "logoLoaded": true,
+      "forestApplied": true,
+      "mintApplied": true,
+      "logoFullyDecoded": true
+    }
+  ],
+  "browserErrors": []
+}

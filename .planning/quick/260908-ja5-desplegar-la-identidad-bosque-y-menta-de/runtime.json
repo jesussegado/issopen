@@ -1,0 +1,15 @@
+{
+  "gitopsRevision": "a1956385752a38bc8261ee9b4d6d5b27bfa7d299",
+  "sync": "Synced",
+  "health": "Healthy",
+  "webPod": "issopen-b479646b4-b6ncc",
+  "image": "registry.serviciosegado.com/issopen:brand-2b0bb5a@sha256:33679a9e2c4edcdbeb8ee4064ca584dcadf011485df2404423f667506c2526b1",
+  "imageID": "registry.serviciosegado.com/issopen@sha256:33679a9e2c4edcdbeb8ee4064ca584dcadf011485df2404423f667506c2526b1",
+  "ready": true,
+  "restarts": 0,
+  "node": "debian13-torre-nya",
+  "postgresUid": "ab78f6be-f08f-4d8b-a7ea-bc100a5ddfdc",
+  "postgresRestarts": 0,
+  "pvcUid": "cf93e0a7-b978-46c2-9c03-c77f902742b9",
+  "pvcPhase": "Bound"
+}

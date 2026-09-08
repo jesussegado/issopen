@@ -102,3 +102,8 @@ marca aprobada. Nuevas pantallas deben reutilizar estos tokens y el componente
 El cambio de identidad es de fuente. Una publicación productiva requiere la
 release GitOps correspondiente; aceptar esta decisión no cambia datos ni
 infraestructura por sí mismo.
+
+La identidad se publicó en producción el 2026-09-08 tras la autorización
+«despliega», mediante la fuente `2b0bb5a` y el commit GitOps `a1956385`.
+La evidencia y rollback se registran en
+[quick 260908-ja5](../../.planning/quick/260908-ja5-desplegar-la-identidad-bosque-y-menta-de/260908-ja5-SUMMARY.md).
