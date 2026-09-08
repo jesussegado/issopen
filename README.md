@@ -295,13 +295,15 @@ not terminate public TLS.
 The deployed application image is immutable:
 
 ```text
-registry.serviciosegado.com/issopen:brand-2b0bb5a@sha256:33679a9e2c4edcdbeb8ee4064ca584dcadf011485df2404423f667506c2526b1
+registry.serviciosegado.com/issopen:ticket-labels-9bc53b9@sha256:333be885fbc215bf4db78a0be6c989c2b6124c3f06cf32cd097677c085623da4
 ```
 
 The forest and mint identity was deployed on 2026-09-08 from source
 `2b0bb5a78b0e6847a3e1a694225db4371b86c671`, through GitOps commit
 `a1956385752a38bc8261ee9b4d6d5b27bfa7d299`. See the
 [release verification](.planning/quick/260908-ja5-desplegar-la-identidad-bosque-y-menta-de/260908-ja5-SUMMARY.md).
+The subsequent ticket-label release (`9bc53b9`, GitOps `bb2da342`) preserves
+that identity and is the active image shown above.
 
 Three Secrets exist outside Git in namespace `issopen`:
 

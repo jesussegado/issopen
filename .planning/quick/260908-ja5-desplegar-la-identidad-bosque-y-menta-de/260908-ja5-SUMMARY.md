@@ -6,6 +6,7 @@ completed: 2026-09-08
 source_revision: 2b0bb5a78b0e6847a3e1a694225db4371b86c671
 gitops_revision: a1956385752a38bc8261ee9b4d6d5b27bfa7d299
 control_plane_local_commit: c17e6cbc00c475ddb401c6848e643e979ae884bd
+final_gitops_revision: bb2da3421fb8887efc6ce568b67e151a5bda48af
 ---
 
 # Identidad bosque y menta desplegada
@@ -14,6 +15,15 @@ La nueva identidad está disponible en
 <https://issopen.serviciosegado.com>. Argo CD reconcilió automáticamente el
 commit `a1956385` como **Synced/Healthy**. Logo, favicon y tokens de color se
 verificaron por HTTPS en la aplicación real, en escritorio y móvil.
+
+Durante la verificación entró la publicación posterior de etiquetas compactas
+de tickets/Epics: fuente `9bc53b9`, descendiente de `2b0bb5a`, y GitOps
+`bb2da3421fb8887efc6ce568b67e151a5bda48af`. Se conserva esa versión activa;
+no se redepliega una imagen anterior. La comparación de Git confirma que
+logo, favicon, CSS, cabeceras y ruta de imagen no cambian entre ambas fuentes.
+El runtime final está **Synced/Healthy**, Ready y sin reinicios con
+`registry.serviciosegado.com/issopen:ticket-labels-9bc53b9@sha256:333be885fbc215bf4db78a0be6c989c2b6124c3f06cf32cd097677c085623da4`.
+Las capturas HTTPS finales corresponden a esta versión que incluye la marca.
 
 ## Artefactos y commits
 
@@ -83,16 +93,24 @@ clúster o DNS. Se esperó la reconciliación automática, sin forzar un sync.
 - [Imagen probada](./image-smoke.json).
 - [Referencias de release y baseline](./release.json).
 - [Estado del runtime](./runtime.json).
+- [Estado final tras la publicación posterior](./runtime-final.json).
 - [Smoke HTTPS y navegador](./evidence/public-smoke.json).
 - [Captura de escritorio](./evidence/production-sign-in-1440.png).
 - [Captura de móvil](./evidence/production-sign-in-360.png).
 
 ## Rollback
 
-Revertir `a1956385` mediante GitOps restaura:
+El rollback preparado para esta release, antes de la publicación posterior,
+consistía en revertir `a1956385` mediante GitOps para restaurar:
 
 `registry.serviciosegado.com/issopen:epic-numbers-f79e305@sha256:61d2f3989b9fbbeccd48336c3534fa112334d9843641c0b6950f7d9d8e14b16d`.
 
 Fuente anterior: `f79e305d7358f4d46a25f2ecfb13916f4824ea3a`. El esquema es
 idéntico; el rollback no requiere borrar datos ni recrear PostgreSQL o PVC.
 No quedan bloqueos dentro del alcance de esta publicación.
+
+Con `bb2da342` ya activo, no se debe aplicar ciegamente ese rollback histórico:
+hay que conservar los cambios posteriores de etiquetas. Si se quisiera retirar
+sólo la identidad, preparar una nueva revisión de fuente que revierta sus
+cambios visuales, construir su imagen y publicarla por GitOps con revisión del
+diff. Esta tarea no ejecutó ningún rollback.

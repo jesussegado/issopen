@@ -1,0 +1,13 @@
+{
+  "gitopsRevision": "bb2da3421fb8887efc6ce568b67e151a5bda48af",
+  "sync": "Synced",
+  "health": "Healthy",
+  "webPod": "issopen-876c59c6b-wqdnv",
+  "image": "registry.serviciosegado.com/issopen:ticket-labels-9bc53b9@sha256:333be885fbc215bf4db78a0be6c989c2b6124c3f06cf32cd097677c085623da4",
+  "imageID": "registry.serviciosegado.com/issopen@sha256:333be885fbc215bf4db78a0be6c989c2b6124c3f06cf32cd097677c085623da4",
+  "ready": true,
+  "restarts": 0,
+  "postgresUid": "ab78f6be-f08f-4d8b-a7ea-bc100a5ddfdc",
+  "pvcUid": "cf93e0a7-b978-46c2-9c03-c77f902742b9",
+  "reason": "Subsequent ticket labels release includes the brand revision with unchanged branding files."
+}

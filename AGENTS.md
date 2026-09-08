@@ -47,12 +47,15 @@ haya conflicto, usa este orden:
   un StatefulSet PostgreSQL, ambos fijados a `debian13-torre-nya`, más Services
   ClusterIP e Ingress Traefik en namespace `issopen`/proyecto `business-apps`.
 - La imagen productiva inmutable es
-  `registry.serviciosegado.com/issopen:brand-2b0bb5a@sha256:33679a9e2c4edcdbeb8ee4064ca584dcadf011485df2404423f667506c2526b1`.
+  `registry.serviciosegado.com/issopen:ticket-labels-9bc53b9@sha256:333be885fbc215bf4db78a0be6c989c2b6124c3f06cf32cd097677c085623da4`.
 - El 2026-09-08 se publicó la identidad de seis piezas, bosque y menta desde
   la fuente `2b0bb5a78b0e6847a3e1a694225db4371b86c671`. Argo CD reconcilió
   `a1956385752a38bc8261ee9b4d6d5b27bfa7d299` como `Synced/Healthy`; se
   conservaron el pod PostgreSQL y su PVC, sin nuevas migraciones. La evidencia
   de publicación vive en quick `260908-ja5`.
+- La publicación posterior de etiquetas compactas, fuente `9bc53b9` y GitOps
+  `bb2da342`, incluye la identidad sin cambios y es la versión activa observada
+  al cerrar esa verificación, también `Synced/Healthy` y sin reinicios.
 - El 2026-09-02 Argo CD reconcilió la release de Epics como `Synced/Healthy`;
   la migración conservó 18 issues y 133 eventos, y se verificaron readiness,
   HSTS, discovery OAuth/MCP y el bundle público sin mutar datos del owner.
