@@ -50,7 +50,7 @@ try {
   if (response.error) throw new Error("Native skills/list failed");
   const matches = response.result.data
     .flatMap((entry) => entry.skills)
-    .filter((skill) => skill.name === "issopen");
+    .filter((skill) => skill.name === "issopen" && skill.enabled !== false);
   if (matches.length !== 1 || matches[0].enabled === false)
     throw new Error(
       `Expected one enabled Issopen skill, found ${matches.length}`,
