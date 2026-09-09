@@ -9,6 +9,7 @@ import {
 } from "../../lib/protocol";
 import "./style.css";
 import { Account } from "./Account";
+import { Capture } from "./Capture";
 
 function App() {
   const [busy, setBusy] = useState(false);
@@ -52,11 +53,12 @@ function App() {
           versión permite comprobar la conexión del panel con tu pestaña.
         </p>
         <p className="notice">
-          Ya puedes conectar tu cuenta. La captura y el envío de tickets se
-          incorporarán en los siguientes cortes.
+          Conecta tu cuenta y prepara una captura local. El envío de tickets se
+          incorporará en el siguiente corte.
         </p>
       </section>
       <Account />
+      <Capture />
       <section aria-labelledby="page-heading">
         <h2 id="page-heading">Comprueba la página</h2>
         <p>

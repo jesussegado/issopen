@@ -112,3 +112,62 @@ footer {
   color: #46635b;
   font-size: 12px;
 }
+select,
+input[type="number"] {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid #c5d9d1;
+  border-radius: 8px;
+  color: #142f29;
+  background: white;
+  font: inherit;
+  padding: 8px;
+  margin-block: 6px 12px;
+}
+select:focus-visible,
+input:focus-visible,
+a:focus-visible {
+  outline: 3px solid #027067;
+  outline-offset: 2px;
+}
+.capture-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  cursor: crosshair;
+  touch-action: none;
+}
+.capture-viewport {
+  overflow: auto;
+  max-height: 65vh;
+  border: 1px solid #c5d9d1;
+}
+.capture-surface {
+  position: relative;
+}
+.capture-selection {
+  position: absolute;
+  pointer-events: none;
+  border: 2px solid #027067;
+  background: rgb(111 217 181 / 25%);
+}
+.rectangle-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.rectangle-fields label {
+  min-width: 0;
+}
+.capture-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-block: 12px;
+}
+.download {
+  display: block;
+  margin-block: 16px;
+  padding: 12px;
+  color: #027067;
+}

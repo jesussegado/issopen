@@ -43,7 +43,7 @@ export default defineConfig({
     content_security_policy: {
       extension_pages:
         mode === "production"
-          ? `default-src 'self'; script-src 'self'; object-src 'none'; connect-src ${instance.origin}; img-src 'self'; style-src 'self'; base-uri 'none'; form-action 'none'; frame-src 'none'`
+          ? `default-src 'self'; script-src 'self'; object-src 'none'; connect-src ${instance.origin} data:; img-src 'self' data: blob:; style-src 'self'; base-uri 'none'; form-action 'none'; frame-src 'none'`
           : "script-src 'self'; object-src 'none'",
     },
   }),

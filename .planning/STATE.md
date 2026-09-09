@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Chrome Epic first cut 19–20 Ready for Review, claims released; next EXT-03
-last_updated: "2026-09-09T18:04:53Z"
+stopped_at: Chrome OAuth 21 deployed and Ready for Review; local capture 23 and partial editor 25 verification
+last_updated: "2026-09-09T20:00:00Z"
 last_activity: 2026-09-09
 progress:
   total_phases: 9
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-30)
 
 **Core value:** Convertir una intención humana en trabajo estructurado y seguro que ChatGPT y agentes de código externos puedan entender, ejecutar y devolver a revisión dentro de un único flujo trazable.
-**Current focus:** Chrome Epic 1, first cut EXT-01 / 19 + EXT-02 / 20, explicitly prioritized by the owner. Historic phase 1 acceptance remains separate.
+**Current focus:** Chrome Epic 1, OAuth 21 deployed; capture 23 and local editor 25. Historic phase 1 acceptance remains separate.
 
 ## Current Position
 
 Phase: 1 (Private Single-Owner Dogfooding MVP) — EXECUTING
 Plan: 5 of 5
-Status: Ready to execute
-Last activity: 2026-09-09 - Chrome Epic: 17/17 answers saved and independently verified via MCP; recommendations explicitly approved, previous inline project/Epic choice preserved. First cut 19–20 Ready for Review (versions 7/6), claims null, real Chromium action/permission regression verified. Local commits 18658bb / 1b59442, no production release. Quick 260909-r6j. Skill ticket 43 remains Done; 44 not started.
+Status: Executing approved Chrome Epic incrementally
+Last activity: 2026-09-09 - OAuth 21 Ready for Review v6, claim null; source 2d9b376 / GitOps 5a6b2c2e Synced Healthy, Chrome 152 production login/consent/two projects/revocation verified. 23 and partial 25 in progress, local capture E2E passing, full regression in progress. 17/17 owner answers preserved, including inline project/Epic creation. Quick 260909-tfb. Skill 43 remains Done; 44 not started.
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -61,6 +61,10 @@ Progress: [░░░░░░░░░░] 0%
 
 ### Decisions
 
+- [Quick 260909-tfb]: OAuth human extension audience stays separate from MCP;
+  per-installation public clients, PKCE, 30-day absolute lifetime. 0.3 capture
+  stays in RAM until explicit PNG download; DOM/upload/storage criteria stay
+  pending. Server source and unpacked extension version deploy independently.
 - [Quick 260909-r6j]: Owner explicitly prioritizes Chrome Epic before the
   remaining historical sequence; do not mark phases complete. First cut is
   scope + installable local-only foundation. OAuth/capture/submission remain
@@ -152,6 +156,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-09-09T16:00:02Z
-Stopped at: Ticket 43 Done by owner decision; test harness stopped; 44 not started
-Resume file: ../docs/codex-skill-acceptance.md (derived evidence; reread live tickets/answers)
+Last session: 2026-09-09
+Stopped at: OAuth 21 in production; capture 23 + partial editor 25 verification
+Resume file: ./quick/260909-tfb-oauth-humano-y-captura-local-segura-de-l/SUMMARY.md (derived evidence; reread live tickets/answers)

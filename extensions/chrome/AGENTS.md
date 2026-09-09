@@ -22,13 +22,18 @@ Epic `ca26c29b-43ac-4ca0-b768-594d6779d6e7`, tickets 19–33 en Issopen.
   loopback explícito de test); no ampliar trustedOrigins de la REST owner.
 - `lib/protocol.ts`: mensajes v1, schemas de frontera, URLs restringidas y
   errores seguros; no importar dominio, base de datos o secretos del backend.
+- `lib/capture.ts` y `capture-page.ts`: capturas PNG, composición OffscreenCanvas,
+  overlay rectangular y funciones serializadas en el documento concreto. Las
+  funciones inyectadas no pueden cerrar sobre dependencias/imports externos.
+- `sidepanel/Capture.tsx`: preview local, zoom, recorte/redacción opaca,
+  rectángulos con ratón o campos numéricos y cinco pasos de deshacer/rehacer.
 - `tests/unit/`: contratos, privacidad, emisor, worker y navegación cambiante.
 - `tests/e2e/`: artefacto productivo y acción real de Chrome con perfil efímero.
 
 ## Invariantes y próximos tickets
 
-La versión 0.2 añade OAuth humano (21) a la base (20), no el Epic completo.
-Mantener visible que no hay captura/envío de tickets hasta 22/23/25/26. El propietario
+La versión 0.3 añade captura local (23) y parte del editor (25) sobre OAuth (21).
+Mantener visible que no hay DOM ni envío de tickets hasta 22/24/26/28. El propietario
 aprobó recomendaciones y conservó «Crear proyecto y Epic»; no sustituir esa
 respuesta por sólo selección. Alcance y dependencias en
 [`../../docs/chrome-extension.md`](../../docs/chrome-extension.md).
@@ -42,7 +47,11 @@ respuesta por sólo selección. Alcance y dependencias en
   usa `/extensions/link` y `/api/extension/v1`, con clientes por instalación
   y caducidad máxima de 30 días; la revocación web afecta la siguiente petición.
 - Ni DOM, valores de formulario, URLs privadas ni errores crudos en logs.
-  Captura y redacción futuras deben permanecer locales hasta el envío humano.
+  Captura y redacción permanecen en memoria hasta descarga o envío humano futuro.
+- El motor aborta al cambiar documento, pestaña, tamaño o DOM durante la captura;
+  no relajar estas comprobaciones sin nuevas pruebas de fugas. Respetar límites
+  de [captura](../../docs/chrome-capture.md), máscaras previas, rate limit global
+  y restauración `finally`/watchdog. No persistir originales ni historial sensible.
 - No afirmar soporte Edge/Brave ni distribución estable con tests de Chromium.
 - Conservar marca aprobada, HTML semántico y usabilidad a 320 px o más.
 

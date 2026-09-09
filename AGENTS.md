@@ -29,6 +29,13 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+- Chrome 0.3.0 añade captura local (23) y parte del editor (25): viewport,
+  full-page acotada y recorte, máscaras previas, restauración de scroll/estilos,
+  zoom, recorte posterior, ocultación opaca y deshacer/rehacer. PNG final en
+  memoria/descarga, sin subida ni persistencia del original. Detalle e
+  invariantes en [chrome-capture.md](docs/chrome-capture.md). No declarar 25
+  completo sin integrar DOM 24 y verificar el envío/almacenamiento 22/26/28.
+
 - Chrome 0.2.0 añade OAuth humano por instalación (21): PKCE S256 iniciado con
   `chrome.identity`, consentimiento web, acceso de 5 minutos, refresh y límite
   absoluto de 30 días. `src/server/extensions.ts` sirve la API humana separada
@@ -43,7 +50,7 @@ haya conflicto, usa este orden:
 - El 2026-09-09 el propietario priorizó el Epic de Chrome (19–33) y aprobó las
   16 recomendaciones pendientes, conservando «Crear proyecto y Epic».
   El primer corte 19–20 está en `extensions/chrome/`: WXT MV3, panel lateral y
-  comprobación local de pestaña; el siguiente corte añade el login descrito arriba.
+  comprobación local de pestaña; 21 y 23 añaden el login y captura descritos arriba.
   Consultar su [AGENTS.md](extensions/chrome/AGENTS.md),
   [guía de instalación](extensions/chrome/README.md) y
   [alcance del Epic](docs/chrome-extension.md). No confundir esta entrega con

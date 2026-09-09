@@ -1,9 +1,9 @@
-# Issopen para Chrome — desarrollo 0.2.0
+# Issopen para Chrome — desarrollo 0.3.0
 
 Primer corte del [Epic de Chrome](https://issopen.serviciosegado.com/epics/ca26c29b-43ac-4ca0-b768-594d6779d6e7):
-tickets 19–21. Conecta la cuenta humana mediante OAuth PKCE y muestra sus
-proyectos; **todavía no captura imágenes ni crea tickets**. Comprueba además
-la comunicación panel → worker → pestaña.
+tickets 19–21, 23 y parte de 25. Conecta la cuenta humana mediante OAuth PKCE,
+muestra proyectos y permite capturar/editar imágenes localmente.
+**Todavía no crea tickets ni captura DOM.**
 El [alcance completo](../../docs/chrome-extension.md) explica los siguientes cortes.
 
 ## Instalar y probar
@@ -28,6 +28,14 @@ pnpm extension:build
    instalación y acepta el consentimiento. El panel muestra tu cuenta/proyectos.
    Desconecta desde el panel o revoca desde «Extensiones Chrome» en Issopen.
    [Detalles y pruebas de OAuth](../../docs/chrome-oauth.md).
+7. En **Captura y previsualización**, elige recorte (predeterminado), área
+   visible o página completa y pulsa **Capturar página**. Para recortar,
+   arrastra sobre la página; Escape cancela. Se recuerda el último modo usado.
+8. Revisa la imagen, amplíala, recórtala o tapa zonas con la herramienta negra.
+   Arrastra sobre el preview o usa X/Y/Ancho/Alto y **Aplicar** con el teclado.
+   Puedes deshacer/rehacer cinco cambios y descargar el PNG final revisado.
+   Cerrar el panel pierde la captura; todavía no hay borrador persistente.
+   [Privacidad, límites y pruebas](../../docs/chrome-capture.md).
 
 Si abres el panel desde el selector de paneles de Chrome, puede no haber permiso
 para la página. Pulsa el icono de Issopen en esa pestaña y reintenta. Si navegas
@@ -51,7 +59,7 @@ pnpm extension:validate
 ```
 
 La validación incluye lint, TypeScript estricto, tests unitarios de contratos
-y worker, 2 tests E2E de artefacto/Chromium, dos builds comparados byte a byte y
+y worker, 4 tests E2E de artefacto/Chromium, dos builds comparados byte a byte y
 escaneo de secretos. `pnpm validate` integra estas comprobaciones con las de la
 app. Si falta Chromium en una máquina nueva:
 
@@ -84,7 +92,8 @@ política de actualización y aceptación completa pertenecen a 32–33.
 | host de Issopen | Llamar sólo a la instancia autorizada |
 
 No `<all_urls>`, scripts globales, cookies ni permisos pedidos para funciones
-futuras. La CSP productiva permite conexiones sólo a Issopen y bloquea código
+futuras. La CSP productiva permite conexiones de red sólo a Issopen y decodificar
+imágenes locales `data:`; bloquea código
 remoto/inline. El modo dev de
 WXT sí incorpora permisos/hot reload local: no distribuirlo.
 
@@ -97,5 +106,6 @@ la pestaña. Errores de Chrome no se reenvían porque pueden contener URLs.
 
 La comprobación de página sólo vive en memoria; las credenciales OAuth viven
 en storage local confiable del worker, no en el panel. No hay telemetría,
-sincronización, borradores ni capturas en este corte. El símbolo
+sincronización ni borradores persistentes. Capturas e historial permanecen en
+memoria del panel; sólo se recuerda el modo elegido, sin contenido. El símbolo
 se copia byte a byte del PNG blanco aprobado de la app, sin generar otra marca.
