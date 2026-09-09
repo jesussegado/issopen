@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Chrome 0.4 implementation verified locally; release and GitOps validation in progress
-last_updated: "2026-09-09T23:25:00Z"
+stopped_at: Chrome 0.4 delivered and production verified; ticket 33 owner acceptance pending
+last_updated: "2026-09-09T21:50:00Z"
 last_activity: 2026-09-09
 progress:
   total_phases: 9
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-30)
 
 **Core value:** Convertir una intención humana en trabajo estructurado y seguro que ChatGPT y agentes de código externos puedan entender, ejecutar y devolver a revisión dentro de un único flujo trazable.
-**Current focus:** Complete Chrome Epic 1 technical implementation (22, 24–33), package 0.4 and deploy private storage/API. Owner acceptance in 33 stays separate. Quick 260909-vje; 43 remains Done and 44 untouched.
+**Current focus:** Chrome Epic 1 technical delivery complete: 19–32 Ready for Review, 33 has owner-acceptance warning. Version 0.4 deployed and Chrome open. Quick 260909-vje; 43 remains Done and 44 untouched.
 
 ## Current Position
 
 Phase: 1 (Private Single-Owner Dogfooding MVP) — EXECUTING
 Plan: 5 of 5
 Status: Executing approved Chrome Epic incrementally
-Last activity: 2026-09-09 - OAuth 21 and capture 23 Ready for Review v7/v7, editor 25 In Progress v5 (partial), all claims null, independently reread via MCP with code links. Source OAuth 2d9b376 / GitOps 5a6b2c2e Synced Healthy; Chrome 0.3 capture/editor def5297 published. Full pnpm validate PASS (171 tests, 2 expected skips), repeat capture E2E 6/6, Google Chrome 152 desktop capture and production OAuth verified. 17/17 owner answers preserved, including inline project/Epic creation. Quick 260909-tfb. Skill 43 remains Done; 44 not started.
+Last activity: 2026-09-09 - Source e5da82f, Chrome 0.4 ZIP, GitOps db767e30 Synced Healthy (docs followup fac0669d). 182 tests PASS + Compose runtime; homelab 197 PASS. Google Chrome 152 production OAuth and all four capture modes verified in technical tickets 45–48 (Done); private images and opaque masks checked. Full production backup restored isolated without network; server and extension rollback verified. MCP reread: 19–32 Ready for Review, 33 In Progress v5 with one acceptance warning, all claims null, 17 original answers unchanged. Remote Forgejo CI run not observed. 43 Done v22; 44 Backlog v5 untouched.
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -65,8 +65,8 @@ Progress: [░░░░░░░░░░] 0%
   owner-scoped receipts that survive reconnection, separate human write consent,
   bounded structural DOM, inline project/Epic, PNG normalization and private
   storage. Keep originals/history in RAM. Restore/GC use isolated fixtures and
-  recoverable quarantine. See docs/chrome-delivery.md. Do not report deployment
-  or personal owner acceptance until verified separately.
+  recoverable quarantine. See docs/chrome-delivery.md. Deployment, backup restore
+  and technical dogfooding verified separately; personal acceptance remains in 33.
 
 - [Quick 260909-tfb]: OAuth human extension audience stays separate from MCP;
   per-installation public clients, PKCE, 30-day absolute lifetime. 0.3 capture
@@ -132,6 +132,7 @@ Decisions are logged in PROJECT.md Key Decisions table. Current roadmap-level st
 
 | ID | Description | Date | Commits | Status | Directory |
 | --- | --- | --- | --- | --- | --- |
+| 260909-vje | Complete Chrome capture-to-ticket, private storage, drafts, release and production verification | 2026-09-09 | Source `e5da82f`; GitOps `db767e30`, docs `fac0669d` | Technical delivery verified; owner acceptance in 33 | [260909-vje](./quick/260909-vje-completar-epic-chrome-dom-adjuntos-priva/) |
 | 260909-tfb | Chrome OAuth 21 + capture 23 and local part of editor 25 | 2026-09-09 | Source `2d9b376`, `def5297`; GitOps `5a6b2c2e` | 21/23 verified, Ready for Review; 25 partial | [260909-tfb](./quick/260909-tfb-oauth-humano-y-captura-local-segura-de-l/) |
 | 260909-r6j | Chrome Epic: decisiones aprobadas y base MV3/panel lateral, tickets 19–20 | 2026-09-09 | `18658bb`, `1b59442` | Verified; Ready for Review in Issopen | [260909-r6j](./quick/260909-r6j-implementar-ext-01-y-ext-02-del-epic-chr/) |
 | 260902-ght | Epics de proyecto, filtro del tablero y detalle de tickets relacionados | 2026-09-02 | `dd2434c`, `70a8a43` | Verified | [260902-ght](./quick/260902-ght-a-adir-epics-de-proyecto-para-agrupar-is/) |
@@ -165,5 +166,5 @@ Items acknowledged and carried forward from previous milestone close:
 ## Session Continuity
 
 Last session: 2026-09-09
-Stopped at: 21/23 Ready for Review, 25 partial, claims released; Chrome 0.3 open for owner testing. Next 24/22/28, then 26.
-Resume file: ./quick/260909-tfb-oauth-humano-y-captura-local-segura-de-l/SUMMARY.md (derived evidence; reread live tickets/answers)
+Stopped at: 19–32 Ready for Review; 33 owner acceptance warning, claims released. Chrome 0.4 open and connected; production and recovery verified. No remaining approved technical implementation in this Chrome cut.
+Resume file: ./quick/260909-vje-completar-epic-chrome-dom-adjuntos-priva/SUMMARY.md (derived evidence; reread live tickets/answers)

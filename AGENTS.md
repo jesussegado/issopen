@@ -40,13 +40,22 @@ haya conflicto, usa este orden:
   Producción usa volumen separado de adjuntos; su activación/digest se verifica
   en GitOps. `pnpm extension:release` valida y empaqueta sólo un Git limpio.
   La aceptación personal del owner en 33 no se simula con pruebas automáticas.
+  Entrega verificada el 2026-09-09: binario fuente `e5da82f`, GitOps `db767e30`
+  (seguido de corrección documental `fac0669d`), imagen `chrome-mvp-e5da82f`
+  por digest. Chrome 152 real creó pruebas 45–48 con los cuatro modos; PNG
+  privado/redactado verificado, backup completo restaurado sin red en PostgreSQL
+  aislado y rollback 0.4→0.3→0.4 probado. 182 pruebas del gate y Compose pasan.
+  19–32 en Ready for Review, 33 In Progress con una pregunta de aceptación y
+  todos los claims liberados; 17 respuestas previas intactas. El workflow CI
+  está definido, no se afirma un run remoto Forgejo observado. Memoria detallada:
+  [quick de entrega](.planning/quick/260909-vje-completar-epic-chrome-dom-adjuntos-priva/SUMMARY.md).
 
-- Chrome 0.3.0 añade captura local (23) y parte del editor (25): viewport,
+- Histórico del corte Chrome 0.3.0: captura local (23) y parte del editor (25): viewport,
   full-page acotada y recorte, máscaras previas, restauración de scroll/estilos,
   zoom, recorte posterior, ocultación opaca y deshacer/rehacer. PNG final en
   memoria/descarga, sin subida ni persistencia del original. Detalle e
-  invariantes en [chrome-capture.md](docs/chrome-capture.md). No declarar 25
-  completo sin integrar DOM 24 y verificar el envío/almacenamiento 22/26/28.
+  invariantes en [chrome-capture.md](docs/chrome-capture.md). Las dependencias
+  DOM 24 y envío/almacenamiento 22/26/28 se completan en el corte 0.4 anterior.
 
 - Chrome 0.2.0 añade OAuth humano por instalación (21): PKCE S256 iniciado con
   `chrome.identity`, consentimiento web, acceso de 5 minutos, refresh y límite

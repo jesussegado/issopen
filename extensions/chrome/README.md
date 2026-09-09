@@ -88,8 +88,17 @@ extensión. Sourcemaps sólo en desarrollo (`chrome-mv3-dev`); ambos outputs y
 `.wxt` están ignorados en Git. Con Git limpio, `pnpm extension:release` ejecuta
 todos los gates y genera `.output/releases/issopen-chrome-<version>-<commit>.zip`,
 SHA-256 y JSON de procedencia. Verifica `sha256sum -c <archivo>.sha256`, extrae en
-carpeta nueva y carga descomprimida. Mantén el ZIP/carpeta anterior para rollback;
-no elimines la instalación ni su storage si quieres conservar el borrador.
+carpeta nueva y carga descomprimida en la instalación inicial. Para actualizar
+una instalación existente, valida y extrae primero en una carpeta de preparación;
+cierra su panel/Chrome, conserva la carpeta cargada anterior en otra ubicación y
+pon el nuevo artefacto en **la misma ruta absoluta cargada originalmente**.
+Abre Chrome y pulsa Recargar. Cambiar esa ruta puede cambiar el ID unpacked y
+perder acceso al almacenamiento de la instalación anterior. No pulses Eliminar.
+Para rollback, repite conservando la versión nueva y restaurando el artefacto
+anterior en esa misma ruta. 0.3 no puede enviar tickets ni interpretar el borrador
+0.4, pero al volver a 0.4 se conserva el almacenamiento si no se desinstala.
+Verificado en Chrome 152: 0.4 → 0.3 → 0.4 con mismo ID, panel operativo y marcador
+local conservado; la suite prueba por separado la recuperación del borrador.
 El criterio 33 de validación personal sigue requiriendo al owner.
 
 ## Permisos y aislamiento
