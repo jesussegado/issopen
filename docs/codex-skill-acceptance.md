@@ -91,8 +91,21 @@ No real answers have been changed for tests. The original personal installation
 remains pinned to cc71a64; newer packages were installed only into disposable
 fixtures. Do not mistake that initial installation for the final candidate.
 
-Before continuing 44 the owner must authorize its limited production identity,
-confirm project/repository association and choose a small real improvement.
-The existing agent lacks create/questions/comments/Epic scopes; it has not been
-upgraded or replaced. A proposed new project-only credential, without close
-permission, is awaiting approval. Readiness does not authorize the pilot.
+Before continuing 44 the owner must confirm project/repository association and
+choose a small real improvement. Readiness does not authorize the pilot.
+
+### Credential authorization update — 2026-09-09 06:25 UTC
+
+The owner explicitly approved the new testing credential INCLUDING issues:close.
+Created `Codex Issopen pilot (testing)`, identity
+`d4162df6-e07a-4f4d-a8fa-93e0646b01cf`, only for Issopen. It expires on
+2026-10-09 at 06:25 UTC. MCP get_agent_context verified all 11 requested scopes
+and the exact one-project allowlist. An attributed comment on ticket 44 records
+the authorization and verifies comments:write. No ticket was closed.
+
+The credential is stored outside Git in homelab's ignored
+`.local/secrets/issopen-codex-pilot.env` with mode 0600. The previous identity,
+grants and secret file were preserved. No token appears in this document or the
+ticket. Default grants for other agents remain unchanged. This authorization
+does not alter native client approval settings: the interactive acceptance gate
+in 43 and the pilot/repository choice in 44 still remain.

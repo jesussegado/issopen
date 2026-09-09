@@ -4,7 +4,7 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Epic 4 implementation checkpoint; native acceptance and pilot pending
-last_updated: "2026-09-08T23:04:46Z"
+last_updated: "2026-09-09T06:25:52Z"
 last_activity: 2026-09-09
 progress:
   total_phases: 9
@@ -96,9 +96,12 @@ Decisions are logged in PROJECT.md Key Decisions table. Current roadmap-level st
 - Epic 4 / ticket 43: complete native write flow with interactive approval and
   actual editor UI acceptance. The read-only fresh CLI session passed; the
   execution fixture stopped safely before claim under approval policy never.
-- Epic 4 / ticket 44: owner authorization for limited production credential,
-  project/repository association, selected real improvement, then publication
-  and pilot. Existing grants and saved human answers remain unchanged.
+- Epic 4 / ticket 44: project/repository association, selected real improvement,
+  then publication and pilot. Owner approved a new Issopen-only testing PAT,
+  INCLUDING issues:close; created and MCP-verified on 2026-09-09, expires
+  2026-10-09. Stored in ignored homelab .local/secrets/issopen-codex-pilot.env
+  (0600). Existing grants and saved human answers remain unchanged. No tickets
+  closed and no client approval policies changed; see the acceptance report.
 
 ### Completed Todos
 
