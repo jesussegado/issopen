@@ -6,12 +6,14 @@ import { once } from "node:events";
 import {
   mkdirSync,
   mkdtempSync,
+  openSync,
   readFileSync,
   symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { serve } from "@hono/node-server";
 import { PostgreSqlContainer } from "@testcontainers/postgresql";
 import { eq } from "drizzle-orm";
@@ -31,12 +33,37 @@ const codex = process.argv[2];
 const flags = process.argv.slice(3);
 const editorMode = flags.includes("--editor");
 const planningMode = flags.includes("--planning");
+const backgroundMode = flags.includes("--background");
 if (!codex)
   throw new Error("Pass the absolute path of the native Codex binary");
-if (flags.some((flag) => !["--editor", "--planning"].includes(flag)))
-  throw new Error("Supported flags: --editor [--planning]");
+if (
+  flags.some(
+    (flag) => !["--editor", "--planning", "--background"].includes(flag),
+  )
+)
+  throw new Error("Supported flags: --editor [--planning] [--background]");
 if (planningMode && !editorMode)
   throw new Error("Planning acceptance requires interactive --editor approval");
+if (backgroundMode) {
+  if (!editorMode) throw new Error("Background mode requires --editor");
+  const logDirectory = mkdtempSync(join(tmpdir(), "issopen-native-launch-"));
+  const logPath = join(logDirectory, "fixture.log");
+  const log = openSync(logPath, "wx", 0o600);
+  const processHandle = spawn(
+    process.execPath,
+    [
+      ...process.execArgv,
+      fileURLToPath(import.meta.url),
+      resolve(codex),
+      ...flags.filter((flag) => flag !== "--background"),
+    ],
+    { cwd: process.cwd(), detached: true, stdio: ["ignore", log, log] },
+  );
+  await once(processHandle, "spawn");
+  processHandle.unref();
+  console.log(JSON.stringify({ backgroundPid: processHandle.pid, logPath }));
+  process.exit(0);
+}
 const source = process.cwd();
 const root = mkdtempSync(join(tmpdir(), "issopen-native-acceptance-"));
 const repositoryUrl = "https://git.example.test/native/fixture.git";
