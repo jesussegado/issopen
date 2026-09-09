@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Chrome OAuth 21 deployed and Ready for Review; local capture 23 and partial editor 25 verification
-last_updated: "2026-09-09T20:00:00Z"
+stopped_at: Chrome 21/23 Ready for Review, claims released; 25 partial; next DOM 24 and attachments 22/28
+last_updated: "2026-09-09T20:13:07Z"
 last_activity: 2026-09-09
 progress:
   total_phases: 9
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-30)
 
 **Core value:** Convertir una intención humana en trabajo estructurado y seguro que ChatGPT y agentes de código externos puedan entender, ejecutar y devolver a revisión dentro de un único flujo trazable.
-**Current focus:** Chrome Epic 1, OAuth 21 deployed; capture 23 and local editor 25. Historic phase 1 acceptance remains separate.
+**Current focus:** Chrome Epic 1: OAuth 21 and capture 23 Ready for Review; editor 25 partial. Next DOM 24 and private attachment contracts 22/28 before composer 26. Historic phase 1 acceptance remains separate.
 
 ## Current Position
 
 Phase: 1 (Private Single-Owner Dogfooding MVP) — EXECUTING
 Plan: 5 of 5
 Status: Executing approved Chrome Epic incrementally
-Last activity: 2026-09-09 - OAuth 21 Ready for Review v6, claim null; source 2d9b376 / GitOps 5a6b2c2e Synced Healthy, Chrome 152 production login/consent/two projects/revocation verified. 23 and partial 25 in progress, local capture E2E passing, full regression in progress. 17/17 owner answers preserved, including inline project/Epic creation. Quick 260909-tfb. Skill 43 remains Done; 44 not started.
+Last activity: 2026-09-09 - OAuth 21 and capture 23 Ready for Review v7/v7, editor 25 In Progress v5 (partial), all claims null, independently reread via MCP with code links. Source OAuth 2d9b376 / GitOps 5a6b2c2e Synced Healthy; Chrome 0.3 capture/editor def5297 published. Full pnpm validate PASS (171 tests, 2 expected skips), repeat capture E2E 6/6, Google Chrome 152 desktop capture and production OAuth verified. 17/17 owner answers preserved, including inline project/Epic creation. Quick 260909-tfb. Skill 43 remains Done; 44 not started.
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -125,6 +125,7 @@ Decisions are logged in PROJECT.md Key Decisions table. Current roadmap-level st
 
 | ID | Description | Date | Commits | Status | Directory |
 | --- | --- | --- | --- | --- | --- |
+| 260909-tfb | Chrome OAuth 21 + capture 23 and local part of editor 25 | 2026-09-09 | Source `2d9b376`, `def5297`; GitOps `5a6b2c2e` | 21/23 verified, Ready for Review; 25 partial | [260909-tfb](./quick/260909-tfb-oauth-humano-y-captura-local-segura-de-l/) |
 | 260909-r6j | Chrome Epic: decisiones aprobadas y base MV3/panel lateral, tickets 19–20 | 2026-09-09 | `18658bb`, `1b59442` | Verified; Ready for Review in Issopen | [260909-r6j](./quick/260909-r6j-implementar-ext-01-y-ext-02-del-epic-chr/) |
 | 260902-ght | Epics de proyecto, filtro del tablero y detalle de tickets relacionados | 2026-09-02 | `dd2434c`, `70a8a43` | Verified | [260902-ght](./quick/260902-ght-a-adir-epics-de-proyecto-para-agrupar-is/) |
 | 260902-mmt | Publicar Epics por GitOps y validar producción | 2026-09-02 | `144ca29`, `2de2c41`, `7f27149` | Verified | [260902-mmt](./quick/260902-mmt-publicar-la-imagen-de-issopen-con-epics-/) |
@@ -157,5 +158,5 @@ Items acknowledged and carried forward from previous milestone close:
 ## Session Continuity
 
 Last session: 2026-09-09
-Stopped at: OAuth 21 in production; capture 23 + partial editor 25 verification
+Stopped at: 21/23 Ready for Review, 25 partial, claims released; Chrome 0.3 open for owner testing. Next 24/22/28, then 26.
 Resume file: ./quick/260909-tfb-oauth-humano-y-captura-local-segura-de-l/SUMMARY.md (derived evidence; reread live tickets/answers)

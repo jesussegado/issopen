@@ -23,7 +23,7 @@ no migraciones/Secrets nuevos. Registro canónico local `438bee2a`.
 Google Chrome 152 real, perfil aislado: login normal del propietario, vínculo,
 consentimiento, dos proyectos visibles en el panel, desconexión y revocación
 comprobadas. La instalación de prueba queda revocada como rastro. Ticket 21
-Ready for Review v6, claim null, releído por MCP; 4 criterios marcados y pruebas
+Ready for Review v7 tras enlazar el commit, claim null, releído por MCP; 4 criterios marcados y pruebas
 registradas. No se han cambiado contraseñas ni permisos de agentes.
 
 ## 23 / captura y parte local de 25
@@ -60,3 +60,13 @@ almacenada en 22/26/28. No declarar el Epic completo ni promover criterios de
 upload por haber probado una descarga local. Próximo bloque: DOM 24 y contratos
 de adjuntos 22/28 antes del compositor 26. No se declara 22–33 completos.
 La skill 43 sigue cerrada y no se inicia la distribución/piloto 44.
+
+## Publicación y handoff
+
+Captura/editor publicados en `def529733fec43e7f78247c08732ca7753078028` en
+`origin/main`. Commits enlazados desde los tickets en Forgejo privado.
+Tracker releído al finalizar: 21 Ready for Review v7, 23 Ready for Review v7
+(4 criterios verificados), 25 In Progress v5 (criterios de envío/almacenamiento
+sin marcar); los tres claims null y cero preguntas bloqueantes sin respuesta.
+Los comentarios detallan pruebas y próximos pasos. No se inicia todavía 24 ni
+22/26/28; no hay envío de tickets desde la extensión.
