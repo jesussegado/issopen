@@ -31,6 +31,19 @@ master and an Ingress for `issopen.serviciosegado.com`. Issopen stores backlog
 and result references; it has no Git credentials or capability to edit a
 repository, run CI, merge or deploy code.
 
+## Chrome extension (first development cut)
+
+The `extensions/chrome` workspace contains an installable MV3 side panel built
+with WXT, React and TypeScript. It checks the active page locally after an
+explicit toolbar action; account connection, image capture and issue submission
+are **not implemented yet**. It does not change the deployed web application.
+
+Run `pnpm extension:build`, then load `extensions/chrome/.output/chrome-mv3`
+unpacked in `chrome://extensions`. See the
+[installation and test guide](extensions/chrome/README.md) and the
+[approved Epic scope](docs/chrome-extension.md). `pnpm extension:validate`
+checks this artifact; the root `pnpm validate` includes it too.
+
 ## Architecture and data flow
 
 La identidad visual aprobada usa el icono de apertura de seis piezas y la

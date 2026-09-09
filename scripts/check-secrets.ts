@@ -1,7 +1,16 @@
 import { access, readdir, readFile } from "node:fs/promises";
 import { extname, join, relative } from "node:path";
 
-const roots = ["src", "scripts", "tests", "skills", ".planning", "deploy"];
+const roots = [
+  "src",
+  "scripts",
+  "tests",
+  "skills",
+  ".planning",
+  "deploy",
+  "extensions",
+  "docs",
+];
 const topLevelFiles = ["README.md", "AGENTS.md", "app.yaml", "compose.yml"];
 const extensions = new Set([
   ".ts",

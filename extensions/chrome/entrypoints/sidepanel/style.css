@@ -1,0 +1,114 @@
+:root {
+  font-family: system-ui, sans-serif;
+  color: #142f29;
+  background: #f3faf7;
+  font-size: 14px;
+  line-height: 1.5;
+  color-scheme: light;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+main {
+  padding: 20px;
+  max-width: 640px;
+  margin-inline: auto;
+  overflow-wrap: anywhere;
+}
+header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+header strong {
+  font-size: 20px;
+}
+header p {
+  margin: 0;
+  color: #46635b;
+}
+h1 {
+  font-size: 24px;
+  line-height: 1.2;
+}
+h2 {
+  font-size: 18px;
+}
+h3 {
+  font-size: 16px;
+}
+section {
+  margin-block: 20px;
+  padding: 16px;
+  background: white;
+  border: 1px solid #c5d9d1;
+  border-radius: 12px;
+}
+.badge {
+  display: inline-block;
+  background: #6fd9b5;
+  border-radius: 16px;
+  padding: 4px 10px;
+}
+.notice {
+  padding: 12px;
+  background: #fff7ed;
+  color: #9a3412;
+  border: 1px solid #b45309;
+  border-radius: 8px;
+}
+button {
+  min-height: 44px;
+  max-width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #027067;
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 600;
+  color: white;
+  background: #027067;
+  cursor: pointer;
+}
+button:hover {
+  background: #01534c;
+}
+button:active {
+  background: #01443e;
+}
+button:focus-visible {
+  outline: 3px solid #01534c;
+  outline-offset: 3px;
+}
+button:disabled {
+  background: #dce9e3;
+  color: #46635b;
+  cursor: wait;
+}
+button.secondary {
+  background: white;
+  color: #027067;
+}
+.result {
+  margin-top: 16px;
+  border-top: 1px solid #c5d9d1;
+}
+dt {
+  font-weight: 600;
+}
+dd {
+  margin: 0 0 12px;
+}
+.error {
+  color: #b91c1c;
+  border: 1px solid #b91c1c;
+  background: #fef2f2;
+  padding: 12px;
+  border-radius: 8px;
+}
+footer {
+  color: #46635b;
+  font-size: 12px;
+}

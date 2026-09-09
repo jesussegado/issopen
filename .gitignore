@@ -25,4 +25,8 @@ __pycache__/
 build/
 dist/
 coverage/
+.wxt/
+.output/
+test-results/
+playwright-report/
 *.log

@@ -1,5 +1,6 @@
 packages:
   - "."
+  - "extensions/chrome"
 
 allowBuilds:
   cpu-features: false

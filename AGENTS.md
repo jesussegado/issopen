@@ -29,6 +29,14 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+- El 2026-09-09 el propietario priorizó el Epic de Chrome (19–33) y aprobó las
+  16 recomendaciones pendientes, conservando «Crear proyecto y Epic».
+  El primer corte 19–20 está en `extensions/chrome/`: WXT MV3, panel lateral y
+  comprobación local de pestaña, sin login, captura de imagen ni envío todavía.
+  Consultar su [AGENTS.md](extensions/chrome/AGENTS.md),
+  [guía de instalación](extensions/chrome/README.md) y
+  [alcance del Epic](docs/chrome-extension.md). No confundir esta entrega con
+  completar fases previas del roadmap, el ticket 44 ni todo el Epic.
 - Proyecto greenfield en implementación: los planes `01-01` a `01-05` aportan
   el walking skeleton ejecutable, el dominio transaccional con su REST privada
   y la web responsive del tracker, más identidades agenticas y Remote MCP.
