@@ -310,8 +310,9 @@ configuración privada. Issopen sigue siendo el plan canónico, GSD una copia
 derivada con versiones de ticket y preguntas.
 
 El trabajo del Epic 4 se sigue en Issopen: tickets 13 y 34–42 listos para revisión;
-43 pendiente de aceptación nativa de escritura/editor, 44 pendiente de publicación
-y piloto autorizado. El detalle verificable y las limitaciones están en
+43 con consulta, ejecución y reapertura/reanudación nativas comprobadas, pendiente
+de planificación/reutilización, respuestas modificadas y completar casos de fallo;
+44 pendiente de publicación y piloto autorizado. El detalle verificable está en
 [docs/codex-skill-acceptance.md](docs/codex-skill-acceptance.md). No confundir
 descubrimiento por app-server con aceptación de la UI de Codex, ni los tests del
 SDK con una sesión nativa del modelo. No cambiar políticas de aprobación para

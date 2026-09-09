@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Epic 4 implementation checkpoint; native acceptance and pilot pending
-last_updated: "2026-09-09T06:25:52Z"
+stopped_at: Ticket 43 planning fixture ready; owner Workspace Trust pending
+last_updated: "2026-09-09T14:01:00Z"
 last_activity: 2026-09-09
 progress:
   total_phases: 9
@@ -93,9 +93,20 @@ Decisions are logged in PROJECT.md Key Decisions table. Current roadmap-level st
 
 ### Pending Todos
 
-- Epic 4 / ticket 43: complete native write flow with interactive approval and
-  actual editor UI acceptance. The read-only fresh CLI session passed; the
-  execution fixture stopped safely before claim under approval policy never.
+- Epic 4 / ticket 43: native editor query, execution and reopen/resume PASSED
+  with candidate 4a5c0bf and individual owner approvals. Final independent
+  report at 13:34 UTC: Ready for Review, claim null, one attributed comment,
+  five agent events, Other=Hola unchanged, real Node test 1/1 and only
+  greeting.mjs modified; no new commits. Original global config hash restored
+  and personal installation unchanged. Disposable server/database stopped.
+  Native full planning/reuse, changed-answer resume and remaining failure
+  scenarios still pending; this is not the real pilot. Owner selected continuing
+  43. Fresh native CLI also queried the empty Epic by number without mutations.
+  Quick 260909-lxa adds planning and detached editor fixtures. New fixture
+  /tmp/issopen-native-acceptance-jck3x2 is running (PID 2517887, loopback 40385),
+  control /tmp/issopen-ide-control-MPtIb5. Waiting for owner Workspace Trust in
+  that isolated VS Code window before native planning writes. Ticket paused in
+  Backlog, claim released; no Done or production answer changes.
 - Epic 4 / ticket 44: project/repository association, selected real improvement,
   then publication and pilot. Owner approved a new Issopen-only testing PAT,
   INCLUDING issues:close; created and MCP-verified on 2026-09-09, expires
@@ -143,6 +154,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-09-08T23:04:46Z
-Stopped at: Epic 4 acceptance checkpoint; no phase completion claimed
+Last session: 2026-09-09T14:01:00Z
+Stopped at: Quick 260909-lxa / ticket 43; owner trust for new isolated planning fixture pending
 Resume file: ../docs/codex-skill-acceptance.md (derived evidence; reread live tickets/answers)
