@@ -1,9 +1,21 @@
 ---
-status: incomplete
+status: closed_by_owner
 canonical_issue: https://issopen.serviciosegado.com/issues/5c69ca94-a189-42cf-8e23-2eb2c3f12fb2
 ---
 
-# Checkpoint — 43, no terminado
+# Ticket 43 — cerrado por decisión del propietario
+
+El owner pidió «marca como listo el 43 y dejalo cerrado». A las 16:00:02 UTC
+MCP confirmó Done, versión 22 y claim null. Las pruebas no realizadas no se
+convierten en PASS: se conservan debajo como historial, no como una orden de
+reanudar este ticket. El 44 y la publicación no están autorizados por este cierre.
+
+Se detuvo el harness 2517887 por SIGTERM; dejó informe final en
+`/tmp/issopen-ide-control-MPtIb5/final-report.json` a las 16:00:02.647 UTC.
+Verificado: seis eventos sintéticos, sin cambios/staged/untracked en el repo,
+configuración global idéntica al inicio y producción ajena al fixture intacta.
+El proceso ya no existe y la ventana aislada ya estaba cerrada. Los artefactos
+privados se conservan; no recrear el entorno ni reabrir 43 automáticamente.
 
 ## Verificado
 

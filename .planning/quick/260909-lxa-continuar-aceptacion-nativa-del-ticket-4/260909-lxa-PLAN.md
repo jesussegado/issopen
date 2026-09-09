@@ -1,12 +1,16 @@
 ---
 type: quick
-status: in_progress
+status: closed_by_owner
 canonical_issue: https://issopen.serviciosegado.com/issues/5c69ca94-a189-42cf-8e23-2eb2c3f12fb2
-source_issue_version: 13
+source_issue_version: 22
 source_question_versions: []
 ---
 
 # Ticket 43 — continuar la aceptación nativa
+
+Plan cerrado por instrucción posterior del owner el 2026-09-09, 16:00 UTC.
+Ticket 43 verificado en Done. No se completaron todos los pasos originales:
+conservar las salvedades del SUMMARY; no retomar ni publicar automáticamente.
 
 Plan derivado del ticket 43, no una autoridad alternativa. Encargo del owner:
 completar la aceptación pendiente antes de publicar o iniciar el piloto 44.

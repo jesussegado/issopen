@@ -4,6 +4,21 @@ Scope: Epic 4, "crear skill para usar desde codex". Issopen remains the
 canonical plan and decision store. This is derived verification evidence, not
 permission to publish, create production credentials, or close tickets.
 
+## Current disposition — closed by owner, 16:00 UTC
+
+The owner explicitly requested that ticket 43 be marked ready and closed.
+MCP independently confirmed Done, version 22, claim null at 16:00:02 UTC.
+An attributed comment records the instruction and the remaining acceptance
+caveats; closure is not a claim that unexecuted checks passed. The checkpoints
+below are historical evidence, not instructions to resume or reopen 43.
+Ticket 44, release and deployment remain outside this closure request.
+
+Stopped only the disposable harness PID 2517887. It saved
+`/tmp/issopen-ide-control-MPtIb5/final-report.json` at 16:00:02.647 UTC:
+six synthetic agent events, unchanged fixture disk/remote, original global
+configuration hash restored, productionTouched=false. The process exited;
+the isolated editor window was already closed. Private evidence is retained.
+
 ## Revisions and actual surfaces
 
 - Native client: codex-cli 0.153.0, shipped with the installed editor extension.
@@ -372,8 +387,9 @@ Chromium/Playwright runs, not use of an unavailable Chrome connector.
 
 ## Remaining gates and handoff
 
-Tickets 13 and 34–42 are Ready for Review, not Done. Ticket 43 retains the
-native-write/editor acceptance gap; ticket 44 retains the release/pilot gate.
+Tickets 13 and 34–42 are Ready for Review, not Done. Ticket 43 is Done by the
+explicit owner decision above, with acceptance caveats retained rather than
+asserted as passed. Ticket 44 retains the release/pilot gate.
 No real answers have been changed for tests. The original personal installation
 remains pinned to cc71a64; newer packages were installed only into disposable
 fixtures. Do not mistake that initial installation for the final candidate.

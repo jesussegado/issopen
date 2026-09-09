@@ -310,14 +310,14 @@ configuración privada. Issopen sigue siendo el plan canónico, GSD una copia
 derivada con versiones de ticket y preguntas.
 
 El trabajo del Epic 4 se sigue en Issopen: tickets 13 y 34–42 listos para revisión;
-43 con consulta, ejecución y reapertura/reanudación nativas comprobadas, pendiente
-de planificación/reutilización, respuestas modificadas y completar casos de fallo;
+43 cerrado en Done por instrucción explícita del owner el 2026-09-09, con las
+salvedades de aceptación documentadas, sin afirmar que todas las pruebas pasaron;
 44 pendiente de publicación y piloto autorizado. El detalle verificable está en
 [docs/codex-skill-acceptance.md](docs/codex-skill-acceptance.md). No confundir
 descubrimiento por app-server con aceptación de la UI de Codex, ni los tests del
 SDK con una sesión nativa del modelo. No cambiar políticas de aprobación para
-sortear una prueba bloqueada. No declarar Done ni publicar el candidato hasta
-resolver los gates documentados.
+sortear una prueba bloqueada. El cierre autorizado de 43 no autoriza publicar el
+candidato ni iniciar 44. No reabrir ni retomar automáticamente las pruebas de 43.
 
 ## Invariantes de seguridad
 

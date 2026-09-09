@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Ticket 43 planning/repeat and changed-answer query verified; editor URI confirmation pending
-last_updated: "2026-09-09T15:40:00Z"
+stopped_at: Ticket 43 closed Done by explicit owner request; test harness stopped
+last_updated: "2026-09-09T16:00:02Z"
 last_activity: 2026-09-09
 progress:
   total_phases: 9
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-08-30)
 Phase: 1 (Private Single-Owner Dogfooding MVP) — EXECUTING
 Plan: 5 of 5
 Status: Ready to execute
-Last activity: 2026-09-09 - Epic 4: tickets 13 and 34–42 implemented and Ready for Review; 43/44 acceptance and pilot gates pending. Server guards/Epic MCP deployed via GitOps. See ../docs/codex-skill-acceptance.md.
+Last activity: 2026-09-09 - Epic 4: tickets 13 and 34–42 Ready for Review; 43 Done by explicit owner decision with acceptance caveats recorded; 44 not started. See ../docs/codex-skill-acceptance.md.
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -93,38 +93,22 @@ Decisions are logged in PROJECT.md Key Decisions table. Current roadmap-level st
 
 ### Pending Todos
 
-- Epic 4 / ticket 43: native editor query, execution and reopen/resume PASSED
-  with candidate 4a5c0bf and individual owner approvals. Final independent
-  report at 13:34 UTC: Ready for Review, claim null, one attributed comment,
-  five agent events, Other=Hola unchanged, real Node test 1/1 and only
-  greeting.mjs modified; no new commits. Original global config hash restored
-  and personal installation unchanged. Disposable server/database stopped.
-  Native full planning/reuse, changed-answer resume and remaining failure
-  scenarios still pending; this is not the real pilot. Owner selected continuing
-  43. Fresh native CLI also queried the empty Epic by number without mutations.
-  Quick 260909-lxa adds planning and detached editor fixtures. New fixture
-  /tmp/issopen-native-acceptance-jck3x2 is running (PID 2517887, loopback 40385),
-  control /tmp/issopen-ide-control-MPtIb5. Owner trusted the isolated folder;
-  native planning completed two synthetic Backlog plans, links, Epic map and
-  format question. Repeated full request completed read-only with identical
-  IDs/content/events. Initial creation's human approval remains inconclusive
-  due to operator focus loss; it is excluded from approval evidence. Synthetic
-  owner used the local web to answer JSON then change to Other (question v3,
-  issue still v2). Fresh native CLI query 01a086cd-f9d1-7c70-b1c6-dd6c8df02cec
-  correctly identified the changed answer and stale plan without writes.
-  Explicit planning resume remains pending: isolated VS Code asks Open for
-  that conversation URI. Global config hash restored; START-HERE accidental
-  buffer still unsaved, disk unchanged. Real ticket 43 is Backlog, claim null
-  (v21); no Done or production answer changes. See quick summary before resume.
 - Epic 4 / ticket 44: project/repository association, selected real improvement,
   then publication and pilot. Owner approved a new Issopen-only testing PAT,
   INCLUDING issues:close; created and MCP-verified on 2026-09-09, expires
   2026-10-09. Stored in ignored homelab .local/secrets/issopen-codex-pilot.env
-  (0600). Existing grants and saved human answers remain unchanged. No tickets
-  closed and no client approval policies changed; see the acceptance report.
+  (0600). Existing grants, saved human answers and client approval policies
+  remain unchanged. Only 43 was closed by explicit owner request.
 
 ### Completed Todos
 
+- Epic 4 / ticket 43: Done, version 22, claim null, independently reread via MCP
+  at 16:00:02 UTC after the owner requested closure. Native execution/reopen,
+  planning/repeat and changed-answer query evidence remains documented; unrun
+  plan reconciliation/failure cases are not relabeled PASS. Test harness PID
+  2517887 stopped; final report retained in /tmp/issopen-ide-control-MPtIb5.
+  Global config restored, fixture disk unchanged. Do not resume this closed
+  task automatically; 44 and publication require a separate request.
 - `2026-08-30-documentar-mvp-autoprogramable-con-chatgpt`: integrado en
   `PROJECT.md` y `REQUIREMENTS.md`; su roadmap de doce fases quedó superado el
   2026-08-31 al mover el MVP privado completo a la fase 1.
@@ -163,6 +147,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-09-09T15:40:00Z
-Stopped at: Quick 260909-lxa / ticket 43; Open URI confirmation for changed-answer planning resume
+Last session: 2026-09-09T16:00:02Z
+Stopped at: Ticket 43 Done by owner decision; test harness stopped; 44 not started
 Resume file: ../docs/codex-skill-acceptance.md (derived evidence; reread live tickets/answers)
