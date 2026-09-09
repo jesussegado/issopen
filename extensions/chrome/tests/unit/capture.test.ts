@@ -36,7 +36,6 @@ describe("capture geometry", () => {
     for (const extra of [
       { tabId: 12 },
       { url: "https://other.test" },
-      { mode: "element" },
       { mode: "automatic" },
     ])
       expect(

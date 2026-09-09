@@ -1,7 +1,12 @@
 import { browser } from "wxt/browser";
 import { defineBackground } from "wxt/utils/define-background";
-import { accountRequestSchema, handleAccount } from "../lib/account";
+import {
+  accountRequestSchema,
+  handleAccount,
+  handleTickets,
+} from "../lib/account";
 import { capture, captureRequestSchema } from "../lib/capture";
+import { loadDraft } from "../lib/draft";
 import {
   type InspectResponse,
   inspectableOrigin,
@@ -9,6 +14,7 @@ import {
   isPanelSender,
   pageContextSchema,
 } from "../lib/protocol";
+import { ticketRequestSchema } from "../lib/tickets";
 
 async function inspectActiveTab(): Promise<InspectResponse> {
   try {
@@ -43,6 +49,8 @@ async function inspectActiveTab(): Promise<InspectResponse> {
 }
 
 export default defineBackground(() => {
+  // Enforce logical expiry and delete stale pixels when the worker wakes.
+  void loadDraft().catch(() => undefined);
   // Native automatic side-panel opening bypasses the action's activeTab grant.
   // Handle the toolbar action explicitly, then open within that same gesture.
   const reportPanelFailure = () =>
@@ -66,6 +74,11 @@ export default defineBackground(() => {
       )
         return false;
       const account = accountRequestSchema.safeParse(message);
+      const ticket = ticketRequestSchema.safeParse(message);
+      if (ticket.success) {
+        void handleTickets(ticket.data).then(sendResponse);
+        return true;
+      }
       if (account.success) {
         void handleAccount(account.data.type).then(sendResponse);
         return true;

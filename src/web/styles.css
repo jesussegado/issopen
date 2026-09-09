@@ -28,6 +28,27 @@
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
+.capture-evidence {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.capture-evidence img {
+  display: block;
+  max-width: 100%;
+  max-height: 420px;
+  object-fit: contain;
+  border: 1px solid #cbd5e1;
+}
+.capture-evidence pre {
+  max-width: 100%;
+  overflow: auto;
+  max-height: 360px;
+  white-space: pre-wrap;
+}
+.capture-evidence dd {
+  margin-left: 0;
+}
+
 :root {
   color: var(--color-text);
   background: var(--color-app);

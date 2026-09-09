@@ -70,8 +70,9 @@ Este documento deriva del tracker, no lo sustituye.
 | 33 / EXT-15 | Dogfooding completo contra producción | 19–32 |
 
 La primera entrega incluyó 19–20; 0.2 añade [OAuth humano](chrome-oauth.md) (21).
-0.3 incorpora [captura local](chrome-capture.md) (23) y la parte local del editor
-(25); DOM, envío y evidencias persistentes siguen pendientes.
+0.3 incorporó [captura local](chrome-capture.md) (23) y parte del editor.
+0.4 completa DOM, compositor, adjuntos, borrador y reintento; contrato y gates
+en [chrome-delivery.md](chrome-delivery.md). La aceptación personal 33 sigue separada.
 No se declara el Epic completo por tener
 un scaffold instalable. La distribución comienza unpacked; Chrome Web Store,
 Firefox/Safari, anotaciones con flechas/texto y envío automático quedan fuera
@@ -95,9 +96,9 @@ entrada/salida y validación del emisor; nada de `window.postMessage` confiable
 por defecto. No dependencias del servidor dentro del bundle del navegador.
 
 La base comprueba origen (sin ruta/query/hash), viewport y DPR;
-no captura DOM. OAuth 0.2 añade red sólo a Issopen y credenciales
-limitadas al worker. Captura 0.3 añade imágenes en memoria, no envío. Los siguientes cortes
-añaden capacidades conforme a sus pruebas, no permisos preventivos.
+no capturaba DOM. OAuth 0.2 añade red sólo a Issopen y credenciales
+limitadas al protocolo del worker. Captura 0.3 añadió imágenes en memoria. 0.4
+integra envío autorizado y evidencia privada; no añade permisos globales a webs.
 
 Fuentes técnicas: [WXT manifest](https://wxt.dev/guide/essentials/config/manifest.html),
 [scripts bajo demanda](https://wxt.dev/guide/essentials/scripting),

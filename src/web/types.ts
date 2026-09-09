@@ -181,7 +181,7 @@ export type IssueComment = {
   authorType: "human" | "agent" | "system";
   authorId: string;
   authorDisplayName: string;
-  source: "rest" | "mcp" | "system" | "operator";
+  source: "rest" | "mcp" | "system" | "operator" | "chrome_extension";
   createdAt: string;
 };
 
@@ -192,7 +192,7 @@ export type Activity = {
   actorType: "human" | "agent" | "system";
   actorId: string;
   actorDisplayName: string;
-  source: "rest" | "mcp" | "system" | "operator";
+  source: "rest" | "mcp" | "system" | "operator" | "chrome_extension";
   summary: string;
   changes: Record<string, unknown>;
   createdAt: string;

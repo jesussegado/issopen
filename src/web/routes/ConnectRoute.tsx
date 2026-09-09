@@ -72,6 +72,8 @@ const scopeLabels: Record<string, string> = {
   "issues:close": "Close issues",
   "extension:read":
     "Leer tus proyectos desde esta instalación de Chrome (sin permisos de agente)",
+  "extension:write":
+    "Crear proyectos, Epics y tickets con capturas revisadas desde esta instalación de Chrome",
   offline_access: "Stay connected and refresh access until revoked",
 };
 

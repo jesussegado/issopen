@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Chrome 21/23 Ready for Review, claims released; 25 partial; next DOM 24 and attachments 22/28
-last_updated: "2026-09-09T20:13:07Z"
+stopped_at: Chrome 0.4 implementation verified locally; release and GitOps validation in progress
+last_updated: "2026-09-09T23:25:00Z"
 last_activity: 2026-09-09
 progress:
   total_phases: 9
@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-30)
 
 **Core value:** Convertir una intención humana en trabajo estructurado y seguro que ChatGPT y agentes de código externos puedan entender, ejecutar y devolver a revisión dentro de un único flujo trazable.
-**Current focus:** Chrome Epic 1: OAuth 21 and capture 23 Ready for Review; editor 25 partial. Next DOM 24 and private attachment contracts 22/28 before composer 26. Historic phase 1 acceptance remains separate.
+**Current focus:** Complete Chrome Epic 1 technical implementation (22, 24–33), package 0.4 and deploy private storage/API. Owner acceptance in 33 stays separate. Quick 260909-vje; 43 remains Done and 44 untouched.
 
 ## Current Position
 
@@ -60,6 +60,13 @@ Progress: [░░░░░░░░░░] 0%
 ## Accumulated Context
 
 ### Decisions
+
+- [Quick 260909-vje]: Chrome 0.4 adds reviewed-only IndexedDB drafts (24 h),
+  owner-scoped receipts that survive reconnection, separate human write consent,
+  bounded structural DOM, inline project/Epic, PNG normalization and private
+  storage. Keep originals/history in RAM. Restore/GC use isolated fixtures and
+  recoverable quarantine. See docs/chrome-delivery.md. Do not report deployment
+  or personal owner acceptance until verified separately.
 
 - [Quick 260909-tfb]: OAuth human extension audience stays separate from MCP;
   per-installation public clients, PKCE, 30-day absolute lifetime. 0.3 capture

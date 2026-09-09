@@ -27,7 +27,7 @@ export default defineConfig({
   manifest: ({ mode }) => ({
     name: "Issopen",
     description:
-      "Conecta tu cuenta de Issopen y prepara capturas desde Chrome.",
+      "Crea tickets con capturas revisadas y DOM saneado en tus proyectos y Epics de Issopen.",
     minimum_chrome_version: "116",
     incognito: "not_allowed",
     permissions: ["activeTab", "scripting", "sidePanel", "identity", "storage"],

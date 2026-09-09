@@ -3,7 +3,11 @@ import { browser } from "wxt/browser";
 import { type AccountResponse, accountResponseSchema } from "../../lib/account";
 import { instanceUrl } from "../../lib/instance";
 
-export function Account() {
+export function Account({
+  onChange,
+}: {
+  onChange?: (account: AccountResponse) => void;
+}) {
   const [account, setAccount] = useState<AccountResponse | null>(null);
   const [busy, setBusy] = useState(false);
   const request = useCallback(
@@ -33,6 +37,9 @@ export function Account() {
     void request("account-status");
   }, [request]);
   const connected = account?.ok && account.connected;
+  useEffect(() => {
+    if (account) onChange?.(account);
+  }, [account, onChange]);
   return (
     <section aria-labelledby="account-heading">
       <h2 id="account-heading">Tu cuenta</h2>
@@ -48,6 +55,12 @@ export function Account() {
             <p>
               Conectado como <strong>{account.name}</strong>
             </p>
+            {!account.canWrite && (
+              <p className="notice">
+                Esta conexión sólo permite lectura. Desconecta y vuelve a
+                conectar para autorizar tickets.
+              </p>
+            )}
             <p>
               Vinculación hasta{" "}
               {new Date(account.expiresAt).toLocaleDateString()}.

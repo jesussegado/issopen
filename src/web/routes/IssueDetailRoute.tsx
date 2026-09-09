@@ -5,6 +5,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { CaptureEvidence } from "../components/CaptureEvidence.js";
 import {
   AppLink,
   Badge,
@@ -71,6 +72,7 @@ function commentAuthorLabel(comment: IssueComment) {
 }
 
 const sourceLabels: Record<Activity["source"], string> = {
+  chrome_extension: "Chrome extension",
   rest: "Web",
   mcp: "MCP",
   system: "System",
@@ -498,6 +500,7 @@ export function IssueDetailRoute({ issueId }: { issueId: string }) {
               <p className="metadata">No description</p>
             )}
           </section>
+          <CaptureEvidence issueId={issue.id} />
           <section
             className="detail-panel question-panel"
             aria-labelledby="questions-heading"

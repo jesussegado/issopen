@@ -31,16 +31,17 @@ master and an Ingress for `issopen.serviciosegado.com`. Issopen stores backlog
 and result references; it has no Git credentials or capability to edit a
 repository, run CI, merge or deploy code.
 
-## Chrome extension (development 0.3)
+## Chrome extension (pilot 0.4)
 
 The `extensions/chrome` workspace contains an installable MV3 side panel built
 with WXT, React and TypeScript. It checks the active page locally after an
 explicit toolbar action and links the human account through OAuth PKCE, with
-individual revocation in `/extensions`. Version 0.3 adds local viewport,
-full-page and crop screenshots, preview zoom, crop/redaction, undo/redo and
-flattened PNG download. Issue submission and DOM capture are **not implemented
-yet**. See [human OAuth](docs/chrome-oauth.md) and
-[local capture](docs/chrome-capture.md) for the verified boundaries and limits.
+individual revocation in `/extensions`. Version 0.4 adds bounded viewport,
+full-page, crop and element screenshots, sanitized structural DOM, irreversible
+redaction, inline project/Epic creation and ticket submission with private PNG
+evidence. One reviewed 24-hour draft survives reload/reconnection, and manual
+idempotent retry avoids duplicates. See [delivery and operation](docs/chrome-delivery.md).
+Existing read-only connections must reconnect to consent to creation.
 
 Run `pnpm extension:build`, then load `extensions/chrome/.output/chrome-mv3`
 unpacked in `chrome://extensions`. See the

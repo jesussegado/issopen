@@ -1,9 +1,13 @@
+import { mkdtemp } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { serve } from "@hono/node-server";
 import { PostgreSqlContainer } from "@testcontainers/postgresql";
 import pino from "pino";
 import { bootstrapOwner } from "../../scripts/owner.js";
 import { createApp } from "../../src/server/app.js";
 import { createAuth } from "../../src/server/auth.js";
+import { CaptureStorage } from "../../src/server/capture-storage.js";
 import { loadConfig } from "../../src/server/config.js";
 import { createDatabase } from "../../src/server/db/client.js";
 import { migrateDatabase } from "../../src/server/db/migrate.js";
@@ -22,6 +26,9 @@ const config = loadConfig({
 const auth = createAuth(connection.db, config);
 await bootstrapOwner(connection.db, auth, e2eOwner);
 const app = createApp({
+  captureStorage: new CaptureStorage(
+    await mkdtemp(join(tmpdir(), "issopen-e2e-evidence-")),
+  ),
   logger: pino({ level: "silent" }),
   db: connection.db,
   auth,

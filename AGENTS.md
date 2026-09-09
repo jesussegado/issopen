@@ -29,6 +29,18 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+- Chrome 0.4 implementa el flujo captura → ticket: selección DOM estructural,
+  revisión/exclusión, proyecto y Epic inline, evidencia privada y borrador
+  IndexedDB de 24 h con reintento idempotente. Contrato común en
+  `src/shared/capture-contract.ts`, API/storage/maintenance en `src/server/capture-*.ts`,
+  compositor en `extensions/chrome/entrypoints/sidepanel/Workspace.tsx`.
+  Ver [contratos, seguridad, backups y release](docs/chrome-delivery.md).
+  Nuevos permisos humanos `extension:write` requieren reconectar/consentir;
+  no ampliar grants antiguos ni permisos MCP. Migración aditiva 0013.
+  Producción usa volumen separado de adjuntos; su activación/digest se verifica
+  en GitOps. `pnpm extension:release` valida y empaqueta sólo un Git limpio.
+  La aceptación personal del owner en 33 no se simula con pruebas automáticas.
+
 - Chrome 0.3.0 añade captura local (23) y parte del editor (25): viewport,
   full-page acotada y recorte, máscaras previas, restauración de scroll/estilos,
   zoom, recorte posterior, ocultación opaca y deshacer/rehacer. PNG final en
@@ -44,7 +56,7 @@ haya conflicto, usa este orden:
   a agentes. Cada instalación es un cliente público propio revocable, callback
   Chromium exacto, sin secreto de cliente. Credenciales sólo en storage local
   confiable del worker, nunca mensajes al panel/content scripts ni sync.
-  La conexión permite leer proyectos; todavía no envía capturas ni crea tickets.
+  Esa conexión 0.2 sólo permite leer; 0.4 añade escritura con consentimiento nuevo.
   La revisión/digest GitOps siguen siendo la autoridad de qué está desplegado.
 
 - El 2026-09-09 el propietario priorizó el Epic de Chrome (19–33) y aprobó las

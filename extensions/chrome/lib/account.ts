@@ -1,6 +1,14 @@
 import { browser } from "wxt/browser";
 import { z } from "zod";
 import { extensionResource, instanceUrl } from "./instance";
+import {
+  createdIssueSchema,
+  epicSchema,
+  projectSchema,
+  type TicketRequest,
+  type TicketResponse,
+  ticketErrorSchema,
+} from "./tickets";
 
 export const accountRequestSchema = z
   .object({
@@ -16,6 +24,10 @@ export const accountResponseSchema = z.union([
       connected: z.literal(true),
       name: z.string().max(120),
       expiresAt: z.iso.datetime(),
+      canWrite: z.boolean().optional(),
+      apiVersion: z.number().optional(),
+      ownerId: z.string().optional(),
+      workspaceId: z.uuid().optional(),
       projects: z.array(z.object({ id: z.uuid(), name: z.string().max(120) })),
     })
     .strict(),
@@ -41,12 +53,16 @@ const tokenSchema = z.object({
 const sessionSchema = z.object({
   name: z.string().max(120),
   expiresAt: z.iso.datetime(),
+  canWrite: z.boolean().optional(),
+  apiVersion: z.number().optional(),
+  ownerId: z.string().optional(),
+  workspaceId: z.uuid().optional(),
 });
 const projectsSchema = z.object({
   projects: z.array(z.object({ id: z.uuid(), name: z.string().max(120) })),
 });
 const storageKey = "issopen-account-v1";
-let operation: Promise<AccountResponse> | null = null;
+let operation: Promise<unknown> | null = null;
 
 export function randomProof() {
   return btoa(
@@ -234,7 +250,88 @@ export async function handleAccount(
     }
   })();
   try {
-    return await operation;
+    return (await operation) as AccountResponse;
+  } finally {
+    operation = null;
+  }
+}
+
+export async function handleTickets(
+  request: TicketRequest,
+): Promise<TicketResponse> {
+  if (operation) return { ok: false, code: "busy" };
+  operation = (async (): Promise<TicketResponse> => {
+    try {
+      const credential = await usableCredential();
+      if (!credential) return { ok: false, code: "auth" };
+      const path =
+        request.action === "capture"
+          ? "/captures"
+          : request.action === "project"
+            ? "/projects"
+            : `/projects/${request.projectId}/epics`;
+      const body =
+        request.action === "epics"
+          ? undefined
+          : request.action === "capture"
+            ? request.payload
+            : request.action === "project"
+              ? { name: request.name, idempotencyKey: request.idempotencyKey }
+              : {
+                  title: request.title,
+                  idempotencyKey: request.idempotencyKey,
+                };
+      const response = await fetch(`${extensionResource}${path}`, {
+        method: body ? "POST" : "GET",
+        credentials: "omit",
+        redirect: "error",
+        cache: "no-store",
+        headers: {
+          Authorization: `Bearer ${credential.accessToken}`,
+          "Content-Type": "application/json",
+        },
+        ...(body ? { body: JSON.stringify(body) } : {}),
+        signal: AbortSignal.timeout(25000),
+      });
+      if (response.status === 401) {
+        await browser.storage.local.remove(storageKey);
+        return { ok: false, code: "auth" };
+      }
+      const json = await response.json().catch(() => null);
+      if (!response.ok)
+        return {
+          ok: false,
+          code:
+            ticketErrorSchema.safeParse(json?.code).data ??
+            (response.status === 403
+              ? "permission"
+              : response.status === 413
+                ? "size"
+                : response.status === 404
+                  ? "version"
+                  : "storage"),
+        };
+      if (request.action === "capture")
+        return { ok: true, issue: createdIssueSchema.parse(json.issue) };
+      if (request.action === "project")
+        return { ok: true, project: projectSchema.parse(json.project) };
+      if (request.action === "epic")
+        return { ok: true, epic: epicSchema.parse(json.epic) };
+      return { ok: true, epics: z.array(epicSchema).parse(json.epics) };
+    } catch (error) {
+      return {
+        ok: false,
+        code:
+          error instanceof z.ZodError
+            ? "version"
+            : error instanceof Error && error.message === "Token request failed"
+              ? "auth"
+              : "network",
+      };
+    }
+  })();
+  try {
+    return (await operation) as TicketResponse;
   } finally {
     operation = null;
   }

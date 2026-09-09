@@ -169,6 +169,7 @@ export async function prepareCapturePage(full: boolean) {
     x: scrollX,
     y: scrollY,
     origin: location.origin,
+    dpr: originalDpr,
   };
 }
 

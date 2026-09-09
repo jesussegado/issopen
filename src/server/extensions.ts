@@ -4,6 +4,8 @@ import { Hono } from "hono";
 import { createLocalJWKSet, jwtVerify } from "jose";
 import { z } from "zod";
 import type { IssopenAuth, OwnerSession } from "./auth.js";
+import { createCaptureRouter, type ExtensionBindings } from "./capture-api.js";
+import type { CaptureStorage } from "./capture-storage.js";
 import type { Database } from "./db/client.js";
 import {
   oauthAccessToken,
@@ -16,7 +18,11 @@ import {
 } from "./db/schema.js";
 import { DomainError, TrackerService } from "./domain/index.js";
 
-export const extensionScopes = ["extension:read", "offline_access"];
+export const extensionScopes = [
+  "extension:read",
+  "extension:write",
+  "offline_access",
+];
 const lifetimeMs = 30 * 24 * 60 * 60 * 1000;
 const marker = "issopen-chrome";
 export const extensionLinkSchema = z
@@ -175,7 +181,10 @@ export function createExtensionOwnerRouter(db: Database, auth: IssopenAuth) {
           accessTokenTtl: 300,
           refreshTokenTtl: lifetimeMs / 1000,
         })
-        .onConflictDoNothing();
+        .onConflictDoUpdate({
+          target: oauthResource.identifier,
+          set: { allowedScopes: extensionScopes },
+        });
       await tx
         .insert(oauthClient)
         .values({
@@ -245,15 +254,12 @@ export function createExtensionOwnerRouter(db: Database, auth: IssopenAuth) {
   return router;
 }
 
-export function createExtensionRouter(db: Database, auth: IssopenAuth) {
-  const router = new Hono<{
-    Variables: {
-      ownerId: string;
-      clientId: string;
-      expiresAt: string;
-      workspaceId: string;
-    };
-  }>();
+export function createExtensionRouter(
+  db: Database,
+  auth: IssopenAuth,
+  storage?: CaptureStorage,
+) {
+  const router = new Hono<ExtensionBindings>();
   const resource = extensionResource(String(auth.options.baseURL));
   router.use("*", async (c, next) => {
     c.header("Cache-Control", "no-store");
@@ -302,6 +308,11 @@ export function createExtensionRouter(db: Database, auth: IssopenAuth) {
       c.set("clientId", payload.client_id);
       c.set("expiresAt", metadata.expiresAt);
       c.set("workspaceId", space.id);
+      c.set(
+        "canWrite",
+        payload.scope.split(" ").includes("extension:write") &&
+          Boolean(client?.scopes?.includes("extension:write")),
+      );
     } catch {
       c.header("WWW-Authenticate", `Bearer resource="${resource}"`);
       return c.json(
@@ -320,6 +331,10 @@ export function createExtensionRouter(db: Database, auth: IssopenAuth) {
     return c.json({
       name: person?.name ?? "Issopen",
       expiresAt: c.get("expiresAt"),
+      apiVersion: 1,
+      canWrite: c.get("canWrite"),
+      ownerId: c.get("ownerId"),
+      workspaceId: c.get("workspaceId"),
     });
   });
   router.get("/projects", async (c) =>
@@ -333,5 +348,9 @@ export function createExtensionRouter(db: Database, auth: IssopenAuth) {
     await revoke(db, c.get("clientId"), c.get("ownerId"));
     return c.json({ revoked: true });
   });
+  router.route(
+    "/",
+    createCaptureRouter(db, storage, String(auth.options.baseURL)),
+  );
   return router;
 }

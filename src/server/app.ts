@@ -5,6 +5,8 @@ import { Hono } from "hono";
 import type { Logger } from "pino";
 import { z } from "zod";
 import type { IssopenAuth, OwnerSession } from "./auth.js";
+import { createEvidenceRouter } from "./capture-api.js";
+import type { CaptureStorage } from "./capture-storage.js";
 import type { Database } from "./db/client.js";
 import { workspace } from "./db/schema.js";
 import { DomainError } from "./domain/index.js";
@@ -32,6 +34,7 @@ type AppDependencies = {
   auth: IssopenAuth;
   trustedOrigins: string[];
   webRoot?: string;
+  captureStorage?: CaptureStorage | undefined;
 };
 
 const workspaceInputSchema = z.object({
@@ -64,6 +67,7 @@ export function createApp({
   auth,
   trustedOrigins,
   webRoot = "./dist/web",
+  captureStorage,
 }: AppDependencies) {
   const app = new Hono<AppBindings>();
   const oauthApi = auth.api as typeof auth.api & {
@@ -95,7 +99,10 @@ export function createApp({
       (await extensionOAuthGuard(context.req.raw, db)) ??
       auth.handler(context.req.raw),
   );
-  app.route("/api/extension/v1", createExtensionRouter(db, auth));
+  app.route(
+    "/api/extension/v1",
+    createExtensionRouter(db, auth, captureStorage),
+  );
   app.get("/.well-known/oauth-authorization-server", (context) =>
     oauthApi.getOAuthServerConfig({
       request: context.req.raw,
@@ -219,6 +226,7 @@ export function createApp({
   app.route("/api/v1", createTrackerRouter({ db }));
   app.route("/api/v1", createAgentRouter({ db }));
   app.route("/api/v1", createExtensionOwnerRouter(db, auth));
+  app.route("/api/v1", createEvidenceRouter(db, captureStorage));
 
   app.all("/api/v1/*", (context) =>
     context.json({ error: "This page isn't available" }, 404),

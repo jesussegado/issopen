@@ -2,6 +2,7 @@ import { serve } from "@hono/node-server";
 import pino from "pino";
 import { createApp } from "./app.js";
 import { createAuth } from "./auth.js";
+import { CaptureStorage } from "./capture-storage.js";
 import { ConfigError, loadConfig } from "./config.js";
 import { createDatabase } from "./db/client.js";
 
@@ -24,11 +25,19 @@ async function main() {
   const config = loadConfig();
   const connection = createDatabase(config.databaseUrl);
   const auth = createAuth(connection.db, config);
+  const captureStorage = process.env.ISSOPEN_ATTACHMENTS_DIR
+    ? new CaptureStorage(
+        process.env.ISSOPEN_ATTACHMENTS_DIR,
+        Number(process.env.ISSOPEN_ATTACHMENTS_QUOTA_BYTES ?? 1073741824),
+      )
+    : undefined;
+  await captureStorage?.ready();
   const app = createApp({
     logger,
     db: connection.db,
     auth,
     trustedOrigins: config.trustedOrigins,
+    captureStorage,
   });
   const server = serve({
     fetch: app.fetch,

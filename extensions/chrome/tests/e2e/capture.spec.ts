@@ -13,7 +13,7 @@ const server = createServer((_req, res) => {
     #fixed{position:fixed;top:0;right:0;background:lime;width:80px;height:40px}
     private-control{position:absolute;top:150px;left:10px;width:200px;height:30px;display:block;background:red}
     </style></head><body><div id="page">Capture fixture</div>
-    <input value="PRIVATE-INPUT"><private-control>PRIVATE-SHADOW</private-control><div id="fixed">Fixed</div></body></html>`);
+    <input value="PRIVATE-INPUT"><private-control>PRIVATE-SHADOW</private-control><section id="pick" style="position:absolute;left:20px;top:200px" data-secret="PRIVATE-DOM-DECOY"><button id="target" title="PRIVATE-DOM-DECOY" style="width:200px;height:50px">Select this button</button></section><div id="fixed">Fixed</div></body></html>`);
 });
 let url: string;
 test.beforeAll(async () => {
@@ -139,6 +139,37 @@ async function take(panel: Page, mode: string) {
     .getByRole("button", { name: "Capturar página", exact: true })
     .click();
 }
+
+// biome-ignore lint/correctness/noEmptyPattern: Playwright requires destructured fixtures.
+test("selects an element, navigates ancestors and previews only removable sanitized structure", async ({}) => {
+  const { context, page, panel, requests } = await openCapture();
+  try {
+    await take(panel, "element");
+    await selectionReady(page);
+    await page.locator("#target").hover();
+    await page.keyboard.press("ArrowUp");
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("Enter");
+    await expect(panel.locator("canvas")).toHaveAttribute("aria-busy", "false");
+    await expect(
+      panel.getByRole("heading", { name: "Elemento seleccionado" }),
+    ).toBeVisible();
+    await panel.getByText("Revisar DOM", { exact: false }).click();
+    await expect(panel.locator("pre")).toContainText("<button>");
+    expect(await panel.locator(".element-context").innerText()).not.toContain(
+      "PRIVATE",
+    );
+    await panel.getByLabel("Incluir estructura DOM saneada").uncheck();
+    await expect(panel.locator("pre")).toHaveCount(0);
+    expect(requests).toEqual([]);
+    await take(panel, "element");
+    await selectionReady(page);
+    await page.keyboard.press("Escape");
+    await expect(panel.getByRole("alert")).toContainText("Selección cancelada");
+  } finally {
+    await context.close();
+  }
+});
 
 // biome-ignore lint/correctness/noEmptyPattern: Playwright requires destructured fixtures.
 test("captures viewport/crop/full page and edits only flattened local pixels", async ({}, info) => {

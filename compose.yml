@@ -12,6 +12,10 @@ services:
       ISSOPEN_BASE_URL: ${ISSOPEN_BASE_URL:-http://localhost:${ISSOPEN_PORT:-8080}}
       ISSOPEN_TRUSTED_ORIGINS: ${ISSOPEN_TRUSTED_ORIGINS:-}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET in .env}
+      ISSOPEN_ATTACHMENTS_DIR: /data/attachments
+      ISSOPEN_ATTACHMENTS_QUOTA_BYTES: "1073741824"
+    volumes:
+      - issopen_attachments:/data/attachments
     depends_on:
       postgres:
         condition: service_healthy
@@ -38,3 +42,4 @@ services:
 
 volumes:
   issopen_postgres:
+  issopen_attachments:

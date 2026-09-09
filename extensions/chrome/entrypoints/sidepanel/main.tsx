@@ -8,8 +8,7 @@ import {
   inspectResponseSchema,
 } from "../../lib/protocol";
 import "./style.css";
-import { Account } from "./Account";
-import { Capture } from "./Capture";
+import { Workspace } from "./Workspace";
 
 function App() {
   const [busy, setBusy] = useState(false);
@@ -49,16 +48,15 @@ function App() {
       <section aria-labelledby="start-heading">
         <h1 id="start-heading">De la web a un ticket</h1>
         <p>
-          Estamos construyendo el flujo de captura, revisión y envío. Esta
-          versión permite comprobar la conexión del panel con tu pestaña.
+          Captura, oculta información sensible y crea tickets en tu proyecto y
+          Epic.
         </p>
         <p className="notice">
-          Conecta tu cuenta y prepara una captura local. El envío de tickets se
-          incorporará en el siguiente corte.
+          Revisa la imagen y el contexto antes de enviar. La captura no se envía
+          automáticamente.
         </p>
       </section>
-      <Account />
-      <Capture />
+      <Workspace />
       <section aria-labelledby="page-heading">
         <h2 id="page-heading">Comprueba la página</h2>
         <p>

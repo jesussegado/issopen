@@ -1,10 +1,9 @@
-# Issopen para Chrome — desarrollo 0.3.0
+# Issopen para Chrome — piloto 0.4.0
 
-Primer corte del [Epic de Chrome](https://issopen.serviciosegado.com/epics/ca26c29b-43ac-4ca0-b768-594d6779d6e7):
-tickets 19–21, 23 y parte de 25. Conecta la cuenta humana mediante OAuth PKCE,
-muestra proyectos y permite capturar/editar imágenes localmente.
-**Todavía no crea tickets ni captura DOM.**
-El [alcance completo](../../docs/chrome-extension.md) explica los siguientes cortes.
+Flujo del [Epic de Chrome](https://issopen.serviciosegado.com/epics/ca26c29b-43ac-4ca0-b768-594d6779d6e7):
+OAuth humano, capturas y DOM saneado, revisión, creación de proyecto/Epic/ticket,
+adjuntos privados y borrador recuperable con reintento sin duplicados.
+[Contrato, límites y operación](../../docs/chrome-delivery.md).
 
 ## Instalar y probar
 
@@ -29,12 +28,19 @@ pnpm extension:build
    Desconecta desde el panel o revoca desde «Extensiones Chrome» en Issopen.
    [Detalles y pruebas de OAuth](../../docs/chrome-oauth.md).
 7. En **Captura y previsualización**, elige recorte (predeterminado), área
-   visible o página completa y pulsa **Capturar página**. Para recortar,
+   visible, página completa o elemento y pulsa **Capturar página**. Para recortar,
    arrastra sobre la página; Escape cancela. Se recuerda el último modo usado.
 8. Revisa la imagen, amplíala, recórtala o tapa zonas con la herramienta negra.
    Arrastra sobre el preview o usa X/Y/Ancho/Alto y **Aplicar** con el teclado.
    Puedes deshacer/rehacer cinco cambios y descargar el PNG final revisado.
-   Cerrar el panel pierde la captura; todavía no hay borrador persistente.
+   En elemento: hover, ↑ ancestro, ↓ volver, Enter y Escape.
+9. Elige qué incluir y pulsa **Confirmar captura revisada**: sólo el PNG final
+   se conserva en un borrador local durante 24 h; originales/historial no.
+   Una captura sin confirmar se pierde al cerrar. Puedes excluir imagen, DOM,
+   descriptor, metadatos o toda la evidencia. El borrador restaurado es editable.
+10. Elige proyecto/Epic o créalos aquí, completa título y pulsa **Enviar ticket**.
+   Se muestra número y enlace, sin navegación automática. Si se pierde la red,
+   reintenta manualmente; conserva payload/UUID incluso al recargar o reconectar.
    [Privacidad, límites y pruebas](../../docs/chrome-capture.md).
 
 Si abres el panel desde el selector de paneles de Chrome, puede no haber permiso
@@ -45,7 +51,9 @@ páginas internas, tiendas, archivos locales e incógnito no están soportados.
 Para actualizar: vuelve a construir, pulsa **Recargar** en `chrome://extensions`
 y cierra/reabre el panel. Desactivar/eliminar la extensión revierte esta entrega;
 revoca primero la instalación si quieres retirar también su acceso al servidor.
-No hay migraciones de esquema. No se instala en tu perfil personal
+La API 0.4 usa migración aditiva 0013 y volumen privado; el binario viejo puede
+revertirse conservando esquema y ambos PVCs. Las conexiones 0.2/0.3 requieren
+**desconectar y reconectar** para autorizar escritura. No se instala en tu perfil personal
 automáticamente y no hay publicación en Chrome Web Store.
 
 ## Desarrollo y validación
@@ -59,7 +67,7 @@ pnpm extension:validate
 ```
 
 La validación incluye lint, TypeScript estricto, tests unitarios de contratos
-y worker, 4 tests E2E de artefacto/Chromium, dos builds comparados byte a byte y
+y worker, tests E2E de artefacto/Chromium y recorrido completo OAuth/API, dos builds comparados byte a byte y
 escaneo de secretos. `pnpm validate` integra estas comprobaciones con las de la
 app. Si falta Chromium en una máquina nueva:
 
@@ -77,8 +85,12 @@ validación de todas las versiones intermedias ni Edge/Brave.
 
 Artefacto productivo en `.output/chrome-mv3`, con versión del package de la
 extensión. Sourcemaps sólo en desarrollo (`chrome-mv3-dev`); ambos outputs y
-`.wxt` están ignorados en Git. El ZIP de distribución, checksum publicado,
-política de actualización y aceptación completa pertenecen a 32–33.
+`.wxt` están ignorados en Git. Con Git limpio, `pnpm extension:release` ejecuta
+todos los gates y genera `.output/releases/issopen-chrome-<version>-<commit>.zip`,
+SHA-256 y JSON de procedencia. Verifica `sha256sum -c <archivo>.sha256`, extrae en
+carpeta nueva y carga descomprimida. Mantén el ZIP/carpeta anterior para rollback;
+no elimines la instalación ni su storage si quieres conservar el borrador.
+El criterio 33 de validación personal sigue requiriendo al owner.
 
 ## Permisos y aislamiento
 
@@ -106,6 +118,7 @@ la pestaña. Errores de Chrome no se reenvían porque pueden contener URLs.
 
 La comprobación de página sólo vive en memoria; las credenciales OAuth viven
 en storage local confiable del worker, no en el panel. No hay telemetría,
-sincronización ni borradores persistentes. Capturas e historial permanecen en
-memoria del panel; sólo se recuerda el modo elegido, sin contenido. El símbolo
+sincronización. Sólo el PNG confirmado y campos escritos por el usuario entran
+en un borrador IndexedDB acotado de 24 h; el historial permanece en RAM. Se
+recuerdan modo, proyecto y Epic. No hay envío automático. El símbolo
 se copia byte a byte del PNG blanco aprobado de la app, sin generar otra marca.

@@ -32,6 +32,17 @@ Epic `ca26c29b-43ac-4ca0-b768-594d6779d6e7`, tickets 19–33 en Issopen.
 
 ## Invariantes y próximos tickets
 
+La entrega 0.4 completa el flujo técnico. `Workspace.tsx` compone tickets y
+proyectos/Epics inline; `lib/tickets.ts` limita operaciones API y respuestas;
+`lib/draft.ts` guarda sólo un borrador revisado 24 h en IndexedDB. `element.ts`
+devuelve DOM estructural acotado, no texto ni atributos arbitrarios.
+Contrato común en `../../src/shared/capture-contract.ts`. Backend/storage y
+operación: [chrome-delivery.md](../../docs/chrome-delivery.md).
+No persistir ni subir originales/historial. Si el resultado del envío es
+incierto, mantener payload/UUID bloqueados al recargar/reconectar. No enviar
+automáticamente ni renovar permisos antiguos sin nuevo consentimiento.
+La nota 0.3 siguiente es histórica, no describe los límites de 0.4.
+
 La versión 0.3 añade captura local (23) y parte del editor (25) sobre OAuth (21).
 Mantener visible que no hay DOM ni envío de tickets hasta 22/24/26/28. El propietario
 aprobó recomendaciones y conservó «Crear proyecto y Epic»; no sustituir esa
@@ -47,7 +58,8 @@ respuesta por sólo selección. Alcance y dependencias en
   usa `/extensions/link` y `/api/extension/v1`, con clientes por instalación
   y caducidad máxima de 30 días; la revocación web afecta la siguiente petición.
 - Ni DOM, valores de formulario, URLs privadas ni errores crudos en logs.
-  Captura y redacción permanecen en memoria hasta descarga o envío humano futuro.
+  Captura e historial quedan en RAM; sólo el PNG confirmado entra en borrador
+  local. El envío requiere acción humana y escritura OAuth autorizada.
 - El motor aborta al cambiar documento, pestaña, tamaño o DOM durante la captura;
   no relajar estas comprobaciones sin nuevas pruebas de fugas. Respetar límites
   de [captura](../../docs/chrome-capture.md), máscaras previas, rate limit global

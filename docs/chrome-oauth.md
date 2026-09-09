@@ -1,5 +1,9 @@
 # Chrome 0.2 — vinculación humana
 
+0.4 conserva este flujo y añade `extension:write` mediante nuevo consentimiento
+para proyectos/Epics/tickets. Los clientes anteriores siguen siendo sólo lectura;
+desconectar/reconectar para autorizar escritura. Ver [contrato actual](chrome-delivery.md).
+
 Implementa 21 / EXT-03. El proveedor OAuth ya existente de Better Auth 1.7.2
 emite los códigos y tokens; no se añade un segundo servidor ni OAuth de Google.
 

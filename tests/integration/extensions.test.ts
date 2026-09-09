@@ -1,4 +1,8 @@
+import { spawn } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
+import { copyFile, mkdtemp, utimes } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import {
   PostgreSqlContainer,
   type StartedPostgreSqlContainer,
@@ -9,13 +13,24 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { bootstrapOwner } from "../../scripts/owner.js";
 import { createApp } from "../../src/server/app.js";
 import { createAuth, type IssopenAuth } from "../../src/server/auth.js";
+import { auditCaptures } from "../../src/server/capture-maintenance.js";
+import { CaptureStorage } from "../../src/server/capture-storage.js";
 import { loadConfig } from "../../src/server/config.js";
 import {
   createDatabase,
   type DatabaseConnection,
 } from "../../src/server/db/client.js";
 import { migrateDatabase } from "../../src/server/db/migrate.js";
-import { agentIdentity, oauthClient } from "../../src/server/db/schema.js";
+import {
+  activityEvent,
+  agentIdentity,
+  captureEvidence,
+  extensionReceipt,
+  issue,
+  oauthClient,
+  project,
+} from "../../src/server/db/schema.js";
+import { syntheticPng } from "../fixtures/png.js";
 
 const base = "http://localhost:8080";
 const extensionId = "abcdefghijklmnopabcdefghijklmnop";
@@ -33,6 +48,7 @@ let connection: DatabaseConnection;
 let auth: IssopenAuth;
 let app: ReturnType<typeof createApp>;
 let cookie: string;
+let storage: CaptureStorage;
 const headers = () => ({
   Cookie: cookie,
   Origin: base,
@@ -62,7 +78,11 @@ beforeEach(async () => {
     BETTER_AUTH_SECRET: "synthetic-extension-auth-secret-tests",
   });
   auth = createAuth(connection.db, config);
+  storage = new CaptureStorage(
+    await mkdtemp(join(tmpdir(), "issopen-api-capture-")),
+  );
   app = createApp({
+    captureStorage: storage,
     db: connection.db,
     auth,
     logger: pino({ level: "silent" }),
@@ -110,7 +130,7 @@ async function link() {
       .authorizeUrl,
   };
 }
-async function grant(accept = true) {
+async function grant(accept = true, write = false) {
   const linked = await link();
   const authorization = await app.request(linked.authorizeUrl, {
     headers: { Cookie: cookie },
@@ -123,7 +143,9 @@ async function grant(accept = true) {
     headers: headers(),
     body: JSON.stringify({
       accept,
-      scope: "extension:read offline_access",
+      scope: write
+        ? "extension:read extension:write offline_access"
+        : "extension:read offline_access",
       oauth_query: consentUrl.search.slice(1),
     }),
   });
@@ -147,8 +169,8 @@ function token(params: Record<string, string>) {
     body: new URLSearchParams({ ...params, resource }),
   });
 }
-async function connect() {
-  const grant_ = await grant();
+async function connect(write = false) {
+  const grant_ = await grant(true, write);
   const response = await token({
     grant_type: "authorization_code",
     client_id: grant_.clientId,
@@ -169,6 +191,185 @@ function readSession(tokens: Tokens) {
 }
 
 describe("human Chrome OAuth", () => {
+  it("creates project/Epic/capture atomically, attributes human Chrome and replays without duplicate after reauthorization", async () => {
+    const { tokens } = await connect(true);
+    const post = (path: string, body: unknown, access = tokens.access_token) =>
+      app.request(`/api/extension/v1${path}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${access}`,
+          Origin: origin,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+    const projectBody = {
+      name: "Captured project",
+      idempotencyKey: randomUUID(),
+    };
+    const p = await (await post("/projects", projectBody)).json();
+    expect(p.project.id).toBeTruthy();
+    expect(await (await post("/projects", projectBody)).json()).toEqual(p);
+    const e = await (
+      await post(`/projects/${p.project.id}/epics`, {
+        title: "Audit",
+        idempotencyKey: randomUUID(),
+      })
+    ).json();
+    expect(e.epic.id).toBeTruthy();
+    const body = {
+      version: 1,
+      idempotencyKey: randomUUID(),
+      projectId: p.project.id,
+      epicId: e.epic.id,
+      title: "Reviewed black screenshot",
+      description: "Synthetic capture",
+      priority: "medium",
+      status: "backlog",
+      metadata: { mode: "viewport", url: "https://example.test/" },
+      image: `data:image/png;base64,${syntheticPng(true).toString("base64")}`,
+    };
+    const responses = await Promise.all([
+      post("/captures", body),
+      post("/captures", body),
+    ]);
+    expect(responses.map((r) => r.status)).toEqual([201, 201]);
+    const created = await responses[0]?.json();
+    expect(await responses[1]?.json()).toEqual(created);
+    const reconnected = await connect(true);
+    expect(
+      await (
+        await post("/captures", body, reconnected.tokens.access_token)
+      ).json(),
+    ).toEqual(created);
+    expect(
+      (await post("/captures", { ...body, title: "Changed" })).status,
+    ).toBe(409);
+    expect(await connection.db.select().from(issue)).toHaveLength(1);
+    expect(await connection.db.select().from(project)).toHaveLength(1);
+    expect(await connection.db.select().from(extensionReceipt)).toHaveLength(3);
+    const [activity] = await connection.db
+      .select()
+      .from(activityEvent)
+      .where(eq(activityEvent.issueId, created.issue.id));
+    expect(activity?.source).toBe("chrome_extension");
+    const evidence = await (
+      await app.request(`/api/v1/issues/${created.issue.id}/evidence`, {
+        headers: headers(),
+      })
+    ).json();
+    expect(evidence.evidence[0].fileKey).toBeUndefined();
+    const imageUrl = evidence.evidence[0].imageUrl;
+    expect((await app.request(imageUrl)).status).toBe(401);
+    const image = await app.request(imageUrl, { headers: headers() });
+    expect(image.headers.get("cache-control")).toContain("no-store");
+    expect(Buffer.from(await image.arrayBuffer())).toEqual(syntheticPng());
+    const bad = {
+      ...body,
+      idempotencyKey: randomUUID(),
+      image: "data:image/png;base64,PHN2Zy8+",
+    };
+    expect((await post("/captures", bad)).status).toBe(400);
+    expect(await connection.db.select().from(issue)).toHaveLength(1);
+    expect(await connection.db.select().from(captureEvidence)).toHaveLength(1);
+    // Restore the complete synthetic database into a separate PostgreSQL and
+    // copy the immutable volume files: no production database is touched.
+    const backup = await container.exec([
+      "pg_dump",
+      "-U",
+      container.getUsername(),
+      "-d",
+      container.getDatabase(),
+    ]);
+    expect(backup.exitCode).toBe(0);
+    const restoredContainer = await new PostgreSqlContainer(
+      "postgres:18.6-alpine",
+    ).start();
+    const restoredConnection = createDatabase(
+      restoredContainer.getConnectionUri(),
+    );
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const child = spawn(
+          "docker",
+          [
+            "exec",
+            "-i",
+            restoredContainer.getId(),
+            "psql",
+            "-U",
+            restoredContainer.getUsername(),
+            "-d",
+            restoredContainer.getDatabase(),
+            "-v",
+            "ON_ERROR_STOP=1",
+          ],
+          { stdio: ["pipe", "ignore", "ignore"] },
+        );
+        child.on("error", reject);
+        child.on("close", (code) =>
+          code === 0
+            ? resolve()
+            : reject(new Error("Synthetic restore failed")),
+        );
+        child.stdin.end(backup.output);
+      });
+      const restoredStorage = new CaptureStorage(
+        await mkdtemp(join(tmpdir(), "issopen-api-restored-")),
+      );
+      const [row] = await restoredConnection.db.select().from(captureEvidence);
+      if (!row?.fileKey || !row.sha256)
+        throw new Error("Missing restored evidence");
+      await copyFile(
+        storage.path(row.fileKey),
+        restoredStorage.path(row.fileKey),
+      );
+      expect(
+        await restoredStorage.read(row.fileKey, row.sha256, row.bytes),
+      ).toEqual(syntheticPng());
+      expect(
+        await restoredConnection.db.select().from(extensionReceipt),
+      ).toHaveLength(3);
+      const orphan = await restoredStorage.write(syntheticPng());
+      const old = new Date(Date.now() - 25 * 60 * 60 * 1000);
+      await utimes(restoredStorage.path(orphan.fileKey), old, old);
+      expect(
+        await auditCaptures(restoredConnection.db, restoredStorage),
+      ).toMatchObject({
+        verified: 1,
+        invalid: 0,
+        agedOrphans: 1,
+        quarantined: 0,
+      });
+      expect(
+        await auditCaptures(restoredConnection.db, restoredStorage, true),
+      ).toMatchObject({
+        verified: 1,
+        invalid: 0,
+        agedOrphans: 1,
+        quarantined: 1,
+      });
+      expect(
+        await restoredStorage.read(row.fileKey, row.sha256, row.bytes),
+      ).toEqual(syntheticPng());
+    } finally {
+      await restoredConnection.close();
+      await restoredContainer.stop();
+    }
+    expect(
+      (
+        await post("/captures", {
+          ...body,
+          idempotencyKey: randomUUID(),
+          projectId: randomUUID(),
+        })
+      ).status,
+    ).toBe(404);
+    const readOnly = await connect();
+    expect(
+      (await post("/captures", body, readOnly.tokens.access_token)).status,
+    ).toBe(403);
+  });
   it("links with PKCE, reads human projects, rotates refresh and revokes one installation independently", async () => {
     const first = await connect();
     const second = await connect();

@@ -26,7 +26,9 @@ ENV PORT=8080
 WORKDIR /app
 RUN apk add --no-cache dumb-init \
   && addgroup --system --gid 1001 issopen \
-  && adduser --system --uid 1001 --ingroup issopen issopen
+  && adduser --system --uid 1001 --ingroup issopen issopen \
+  && mkdir -p /data/attachments \
+  && chown issopen:issopen /data/attachments
 COPY --from=production-dependencies --chown=issopen:issopen /app/node_modules ./node_modules
 COPY --from=builder --chown=issopen:issopen /app/dist ./dist
 COPY --chown=issopen:issopen package.json ./package.json

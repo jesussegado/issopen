@@ -1,6 +1,12 @@
 import { browser } from "wxt/browser";
 import { z } from "zod";
 import {
+  captureMetadataSchema,
+  captureModeSchema,
+  safePageUrl,
+  selectedElementSchema,
+} from "../../../src/shared/capture-contract";
+import {
   prepareCapturePage,
   restoreCapturePage,
   scrollCapturePage,
@@ -9,7 +15,7 @@ import {
 } from "./capture-page";
 import { inspectableOrigin } from "./protocol";
 
-export const captureModeSchema = z.enum(["crop", "viewport", "full"]);
+export { captureModeSchema };
 export const captureRequestSchema = z
   .object({
     version: z.literal(1),
@@ -26,6 +32,7 @@ export const captureResponseSchema = z.union([
       height: z.number().int().positive(),
       origin: z.string(),
       mode: captureModeSchema,
+      metadata: captureMetadataSchema.optional(),
     })
     .strict(),
   z.object({ ok: z.literal(false), message: z.string().max(240) }).strict(),
@@ -108,6 +115,23 @@ export async function capture(mode: Mode): Promise<CaptureResponse> {
     documentId = identity?.documentId;
     if (!documentId) throw new Error("Missing document");
     const target = { tabId, documentIds: [documentId] };
+    const chosen =
+      mode === "element"
+        ? selectedElementSchema.nullable().parse(
+            (
+              await browser.scripting.executeScript({
+                target,
+                files: ["/content-scripts/element.js"],
+              })
+            )[0]?.result ?? null,
+          )
+        : null;
+    if (mode === "element" && !chosen)
+      return {
+        ok: false,
+        message:
+          "Selección cancelada. Elige un elemento de contenido, fuera de formularios.",
+      };
     const area =
       mode === "crop"
         ? (
@@ -231,6 +255,25 @@ export async function capture(mode: Mode): Promise<CaptureResponse> {
           : totalHeight;
     } while (captured < totalHeight);
     if (!canvas) throw new Error("Capture unavailable");
+    if (chosen) {
+      const rect = pixelRect(
+        chosen.element.bounds,
+        scale,
+        canvas.width,
+        canvas.height,
+      );
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Canvas unavailable");
+      const line = Math.max(2, Math.round(3 * scale));
+      ctx.strokeStyle = "#027067";
+      ctx.lineWidth = line;
+      ctx.strokeRect(
+        rect.x + line / 2,
+        rect.y + line / 2,
+        Math.max(1, rect.width - line),
+        Math.max(1, rect.height - line),
+      );
+    }
     if (area) {
       const rect = pixelRect(area, scale, canvas.width, canvas.height);
       const cropped = new OffscreenCanvas(rect.width, rect.height);
@@ -266,6 +309,19 @@ export async function capture(mode: Mode): Promise<CaptureResponse> {
       height: canvas.height,
       origin: page.origin,
       mode,
+      metadata: {
+        mode,
+        ...(safePageUrl(tab.url)
+          ? { url: safePageUrl(tab.url) as string }
+          : {}),
+        viewport: {
+          width: page.width,
+          height: page.height,
+          devicePixelRatio: page.dpr,
+        },
+        capturedAt: new Date().toISOString(),
+        ...(chosen ? { element: chosen.element, dom: chosen.dom } : {}),
+      },
     };
   } catch {
     return {

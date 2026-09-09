@@ -1,8 +1,11 @@
 # Captura local — Chrome 0.3.0
 
+Nota histórica del motor 0.3; los límites técnicos siguen aplicando. DOM, envío,
+evidencias y borrador ya se integran en [0.4](chrome-delivery.md).
+
 Entrega derivada del ticket 23 y parte de 25 del Epic Chrome. No sustituye el
-tracker: aún faltan DOM/elemento (24), API/adjuntos (22/28), composición/envío
-(26), evidencias web (27) y borradores de 24 horas (30).
+tracker: ese corte aún no incluía DOM/elemento, API/adjuntos, composición/envío,
+evidencias web ni borradores; se añadieron en 0.4.
 
 ## Uso y datos
 
