@@ -1,5 +1,6 @@
 import { browser } from "wxt/browser";
 import { defineBackground } from "wxt/utils/define-background";
+import { accountRequestSchema, handleAccount } from "../lib/account";
 import {
   type InspectResponse,
   inspectableOrigin,
@@ -63,6 +64,11 @@ export default defineBackground(() => {
         )
       )
         return false;
+      const account = accountRequestSchema.safeParse(message);
+      if (account.success) {
+        void handleAccount(account.data.type).then(sendResponse);
+        return true;
+      }
       if (!inspectRequestSchema.safeParse(message).success) {
         sendResponse({
           ok: false,

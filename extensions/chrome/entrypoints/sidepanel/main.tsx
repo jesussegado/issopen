@@ -8,6 +8,7 @@ import {
   inspectResponseSchema,
 } from "../../lib/protocol";
 import "./style.css";
+import { Account } from "./Account";
 
 function App() {
   const [busy, setBusy] = useState(false);
@@ -50,8 +51,12 @@ function App() {
           Estamos construyendo el flujo de captura, revisión y envío. Esta
           versión permite comprobar la conexión del panel con tu pestaña.
         </p>
-        <p className="notice">Todavía no conecta tu cuenta ni crea tickets.</p>
+        <p className="notice">
+          Ya puedes conectar tu cuenta. La captura y el envío de tickets se
+          incorporarán en los siguientes cortes.
+        </p>
       </section>
+      <Account />
       <section aria-labelledby="page-heading">
         <h2 id="page-heading">Comprueba la página</h2>
         <p>

@@ -85,6 +85,7 @@ function Navigation({
       <div className="nav-divider" />
       {link("/agents", "Agents")}
       {link("/connect", "Connect ChatGPT")}
+      {link("/extensions", "Extensiones Chrome")}
     </nav>
   );
 }

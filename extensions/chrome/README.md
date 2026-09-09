@@ -1,8 +1,9 @@
-# Issopen para Chrome — base 0.1.0
+# Issopen para Chrome — desarrollo 0.2.0
 
 Primer corte del [Epic de Chrome](https://issopen.serviciosegado.com/epics/ca26c29b-43ac-4ca0-b768-594d6779d6e7):
-tickets 19 y 20. Es una base instalable, **todavía no captura imágenes, conecta
-la cuenta ni crea tickets**. Comprueba la comunicación panel → worker → pestaña.
+tickets 19–21. Conecta la cuenta humana mediante OAuth PKCE y muestra sus
+proyectos; **todavía no captura imágenes ni crea tickets**. Comprueba además
+la comunicación panel → worker → pestaña.
 El [alcance completo](../../docs/chrome-extension.md) explica los siguientes cortes.
 
 ## Instalar y probar
@@ -23,6 +24,10 @@ pnpm extension:build
 5. Pulsa **Comprobar página**: verás origen, viewport y densidad de píxeles.
    No recoge rutas, query, fragmentos, título, DOM, formularios ni imágenes.
    **Borrar comprobación** limpia el resultado; cerrar el panel también lo pierde.
+6. Pulsa **Conectar con Issopen**, inicia sesión en la ventana web, nombra la
+   instalación y acepta el consentimiento. El panel muestra tu cuenta/proyectos.
+   Desconecta desde el panel o revoca desde «Extensiones Chrome» en Issopen.
+   [Detalles y pruebas de OAuth](../../docs/chrome-oauth.md).
 
 Si abres el panel desde el selector de paneles de Chrome, puede no haber permiso
 para la página. Pulsa el icono de Issopen en esa pestaña y reintenta. Si navegas
@@ -31,7 +36,8 @@ páginas internas, tiendas, archivos locales e incógnito no están soportados.
 
 Para actualizar: vuelve a construir, pulsa **Recargar** en `chrome://extensions`
 y cierra/reabre el panel. Desactivar/eliminar la extensión revierte esta entrega;
-no hay datos en el servidor ni migraciones. No se instala en tu perfil personal
+revoca primero la instalación si quieres retirar también su acceso al servidor.
+No hay migraciones de esquema. No se instala en tu perfil personal
 automáticamente y no hay publicación en Chrome Web Store.
 
 ## Desarrollo y validación
@@ -44,7 +50,7 @@ pnpm extension:dev
 pnpm extension:validate
 ```
 
-La validación incluye lint, TypeScript estricto, 27 tests unitarios de contratos
+La validación incluye lint, TypeScript estricto, tests unitarios de contratos
 y worker, 2 tests E2E de artefacto/Chromium, dos builds comparados byte a byte y
 escaneo de secretos. `pnpm validate` integra estas comprobaciones con las de la
 app. Si falta Chromium en una máquina nueva:
@@ -73,10 +79,13 @@ política de actualización y aceptación completa pertenecen a 32–33.
 | `activeTab` | Acceso temporal a la pestaña elegida mediante acción explícita |
 | `scripting` | Inyectar un archivo local en el frame principal/mundo aislado |
 | `sidePanel` | Mostrar el panel de Issopen |
+| `identity` | Ventana OAuth y callback Chromium |
+| `storage` | Credenciales limitadas a contextos confiables, sin sync |
+| host de Issopen | Llamar sólo a la instancia autorizada |
 
-No `host_permissions`, `<all_urls>`, scripts globales, cookies, storage,
-identity ni permisos pedidos para funciones futuras. La CSP productiva bloquea
-conexiones de red (`connect-src 'none'`) y código remoto/inline. El modo dev de
+No `<all_urls>`, scripts globales, cookies ni permisos pedidos para funciones
+futuras. La CSP productiva permite conexiones sólo a Issopen y bloquea código
+remoto/inline. El modo dev de
 WXT sí incorpora permisos/hot reload local: no distribuirlo.
 
 La apertura se maneja explícitamente en `action.onClicked` y luego
@@ -86,6 +95,7 @@ ampliar permisos. Los mensajes sólo se aceptan del panel de esta extensión,
 sin destinos arbitrarios, con schemas de entrada/salida y descarte si cambia
 la pestaña. Errores de Chrome no se reenvían porque pueden contener URLs.
 
-Los datos sólo viven en memoria del panel; no hay telemetry, sincronización,
-peticiones API, autenticación, borradores ni capturas en este corte. El símbolo
+La comprobación de página sólo vive en memoria; las credenciales OAuth viven
+en storage local confiable del worker, no en el panel. No hay telemetría,
+sincronización, borradores ni capturas en este corte. El símbolo
 se copia byte a byte del PNG blanco aprobado de la app, sin generar otra marca.

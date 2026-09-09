@@ -69,7 +69,8 @@ Este documento deriva del tracker, no lo sustituye.
 | 32 / EXT-14 | Artefacto versionado y guía unpacked | 29, 31 |
 | 33 / EXT-15 | Dogfooding completo contra producción | 19–32 |
 
-La primera entrega sólo incluye 19–20. No se declara el Epic completo por tener
+La primera entrega incluyó 19–20; 0.2 añade [OAuth humano](chrome-oauth.md) (21).
+No se declara el Epic completo por tener
 un scaffold instalable. La distribución comienza unpacked; Chrome Web Store,
 Firefox/Safari, anotaciones con flechas/texto y envío automático quedan fuera
 de este MVP. Edge/Brave requieren pruebas propias antes de declarar soporte.
@@ -91,8 +92,9 @@ principal tras acción explícita. Mensajes internos versionados, con schemas de
 entrada/salida y validación del emisor; nada de `window.postMessage` confiable
 por defecto. No dependencias del servidor dentro del bundle del navegador.
 
-La base únicamente comprueba origen (sin ruta/query/hash), viewport y DPR;
-no captura imagen ni DOM, no inicia red ni guarda datos. Los siguientes cortes
+La base comprueba origen (sin ruta/query/hash), viewport y DPR;
+no captura imagen ni DOM. OAuth 0.2 añade red sólo a Issopen y credenciales
+limitadas al worker. Los siguientes cortes
 añaden capacidades conforme a sus pruebas, no permisos preventivos.
 
 Fuentes técnicas: [WXT manifest](https://wxt.dev/guide/essentials/config/manifest.html),

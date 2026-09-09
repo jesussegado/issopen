@@ -9,16 +9,26 @@ import type { AppConfig } from "./config.js";
 import type { Database } from "./db/client.js";
 import * as schema from "./db/schema.js";
 import { agentScopeValues } from "./db/schema.js";
+import { extensionResource, extensionScopes } from "./extensions.js";
 
 export function createAuth(db: Database, config: AppConfig) {
-  const oauthScopes = [...agentScopeValues, "offline_access"];
+  const oauthScopes = [...agentScopeValues, ...extensionScopes];
   const oauthMcp = mcp({
     loginPage: "/sign-in",
     consentPage: "/consent",
     resource: new URL("/mcp", config.baseUrl).toString(),
+    resources: [
+      {
+        identifier: extensionResource(config.baseUrl.toString()),
+        name: "Issopen Chrome",
+        allowedScopes: extensionScopes,
+        accessTokenTtl: 300,
+        refreshTokenTtl: 30 * 24 * 60 * 60,
+      },
+    ],
     scopes: oauthScopes,
     clientRegistrationDefaultScopes: ["issues:read"],
-    clientRegistrationAllowedScopes: oauthScopes,
+    clientRegistrationAllowedScopes: [...agentScopeValues, "offline_access"],
     clientRegistrationRequirePKCE: true,
     codeExpiresIn: 300,
   }) as unknown as BetterAuthPlugin;

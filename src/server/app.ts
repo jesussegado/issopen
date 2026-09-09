@@ -9,6 +9,11 @@ import type { Database } from "./db/client.js";
 import { workspace } from "./db/schema.js";
 import { DomainError } from "./domain/index.js";
 import {
+  createExtensionOwnerRouter,
+  createExtensionRouter,
+  extensionOAuthGuard,
+} from "./extensions.js";
+import {
   createAgentRouter,
   createTrackerRouter,
   domainErrorResponse,
@@ -83,9 +88,14 @@ export function createApp({
   app.on(["GET", "POST"], "/api/auth/sign-up/*", (context) =>
     context.json({ error: "Not found" }, 404),
   );
-  app.on(["GET", "POST"], "/api/auth/*", (context) =>
-    auth.handler(context.req.raw),
+  app.on(
+    ["GET", "POST"],
+    "/api/auth/*",
+    async (context) =>
+      (await extensionOAuthGuard(context.req.raw, db)) ??
+      auth.handler(context.req.raw),
   );
+  app.route("/api/extension/v1", createExtensionRouter(db, auth));
   app.get("/.well-known/oauth-authorization-server", (context) =>
     oauthApi.getOAuthServerConfig({
       request: context.req.raw,
@@ -208,6 +218,7 @@ export function createApp({
 
   app.route("/api/v1", createTrackerRouter({ db }));
   app.route("/api/v1", createAgentRouter({ db }));
+  app.route("/api/v1", createExtensionOwnerRouter(db, auth));
 
   app.all("/api/v1/*", (context) =>
     context.json({ error: "This page isn't available" }, 404),

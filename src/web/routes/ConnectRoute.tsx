@@ -70,6 +70,8 @@ const scopeLabels: Record<string, string> = {
   "code:link": "Link code results",
   "issues:review": "Move work through Ready for Review",
   "issues:close": "Close issues",
+  "extension:read":
+    "Leer tus proyectos desde esta instalación de Chrome (sin permisos de agente)",
   offline_access: "Stay connected and refresh access until revoked",
 };
 
@@ -131,12 +133,12 @@ export function ConsentRoute({
   return (
     <div className="reading-column">
       <PageHeading>
-        {clientName ?? "ChatGPT"} wants to access Issopen
+        {clientName ?? "Cliente OAuth"} wants to access Issopen
       </PageHeading>
       {failure ? (
         <StatusBanner error focus>
-          We couldn't authorize ChatGPT. Return to ChatGPT and try connecting
-          again.
+          We couldn't authorize this connection. Return to the client and try
+          connecting again.
         </StatusBanner>
       ) : null}
       <section className="detail-panel" aria-labelledby="consent-workspace">

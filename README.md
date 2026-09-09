@@ -31,12 +31,14 @@ master and an Ingress for `issopen.serviciosegado.com`. Issopen stores backlog
 and result references; it has no Git credentials or capability to edit a
 repository, run CI, merge or deploy code.
 
-## Chrome extension (first development cut)
+## Chrome extension (development 0.2)
 
 The `extensions/chrome` workspace contains an installable MV3 side panel built
 with WXT, React and TypeScript. It checks the active page locally after an
-explicit toolbar action; account connection, image capture and issue submission
-are **not implemented yet**. It does not change the deployed web application.
+explicit toolbar action and links the human account through OAuth PKCE, with
+individual revocation in `/extensions`. Image capture and issue submission
+are **not implemented yet**. See [human OAuth](docs/chrome-oauth.md) for the
+required backend release and verified security boundary.
 
 Run `pnpm extension:build`, then load `extensions/chrome/.output/chrome-mv3`
 unpacked in `chrome://extensions`. See the

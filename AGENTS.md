@@ -29,10 +29,21 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+- Chrome 0.2.0 añade OAuth humano por instalación (21): PKCE S256 iniciado con
+  `chrome.identity`, consentimiento web, acceso de 5 minutos, refresh y límite
+  absoluto de 30 días. `src/server/extensions.ts` sirve la API humana separada
+  `/api/extension/v1` y gestión owner `/api/v1/extensions`; web `/extensions`.
+  Reutiliza las tablas OAuth existentes, sin migración ni concesión de scopes
+  a agentes. Cada instalación es un cliente público propio revocable, callback
+  Chromium exacto, sin secreto de cliente. Credenciales sólo en storage local
+  confiable del worker, nunca mensajes al panel/content scripts ni sync.
+  La conexión permite leer proyectos; todavía no envía capturas ni crea tickets.
+  La revisión/digest GitOps siguen siendo la autoridad de qué está desplegado.
+
 - El 2026-09-09 el propietario priorizó el Epic de Chrome (19–33) y aprobó las
   16 recomendaciones pendientes, conservando «Crear proyecto y Epic».
   El primer corte 19–20 está en `extensions/chrome/`: WXT MV3, panel lateral y
-  comprobación local de pestaña, sin login, captura de imagen ni envío todavía.
+  comprobación local de pestaña; el siguiente corte añade el login descrito arriba.
   Consultar su [AGENTS.md](extensions/chrome/AGENTS.md),
   [guía de instalación](extensions/chrome/README.md) y
   [alcance del Epic](docs/chrome-extension.md). No confundir esta entrega con

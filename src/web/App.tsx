@@ -11,6 +11,7 @@ import {
   EpicFormRoute,
   EpicsRoute,
 } from "./routes/EpicRoutes.js";
+import { ExtensionsRoute } from "./routes/ExtensionsRoute.js";
 import { IssueDetailRoute } from "./routes/IssueDetailRoute.js";
 import {
   SignInRoute,
@@ -166,6 +167,8 @@ function AuthenticatedApp({
     route = <ProjectFormRoute onProjectsChanged={refreshProjects} />;
   else if (pathname === "/agents") route = <AgentsRoute projects={projects} />;
   else if (pathname === "/connect") route = <ConnectRoute />;
+  else if (pathname === "/extensions") route = <ExtensionsRoute />;
+  else if (pathname === "/extensions/link") route = <ExtensionsRoute linking />;
   else if (pathname === "/consent")
     route = (
       <ConsentRoute

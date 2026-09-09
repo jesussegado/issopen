@@ -13,8 +13,13 @@ Epic `ca26c29b-43ac-4ca0-b768-594d6779d6e7`, tickets 19–33 en Issopen.
   del emisor, consulta de pestaña e inyección bajo activeTab.
 - `entrypoints/page.content.ts`: script runtime, frame principal, mundo
   aislado; devuelve origen + viewport + DPR. No captura DOM ni imágenes.
-- `entrypoints/sidepanel/`: panel React en español, aviso de base de desarrollo,
+- `entrypoints/sidepanel/`: panel React en español, conexión humana, proyectos,
   comprobación, resultado efímero, limpieza y errores accionables.
+- `lib/account.ts`: PKCE, validación estricta de callback/state y operaciones
+  serializadas en worker; access/refresh en storage.local con TRUSTED_CONTEXTS.
+  No exponer credenciales en respuestas, storage.sync, logs o URLs. Permiso de
+  host exclusivamente para la instancia configurada al compilar (HTTPS o
+  loopback explícito de test); no ampliar trustedOrigins de la REST owner.
 - `lib/protocol.ts`: mensajes v1, schemas de frontera, URLs restringidas y
   errores seguros; no importar dominio, base de datos o secretos del backend.
 - `tests/unit/`: contratos, privacidad, emisor, worker y navegación cambiante.
@@ -22,8 +27,8 @@ Epic `ca26c29b-43ac-4ca0-b768-594d6779d6e7`, tickets 19–33 en Issopen.
 
 ## Invariantes y próximos tickets
 
-Este corte implementa la base (20), no el Epic completo. Mantener visible que
-no hay login ni creación de tickets hasta implementar 21/22/26. El propietario
+La versión 0.2 añade OAuth humano (21) a la base (20), no el Epic completo.
+Mantener visible que no hay captura/envío de tickets hasta 22/23/25/26. El propietario
 aprobó recomendaciones y conservó «Crear proyecto y Epic»; no sustituir esa
 respuesta por sólo selección. Alcance y dependencias en
 [`../../docs/chrome-extension.md`](../../docs/chrome-extension.md).
@@ -34,7 +39,8 @@ respuesta por sólo selección. Alcance y dependencias en
   en Chromium 151 abría el panel pero no otorgaba acceso. Mantener acción
   explícita + `sidePanel.open` y su test.
 - No tokens de agente para actuar como persona. OAuth PKCE humano revocable
-  pertenece a 21; sesión/consentimiento no pueden suponerse implementados.
+  usa `/extensions/link` y `/api/extension/v1`, con clientes por instalación
+  y caducidad máxima de 30 días; la revocación web afecta la siguiente petición.
 - Ni DOM, valores de formulario, URLs privadas ni errores crudos en logs.
   Captura y redacción futuras deben permanecer locales hasta el envío humano.
 - No afirmar soporte Edge/Brave ni distribución estable con tests de Chromium.

@@ -24,7 +24,7 @@ test.afterAll(async () => {
   );
 });
 
-test("production manifest is local-only, minimal and versioned", async () => {
+test("production manifest limits network access to Issopen and explicit page gestures", async () => {
   const manifest = JSON.parse(
     await readFile(resolve(output, "manifest.json"), "utf8"),
   );
@@ -32,10 +32,9 @@ test("production manifest is local-only, minimal and versioned", async () => {
   expect(manifest.version).toBe(pkg.version);
   expect(manifest.manifest_version).toBe(3);
   expect(manifest.permissions.toSorted()).toEqual(
-    ["activeTab", "scripting", "sidePanel"].toSorted(),
+    ["activeTab", "scripting", "sidePanel", "identity", "storage"].toSorted(),
   );
   for (const key of [
-    "host_permissions",
     "optional_host_permissions",
     "content_scripts",
     "externally_connectable",
@@ -44,14 +43,17 @@ test("production manifest is local-only, minimal and versioned", async () => {
     expect(manifest[key]).toBeUndefined();
   expect(manifest.incognito).toBe("not_allowed");
   expect(manifest.content_security_policy.extension_pages).toContain(
-    "connect-src 'none'",
+    "connect-src https://issopen.serviciosegado.com",
   );
   expect(manifest.content_security_policy.extension_pages).toContain(
     "script-src 'self'",
   );
   expect(manifest.content_security_policy.extension_pages).not.toMatch(
-    /unsafe|https?:/,
+    /unsafe|\*/,
   );
+  expect(manifest.host_permissions).toEqual([
+    "https://issopen.serviciosegado.com/*",
+  ]);
   expect(manifest.side_panel.default_path).toBe("sidepanel.html");
   const files = await readdir(output, { recursive: true });
   expect(files.some((file) => file.endsWith(".map"))).toBe(false);
@@ -151,7 +153,7 @@ test("real toolbar action grants only the chosen page and opens a working side p
       );
     if (!panel) throw new Error("Real side panel did not open");
     await expect(
-      panel.getByText("Todavía no conecta tu cuenta ni crea tickets."),
+      panel.getByRole("button", { name: "Conectar con Issopen" }),
     ).toBeVisible();
     const requests: string[] = [];
     panel.on("request", (request) => {
