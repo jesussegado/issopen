@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Ticket 43 planning fixture ready; owner Workspace Trust pending
-last_updated: "2026-09-09T14:01:00Z"
+stopped_at: Ticket 43 planning/repeat and changed-answer query verified; editor URI confirmation pending
+last_updated: "2026-09-09T15:40:00Z"
 last_activity: 2026-09-09
 progress:
   total_phases: 9
@@ -104,9 +104,18 @@ Decisions are logged in PROJECT.md Key Decisions table. Current roadmap-level st
   43. Fresh native CLI also queried the empty Epic by number without mutations.
   Quick 260909-lxa adds planning and detached editor fixtures. New fixture
   /tmp/issopen-native-acceptance-jck3x2 is running (PID 2517887, loopback 40385),
-  control /tmp/issopen-ide-control-MPtIb5. Waiting for owner Workspace Trust in
-  that isolated VS Code window before native planning writes. Ticket paused in
-  Backlog, claim released; no Done or production answer changes.
+  control /tmp/issopen-ide-control-MPtIb5. Owner trusted the isolated folder;
+  native planning completed two synthetic Backlog plans, links, Epic map and
+  format question. Repeated full request completed read-only with identical
+  IDs/content/events. Initial creation's human approval remains inconclusive
+  due to operator focus loss; it is excluded from approval evidence. Synthetic
+  owner used the local web to answer JSON then change to Other (question v3,
+  issue still v2). Fresh native CLI query 01a086cd-f9d1-7c70-b1c6-dd6c8df02cec
+  correctly identified the changed answer and stale plan without writes.
+  Explicit planning resume remains pending: isolated VS Code asks Open for
+  that conversation URI. Global config hash restored; START-HERE accidental
+  buffer still unsaved, disk unchanged. Real ticket 43 is Backlog, claim null
+  (v21); no Done or production answer changes. See quick summary before resume.
 - Epic 4 / ticket 44: project/repository association, selected real improvement,
   then publication and pilot. Owner approved a new Issopen-only testing PAT,
   INCLUDING issues:close; created and MCP-verified on 2026-09-09, expires
@@ -154,6 +163,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-09-09T14:01:00Z
-Stopped at: Quick 260909-lxa / ticket 43; owner trust for new isolated planning fixture pending
+Last session: 2026-09-09T15:40:00Z
+Stopped at: Quick 260909-lxa / ticket 43; Open URI confirmation for changed-answer planning resume
 Resume file: ../docs/codex-skill-acceptance.md (derived evidence; reread live tickets/answers)

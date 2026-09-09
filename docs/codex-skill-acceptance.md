@@ -28,8 +28,8 @@ permission to publish, create production credentials, or close tickets.
 | Native connection, read-only Epic, pagination | Native app-server MCP read, fresh CLI model and isolated editor query | Passed for query. CLI traversed twelve real tickets; editor read the synthetic Epic/answer with zero domain mutations. |
 | Repository identity, ambiguity, allowlist | Repository helper tests; MCP integration isolation | Passed at helper/service level. Production project association not filled by inference. |
 | Empty Epic, create/update, scopes | MCP integration with real database and separate identities | Passed. Existing scopes are unchanged by enum migration; Epic scopes opt-in. Not a native model write acceptance. |
-| Full plans, reuse, GSD derived context | Renderer/context tests and independent forward review | Passed for meaningful invariants. Full native planning/repeated planning still needs write-capable client acceptance. |
-| Saved choices and Other, changed answers | Question/context tests; HTTP/domain integration | Passed. Answer versions checked independently of issue version. Native fixture correctly read Other=Hola without re-asking. |
+| Full plans, reuse, GSD derived context | Renderer/context tests, forward review, native editor planning and repeated request | Functional planning/repeat passed: complete plans, linked existing work, preserved human note/answer, same IDs/content/events on repeat. Initial create approval is inconclusive and excluded from approval evidence; see checkpoint below. |
+| Saved choices and Other, changed answers | Question/context tests; HTTP/domain integration; synthetic web answers and fresh native query | Native query read changed Other at question v3 while issue remained v2 and identified stale plan without writing. Explicit changed-answer planning resume is still pending. |
 | Next Ready, own claim, tests and review | Selection/checkpoint tests, MCP integration, Chromium dogfood and native editor fixture | Passed in the native editor: own claim, In Progress, actual edit/test, one attributed comment, guarded Ready for Review and released claim. |
 | Conflicts, retries, revocation, lost response | Guards/idempotency integration; retry helper; two-editor Chromium tests | Passed. Draft preserved; explicit comparison/rebase; no silent replay with changed data. |
 | Notify-only update and rollback | Five update tests and installer tests | Passed. No auto-update, timeout doesn't block work, version-aware notification. No stable release tag published. |
@@ -274,6 +274,87 @@ Candidate revision 62908c4 has unchanged skill contents. New project UUID
 `66543fe1-cff5-49db-9517-8b246ca70f0d`. Read its START-HERE planning prompt after
 the owner authorizes the new folder in VS Code. Initial snapshot: zero agent
 events, original repository and global configuration, saved Other=Hola.
+
+At 14:54 UTC the owner-trusted editor started native conversation
+`01a086a9-ee45-7fd0-9074-ddab1f8397f4`. It read the target Epic, existing ticket
+and saved Other=Hola v2. At 14:58 UTC it created synthetic ticket
+`903b1277-3787-476e-812a-d1841ac04956` for the optional-name library result,
+in Backlog with a detailed plan and an explicit dependency on the existing
+greeting ticket. Independent snapshot: one issue.created event, original answer
+and human Epic note preserved, no on-disk file changes. Full planning: NOT passed.
+
+Input automation lost focus: the initial native message was incomplete, a later
+typing attempt changed only the unsaved START-HERE editor buffer, and the full
+prompt was subsequently queued. The first write's approval coincided with operator
+keyboard actions, so genuine owner approval cannot be established for that step.
+Treat that approval evidence as inconclusive, not PASS. Stop blind keyboard/click
+automation while approval cards are present. At 15:03 UTC the editor visibly
+waited for owner approval of a second create_issue (local Node command); the
+operator did not approve this pending request. Keep the current fixture for
+continuation, not a newly seeded substitute. Once idle, discard only the accidental
+unsaved buffer and verify the full prompt was received. The native client also
+added temporary global project trust; global config hash is not yet restored.
+Planning/reuse and changed-answer resume remain pending, as does final cleanup.
+
+Following the owner's next approvals, the native model created the Node-command
+ticket `c0afce57-6ff9-423e-b827-a7d4451f713b` and blocking question
+`111ed044-0d92-4d80-80b7-92ecd4680515` v1 (plain text recommended / JSON,
+unanswered). It reread the ticket and saved the question reference in its plan
+using expectedVersion=1 plus the complete question-version set; ticket is now v2.
+The independently reviewed plan covers library reuse, process outputs/exit code,
+argument handling, tests without shell, dependencies and mutually exclusive
+format branches pending the human choice. No recommended answer was selected.
+Snapshot at 15:14 UTC: two created issues, one question, one issue update; both
+new tickets Backlog/unclaimed, original Other=Hola v2 and Epic note unchanged,
+no changed/staged/untracked files or remote changes. The editor waits for a
+guarded library-plan link update, then intends the Epic map update. These are
+partial planning observations, not completion/repeated-planning acceptance.
+
+### Completed plan/repeat and changed-answer query — 15:40 UTC
+
+The owner-approved library link and Epic map updates completed. The first native
+turn ended at 15:29:37 UTC with two complete functional plans in Backlog, a single
+unanswered blocking format question, links to the existing greeting result,
+an acyclic 1 → 2 → 3 dependency order and the original human note preserved.
+Independent state: six agent events (two creates, one question, two issue updates,
+one Epic update), no claims or file changes. The first create's approval remains
+inconclusive; do not use that operation to certify human approval. Later explicit
+owner approvals and the functional artifacts are separate evidence.
+
+The complete queued request was received at 15:29:38 UTC. The second native turn
+finished at 15:30:50 UTC, correctly deciding no further writes were needed.
+Compared the full Epic, issue details/plans/questions and agent-event sequence
+against the private `planning-before-repeat.json`: identical, including IDs and
+versions, not merely equal counts. Functional planning and repeated-request
+reuse: PASS. This does not finish every criterion of ticket 43.
+
+The operator then used Playwright and only the disposable owner through the local
+web: selected JSON at 15:31:54.018 UTC (question v2), then changed to Other at
+15:31:54.398 UTC (v3): a JSON object with greeting and name, name null when omitted.
+The issue remained v2. No agent events/plan edits occurred; only the human answer
+and its derived summaries changed. A fresh browser login verified the persisted
+Other value and versions (exit 0). The initial web driver had completed both
+saves but exited 1 during cleanup because of an unused response waiter; this was
+an operator test-driver error, not a failed save or product defect. No answers
+were replayed to hide that error.
+
+Fresh native CLI conversation `01a086cd-f9d1-7c70-b1c6-dd6c8df02cec` finished
+successfully after independently reading the same fixture. It found Other v3,
+distinguished it from the recommended text and former single-field JSON option,
+identified stale v1 references and missing name field in ticket/Epic plans, and
+kept the original Hola decision and unsatisfied dependencies. No mutation or
+code test ran. Private result: `changed-answer-query-result.md`; independent
+snapshot: `after-changed-answer-query.json`. Changed-answer read-only resume: PASS;
+explicit plan reconciliation after a new execution request is still pending.
+
+Removed only the native client's temporary project-trust stanza; the harness
+confirmed global config hash restored. The accidental START-HERE editor buffer
+is still unsaved (disk unchanged); attempts to focus the isolated editor did not
+reliably take focus, so do not send more blind keyboard input. VS Code now asks
+to Open `vscode://openai.chatgpt/local/01a086cd-f9d1-7c70-b1c6-dd6c8df02cec` in the
+isolated profile. Await the owner's one-time URI confirmation, then explicitly
+request planning resume with current answers; do not implement or change approvals.
+The same loopback fixture stays running for continuation. No release, pilot or Done.
 
 ## Deterministic validation and browser evidence
 
