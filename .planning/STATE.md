@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Ticket 43 closed Done by explicit owner request; test harness stopped
-last_updated: "2026-09-09T16:00:02Z"
+stopped_at: Chrome Epic first cut 19–20 Ready for Review, claims released; next EXT-03
+last_updated: "2026-09-09T18:04:53Z"
 last_activity: 2026-09-09
 progress:
   total_phases: 9
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-30)
 
 **Core value:** Convertir una intención humana en trabajo estructurado y seguro que ChatGPT y agentes de código externos puedan entender, ejecutar y devolver a revisión dentro de un único flujo trazable.
-**Current focus:** Phase 1 — Private Single-Owner Dogfooding MVP
+**Current focus:** Chrome Epic 1, first cut EXT-01 / 19 + EXT-02 / 20, explicitly prioritized by the owner. Historic phase 1 acceptance remains separate.
 
 ## Current Position
 
 Phase: 1 (Private Single-Owner Dogfooding MVP) — EXECUTING
 Plan: 5 of 5
 Status: Ready to execute
-Last activity: 2026-09-09 - Epic 4: tickets 13 and 34–42 Ready for Review; 43 Done by explicit owner decision with acceptance caveats recorded; 44 not started. See ../docs/codex-skill-acceptance.md.
+Last activity: 2026-09-09 - Chrome Epic: 17/17 answers saved and independently verified via MCP; recommendations explicitly approved, previous inline project/Epic choice preserved. First cut 19–20 Ready for Review (versions 7/6), claims null, real Chromium action/permission regression verified. Local commits 18658bb / 1b59442, no production release. Quick 260909-r6j. Skill ticket 43 remains Done; 44 not started.
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -61,6 +61,10 @@ Progress: [░░░░░░░░░░] 0%
 
 ### Decisions
 
+- [Quick 260909-r6j]: Owner explicitly prioritizes Chrome Epic before the
+  remaining historical sequence; do not mark phases complete. First cut is
+  scope + installable local-only foundation. OAuth/capture/submission remain
+  in 21–33; `docs/chrome-extension.md` records roadmap differences and answers.
 Decisions are logged in PROJECT.md Key Decisions table. Current roadmap-level structure:
 
 - [Roadmap]: Nine sequential phases start with the complete private dogfooding loop; no parallel phase execution.
@@ -117,6 +121,7 @@ Decisions are logged in PROJECT.md Key Decisions table. Current roadmap-level st
 
 | ID | Description | Date | Commits | Status | Directory |
 | --- | --- | --- | --- | --- | --- |
+| 260909-r6j | Chrome Epic: decisiones aprobadas y base MV3/panel lateral, tickets 19–20 | 2026-09-09 | `18658bb`, `1b59442` | Verified; Ready for Review in Issopen | [260909-r6j](./quick/260909-r6j-implementar-ext-01-y-ext-02-del-epic-chr/) |
 | 260902-ght | Epics de proyecto, filtro del tablero y detalle de tickets relacionados | 2026-09-02 | `dd2434c`, `70a8a43` | Verified | [260902-ght](./quick/260902-ght-a-adir-epics-de-proyecto-para-agrupar-is/) |
 | 260902-mmt | Publicar Epics por GitOps y validar producción | 2026-09-02 | `144ca29`, `2de2c41`, `7f27149` | Verified | [260902-mmt](./quick/260902-mmt-publicar-la-imagen-de-issopen-con-epics-/) |
 | 260907-vpo | Seis variantes y refinamiento de seis piezas en verde bosque y menta | 2026-09-07 | `96de32a`, `cfe220d` | Verified | [260907-vpo](./quick/260907-vpo-explorar-seis-variantes-verdes-y-moradas/) |

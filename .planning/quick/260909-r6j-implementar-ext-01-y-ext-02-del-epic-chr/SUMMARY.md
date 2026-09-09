@@ -3,6 +3,9 @@
 Fecha: 2026-09-09. Alcance de esta entrega: EXT-01 / 19 y EXT-02 / 20.
 Plan/canon: [PLAN.md](PLAN.md) y Epic `ca26c29b-43ac-4ca0-b768-594d6779d6e7`.
 Commit del alcance aprobado: `18658bb`.
+Commit de implementación: `1b59442`. Relectura MCP a las 18:04 UTC:
+19 Ready for Review v7; 20 Ready for Review v6; ambos sin claim y sin preguntas
+bloqueantes. No Done automático. El escaneo final pasó con 186 archivos.
 
 ## Decisiones y atribución
 
