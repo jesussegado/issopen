@@ -1,4 +1,4 @@
-# Issopen para Chrome — piloto 0.4.0
+# Issopen para Chrome — piloto 0.4.1
 
 Flujo del [Epic de Chrome](https://issopen.serviciosegado.com/epics/ca26c29b-43ac-4ca0-b768-594d6779d6e7):
 OAuth humano, capturas y DOM saneado, revisión, creación de proyecto/Epic/ticket,
@@ -38,7 +38,10 @@ pnpm extension:build
    se conserva en un borrador local durante 24 h; originales/historial no.
    Una captura sin confirmar se pierde al cerrar. Puedes excluir imagen, DOM,
    descriptor, metadatos o toda la evidencia. El borrador restaurado es editable.
-10. Elige proyecto/Epic o créalos aquí, completa título y pulsa **Enviar ticket**.
+10. Elige proyecto/Epic o usa los botones **Crear proyecto** y **Crear Epic**
+   al principio de **Crear ticket**. Cada botón abre/cierra su formulario; el
+   color verde indica cuál está abierto y alternarlos conserva lo escrito.
+   Completa el título del ticket y pulsa **Enviar ticket**.
    Se muestra número y enlace, sin navegación automática. Si se pierde la red,
    reintenta manualmente; conserva payload/UUID incluso al recargar o reconectar.
    [Privacidad, límites y pruebas](../../docs/chrome-capture.md).

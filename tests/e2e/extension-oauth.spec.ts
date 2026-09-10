@@ -109,17 +109,51 @@ test("Chrome completes real identity consent and disconnects without exposing to
     ).toBeVisible();
     // Create the two containers from the real panel, then exercise a lost reply
     // after the server commit: reloading must preserve the reviewed PNG and key.
-    await panel.getByText("Crear proyecto aquí", { exact: true }).click();
+    const projectToggle = panel.getByRole("button", {
+      name: "Crear proyecto aquí",
+      exact: true,
+    });
+    const epicToggle = panel.getByRole("button", {
+      name: "Crear Epic aquí",
+      exact: true,
+    });
+    const shortcuts = panel.getByRole("group", {
+      name: "Crear proyecto o Epic",
+    });
+    await expect(shortcuts).toBeVisible();
+    expect(
+      await shortcuts.evaluate((el) =>
+        Boolean(
+          el.compareDocumentPosition(
+            document.querySelector('[aria-label="Proyecto"]') as Element,
+          ) & Node.DOCUMENT_POSITION_FOLLOWING,
+        ),
+      ),
+    ).toBe(true);
+    await projectToggle.focus();
+    await panel.keyboard.press("Enter");
+    await expect(projectToggle).toHaveAttribute("aria-expanded", "true");
     await panel
       .getByLabel("Nombre del nuevo proyecto")
       .fill("Chrome capture E2E");
+    await epicToggle.click();
+    await expect(projectToggle).toHaveAttribute("aria-expanded", "false");
+    await expect(panel.getByLabel("Nombre del nuevo proyecto")).toBeHidden();
+    await expect(epicToggle).toHaveAttribute("aria-expanded", "true");
+    await epicToggle.focus();
+    await panel.keyboard.press("Space");
+    await expect(epicToggle).toHaveAttribute("aria-expanded", "false");
+    await projectToggle.click();
+    await expect(panel.getByLabel("Nombre del nuevo proyecto")).toHaveValue(
+      "Chrome capture E2E",
+    );
     await panel
       .getByRole("button", { name: "Crear proyecto", exact: true })
       .click();
     await expect(panel.getByLabel("Proyecto", { exact: true })).not.toHaveValue(
       "",
     );
-    await panel.getByText("Crear Epic aquí", { exact: true }).click();
+    await epicToggle.click();
     await panel.getByLabel("Título del nuevo Epic").fill("Chrome E2E audit");
     await panel
       .getByRole("button", { name: "Crear Epic", exact: true })

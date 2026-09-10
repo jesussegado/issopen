@@ -56,6 +56,9 @@ export function Workspace() {
   const [epicSearch, setEpicSearch] = useState("");
   const [projectName, setProjectName] = useState("");
   const [epicTitle, setEpicTitle] = useState("");
+  const [createPanel, setCreatePanel] = useState<"project" | "epic" | null>(
+    null,
+  );
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
   const [storageError, setStorageError] = useState(false);
@@ -338,6 +341,89 @@ export function Workspace() {
           />
           <section aria-labelledby="composer-heading">
             <h2 id="composer-heading">Crear ticket</h2>
+            {!created && (
+              <fieldset className="create-destination" disabled={locked}>
+                <fieldset
+                  className="create-shortcuts"
+                  aria-label="Crear proyecto o Epic"
+                >
+                  {(["project", "epic"] as const).map((target) => (
+                    <button
+                      key={target}
+                      id={`create-${target}-toggle`}
+                      type="button"
+                      className="create-shortcut"
+                      aria-label={
+                        target === "project"
+                          ? "Crear proyecto aquí"
+                          : "Crear Epic aquí"
+                      }
+                      aria-expanded={createPanel === target}
+                      aria-controls={`create-${target}-panel`}
+                      onClick={() =>
+                        setCreatePanel((current) =>
+                          current === target ? null : target,
+                        )
+                      }
+                    >
+                      <span className="create-shortcut-icon" aria-hidden="true">
+                        {createPanel === target ? "−" : "+"}
+                      </span>
+                      {target === "project" ? "Crear proyecto" : "Crear Epic"}
+                    </button>
+                  ))}
+                </fieldset>
+                <section
+                  id="create-project-panel"
+                  className="create-inline-panel"
+                  aria-labelledby="create-project-toggle"
+                  hidden={createPanel !== "project"}
+                >
+                  <label>
+                    Nombre del nuevo proyecto
+                    <input
+                      maxLength={120}
+                      value={projectName}
+                      onChange={(e) => setProjectName(e.target.value)}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    disabled={!writable || !projectName.trim()}
+                    onClick={() => void createContainer("project")}
+                  >
+                    Crear proyecto
+                  </button>
+                </section>
+                <section
+                  id="create-epic-panel"
+                  className="create-inline-panel"
+                  aria-labelledby="create-epic-toggle"
+                  hidden={createPanel !== "epic"}
+                >
+                  <p className="create-inline-hint">
+                    {form.projectId
+                      ? `En el proyecto ${projects.find((p) => p.id === form.projectId)?.name ?? "seleccionado"}.`
+                      : "Selecciona primero un proyecto en el formulario inferior."}
+                  </p>
+                  <label>
+                    Título del nuevo Epic
+                    <input
+                      maxLength={240}
+                      value={epicTitle}
+                      onChange={(e) => setEpicTitle(e.target.value)}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    disabled={!writable || !form.projectId || !epicTitle.trim()}
+                    onClick={() => void createContainer("epic")}
+                  >
+                    Crear Epic
+                  </button>
+                </section>
+              </fieldset>
+            )}
             <p className="notice">
               Un borrador local, hasta 24 horas desde el último cambio. Sólo se
               envía al pulsar Enviar ticket; nunca en segundo plano.
@@ -422,24 +508,6 @@ export function Workspace() {
                         ))}
                     </select>
                   </label>
-                  <details>
-                    <summary>Crear proyecto aquí</summary>
-                    <label>
-                      Nombre del nuevo proyecto
-                      <input
-                        maxLength={120}
-                        value={projectName}
-                        onChange={(e) => setProjectName(e.target.value)}
-                      />
-                    </label>
-                    <button
-                      type="button"
-                      disabled={!writable || !projectName.trim()}
-                      onClick={() => void createContainer("project")}
-                    >
-                      Crear proyecto
-                    </button>
-                  </details>
                   <label>
                     Buscar Epic
                     <input
@@ -474,31 +542,11 @@ export function Workspace() {
                   </label>
                   <button
                     type="button"
-                    className="secondary"
+                    className="secondary refresh-epics"
                     onClick={() => setEpicReload((v) => v + 1)}
                   >
                     Actualizar Epics
                   </button>
-                  <details>
-                    <summary>Crear Epic aquí</summary>
-                    <label>
-                      Título del nuevo Epic
-                      <input
-                        maxLength={240}
-                        value={epicTitle}
-                        onChange={(e) => setEpicTitle(e.target.value)}
-                      />
-                    </label>
-                    <button
-                      type="button"
-                      disabled={
-                        !writable || !form.projectId || !epicTitle.trim()
-                      }
-                      onClick={() => void createContainer("epic")}
-                    >
-                      Crear Epic
-                    </button>
-                  </details>
                   <label>
                     Título
                     <input

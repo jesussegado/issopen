@@ -41,6 +41,10 @@ operación: [chrome-delivery.md](../../docs/chrome-delivery.md).
 No persistir ni subir originales/historial. Si el resultado del envío es
 incierto, mantener payload/UUID bloqueados al recargar/reconectar. No enviar
 automáticamente ni renovar permisos antiguos sin nuevo consentimiento.
+El parche 0.4.1 presenta la creación inline de proyecto/Epic como dos botones
+al inicio del compositor. Usan `aria-expanded`/`aria-controls`, regiones ocultas
+y estado local que conserva los nombres al alternar. Mantener los guards de
+escritura/destino y deshabilitar ambos durante operaciones pendientes.
 La nota 0.3 siguiente es histórica, no describe los límites de 0.4.
 
 La versión 0.3 añade captura local (23) y parte del editor (25) sobre OAuth (21).
