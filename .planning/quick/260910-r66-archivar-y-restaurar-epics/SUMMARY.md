@@ -7,9 +7,12 @@
 - Archive and restore are reversible, optimistic-concurrency guarded and emit
   append-only `epic.archived` / `epic.restored` activity in the same
   transaction.
-- Existing tickets remain linked and usable. A row-lock guard rejects a new
-  association to an archived Epic, including concurrent archive/assignment
-  races.
+- Existing tickets remain linked and keep their exact workflow status. While
+  the parent Epic is archived they are omitted from the board, the active REST
+  collection and MCP `list_issues`; direct issue and Epic detail stay readable.
+  Restoring the Epic returns them to their original columns. A row-lock guard
+  rejects a new association to an archived Epic, including concurrent
+  archive/assignment races.
 - REST and MCP lists default to active Epics and accept active, archived or all
   explicitly. MCP reuses the existing opt-in `epics:write` scope and
   idempotency contract.
@@ -47,3 +50,19 @@
 - An authenticated Chrome smoke checked active/all Epic lists, the archive
   action and the linked-ticket view without mutating a real Epic. The public
   readiness endpoint returned HTTP 200 with HSTS.
+
+## Inherited ticket archive follow-up
+
+- Source `af1e2f7` implements derived ticket visibility without another schema
+  migration; ticket rows and statuses are never rewritten.
+- GitOps `26fa5c30` promoted
+  `registry.serviciosegado.com/issopen:epic-ticket-archive-af1e2f7` at digest
+  `sha256:ecc2acf08ba8907e824153830b9811acc74911e865573f155ffd568ba3ad09b7`.
+- The fresh complete backup `issopen-QNBmK7` restored in isolated PostgreSQL 18
+  with 67 issues, 603 events, 8 Epics, 10 evidence rows, 11 receipts and all 17
+  migrations.
+- Argo CD reached `Synced/Healthy`; the application pod was Ready with zero
+  restarts, both PVC UIDs were unchanged and public readiness returned 200.
+- Authenticated Chrome verified the new archive explanation and healthy board
+  layout. Production MCP advertises archived-Epic omission on `list_issues`.
+  Both checks were read-only because production had no archived Epic.
