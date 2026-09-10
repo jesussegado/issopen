@@ -34,7 +34,9 @@ test("creation shortcuts stay above the fields, fit narrow panels and preserve i
       await shortcuts.scrollIntoViewIfNeeded();
       const projectBox = await project.boundingBox();
       const epicBox = await epic.boundingBox();
-      const searchBox = await page.getByLabel("Buscar proyecto").boundingBox();
+      const searchBox = await page
+        .getByRole("combobox", { name: "Proyecto", exact: true })
+        .boundingBox();
       if (!projectBox || !epicBox || !searchBox)
         throw new Error("Missing fields");
       expect(Math.abs(projectBox.y - epicBox.y)).toBeLessThan(1);

@@ -97,7 +97,9 @@ async function choose(page: Page, label: string, option: string) {
   ).toBeVisible();
   await page.getByRole("option", { name: option, exact: true }).click();
   await expect(field).toHaveAttribute("aria-expanded", "false");
-  await expect(field).toContainText(option);
+  if ((await field.getAttribute("aria-autocomplete")) === "list")
+    await expect(field).toHaveValue(option);
+  else await expect(field).toContainText(option);
   await expect(field).toBeFocused();
 }
 
@@ -110,7 +112,7 @@ test("mouse selection, search and long options fit the panel and preserve the dr
     await choose(page, "Proyecto", "Alpha");
     await expect(
       page.getByRole("combobox", { name: "Epic", exact: true }),
-    ).toContainText("1-Primero");
+    ).toHaveValue("1-Primero");
     for (const width of [320, 400]) {
       await page.setViewportSize({ width, height: 800 });
       for (const name of ["Proyecto", "Epic", "Prioridad", "Estado"]) {
@@ -132,17 +134,28 @@ test("mouse selection, search and long options fit the panel and preserve the dr
         await page.keyboard.press("Escape");
       }
     }
-    await page.getByLabel("Buscar proyecto").fill("bet");
+    await expect(
+      page.getByLabel("Buscar proyecto", { exact: true }),
+    ).toHaveCount(0);
+    await expect(page.getByLabel("Buscar Epic", { exact: true })).toHaveCount(
+      0,
+    );
+    await page
+      .getByRole("combobox", { name: "Proyecto", exact: true })
+      .fill("bet");
+    await expect(page.getByRole("option")).toHaveCount(1);
     await choose(page, "Proyecto", "Beta");
     await expect(
       page.getByRole("combobox", { name: "Epic", exact: true }),
-    ).toContainText("Sin Epic");
+    ).toHaveValue("Sin Epic");
     await page.getByRole("combobox", { name: "Epic", exact: true }).click();
     await expect(page.getByRole("option")).toHaveCount(1);
     await page.keyboard.press("Escape");
-    await page.getByLabel("Buscar proyecto").fill("");
     await choose(page, "Proyecto", "Alpha");
-    await page.getByLabel("Buscar Epic").fill("extenso");
+    await page
+      .getByRole("combobox", { name: "Epic", exact: true })
+      .fill("extenso");
+    await expect(page.getByRole("option")).toHaveCount(1);
     await choose(page, "Epic", `2-${longTitle}`);
     await choose(page, "Prioridad", "urgent");
     await choose(page, "Estado", "ready");
@@ -177,10 +190,10 @@ test("mouse selection, search and long options fit the panel and preserve the dr
     ] as const)
       await expect(
         page.getByRole("combobox", { name, exact: true }),
-      ).toHaveAttribute("value", value);
+      ).toHaveAttribute("data-selected-value", value);
     await expect(
       page.getByRole("combobox", { name: "Epic", exact: true }),
-    ).toContainText(`2-${longTitle}`);
+    ).toHaveValue(`2-${longTitle}`);
     await expect(page.getByLabel("Título", { exact: true })).toHaveValue(
       "Synthetic draft",
     );
@@ -234,6 +247,86 @@ test("keyboard navigation only commits with Enter/Space and supports outside dis
   }
 });
 
+// biome-ignore lint/correctness/noEmptyPattern: Playwright fixture signature.
+test("editable destinations filter in one input, cancel free text and support keyboard", async ({}, info) => {
+  const { context, page, requests } = await fixture();
+  try {
+    const project = page.getByRole("combobox", {
+      name: "Proyecto",
+      exact: true,
+    });
+    const epic = page.getByRole("combobox", { name: "Epic", exact: true });
+    await expect(project).toHaveAttribute("aria-autocomplete", "list");
+    await project.fill("ALP");
+    await expect(page.getByRole("option")).toHaveText(["Alpha"]);
+    await page.keyboard.press("Enter");
+    await expect(project).toHaveValue("Alpha");
+    await choose(page, "Epic", "1-Primero");
+    for (const key of ["Escape", "Tab"]) {
+      await epic.fill("texto que no existe");
+      await expect(
+        page.getByRole("status").filter({ hasText: "Sin resultados" }),
+      ).toBeVisible();
+      await page.keyboard.press("Enter");
+      await expect(epic).toHaveAttribute("data-selected-value", firstEpic);
+      await page.keyboard.press(key);
+      await expect(epic).toHaveValue("1-Primero");
+      await expect(epic).toHaveAttribute("aria-expanded", "false");
+    }
+    await epic.fill("no existe");
+    await page.getByLabel("Título", { exact: true }).click();
+    await expect(epic).toHaveValue("1-Primero");
+    await epic.click();
+    await page.keyboard.type("prim"); // Selected label is replaced, not appended.
+    await expect(epic).toHaveValue("prim");
+    await page.keyboard.press("Enter");
+    await expect(epic).toHaveValue("1-Primero");
+    await epic.fill("exténso"); // Accent-insensitive substring, unlike select-only typeahead.
+    await expect(page.getByRole("option")).toHaveText([`2-${longTitle}`]);
+    await page.keyboard.press("Home");
+    await expect(epic).toHaveValue("exténso");
+    await page.keyboard.press("Escape");
+    await epic.fill("");
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("Enter");
+    await expect(epic).toHaveAttribute("data-selected-value", secondEpic);
+    await page
+      .getByRole("button", { name: "Mostrar opciones de Epic" })
+      .click();
+    await expect(
+      page.getByRole("listbox", { name: "Epic", exact: true }),
+    ).toBeVisible();
+    await page
+      .getByRole("button", { name: "Ocultar opciones de Epic" })
+      .click();
+    await expect(epic).toHaveValue(`2-${longTitle}`);
+    await expect(epic).toBeFocused();
+    await epic.fill("Sin Epic");
+    await page.keyboard.press("Enter");
+    await expect(epic).toHaveAttribute("data-selected-value", "");
+    for (const width of [320, 400]) {
+      await page.setViewportSize({ width, height: 800 });
+      await epic.fill("prim");
+      await page
+        .locator('section[aria-labelledby="composer-heading"]')
+        .screenshot({ path: info.outputPath(`search-select-${width}.png`) });
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth),
+      ).toBeLessThanOrEqual(width);
+      await page.keyboard.press("Escape");
+    }
+    await project.fill("bet");
+    await page.keyboard.press("Enter");
+    await expect(project).toHaveValue("Beta");
+    await expect(epic).toHaveValue("Sin Epic");
+    expect(await page.evaluate("globalThis.mutations")).toBe(0);
+    expect(requests).toEqual([]);
+  } finally {
+    await context.close();
+  }
+});
+
 test("late Epic reads cannot overwrite the new project and refresh errors preserve selection", async () => {
   const { context, page } = await fixture();
   try {
@@ -259,13 +352,13 @@ test("late Epic reads cannot overwrite the new project and refresh errors preser
     );
     await expect(
       page.getByRole("combobox", { name: "Epic", exact: true }),
-    ).toHaveAttribute("value", firstEpic);
+    ).toHaveAttribute("data-selected-value", firstEpic);
     await page.evaluate("globalThis.failEpics = false");
     await page.getByRole("button", { name: "Actualizar Epics" }).click();
     await expect(page.getByRole("alert")).toHaveCount(0);
     await expect(
       page.getByRole("combobox", { name: "Epic", exact: true }),
-    ).toHaveAttribute("value", firstEpic);
+    ).toHaveAttribute("data-selected-value", firstEpic);
     expect(await page.evaluate("globalThis.mutations")).toBe(0);
   } finally {
     await context.close();

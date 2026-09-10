@@ -29,6 +29,11 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+- Chrome 0.5.3 (ticket 54) fusiona búsqueda y selección de Proyecto/Epic en
+  un único input-combobox por destino. Texto de filtro transitorio, selección
+  confirmada por clic/Enter, cancelación sin modificar IDs ni borradores.
+  Prioridad/estado y backend/permisos no cambian.
+
 - Chrome 0.5.2 (ticket 53) corrige los selectores que Chrome Linux posicionaba
   fuera de su ventana. Listas HTML dentro del panel con ratón/teclado, filtros
   y bloqueo de envío pendiente; conserva API, permisos y borradores. Pruebas

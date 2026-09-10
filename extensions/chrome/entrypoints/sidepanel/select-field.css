@@ -2,6 +2,41 @@
   min-width: 0;
   margin-bottom: 12px;
 }
+.field-select-input-wrap {
+  position: relative;
+  margin-top: 6px;
+}
+input.field-select-input {
+  min-height: 44px;
+  border: 1px solid #a4c8bb;
+  border-radius: 8px;
+  padding: 10px 44px 10px 14px;
+  font: inherit;
+  color: #142f29;
+  background: white;
+  text-overflow: ellipsis;
+}
+input.field-select-input:disabled {
+  color: #46635b;
+  background: #dce9e3;
+}
+button.field-select-toggle {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #027067;
+}
+button.field-select-toggle:hover:not(:disabled) {
+  background: #d9f3e8;
+}
+.field-select-empty {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: #46635b;
+}
 button.field-select-trigger,
 button.field-select-option {
   display: flex;

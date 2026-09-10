@@ -162,7 +162,7 @@ test("Chrome completes real identity consent and disconnects without exposing to
       .click();
     await expect(
       panel.getByRole("combobox", { name: "Proyecto", exact: true }),
-    ).toContainText("Chrome capture E2E");
+    ).toHaveValue("Chrome capture E2E");
     await epicToggle.click();
     await panel.getByLabel("Título del nuevo Epic").fill("Chrome E2E audit");
     await panel
@@ -170,14 +170,14 @@ test("Chrome completes real identity consent and disconnects without exposing to
       .click();
     await expect(
       panel.getByRole("combobox", { name: "Epic", exact: true }),
-    ).toContainText("Chrome E2E audit");
+    ).toHaveValue("1-Chrome E2E audit");
     // Real clicks on in-panel options, not selectOption (which skips the popup).
     for (const [name, option] of [
       ["Proyecto", "Chrome capture E2E"],
       ["Epic", "1-Chrome E2E audit"],
     ] as const) {
       const selector = panel.getByRole("combobox", { name, exact: true });
-      await selector.click();
+      await selector.fill(option.slice(2));
       await expect(
         panel.getByRole("listbox", { name, exact: true }),
       ).toBeVisible();
@@ -186,10 +186,10 @@ test("Chrome completes real identity consent and disconnects without exposing to
     }
     const projectId = await panel
       .getByRole("combobox", { name: "Proyecto", exact: true })
-      .getAttribute("value");
+      .getAttribute("data-selected-value");
     const epicId = await panel
       .getByRole("combobox", { name: "Epic", exact: true })
-      .getAttribute("value");
+      .getAttribute("data-selected-value");
     const files = await panel.evaluate(() => {
       const canvas = document.createElement("canvas");
       canvas.width = 80;
@@ -224,10 +224,10 @@ test("Chrome completes real identity consent and disconnects without exposing to
       .getAttribute("src");
     const destination = await panel
       .getByRole("combobox", { name: "Proyecto", exact: true })
-      .getAttribute("value");
+      .getAttribute("data-selected-value");
     const epicDestination = await panel
       .getByRole("combobox", { name: "Epic", exact: true })
-      .getAttribute("value");
+      .getAttribute("data-selected-value");
     await accountButton.click();
     await expect(
       panel.getByText("Conectado como", { exact: false }),
@@ -241,10 +241,10 @@ test("Chrome completes real identity consent and disconnects without exposing to
     ).toHaveValue("Synthetic evidence only");
     await expect(
       panel.getByRole("combobox", { name: "Proyecto", exact: true }),
-    ).toHaveAttribute("value", destination ?? "");
+    ).toHaveAttribute("data-selected-value", destination ?? "");
     await expect(
       panel.getByRole("combobox", { name: "Epic", exact: true }),
-    ).toHaveAttribute("value", epicDestination ?? "");
+    ).toHaveAttribute("data-selected-value", epicDestination ?? "");
     await expect(panel.getByAltText("Imagen adjunta 1")).toHaveAttribute(
       "src",
       reviewed ?? "",

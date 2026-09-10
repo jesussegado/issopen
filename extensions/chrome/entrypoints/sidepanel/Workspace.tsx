@@ -51,8 +51,6 @@ export function Workspace({ account }: { account: AccountResponse | null }) {
   const [owner, setOwner] = useState<string | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [epics, setEpics] = useState<Epic[]>([]);
-  const [search, setSearch] = useState("");
-  const [epicSearch, setEpicSearch] = useState("");
   const [projectName, setProjectName] = useState("");
   const [epicTitle, setEpicTitle] = useState("");
   const [createPanel, setCreatePanel] = useState<"project" | "epic" | null>(
@@ -482,15 +480,9 @@ export function Workspace({ account }: { account: AccountResponse | null }) {
             ) : (
               <>
                 <fieldset disabled={locked}>
-                  <label>
-                    Buscar proyecto
-                    <input
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                    />
-                  </label>
                   <SelectField
                     label="Proyecto"
+                    searchable
                     required
                     disabled={locked}
                     value={form.projectId}
@@ -500,24 +492,12 @@ export function Workspace({ account }: { account: AccountResponse | null }) {
                     }}
                     options={[
                       { value: "", label: "Selecciona proyecto" },
-                      ...projects
-                        .filter(
-                          (p) =>
-                            p.id === form.projectId ||
-                            p.name.toLowerCase().includes(search.toLowerCase()),
-                        )
-                        .map((p) => ({ value: p.id, label: p.name })),
+                      ...projects.map((p) => ({ value: p.id, label: p.name })),
                     ]}
                   />
-                  <label>
-                    Buscar Epic
-                    <input
-                      value={epicSearch}
-                      onChange={(e) => setEpicSearch(e.target.value)}
-                    />
-                  </label>
                   <SelectField
                     label="Epic"
+                    searchable
                     disabled={locked}
                     value={form.epicId}
                     missingLabel={
@@ -528,18 +508,10 @@ export function Workspace({ account }: { account: AccountResponse | null }) {
                     onChange={(value) => setForm({ ...form, epicId: value })}
                     options={[
                       { value: "", label: "Sin Epic" },
-                      ...epics
-                        .filter(
-                          (e) =>
-                            e.id === form.epicId ||
-                            e.title
-                              .toLowerCase()
-                              .includes(epicSearch.toLowerCase()),
-                        )
-                        .map((e) => ({
-                          value: e.id,
-                          label: `${e.number}-${e.title}`,
-                        })),
+                      ...epics.map((e) => ({
+                        value: e.id,
+                        label: `${e.number}-${e.title}`,
+                      })),
                     ]}
                   />
                   {epicLoading && <p role="status">Cargando Epics…</p>}

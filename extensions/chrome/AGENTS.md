@@ -5,7 +5,7 @@ repositorio; no crear otro Git. Epic Chrome
 `ca26c29b-43ac-4ca0-b768-594d6779d6e7`; ticket 51 simplifica las imágenes
 por petición explícita del owner. El criterio personal 33 sigue independiente.
 
-## Qué hace ahora (0.5.2)
+## Qué hace ahora (0.5.3)
 
 OAuth humano → pegar/subir imágenes externas → proyecto/Epic y campos →
 Enviar ticket → enlace. No captura ni lee la página, no inspecciona DOM.
@@ -30,11 +30,17 @@ No reintroducir controles de captura por seguir documentación histórica 0.3/0.
 - `Workspace.tsx`: compositor y creación de proyecto/Epic inline; conserva
   cuenta/formulario/imágenes al alternar paneles. Bloquea operaciones durante
   preparación o envío incierto. Conserva payload y UUID para reintentar.
-- `SelectField.tsx`: proyecto/Epic/prioridad/estado usan combobox con lista HTML
+- `SelectField.tsx`: proyecto/Epic usan un único input-combobox buscable, sin
+  otro input de búsqueda encima. El filtro ignora mayúsculas/tildes y no cambia
+  el ID confirmado; sólo elegir una opción llama onChange. Escape/Tab/fuera
+  restauran el nombre guardado. `data-selected-value` expone el ID interno a
+  tests; `value` del input es texto visible, nunca un ID para enviar.
+  Prioridad/estado conservan el modo no editable. Todos usan una lista HTML
   dentro del panel. El popup nativo de select se observó fuera de la ventana en
   Chrome Linux. No restaurarlo sin probar su posición en el panel real.
-  Clic y Enter/Espacio confirman, flechas/Home/End/letras buscan, Escape/Tab
-  cierran sin cambiar. Listas acotadas y foco/ARIA; sin nuevas dependencias.
+  Clic/Enter confirman, flechas navegan; Espacio/Home/End/letras conservan la
+  edición nativa en inputs y la navegación del modo no editable. Ignora Enter
+  durante composición IME. Listas acotadas y foco/ARIA; sin nuevas dependencias.
   Respeta `locked`; reseleccionar proyecto conserva Epic. La carga asíncrona
   de Epics no borra el ID guardado ni aplica respuestas de otro proyecto.
 - `Account.tsx`: botón de usuario y diálogo nativo cerrado por defecto,

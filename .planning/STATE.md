@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Chrome 0.5.2 in-panel selectors loaded and verified; ticket 53 Ready for Review
-last_updated: "2026-09-10T08:39:18Z"
+stopped_at: Chrome 0.5.3 unified search selects implemented; ticket 54 awaiting release
+last_updated: "2026-09-10T08:47:58Z"
 last_activity: 2026-09-10
 progress:
   total_phases: 9
@@ -22,6 +22,11 @@ See: .planning/PROJECT.md (updated 2026-08-30)
 
 **Core value:** Convertir una intención humana en trabajo estructurado y seguro que ChatGPT y agentes de código externos puedan entender, ejecutar y devolver a revisión dentro de un único flujo trazable.
 **Current focus:** Chrome 0.5 replaces capture/DOM/editor with pasted/uploaded images at owner request. Ticket 51 Ready for Review; 33 owner acceptance untouched. Server deployed and managed Chrome connected. Quick 260910-d89.
+
+Follow-up 2026-09-10: ticket 54 merges destination search and selection into
+one editable combobox for Proyecto and Epic. Quick 260910-euw; five targeted
+selector/composer tests and real OAuth E2E pass. 0.5.3 release/reload pending;
+confirmed IDs, draft, permissions and backend unchanged.
 
 Follow-up 2026-09-10: ticket 53 fixes native dropdown positioning observed in
 managed Chrome 152 Linux (popup outside the browser window). SelectField lists
