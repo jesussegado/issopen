@@ -31,6 +31,25 @@ Cambios ajenos intactos. No se despliega Kubernetes por una modificación de UI.
 
 ## Entrega
 
-Pendiente del gate completo, artefacto limpio 0.5.3 y recarga de la misma
-instalación con sesión/borrador confirmados. Conservar la imagen real del owner,
-no leer clipboard ni cambiar el destino actual en la comprobación en vivo.
+Fuente publicada `b5795e6995d674791a5c1c9466daebba976b9177`.
+Gate completo `pnpm extension:release` desde Git limpio PASS: 78 unit/web +
+46 integración + 8 E2E app + 76 unit extensión + 11 E2E extensión = **219 tests**,
+dos skips móviles previstos. Lint/TypeScript y escaneo de secretos PASS.
+Build reproducible (8 archivos), tree SHA
+`cdc3379e3fe1d1bf550abeb69de043df997cc5bef0a621b0a9e540f5e5038e63`.
+
+Artefacto ignorado `extensions/chrome/.output/releases/issopen-chrome-0.5.3-b5795e6995d6.zip`.
+SHA256 `43bff029cfc32e625cb3394390bd315c6962ff0aed780654f2ff5f2197504a6c`.
+Checksum/unzip -t PASS, extracción temporal idéntica al build antes de recarga.
+0.5.2 retenido y checksum verificado. No necesita cambio de servidor/GitOps.
+
+Mismo perfil/ruta/ID Chrome 152, versión cargada **0.5.3** y cuenta conectada.
+Antes de recargar: UI y única imagen confirmadas en IndexedDB, sin operaciones
+pendientes ni edición transitoria. Después: fingerprint de cuenta/formulario/
+evidencia/pending idéntico (comparado en memoria, sin imprimir contenido).
+Dos inputs buscables, cero inputs Buscar antiguos. En ambos se probaron filtro,
+clic en opción actual y cancelación de búsqueda sin resultados; ID/etiqueta y
+borrador se conservaron. No lectura de clipboard ni subida de imágenes/tickets.
+
+Ticket 54 reread: Ready for Review v6, claim null, cero preguntas. Commit y
+evidencias enlazados. Ticket personal 33 y cambios ajenos permanecen intactos.

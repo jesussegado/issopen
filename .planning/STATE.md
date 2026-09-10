@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Chrome 0.5.3 unified search selects implemented; ticket 54 awaiting release
-last_updated: "2026-09-10T08:47:58Z"
+stopped_at: Chrome 0.5.3 unified search selects loaded and verified; ticket 54 Ready for Review
+last_updated: "2026-09-10T08:52:04Z"
 last_activity: 2026-09-10
 progress:
   total_phases: 9
@@ -24,9 +24,11 @@ See: .planning/PROJECT.md (updated 2026-08-30)
 **Current focus:** Chrome 0.5 replaces capture/DOM/editor with pasted/uploaded images at owner request. Ticket 51 Ready for Review; 33 owner acceptance untouched. Server deployed and managed Chrome connected. Quick 260910-d89.
 
 Follow-up 2026-09-10: ticket 54 merges destination search and selection into
-one editable combobox for Proyecto and Epic. Quick 260910-euw; five targeted
-selector/composer tests and real OAuth E2E pass. 0.5.3 release/reload pending;
-confirmed IDs, draft, permissions and backend unchanged.
+one editable combobox for Proyecto and Epic. Quick 260910-euw, source b5795e6
+published; 0.5.3 release 219 tests PASS, checksum/reproducibility verified.
+Managed Chrome loaded/connected, 2 searchable inputs / 0 duplicate search
+fields; filtering/selection/cancel verified. Existing draft and real image
+preserved. Ticket 54 Ready for Review v6, claim null; no backend changes.
 
 Follow-up 2026-09-10: ticket 53 fixes native dropdown positioning observed in
 managed Chrome 152 Linux (popup outside the browser window). SelectField lists
@@ -102,6 +104,10 @@ Progress: [░░░░░░░░░░] 0%
 ## Accumulated Context
 
 ### Decisions
+
+- [Quick 260910-euw]: Proyecto/Epic use one editable input-combobox each.
+  Search text is transient; only an option confirms an ID. Escape/Tab/outside
+  restore the confirmed label. Keep native text editing and in-panel lists.
 
 - [Quick 260910-ehq]: Extension ticket selectors use in-panel HTML lists,
   avoiding the observed out-of-window native popup in Chrome Linux. Preserve
@@ -188,6 +194,7 @@ Decisions are logged in PROJECT.md Key Decisions table. Current roadmap-level st
 
 | ID | Description | Date | Commits | Status | Directory |
 | --- | --- | --- | --- | --- | --- |
+| 260910-euw | Chrome: fusionar búsqueda y selección de Proyecto/Epic | 2026-09-10 | `b5795e6` | 219 tests PASS; 0.5.3 loaded, draft preserved; 54 Ready for Review | [260910-euw](./quick/260910-euw-unificar-busqueda-y-seleccion-de-proyect/) |
 | 260910-ehq | Chrome: selectores accesibles dentro del panel | 2026-09-10 | `fb11c41` | 218 tests PASS; 0.5.2 loaded, draft preserved; 53 Ready for Review | [260910-ehq](./quick/260910-ehq-corregir-selectores-chrome-desplazados-f/) |
 | 260910-e2r | Chrome: aviso cerrable y ayuda permanente en Cuenta | 2026-09-10 | `dbfc597` | 215 tests PASS; 0.5.1 loaded, draft preserved; 52 Ready for Review | [260910-e2r](./quick/260910-e2r-convertir-informacion-de-chrome-en-aviso/) |
 | 260910-d89 | Chrome: pegar/subir varias imágenes al ticket | 2026-09-10 | `4426dc6`, `22b7e89`; GitOps `4eb5b1ec` | 213 tests + Compose PASS; deployed/connected; 51 Ready for Review | [260910-d89](./quick/260910-d89-simplificar-chrome-a-pegar-o-subir-varia/) |
@@ -228,5 +235,5 @@ Items acknowledged and carried forward from previous milestone close:
 ## Session Continuity
 
 Last session: 2026-09-10
-Stopped at: Chrome 0.5.2 selectors loaded/connected, all four lists inside panel and existing image draft preserved. Backend remains 22b7e89 via GitOps 4eb5b1ec. Ticket 53 Ready for Review v6, claim null. Ticket 33 owner acceptance untouched.
-Resume file: ./quick/260910-ehq-corregir-selectores-chrome-desplazados-f/SUMMARY.md (derived evidence; reread live tickets/answers)
+Stopped at: Chrome 0.5.3 unified search selects loaded/connected, search/selection/cancel verified and existing image draft preserved. Backend remains 22b7e89 via GitOps 4eb5b1ec. Ticket 54 Ready for Review v6, claim null. Ticket 33 owner acceptance untouched.
+Resume file: ./quick/260910-euw-unificar-busqueda-y-seleccion-de-proyect/SUMMARY.md (derived evidence; reread live tickets/answers)
