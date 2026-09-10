@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Chrome 0.5 pasted/uploaded images deployed and loaded; ticket 51 Ready for Review
-last_updated: "2026-09-10T08:06:17Z"
+stopped_at: Chrome 0.5.1 closable information and Account help loaded; ticket 52 Ready for Review
+last_updated: "2026-09-10T08:18:19Z"
 last_activity: 2026-09-10
 progress:
   total_phases: 9
@@ -22,6 +22,13 @@ See: .planning/PROJECT.md (updated 2026-08-30)
 
 **Core value:** Convertir una intención humana en trabajo estructurado y seguro que ChatGPT y agentes de código externos puedan entender, ejecutar y devolver a revisión dentro de un único flujo trazable.
 **Current focus:** Chrome 0.5 replaces capture/DOM/editor with pasted/uploaded images at owner request. Ticket 51 Ready for Review; 33 owner acceptance untouched. Server deployed and managed Chrome connected. Quick 260910-d89.
+
+Follow-up 2026-09-10: ticket 52 adds a dismissible information notice and
+permanent Account help, quick 260910-e2r, source dbfc597. 215 tests PASS,
+ZIP/checksum/reproducibility verified. Managed Chrome 0.5.1 loaded/connected;
+dismissal survives reload, Account help accessible, existing image and confirmed
+draft preserved. Ticket 52 Ready for Review v6, claim null. No backend/GitOps
+changes or clipboard reads/uploads; previous extension 0.5.0 retained.
 
 Follow-up 2026-09-10: source 22b7e89, GitOps 4eb5b1ec Synced/Healthy; 213
 tests PASS plus Compose. ZIP/checksum/reproducibility verified. Up to five
@@ -82,6 +89,10 @@ Progress: [░░░░░░░░░░] 0%
 ## Accumulated Context
 
 ### Decisions
+
+- [Quick 260910-e2r]: General information is a dismissible in-panel notice,
+  remembered locally and always readable under Account. Preserve operational
+  errors and attachment limits. Closing must not alter draft/session.
 
 - [Quick 260910-d89]: Owner explicitly replaces internal captures with external
   PNG/JPEG/WebP paste/uploads, 5 images/8 MiB aggregate/32 MP each. No page access,
@@ -160,6 +171,7 @@ Decisions are logged in PROJECT.md Key Decisions table. Current roadmap-level st
 
 | ID | Description | Date | Commits | Status | Directory |
 | --- | --- | --- | --- | --- | --- |
+| 260910-e2r | Chrome: aviso cerrable y ayuda permanente en Cuenta | 2026-09-10 | `dbfc597` | 215 tests PASS; 0.5.1 loaded, draft preserved; 52 Ready for Review | [260910-e2r](./quick/260910-e2r-convertir-informacion-de-chrome-en-aviso/) |
 | 260910-d89 | Chrome: pegar/subir varias imágenes al ticket | 2026-09-10 | `4426dc6`, `22b7e89`; GitOps `4eb5b1ec` | 213 tests + Compose PASS; deployed/connected; 51 Ready for Review | [260910-d89](./quick/260910-d89-simplificar-chrome-a-pegar-o-subir-varia/) |
 | 260910-cw3 | Chrome: cuenta en diálogo desde el botón de usuario | 2026-09-10 | `f6aa3e6` | 217 tests PASS; 0.4.3 loaded/connected; 50 Ready for Review | [260910-cw3](./quick/260910-cw3-mover-cuenta-de-chrome-al-boton-de-usuar/) |
 | 260910-cbj | Chrome: explicar fallos de captura con causa y pasos específicos | 2026-09-10 | `db26d87` | 216 tests PASS; 0.4.2 loaded/connected; 49 Ready for Review | [260910-cbj](./quick/260910-cbj-aclarar-errores-de-captura-chrome-con-ca/) |
@@ -198,5 +210,5 @@ Items acknowledged and carried forward from previous milestone close:
 ## Session Continuity
 
 Last session: 2026-09-10
-Stopped at: Chrome 0.5 images loaded/connected, backend 22b7e89 via GitOps 4eb5b1ec Synced/Healthy. Ticket 51 Ready for Review v6, claim null. Ticket 33 owner acceptance remains untouched.
-Resume file: ./quick/260910-d89-simplificar-chrome-a-pegar-o-subir-varia/SUMMARY.md (derived evidence; reread live tickets/answers)
+Stopped at: Chrome 0.5.1 information notice loaded/connected, help permanently in Account, existing image draft preserved. Backend remains 22b7e89 via GitOps 4eb5b1ec. Ticket 52 Ready for Review v6, claim null. Ticket 33 owner acceptance untouched.
+Resume file: ./quick/260910-e2r-convertir-informacion-de-chrome-en-aviso/SUMMARY.md (derived evidence; reread live tickets/answers)
