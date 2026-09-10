@@ -137,6 +137,7 @@ Decisions are logged in PROJECT.md Key Decisions table. Current roadmap-level st
 
 | ID | Description | Date | Commits | Status | Directory |
 | --- | --- | --- | --- | --- | --- |
+| 260910-cbm | Chrome: botones Crear proyecto/Epic arriba del compositor | 2026-09-10 | `724a2da` | 183 tests PASS; 0.4.1 loaded in connected test Chrome; server unchanged | [260910-cbm](./quick/260910-cbm-mover-crear-proyecto-y-crear-epic-arriba/) |
 | 260909-vje | Complete Chrome capture-to-ticket, private storage, drafts, release and production verification | 2026-09-09 | Source `e5da82f`; GitOps `db767e30`, docs `fac0669d` | Technical delivery verified; owner acceptance in 33 | [260909-vje](./quick/260909-vje-completar-epic-chrome-dom-adjuntos-priva/) |
 | 260909-tfb | Chrome OAuth 21 + capture 23 and local part of editor 25 | 2026-09-09 | Source `2d9b376`, `def5297`; GitOps `5a6b2c2e` | 21/23 verified, Ready for Review; 25 partial | [260909-tfb](./quick/260909-tfb-oauth-humano-y-captura-local-segura-de-l/) |
 | 260909-r6j | Chrome Epic: decisiones aprobadas y base MV3/panel lateral, tickets 19–20 | 2026-09-09 | `18658bb`, `1b59442` | Verified; Ready for Review in Issopen | [260909-r6j](./quick/260909-r6j-implementar-ext-01-y-ext-02-del-epic-chr/) |
