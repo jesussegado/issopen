@@ -29,6 +29,10 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+- Chrome 0.5.1 (ticket 52) reúne la introducción/privacidad/borrador en un aviso
+  cerrable con preferencia local y ayuda permanente en Cuenta. No modifica
+  servidor, permisos, sesión ni borradores. Ver `extensions/chrome/AGENTS.md`.
+
 - Chrome 0.5 (ticket 51): petición del owner de sustituir captura/DOM/editor por
   pegar Ctrl+V o subir hasta cinco imágenes externas. PNG/JPEG/WebP estáticos
   convertidos localmente a PNG, 8 MiB agregados, 32 MP por imagen; miniaturas y

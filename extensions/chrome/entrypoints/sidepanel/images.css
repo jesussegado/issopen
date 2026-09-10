@@ -21,14 +21,9 @@
 .image-buttons button {
   padding-inline: 8px;
 }
-.image-hint,
-.image-privacy {
+.image-hint {
   font-size: 12px;
   color: #46635b;
-}
-.image-privacy {
-  padding-top: 12px;
-  border-top: 1px solid #c5d9d1;
 }
 .image-grid {
   list-style: none;

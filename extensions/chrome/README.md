@@ -1,4 +1,4 @@
-# Issopen para Chrome — piloto 0.5.0
+# Issopen para Chrome — piloto 0.5.1
 
 Crea tickets con imágenes de tu herramienta de recorte favorita.
 Ya no hace falta capturar la página ni concederle acceso a cada web.
@@ -28,6 +28,13 @@ cambio. No se lee tu página ni el portapapeles automáticamente. Las imágenes
 se suben **sólo al enviar el ticket**. Revisa/oculta datos sensibles antes de
 adjuntarlas: ya no hay editor de recorte/redacción dentro de Issopen.
 Cuenta se abre como diálogo, sin perder lo escrito ni las imágenes.
+
+El aviso informativo inicial se cierra con **×** y recuerda tu elección en este
+perfil de Chrome, incluso al volver a abrir el panel. Su contenido permanece
+siempre en **Cuenta → Ayuda e información**, aunque no hayas iniciado sesión.
+Cerrar el aviso no borra el borrador, no desconecta ni oculta errores operativos.
+No usa notificaciones del sistema ni permisos nuevos. Si Chrome no permite
+guardar la preferencia, se cierra en esa vista y se indica que podría reaparecer.
 
 Si falla la conexión después de enviar, reintenta manualmente: se conservan
 el mismo payload/UUID incluso tras recargar o reconectar, evitando duplicados.

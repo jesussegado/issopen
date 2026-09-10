@@ -5,7 +5,7 @@ repositorio; no crear otro Git. Epic Chrome
 `ca26c29b-43ac-4ca0-b768-594d6779d6e7`; ticket 51 simplifica las imágenes
 por petición explícita del owner. El criterio personal 33 sigue independiente.
 
-## Qué hace ahora (0.5.0)
+## Qué hace ahora (0.5.1)
 
 OAuth humano → pegar/subir imágenes externas → proyecto/Epic y campos →
 Enviar ticket → enlace. No captura ni lee la página, no inspecciona DOM.
@@ -32,6 +32,14 @@ No reintroducir controles de captura por seguir documentación histórica 0.3/0.
   preparación o envío incierto. Conserva payload y UUID para reintentar.
 - `Account.tsx`: botón de usuario y diálogo nativo cerrado por defecto,
   Escape y retorno del foco. No desmontar el compositor al alternarlo.
+- `Information.tsx`: aviso introductorio cerrable; `InformationContent` se
+  muestra también siempre en Cuenta → Ayuda e información, incluso sin sesión.
+  El cierre escribe sólo el booleano local `issopen-information-dismissed-v1`,
+  sincroniza vistas del mismo perfil y devuelve el foco a Cuenta. No leer ni
+  modificar claves de OAuth/IndexedDB; fallo de preferencia no bloquea trabajo.
+  No auto-cerrar con temporizador ni solicitar permiso de notificaciones.
+  Las notas genéricas de borrador/privacidad viven aquí, sin repetir tarjetas
+  en el compositor. Conservar errores operativos y límites junto a los campos.
 - `lib/account.ts`: PKCE/state/callback y operaciones serializadas;
   tokens en storage.local TRUSTED_CONTEXTS, nunca respuestas/logs/storage.sync.
 - `lib/draft.ts`: un borrador IndexedDB 24 h. Las imágenes que el usuario

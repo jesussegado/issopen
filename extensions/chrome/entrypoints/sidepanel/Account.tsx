@@ -3,6 +3,7 @@ import { browser } from "wxt/browser";
 import { type AccountResponse, accountResponseSchema } from "../../lib/account";
 import { instanceUrl } from "../../lib/instance";
 import "./account.css";
+import { InformationContent } from "./Information";
 
 export function Account({
   onChange,
@@ -173,6 +174,13 @@ export function Account({
           Tu contraseña se introduce sólo en la web de Issopen. La extensión no
           usa credenciales de agentes.
         </p>
+        <section
+          className="account-information"
+          aria-labelledby="account-information-heading"
+        >
+          <h3 id="account-information-heading">Ayuda e información</h3>
+          <InformationContent />
+        </section>
       </dialog>
     </>
   );

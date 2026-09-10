@@ -4,6 +4,7 @@ import { browser } from "wxt/browser";
 import type { AccountResponse } from "../../lib/account";
 import "./style.css";
 import { Account } from "./Account";
+import { InformationNotice } from "./Information";
 import { Workspace } from "./Workspace";
 
 function App() {
@@ -23,8 +24,12 @@ function App() {
       <p className="badge">
         Base de desarrollo · {browser.runtime.getManifest().version}
       </p>
+      <InformationNotice
+        onDismiss={() =>
+          document.querySelector<HTMLButtonElement>(".account-trigger")?.focus()
+        }
+      />
       <Workspace account={account} />
-      <footer>No leemos la página ni tu portapapeles automáticamente.</footer>
     </main>
   );
 }

@@ -434,10 +434,6 @@ export function Workspace({ account }: { account: AccountResponse | null }) {
                 </section>
               </fieldset>
             )}
-            <p className="notice">
-              Un borrador local, hasta 24 horas desde el último cambio. Sólo se
-              envía al pulsar Enviar ticket; nunca en segundo plano.
-            </p>
             {storageError && (
               <p role="alert" className="error">
                 No se pudo guardar el borrador local. No cierres este panel.

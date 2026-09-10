@@ -198,11 +198,6 @@ export function Images({
           disponibles.
         </p>
       )}
-      <p className="image-privacy">
-        Sólo las imágenes que adjuntes se guardan en este navegador durante 24
-        h. Revisa que no contengan datos sensibles: se subirán únicamente al
-        pulsar Enviar ticket.
-      </p>
       <p role="status">{busy ? "Preparando imágenes…" : message}</p>
       {error && (
         <p role="alert" className="error">

@@ -1,0 +1,45 @@
+.info-notice {
+  margin-block: 16px;
+  padding: 14px;
+  border: 1px solid #a4c8bb;
+  border-radius: 12px;
+  background: #e4f5ec;
+  color: #142f29;
+}
+.info-notice-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.info-notice-heading h2 {
+  margin: 0;
+  font-size: 15px;
+}
+.info-notice-heading button {
+  flex: 0 0 44px;
+  padding: 0;
+  font-size: 24px;
+  line-height: 1;
+}
+.information-content {
+  font-size: 12px;
+}
+.information-content p {
+  margin: 10px 0 0;
+}
+.info-location {
+  margin-bottom: 0;
+  color: #46635b;
+  font-size: 12px;
+}
+.account-information {
+  margin: 20px 0 0;
+  padding: 16px 0 0;
+  border: 0;
+  border-top: 1px solid #c5d9d1;
+  border-radius: 0;
+}
+.account-information h3 {
+  margin: 0;
+}
