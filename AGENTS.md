@@ -29,6 +29,16 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+- Ticket 66 añade archivado reversible de Epics. Los archivados desaparecen de
+  selectores activos y del board como destino nuevo, pero conservan sus
+  tickets, URLs directas y actividad; Manage Epics permite mostrarlos y
+  restaurarlos. REST y MCP aceptan `active`, `archived` o `all` y mantienen
+  `active` por defecto. Fuente `4ebabcf`, GitOps `33ec3938`, digest `f741caa`;
+  gate completo, restore aislado y smoke Chrome productivo pasaron sin archivar
+  ningún Epic real. Contrato en
+  [archivado de Epics](docs/epic-archiving.md) y evidencia en
+  [quick 260910-r66](.planning/quick/260910-r66-archivar-y-restaurar-epics/SUMMARY.md).
+
 - Ticket 64 separa con un `gap` de 8 px el icono `+` y la etiqueta `Create
   ticket in Epic`, sin cambiar nombre accesible ni destino. Fuente `44b1bda`,
   GitOps `cfc0474b` `Synced/Healthy`, digest `0964635`; gate completo, restore y

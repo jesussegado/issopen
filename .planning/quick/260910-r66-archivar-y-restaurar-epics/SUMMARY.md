@@ -32,5 +32,18 @@
   absent from active destinations, reveals it in Manage Epics and restores it
   without losing the ticket.
 
-Production backup/restore, immutable image and GitOps evidence are recorded in
-the release documentation after promotion.
+## Production promotion
+
+- Source `4ebabcf` was published as
+  `registry.serviciosegado.com/issopen:epic-archive-4ebabcf` with immutable OCI
+  digest `sha256:f741caa06ef3235f5cde2a70ce1ece87a9273a137715957f10a004d8d4951ed5`.
+- GitOps `33ec3938` promoted that exact source revision and digest. Argo CD
+  reported `Synced/Healthy`; the resulting pod was Ready with zero restarts.
+- The pre-deploy backup `issopen-rKHep2` restored successfully into an
+  isolated PostgreSQL 18 instance: 67 issues, 597 activity events, 8 Epics and
+  all 10 attachments matched their stored sizes and SHA-256 hashes.
+- Production applied migration 0016 (17 migrations total). PostgreSQL and
+  attachment PVC UIDs were unchanged after the rollout.
+- An authenticated Chrome smoke checked active/all Epic lists, the archive
+  action and the linked-ticket view without mutating a real Epic. The public
+  readiness endpoint returned HTTP 200 with HSTS.
