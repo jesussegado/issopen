@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Chrome 0.5.2 in-panel selectors implemented; ticket 53 awaiting release gates
-last_updated: "2026-09-10T08:40:00Z"
+stopped_at: Chrome 0.5.2 in-panel selectors loaded and verified; ticket 53 Ready for Review
+last_updated: "2026-09-10T08:39:18Z"
 last_activity: 2026-09-10
 progress:
   total_phases: 9
@@ -25,9 +25,11 @@ See: .planning/PROJECT.md (updated 2026-08-30)
 
 Follow-up 2026-09-10: ticket 53 fixes native dropdown positioning observed in
 managed Chrome 152 Linux (popup outside the browser window). SelectField lists
-stay in the panel; mouse/keyboard/filter/draft/late-read tests and real OAuth
-targeted E2E pass. Quick 260910-ehq; 0.5.2 release and managed reload pending.
-No server or permission changes. Preserve the existing real image draft.
+stay in the panel. Quick 260910-ehq, source fb11c419281c published. Release
+0.5.2 passes 218 tests + 197 homelab checks, checksum/reproducibility verified.
+Loaded same managed Chrome ID: all four lists and clicks verified in viewport,
+connected, existing image/draft preserved. Ticket 53 Ready for Review v6,
+claim null. No server, permission changes, clipboard reads or user uploads.
 
 Follow-up 2026-09-10: ticket 52 adds a dismissible information notice and
 permanent Account help, quick 260910-e2r, source dbfc597. 215 tests PASS,
@@ -95,6 +97,10 @@ Progress: [░░░░░░░░░░] 0%
 ## Accumulated Context
 
 ### Decisions
+
+- [Quick 260910-ehq]: Extension ticket selectors use in-panel HTML lists,
+  avoiding the observed out-of-window native popup in Chrome Linux. Preserve
+  keyboard access, saved values and pending-operation locks; test real clicks.
 
 - [Quick 260910-e2r]: General information is a dismissible in-panel notice,
   remembered locally and always readable under Account. Preserve operational
@@ -177,6 +183,7 @@ Decisions are logged in PROJECT.md Key Decisions table. Current roadmap-level st
 
 | ID | Description | Date | Commits | Status | Directory |
 | --- | --- | --- | --- | --- | --- |
+| 260910-ehq | Chrome: selectores accesibles dentro del panel | 2026-09-10 | `fb11c41` | 218 tests PASS; 0.5.2 loaded, draft preserved; 53 Ready for Review | [260910-ehq](./quick/260910-ehq-corregir-selectores-chrome-desplazados-f/) |
 | 260910-e2r | Chrome: aviso cerrable y ayuda permanente en Cuenta | 2026-09-10 | `dbfc597` | 215 tests PASS; 0.5.1 loaded, draft preserved; 52 Ready for Review | [260910-e2r](./quick/260910-e2r-convertir-informacion-de-chrome-en-aviso/) |
 | 260910-d89 | Chrome: pegar/subir varias imágenes al ticket | 2026-09-10 | `4426dc6`, `22b7e89`; GitOps `4eb5b1ec` | 213 tests + Compose PASS; deployed/connected; 51 Ready for Review | [260910-d89](./quick/260910-d89-simplificar-chrome-a-pegar-o-subir-varia/) |
 | 260910-cw3 | Chrome: cuenta en diálogo desde el botón de usuario | 2026-09-10 | `f6aa3e6` | 217 tests PASS; 0.4.3 loaded/connected; 50 Ready for Review | [260910-cw3](./quick/260910-cw3-mover-cuenta-de-chrome-al-boton-de-usuar/) |
@@ -216,5 +223,5 @@ Items acknowledged and carried forward from previous milestone close:
 ## Session Continuity
 
 Last session: 2026-09-10
-Stopped at: Chrome 0.5.1 information notice loaded/connected, help permanently in Account, existing image draft preserved. Backend remains 22b7e89 via GitOps 4eb5b1ec. Ticket 52 Ready for Review v6, claim null. Ticket 33 owner acceptance untouched.
-Resume file: ./quick/260910-e2r-convertir-informacion-de-chrome-en-aviso/SUMMARY.md (derived evidence; reread live tickets/answers)
+Stopped at: Chrome 0.5.2 selectors loaded/connected, all four lists inside panel and existing image draft preserved. Backend remains 22b7e89 via GitOps 4eb5b1ec. Ticket 53 Ready for Review v6, claim null. Ticket 33 owner acceptance untouched.
+Resume file: ./quick/260910-ehq-corregir-selectores-chrome-desplazados-f/SUMMARY.md (derived evidence; reread live tickets/answers)

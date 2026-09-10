@@ -31,7 +31,27 @@ Un Epic guardado pendiente de cargar no se muestra falsamente como «Sin Epic».
 
 ## Entrega
 
-Pendiente: gate completo de release desde Git limpio, ZIP/SHA/procedencia,
-publicación privada y recarga del mismo ID/ruta sólo con borrador confirmado.
-La instalación actual conserva una imagen real; no leer clipboard ni enviarla.
-No requiere Kubernetes. Ticket personal 33 y cambios ajenos de homelab intactos.
+Fuente `fb11c419281cf8a3dc7834b205b3dfc793f00a43` publicada en origin/main.
+`pnpm extension:release` desde Git limpio PASS: 78 unit/web + 46 integración +
+8 E2E app + 76 unit extensión + 10 E2E extensión = **218 tests**, dos skips
+móviles previstos. Lint/TS/secret scan PASS. Build reproducible, ocho archivos:
+tree SHA `1508f6f08fd19c2030866931a6f81c37eb7f82f8770c487771e1f63afbe1edd5`.
+
+ZIP ignorado `extensions/chrome/.output/releases/issopen-chrome-0.5.2-fb11c419281c.zip`:
+SHA256 `a78205ba59953048dfdef7f338af3af338e45b863ad06919e01358a19b97414f`.
+Checksum y unzip -t PASS; extracción temporal idéntica al build.
+Artefacto previo 0.5.1 retenido y checksum verificado. Sin downgrade de datos.
+
+`make validate` homelab: 197 PASS; Ansible y Helm no instalados, se omitieron
+sus checks. No hay cambios nuestros de GitOps/control plane ni redeploy backend.
+
+Chrome gestionado 152 recargado a **0.5.2**, mismo perfil/ruta/ID. Antes:
+formulario/imagen confirmados en IndexedDB, sin envío pendiente ni campos
+transitorios. Después: conectado, fingerprint de cuenta/form/evidencia/pending
+idéntico (comparación en memoria, sin imprimir datos). Conserva una imagen real.
+Los cuatro selectores abiertos y opción actual clicada: Proyecto 3, Epic 5,
+Prioridad 4 y Estado 5 opciones, listas dentro del viewport y cero select nativos.
+No lectura de clipboard ni envío de imagen/ticket del owner.
+
+Ticket 53 reread vía MCP: Ready for Review v6, claim null, cero preguntas,
+commit/evidencia enlazados. Ticket personal 33 y cambios ajenos intactos.
