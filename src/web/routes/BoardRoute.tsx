@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   AppLink,
   Badge,
@@ -24,6 +24,13 @@ import {
 import { UnavailableRoute } from "./TrackerForms.js";
 
 type BoardColumn = { status: IssueStatus; issues: Issue[] };
+type BoardResponse = {
+  project: Project;
+  columns: BoardColumn[];
+  epics: Epic[];
+  totalIssueCount?: number;
+  hiddenIssueCount?: number;
+};
 
 function repositoryLabel(repositoryUrl: string | null) {
   if (!repositoryUrl) return null;
@@ -114,21 +121,35 @@ export function BoardRoute({ projectId }: { projectId: string }) {
   const [announcement, setAnnouncement] = useState("");
   const [focusIssueId, setFocusIssueId] = useState<string | null>(null);
   const statusControls = useRef(new Map<string, HTMLSelectElement>());
+  const boardRequest = useRef(0);
+  const lastAppliedBoardRequest = useRef(0);
+  const mounted = useRef(true);
+  const boardRouteKey = `${projectId}:${epicFilter}`;
+  const activeBoardRoute = useRef(boardRouteKey);
+  activeBoardRoute.current = boardRouteKey;
   const online = useOnlineStatus();
 
-  useEffect(() => {
-    setLoading(true);
-    setError(null);
-    const query =
-      epicFilter === "all" ? "" : `?epicId=${encodeURIComponent(epicFilter)}`;
-    apiRequest<{
-      project: Project;
-      columns: BoardColumn[];
-      epics: Epic[];
-      totalIssueCount?: number;
-      hiddenIssueCount?: number;
-    }>(`/api/v1/projects/${projectId}/board${query}`)
-      .then((board) => {
+  const refreshBoard = useCallback(
+    async (initial = false) => {
+      const request = ++boardRequest.current;
+      const requestRoute = boardRouteKey;
+      if (initial) {
+        setLoading(true);
+        setError(null);
+      }
+      const query =
+        epicFilter === "all" ? "" : `?epicId=${encodeURIComponent(epicFilter)}`;
+      try {
+        const board = await apiRequest<BoardResponse>(
+          `/api/v1/projects/${projectId}/board${query}`,
+        );
+        if (
+          !mounted.current ||
+          requestRoute !== activeBoardRoute.current ||
+          request < lastAppliedBoardRequest.current
+        )
+          return;
+        lastAppliedBoardRequest.current = request;
         const visibleIssueCount = board.columns.reduce(
           (total, column) => total + column.issues.length,
           0,
@@ -139,16 +160,60 @@ export function BoardRoute({ projectId }: { projectId: string }) {
         setTotalIssueCount(board.totalIssueCount ?? visibleIssueCount);
         setHiddenIssueCount(board.hiddenIssueCount ?? 0);
         setMissing(false);
-      })
-      .catch((caught) => {
+        setError(null);
+        setLoading(false);
+      } catch (caught) {
+        if (
+          !mounted.current ||
+          requestRoute !== activeBoardRoute.current ||
+          request < lastAppliedBoardRequest.current ||
+          !initial
+        )
+          return;
         if (unavailable(caught)) setMissing(true);
         else
           setError(
             "We couldn't load this board. Check your connection and try again.",
           );
-      })
-      .finally(() => setLoading(false));
-  }, [epicFilter, projectId]);
+        setLoading(false);
+      }
+    },
+    [boardRouteKey, epicFilter, projectId],
+  );
+
+  useEffect(() => {
+    void refreshBoard(true);
+  }, [refreshBoard]);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const refreshVisibleBoard = () => {
+      if (document.visibilityState === "visible") void refreshBoard();
+    };
+    const stream =
+      typeof EventSource === "undefined"
+        ? null
+        : new EventSource(`/api/v1/projects/${projectId}/board/events`);
+    stream?.addEventListener("board", refreshVisibleBoard);
+    window.addEventListener("focus", refreshVisibleBoard);
+    window.addEventListener("online", refreshVisibleBoard);
+    document.addEventListener("visibilitychange", refreshVisibleBoard);
+    const reconciliation = window.setInterval(refreshVisibleBoard, 30_000);
+    return () => {
+      stream?.removeEventListener("board", refreshVisibleBoard);
+      stream?.close();
+      window.removeEventListener("focus", refreshVisibleBoard);
+      window.removeEventListener("online", refreshVisibleBoard);
+      document.removeEventListener("visibilitychange", refreshVisibleBoard);
+      window.clearInterval(reconciliation);
+    };
+  }, [projectId, refreshBoard]);
 
   useEffect(() => {
     if (!focusIssueId) return;

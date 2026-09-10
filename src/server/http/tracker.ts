@@ -1,9 +1,10 @@
-import { eq } from "drizzle-orm";
+import { and, count, eq, max } from "drizzle-orm";
 import { type Context, Hono } from "hono";
+import { streamSSE } from "hono/streaming";
 import { z } from "zod";
 import type { OwnerSession } from "../auth.js";
 import type { Database } from "../db/client.js";
-import { issueStatusValues, workspace } from "../db/schema.js";
+import { activityEvent, issueStatusValues, workspace } from "../db/schema.js";
 import {
   addCodeLinkSchema,
   addIssueCommentSchema,
@@ -91,6 +92,26 @@ function parseOptionalEpicFilter(value: string | undefined) {
     ]);
   }
   return parsed.data;
+}
+
+async function projectActivityCursor(
+  db: Database,
+  workspaceId: string,
+  projectId: string,
+) {
+  const [latest] = await db
+    .select({
+      events: count(activityEvent.id),
+      createdAt: max(activityEvent.createdAt),
+    })
+    .from(activityEvent)
+    .where(
+      and(
+        eq(activityEvent.workspaceId, workspaceId),
+        eq(activityEvent.projectId, projectId),
+      ),
+    );
+  return `${latest?.events ?? 0}:${latest?.createdAt?.getTime() ?? 0}`;
 }
 
 export function domainErrorResponse(context: Context, error: DomainError) {
@@ -305,6 +326,43 @@ export function createTrackerRouter({ db }: TrackerRouterDependencies) {
         status,
         issues: issues.filter((item) => item.status === status),
       })),
+    });
+  });
+
+  router.get("/projects/:projectId/board/events", async (context) => {
+    const mutationContext = await ownerContext(db, context.get("ownerSession"));
+    const projectId = parseIdentifier(
+      context.req.param("projectId"),
+      "projectId",
+    );
+    await tracker.getProject(mutationContext.workspaceId, projectId);
+    context.header("Cache-Control", "no-cache, no-transform");
+    context.header("X-Accel-Buffering", "no");
+
+    return streamSSE(context, async (stream) => {
+      let cursor = context.req.header("Last-Event-ID") ?? "";
+      let quietTicks = 0;
+      while (!stream.aborted) {
+        const current = await projectActivityCursor(
+          db,
+          mutationContext.workspaceId,
+          projectId,
+        );
+        if (current !== cursor) {
+          cursor = current;
+          quietTicks = 0;
+          await stream.writeSSE({
+            event: "board",
+            id: cursor,
+            data: "changed",
+            retry: 2_000,
+          });
+        } else if (++quietTicks >= 15) {
+          quietTicks = 0;
+          await stream.writeSSE({ event: "keepalive", data: "ok" });
+        }
+        await stream.sleep(1_000);
+      }
     });
   });
 

@@ -92,6 +92,7 @@ beforeEach(() =>
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe("tracker web routes", () => {
@@ -208,7 +209,13 @@ describe("tracker web routes", () => {
     await user.click(
       screen.getByRole("button", { name: "Show details for 1" }),
     );
-    expect(screen.getByText("First line", { exact: false })).toBeVisible();
+    const originalCard = screen
+      .getByRole("link", { name: `1-${issue.title}` })
+      .closest("li");
+    if (!originalCard) throw new Error("Expected original issue card");
+    expect(
+      within(originalCard).getByText("First line", { exact: false }),
+    ).toBeVisible();
     const status = screen.getByRole("combobox", {
       name: "Change status for 1",
     });
@@ -222,6 +229,104 @@ describe("tracker web routes", () => {
     expect(
       screen.getByRole("heading", { name: "Ready" }).closest("section"),
     ).toHaveTextContent(issue.title);
+  });
+
+  it("refreshes an open board from SSE while preserving local presentation state", async () => {
+    class FakeEventSource {
+      static current: FakeEventSource | null = null;
+      readonly url: string;
+      closed = false;
+      private listeners = new Map<string, Set<EventListener>>();
+
+      constructor(url: string) {
+        this.url = url;
+        FakeEventSource.current = this;
+      }
+
+      addEventListener(type: string, listener: EventListener) {
+        const listeners = this.listeners.get(type) ?? new Set<EventListener>();
+        listeners.add(listener);
+        this.listeners.set(type, listeners);
+      }
+
+      removeEventListener(type: string, listener: EventListener) {
+        this.listeners.get(type)?.delete(listener);
+      }
+
+      emit(type: string) {
+        for (const listener of this.listeners.get(type) ?? [])
+          listener(new MessageEvent(type));
+      }
+
+      close() {
+        this.closed = true;
+      }
+    }
+    vi.stubGlobal("EventSource", FakeEventSource);
+    const remoteIssue = {
+      ...issue,
+      id: "44444444-4444-4444-8444-444444444444",
+      number: 2,
+      key: "PRI-2",
+      title: "Created from another client",
+      status: "ready" as const,
+    };
+    let boardReads = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        if (!String(input).endsWith("/board"))
+          throw new Error(`Unexpected request: ${String(input)}`);
+        boardReads++;
+        return json({
+          project,
+          columns: issueStatuses.map((status) => ({
+            status,
+            issues:
+              status === "backlog"
+                ? [issue]
+                : status === "ready" && boardReads > 1
+                  ? [remoteIssue]
+                  : [],
+          })),
+        });
+      }),
+    );
+    const user = userEvent.setup();
+    const rendered = render(<BoardRoute projectId={project.id} />);
+
+    await screen.findByRole("link", { name: `1-${issue.title}` });
+    expect(FakeEventSource.current?.url).toBe(
+      `/api/v1/projects/${project.id}/board/events`,
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Show details for 1" }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Collapse Ready column" }),
+    );
+    FakeEventSource.current?.emit("board");
+
+    await waitFor(() => expect(boardReads).toBe(2));
+    const liveOriginalCard = screen
+      .getByRole("link", { name: `1-${issue.title}` })
+      .closest("li");
+    if (!liveOriginalCard) throw new Error("Expected original issue card");
+    expect(
+      within(liveOriginalCard).getByText("First line", { exact: false }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Expand Ready column" }),
+    ).toHaveAttribute("aria-expanded", "false");
+    await user.click(
+      screen.getByRole("button", { name: "Expand Ready column" }),
+    );
+    expect(
+      screen.getByRole("link", { name: `2-${remoteIssue.title}` }),
+    ).toBeVisible();
+    const source = FakeEventSource.current;
+    rendered.unmount();
+    expect(source?.closed).toBe(true);
   });
 
   it("collapses board columns and expands card previews independently", async () => {

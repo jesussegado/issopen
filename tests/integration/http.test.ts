@@ -197,6 +197,40 @@ afterAll(async () => {
 });
 
 describe("protected tracker REST API", () => {
+  it("streams project-scoped board invalidations without ticket content", async () => {
+    const p = await createProjectFixture();
+    const response = await authenticatedRequest(
+      `/api/v1/projects/${p.id}/board/events`,
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toContain("text/event-stream");
+    expect(response.headers.get("cache-control")).toContain("no-cache");
+    const reader = response.body?.getReader();
+    if (!reader) throw new Error("Expected SSE response body");
+    const decoder = new TextDecoder();
+    const initial = decoder.decode((await reader.read()).value);
+    expect(initial).toContain("event: board");
+    expect(initial).toContain("data: changed");
+
+    const title = "Implement protected REST";
+    await createIssueFixture(p.id);
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    const next = await Promise.race([
+      reader.read(),
+      new Promise<never>((_, reject) => {
+        timeout = setTimeout(
+          () => reject(new Error("SSE invalidation timed out")),
+          4_000,
+        );
+      }),
+    ]).finally(() => clearTimeout(timeout));
+    const notification = decoder.decode(next.value);
+    expect(notification).toContain("event: board");
+    expect(notification).toContain("data: changed");
+    expect(notification).not.toContain(title);
+    await reader.cancel();
+  });
+
   it("only allows authenticated same-origin owner deletion and keeps repeated DELETE safe", async () => {
     const p = await createProjectFixture();
     const e = await createEpicFixture(p.id);
@@ -303,6 +337,7 @@ describe("protected tracker REST API", () => {
       ["/api/v1/projects", undefined],
       ["/api/v1/projects", { method: "POST", body: "{}" }],
       [`/api/v1/projects/${resourceId}/board`, undefined],
+      [`/api/v1/projects/${resourceId}/board/events`, undefined],
       [`/api/v1/projects/${resourceId}/epics`, undefined],
       [`/api/v1/projects/${resourceId}/epics`, { method: "POST", body: "{}" }],
       [`/api/v1/epics/${resourceId}`, undefined],

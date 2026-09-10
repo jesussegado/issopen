@@ -29,6 +29,12 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+- Ticket 63 sincroniza el board abierto mediante invalidación SSE autenticada y
+  acotada al proyecto. El cursor procede del log de actividad append-only y no
+  contiene tickets; por ello observa REST, Chrome y MCP. La UI relee estado
+  autoritativo en eventos, foco, visibilidad, vuelta de red y reconciliación de
+  30 s, sin perder filtros, columnas plegadas ni tarjetas abiertas.
+
 - Chrome 0.5.5 (ticket 62) elimina el estado engañoso de imágenes tras una
   creación confirmada: oculta los controles editables, libera las copias en
   memoria y confirma cuántas quedaron adjuntas. La eliminación previa al envío

@@ -55,6 +55,21 @@ there is no schema migration. Evidence reads retain owner/workspace checks,
 filtering, and download authorization. The neutral label **Private image** is
 used because evidence may now originate in either the web UI or Chrome.
 
+## Authoritative live board
+
+`GET /api/v1/projects/:projectId/board/events` is an owner-authenticated SSE
+invalidation channel. It verifies workspace/project membership before opening
+and emits only `event: board`, `data: changed` and an opaque activity cursor;
+ticket fields never travel in the stream. The cursor combines event count and
+latest timestamp so concurrent activity cannot be missed.
+
+The browser answers an invalidation by requesting the normal board endpoint.
+It also reconciles on focus, visibility restoration, network recovery and every
+30 seconds while visible. EventSource reconnect handles deploys automatically.
+Filters and card/column disclosure state remain client-side and are not reset.
+Overlapping reads apply in request order without allowing stale responses to
+replace a newer board.
+
 ## Release and rollback
 
 Run `pnpm validate`, `pnpm test:compose`, a fresh complete backup, and an
