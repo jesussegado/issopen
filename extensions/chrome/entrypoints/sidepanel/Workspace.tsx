@@ -21,7 +21,6 @@ import {
   ticketErrors,
   ticketResponseSchema,
 } from "../../lib/tickets";
-import { Account } from "./Account";
 import { Capture } from "./Capture";
 
 type Project = { id: string; name: string };
@@ -43,8 +42,7 @@ async function request(message: TicketRequest) {
     return { ok: false, code: "network" } as const;
   }
 }
-export function Workspace() {
-  const [account, setAccount] = useState<AccountResponse | null>(null);
+export function Workspace({ account }: { account: AccountResponse | null }) {
   const [form, setForm] = useState(initialForm);
   const [evidence, setEvidence] = useState<ReviewedEvidence | null>(null);
   const [pending, setPending] = useState<CaptureSubmission | null>(null);
@@ -327,7 +325,6 @@ export function Workspace() {
   }
   return (
     <>
-      <Account onChange={setAccount} />
       {!ready ? (
         <p role="status">Recuperando borrador…</p>
       ) : (

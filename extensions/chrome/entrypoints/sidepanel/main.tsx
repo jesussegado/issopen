@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
 import { browser } from "wxt/browser";
+import type { AccountResponse } from "../../lib/account";
 import {
   errorMessages,
   type InspectRequest,
@@ -8,9 +9,11 @@ import {
   inspectResponseSchema,
 } from "../../lib/protocol";
 import "./style.css";
+import { Account } from "./Account";
 import { Workspace } from "./Workspace";
 
 function App() {
+  const [account, setAccount] = useState<AccountResponse | null>(null);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<InspectResponse | null>(null);
 
@@ -35,12 +38,15 @@ function App() {
 
   return (
     <main>
-      <header>
-        <img src="/icon.png" width="44" height="44" alt="" />
-        <div>
-          <strong>Issopen</strong>
-          <p>Captura desde tu navegador</p>
+      <header className="panel-header">
+        <div className="panel-brand">
+          <img src="/icon.png" width="44" height="44" alt="" />
+          <div className="panel-brand-copy">
+            <strong>Issopen</strong>
+            <p>Captura desde tu navegador</p>
+          </div>
         </div>
+        <Account onChange={setAccount} />
       </header>
       <p className="badge">
         Base de desarrollo · {browser.runtime.getManifest().version}
@@ -56,7 +62,7 @@ function App() {
           automáticamente.
         </p>
       </section>
-      <Workspace />
+      <Workspace account={account} />
       <section aria-labelledby="page-heading">
         <h2 id="page-heading">Comprueba la página</h2>
         <p>

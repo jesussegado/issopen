@@ -80,6 +80,13 @@ test("Chrome completes real identity consent and disconnects without exposing to
         (p) => p.url() === `chrome-extension://${extension.id}/sidepanel.html`,
       );
     if (!panel) throw new Error("Missing panel");
+    const accountButton = panel.getByRole("button", {
+      name: "Tu cuenta",
+      exact: true,
+    });
+    const accountDialog = panel.getByRole("dialog", { name: "Tu cuenta" });
+    await expect(accountDialog).toBeHidden();
+    await accountButton.click();
     await expect(panel.getByText(e2eBaseUrl, { exact: true })).toBeVisible();
     await panel.getByRole("button", { name: "Conectar con Issopen" }).click();
     await expect
@@ -107,6 +114,9 @@ test("Chrome completes real identity consent and disconnects without exposing to
     await expect(
       panel.getByRole("heading", { name: /Proyectos disponibles/ }),
     ).toBeVisible();
+    await panel.getByRole("button", { name: "Cerrar cuenta" }).click();
+    await expect(accountButton).toBeFocused();
+    await expect(accountButton).toContainText("Conectada");
     // Create the two containers from the real panel, then exercise a lost reply
     // after the server commit: reloading must preserve the reviewed PNG and key.
     const projectToggle = panel.getByRole("button", {
@@ -183,6 +193,17 @@ test("Chrome completes real identity consent and disconnects without exposing to
     await expect(
       panel.getByLabel("Previsualización de captura local"),
     ).toHaveAttribute("aria-busy", "false");
+    // Opening account details must not remount the editor or lose unreviewed pixels.
+    const canvas = panel.getByLabel("Previsualización de captura local");
+    const beforeAccount = await canvas.evaluate((el: HTMLCanvasElement) =>
+      el.toDataURL(),
+    );
+    await accountButton.click();
+    await panel.keyboard.press("Escape");
+    await expect(accountDialog).toBeHidden();
+    expect(
+      await canvas.evaluate((el: HTMLCanvasElement) => el.toDataURL()),
+    ).toBe(beforeAccount);
     await panel.getByLabel("X", { exact: true }).fill("0");
     await panel.getByLabel("Y", { exact: true }).fill("0");
     await panel.getByLabel("Ancho", { exact: true }).fill("40");
@@ -203,6 +224,32 @@ test("Chrome completes real identity consent and disconnects without exposing to
     const reviewed = await panel
       .getByAltText("Imagen final revisada para enviar")
       .getAttribute("src");
+    const destination = await panel
+      .getByLabel("Proyecto", { exact: true })
+      .inputValue();
+    const epicDestination = await panel
+      .getByLabel("Epic", { exact: true })
+      .inputValue();
+    await accountButton.click();
+    await expect(
+      panel.getByText("Conectado como", { exact: false }),
+    ).toBeVisible();
+    await panel.getByRole("button", { name: "Cerrar cuenta" }).click();
+    await expect(panel.getByLabel("Título", { exact: true })).toHaveValue(
+      "Reviewed Chrome E2E capture",
+    );
+    await expect(
+      panel.getByRole("textbox", { name: "Descripción", exact: true }),
+    ).toHaveValue("Synthetic evidence only");
+    await expect(panel.getByLabel("Proyecto", { exact: true })).toHaveValue(
+      destination,
+    );
+    await expect(panel.getByLabel("Epic", { exact: true })).toHaveValue(
+      epicDestination,
+    );
+    await expect(
+      panel.getByAltText("Imagen final revisada para enviar"),
+    ).toHaveAttribute("src", reviewed ?? "");
     const worker = context.serviceWorkers()[0];
     if (!worker) throw new Error("Missing extension worker");
     await worker.evaluate(
@@ -215,6 +262,7 @@ test("Chrome completes real identity consent and disconnects without exposing to
       panel.getByRole("button", { name: "Reintentar envío", exact: true }),
     ).toBeEnabled();
     await panel.reload();
+    await expect(accountDialog).toBeHidden();
     await expect(
       panel.getByRole("button", { name: "Reintentar envío", exact: true }),
     ).toBeEnabled();
@@ -279,12 +327,15 @@ test("Chrome completes real identity consent and disconnects without exposing to
     await expect(
       page.getByRole("button", { name: /Revocar Issopen Chrome/ }),
     ).toBeVisible();
+    await accountButton.click();
     await panel
       .getByRole("button", { name: "Desconectar esta instalación" })
       .click();
     await expect(
       panel.getByRole("button", { name: "Conectar con Issopen" }),
     ).toBeVisible();
+    await panel.getByRole("button", { name: "Cerrar cuenta" }).click();
+    await expect(accountButton).toContainText("Sin conectar");
     await page.reload();
     await expect(
       page.getByText("Revocada o caducada", { exact: false }),

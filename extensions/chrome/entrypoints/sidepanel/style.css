@@ -42,17 +42,28 @@ main {
   margin-inline: auto;
   overflow-wrap: anywhere;
 }
-header {
+.panel-header,
+.panel-brand {
   display: flex;
   gap: 12px;
   align-items: center;
 }
-header strong {
+.panel-header {
+  justify-content: space-between;
+}
+.panel-brand {
+  min-width: 0;
+}
+.panel-brand img {
+  flex-shrink: 0;
+}
+.panel-brand-copy strong {
   font-size: 20px;
 }
-header p {
+.panel-brand-copy p {
   margin: 0;
   color: #46635b;
+  font-size: 12px;
 }
 h1 {
   font-size: 24px;

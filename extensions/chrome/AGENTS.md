@@ -15,6 +15,11 @@ Epic `ca26c29b-43ac-4ca0-b768-594d6779d6e7`, tickets 19–33 en Issopen.
   aislado; devuelve origen + viewport + DPR. No captura DOM ni imágenes.
 - `entrypoints/sidepanel/`: panel React en español, conexión humana, proyectos,
   comprobación, resultado efímero, limpieza y errores accionables.
+- `sidepanel/Account.tsx`: botón de usuario en la cabecera y diálogo nativo
+  cerrado por defecto (0.4.3). Datos, proyectos y gestión sólo al abrirlo;
+  `showModal`/`close` conservan Escape y retorno del foco. `main.tsx` comparte
+  el estado de cuenta con `Workspace`: nunca desmontar cuenta/compositor/editor
+  al alternar el diálogo ni repetir OAuth o borrar borradores por abrir/cerrar.
 - `lib/account.ts`: PKCE, validación estricta de callback/state y operaciones
   serializadas en worker; access/refresh en storage.local con TRUSTED_CONTEXTS.
   No exponer credenciales en respuestas, storage.sync, logs o URLs. Permiso de

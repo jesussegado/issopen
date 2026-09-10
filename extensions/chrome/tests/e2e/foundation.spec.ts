@@ -152,9 +152,12 @@ test("real toolbar action grants only the chosen page and opens a working side p
           `chrome-extension://${extension.id}/sidepanel.html`,
       );
     if (!panel) throw new Error("Real side panel did not open");
+    await expect(panel.getByRole("dialog", { name: "Tu cuenta" })).toBeHidden();
+    await panel.getByRole("button", { name: "Tu cuenta", exact: true }).click();
     await expect(
       panel.getByRole("button", { name: "Conectar con Issopen" }),
     ).toBeVisible();
+    await panel.getByRole("button", { name: "Cerrar cuenta" }).click();
     const requests: string[] = [];
     panel.on("request", (request) => {
       if (/^https?:/.test(request.url())) requests.push(request.url());

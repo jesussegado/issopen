@@ -1,4 +1,4 @@
-# Issopen para Chrome — piloto 0.4.2
+# Issopen para Chrome — piloto 0.4.3
 
 Flujo del [Epic de Chrome](https://issopen.serviciosegado.com/epics/ca26c29b-43ac-4ca0-b768-594d6779d6e7):
 OAuth humano, capturas y DOM saneado, revisión, creación de proyecto/Epic/ticket,
@@ -23,9 +23,14 @@ pnpm extension:build
 5. Pulsa **Comprobar página**: verás origen, viewport y densidad de píxeles.
    No recoge rutas, query, fragmentos, título, DOM, formularios ni imágenes.
    **Borrar comprobación** limpia el resultado; cerrar el panel también lo pierde.
-6. Pulsa **Conectar con Issopen**, inicia sesión en la ventana web, nombra la
-   instalación y acepta el consentimiento. El panel muestra tu cuenta/proyectos.
-   Desconecta desde el panel o revoca desde «Extensiones Chrome» en Issopen.
+6. Pulsa el botón de usuario **Cuenta**, arriba a la derecha, y después
+   **Conectar con Issopen**. Inicia sesión en la ventana web, nombra la
+   instalación y acepta el consentimiento. El diálogo muestra tu cuenta/proyectos.
+   Ciérralo con **×** o **Escape** para volver a capturar. Desde el mismo botón
+   puedes consultar la caducidad y desconectar; también puedes revocar desde
+   «Extensiones Chrome» en Issopen. Abrir/cerrar Cuenta no pierde la captura ni
+   el borrador, no desconecta y no repite el consentimiento. El botón muestra
+   el estado de acceso incluso con el diálogo cerrado.
    [Detalles y pruebas de OAuth](../../docs/chrome-oauth.md).
 7. En **Captura y previsualización**, elige recorte (predeterminado), área
    visible, página completa o elemento y pulsa **Capturar página**. Para recortar,
