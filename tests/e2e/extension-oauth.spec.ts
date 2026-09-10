@@ -160,19 +160,36 @@ test("Chrome completes real identity consent and disconnects without exposing to
     await panel
       .getByRole("button", { name: "Crear proyecto", exact: true })
       .click();
-    await expect(panel.getByLabel("Proyecto", { exact: true })).not.toHaveValue(
-      "",
-    );
+    await expect(
+      panel.getByRole("combobox", { name: "Proyecto", exact: true }),
+    ).toContainText("Chrome capture E2E");
     await epicToggle.click();
     await panel.getByLabel("Título del nuevo Epic").fill("Chrome E2E audit");
     await panel
       .getByRole("button", { name: "Crear Epic", exact: true })
       .click();
-    await expect(panel.getByLabel("Epic", { exact: true })).not.toHaveValue("");
+    await expect(
+      panel.getByRole("combobox", { name: "Epic", exact: true }),
+    ).toContainText("Chrome E2E audit");
+    // Real clicks on in-panel options, not selectOption (which skips the popup).
+    for (const [name, option] of [
+      ["Proyecto", "Chrome capture E2E"],
+      ["Epic", "1-Chrome E2E audit"],
+    ] as const) {
+      const selector = panel.getByRole("combobox", { name, exact: true });
+      await selector.click();
+      await expect(
+        panel.getByRole("listbox", { name, exact: true }),
+      ).toBeVisible();
+      await panel.getByRole("option", { name: option, exact: true }).click();
+      await expect(selector).toHaveAttribute("aria-expanded", "false");
+    }
     const projectId = await panel
-      .getByLabel("Proyecto", { exact: true })
-      .inputValue();
-    const epicId = await panel.getByLabel("Epic", { exact: true }).inputValue();
+      .getByRole("combobox", { name: "Proyecto", exact: true })
+      .getAttribute("value");
+    const epicId = await panel
+      .getByRole("combobox", { name: "Epic", exact: true })
+      .getAttribute("value");
     const files = await panel.evaluate(() => {
       const canvas = document.createElement("canvas");
       canvas.width = 80;
@@ -206,11 +223,11 @@ test("Chrome completes real identity consent and disconnects without exposing to
       .getByAltText("Imagen adjunta 1")
       .getAttribute("src");
     const destination = await panel
-      .getByLabel("Proyecto", { exact: true })
-      .inputValue();
+      .getByRole("combobox", { name: "Proyecto", exact: true })
+      .getAttribute("value");
     const epicDestination = await panel
-      .getByLabel("Epic", { exact: true })
-      .inputValue();
+      .getByRole("combobox", { name: "Epic", exact: true })
+      .getAttribute("value");
     await accountButton.click();
     await expect(
       panel.getByText("Conectado como", { exact: false }),
@@ -222,12 +239,12 @@ test("Chrome completes real identity consent and disconnects without exposing to
     await expect(
       panel.getByRole("textbox", { name: "Descripción", exact: true }),
     ).toHaveValue("Synthetic evidence only");
-    await expect(panel.getByLabel("Proyecto", { exact: true })).toHaveValue(
-      destination,
-    );
-    await expect(panel.getByLabel("Epic", { exact: true })).toHaveValue(
-      epicDestination,
-    );
+    await expect(
+      panel.getByRole("combobox", { name: "Proyecto", exact: true }),
+    ).toHaveAttribute("value", destination ?? "");
+    await expect(
+      panel.getByRole("combobox", { name: "Epic", exact: true }),
+    ).toHaveAttribute("value", epicDestination ?? "");
     await expect(panel.getByAltText("Imagen adjunta 1")).toHaveAttribute(
       "src",
       reviewed ?? "",
@@ -243,11 +260,19 @@ test("Chrome completes real identity consent and disconnects without exposing to
     await expect(
       panel.getByRole("button", { name: "Reintentar envío", exact: true }),
     ).toBeEnabled();
+    for (const name of ["Proyecto", "Epic", "Prioridad", "Estado"])
+      await expect(
+        panel.getByRole("combobox", { name, exact: true }),
+      ).toBeDisabled();
     await panel.reload();
     await expect(accountDialog).toBeHidden();
     await expect(
       panel.getByRole("button", { name: "Reintentar envío", exact: true }),
     ).toBeEnabled();
+    for (const name of ["Proyecto", "Epic", "Prioridad", "Estado"])
+      await expect(
+        panel.getByRole("combobox", { name, exact: true }),
+      ).toBeDisabled();
     await expect(panel.getByAltText("Imagen adjunta 1")).toHaveAttribute(
       "src",
       reviewed ?? "",

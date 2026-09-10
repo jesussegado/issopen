@@ -5,7 +5,7 @@ repositorio; no crear otro Git. Epic Chrome
 `ca26c29b-43ac-4ca0-b768-594d6779d6e7`; ticket 51 simplifica las imágenes
 por petición explícita del owner. El criterio personal 33 sigue independiente.
 
-## Qué hace ahora (0.5.1)
+## Qué hace ahora (0.5.2)
 
 OAuth humano → pegar/subir imágenes externas → proyecto/Epic y campos →
 Enviar ticket → enlace. No captura ni lee la página, no inspecciona DOM.
@@ -30,6 +30,13 @@ No reintroducir controles de captura por seguir documentación histórica 0.3/0.
 - `Workspace.tsx`: compositor y creación de proyecto/Epic inline; conserva
   cuenta/formulario/imágenes al alternar paneles. Bloquea operaciones durante
   preparación o envío incierto. Conserva payload y UUID para reintentar.
+- `SelectField.tsx`: proyecto/Epic/prioridad/estado usan combobox con lista HTML
+  dentro del panel. El popup nativo de select se observó fuera de la ventana en
+  Chrome Linux. No restaurarlo sin probar su posición en el panel real.
+  Clic y Enter/Espacio confirman, flechas/Home/End/letras buscan, Escape/Tab
+  cierran sin cambiar. Listas acotadas y foco/ARIA; sin nuevas dependencias.
+  Respeta `locked`; reseleccionar proyecto conserva Epic. La carga asíncrona
+  de Epics no borra el ID guardado ni aplica respuestas de otro proyecto.
 - `Account.tsx`: botón de usuario y diálogo nativo cerrado por defecto,
   Escape y retorno del foco. No desmontar el compositor al alternarlo.
 - `Information.tsx`: aviso introductorio cerrable; `InformationContent` se
@@ -82,6 +89,8 @@ texto nativo, quitar/restaurar, rechazo de lotes, UI a 320/400 px, OAuth real,
 dos imágenes privadas y reintento tras respuesta perdida. Las ramas del botón
 con permisos denegados/vacío/success usan un fixture explícito; no simulan
 el test nativo de Ctrl+V. Usar sólo imágenes sintéticas/perfiles efímeros.
+Selectores: clic sobre opciones (no `selectOption`), teclado, filtros, nombres
+largos, 320/400 px, persistencia, lectura tardía/error y bloqueo de envío incierto.
 
 No versionar outputs, perfiles, reportes ni secretos. Cambio sólo de extensión
 no requiere Kubernetes; la API multiimagen sí requiere despliegue por GitOps.

@@ -29,6 +29,11 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+- Chrome 0.5.2 (ticket 53) corrige los selectores que Chrome Linux posicionaba
+  fuera de su ventana. Listas HTML dentro del panel con ratón/teclado, filtros
+  y bloqueo de envío pendiente; conserva API, permisos y borradores. Pruebas
+  deben clicar opciones reales, no saltarse el menú con `selectOption`.
+
 - Chrome 0.5.1 (ticket 52) reúne la introducción/privacidad/borrador en un aviso
   cerrable con preferencia local y ayuda permanente en Cuenta. No modifica
   servidor, permisos, sesión ni borradores. Ver `extensions/chrome/AGENTS.md`.

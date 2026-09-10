@@ -1,4 +1,4 @@
-# Issopen para Chrome — piloto 0.5.1
+# Issopen para Chrome — piloto 0.5.2
 
 Crea tickets con imágenes de tu herramienta de recorte favorita.
 Ya no hace falta capturar la página ni concederle acceso a cada web.
@@ -17,6 +17,13 @@ Ya no hace falta capturar la página ni concederle acceso a cada web.
 6. Elige proyecto/Epic, título y descripción; pulsa **Enviar ticket**.
    También puedes crear proyecto/Epic desde los botones del compositor.
    Verás el enlace al ticket; no se abre automáticamente.
+
+Los selectores de proyecto, Epic, prioridad y estado abren sus opciones dentro
+del panel, evitando que Chrome las muestre fuera de la ventana. Haz clic en una
+opción o usa flechas y Enter/Espacio. Escape o Tab cierran sin cambiar el valor;
+también puedes escribir las primeras letras. Los campos Buscar filtran los
+destinos. Cambiar de proyecto limpia el Epic anterior; volver a elegir el mismo
+proyecto lo conserva. Durante un envío pendiente siguen bloqueados.
 
 Hasta **5 imágenes**, PNG/JPEG/WebP estáticos, **8 MiB en total** después de
 convertir a PNG. Cada archivo de entrada también debe ocupar como máximo 8 MiB,

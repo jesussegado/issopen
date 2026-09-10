@@ -22,6 +22,7 @@ import {
   ticketResponseSchema,
 } from "../../lib/tickets";
 import { Images } from "./Images";
+import { SelectField } from "./SelectField";
 
 type Project = { id: string; name: string };
 type Epic = { id: string; number: number; title: string };
@@ -70,6 +71,7 @@ export function Workspace({ account }: { account: AccountResponse | null }) {
   const [generation, setGeneration] = useState(0);
   const [imageBusy, setImageBusy] = useState(false);
   const [epicReload, setEpicReload] = useState(0);
+  const [epicLoading, setEpicLoading] = useState(false);
   const gate = useRef(false);
   const connected = account?.ok && account.connected ? account : null;
   const identity =
@@ -152,9 +154,11 @@ export function Workspace({ account }: { account: AccountResponse | null }) {
   useEffect(() => {
     if (!connected || !form.projectId) {
       setEpics([]);
+      setEpicLoading(false);
       return;
     }
     let alive = true;
+    setEpicLoading(true);
     void request({
       type: "tickets",
       version: 1,
@@ -162,6 +166,7 @@ export function Workspace({ account }: { account: AccountResponse | null }) {
       projectId: form.projectId,
     }).then((r) => {
       if (!alive) return;
+      setEpicLoading(false);
       if (r.ok && "epics" in r) {
         setEpics(r.epics);
         setError("");
@@ -484,35 +489,26 @@ export function Workspace({ account }: { account: AccountResponse | null }) {
                       onChange={(e) => setSearch(e.target.value)}
                     />
                   </label>
-                  <label>
-                    Proyecto
-                    <select
-                      required
-                      aria-label="Proyecto"
-                      value={form.projectId}
-                      onChange={(e) => {
-                        setForm({
-                          ...form,
-                          projectId: e.target.value,
-                          epicId: "",
-                        });
-                        setEpics([]);
-                      }}
-                    >
-                      <option value="">Selecciona proyecto</option>
-                      {projects
+                  <SelectField
+                    label="Proyecto"
+                    required
+                    disabled={locked}
+                    value={form.projectId}
+                    onChange={(value) => {
+                      setForm({ ...form, projectId: value, epicId: "" });
+                      setEpics([]);
+                    }}
+                    options={[
+                      { value: "", label: "Selecciona proyecto" },
+                      ...projects
                         .filter(
                           (p) =>
                             p.id === form.projectId ||
                             p.name.toLowerCase().includes(search.toLowerCase()),
                         )
-                        .map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.name}
-                          </option>
-                        ))}
-                    </select>
-                  </label>
+                        .map((p) => ({ value: p.id, label: p.name })),
+                    ]}
+                  />
                   <label>
                     Buscar Epic
                     <input
@@ -520,17 +516,19 @@ export function Workspace({ account }: { account: AccountResponse | null }) {
                       onChange={(e) => setEpicSearch(e.target.value)}
                     />
                   </label>
-                  <label>
-                    Epic
-                    <select
-                      value={form.epicId}
-                      aria-label="Epic"
-                      onChange={(e) =>
-                        setForm({ ...form, epicId: e.target.value })
-                      }
-                    >
-                      <option value="">Sin Epic</option>
-                      {epics
+                  <SelectField
+                    label="Epic"
+                    disabled={locked}
+                    value={form.epicId}
+                    missingLabel={
+                      epicLoading
+                        ? "Cargando Epic guardado…"
+                        : "Epic guardado no disponible; actualiza o elige otro"
+                    }
+                    onChange={(value) => setForm({ ...form, epicId: value })}
+                    options={[
+                      { value: "", label: "Sin Epic" },
+                      ...epics
                         .filter(
                           (e) =>
                             e.id === form.epicId ||
@@ -538,13 +536,13 @@ export function Workspace({ account }: { account: AccountResponse | null }) {
                               .toLowerCase()
                               .includes(epicSearch.toLowerCase()),
                         )
-                        .map((e) => (
-                          <option key={e.id} value={e.id}>
-                            {e.number}-{e.title}
-                          </option>
-                        ))}
-                    </select>
-                  </label>
+                        .map((e) => ({
+                          value: e.id,
+                          label: `${e.number}-${e.title}`,
+                        })),
+                    ]}
+                  />
+                  {epicLoading && <p role="status">Cargando Epics…</p>}
                   <button
                     type="button"
                     className="secondary refresh-epics"
@@ -574,55 +572,43 @@ export function Workspace({ account }: { account: AccountResponse | null }) {
                       }
                     />
                   </label>
-                  <label>
-                    Prioridad
-                    <select
-                      value={form.priority}
-                      aria-label="Prioridad"
-                      onChange={(e) =>
-                        setForm({
-                          ...form,
-                          priority:
-                            captureSubmissionSchema.shape.priority.parse(
-                              e.target.value,
-                            ),
-                        })
-                      }
-                    >
-                      {["low", "medium", "high", "urgent"].map((v) => (
-                        <option key={v} value={v}>
-                          {v}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Estado
-                    <select
-                      value={form.status}
-                      aria-label="Estado"
-                      onChange={(e) =>
-                        setForm({
-                          ...form,
-                          status: captureSubmissionSchema.shape.status.parse(
-                            e.target.value,
-                          ),
-                        })
-                      }
-                    >
-                      {[
-                        "backlog",
-                        "ready",
-                        "in_progress",
-                        "ready_for_review",
-                        "done",
-                      ].map((v) => (
-                        <option key={v} value={v}>
-                          {v}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                  <SelectField
+                    label="Prioridad"
+                    disabled={locked}
+                    value={form.priority}
+                    onChange={(value) =>
+                      setForm({
+                        ...form,
+                        priority:
+                          captureSubmissionSchema.shape.priority.parse(value),
+                      })
+                    }
+                    options={["low", "medium", "high", "urgent"].map(
+                      (value) => ({
+                        value,
+                        label: value,
+                      }),
+                    )}
+                  />
+                  <SelectField
+                    label="Estado"
+                    disabled={locked}
+                    value={form.status}
+                    onChange={(value) =>
+                      setForm({
+                        ...form,
+                        status:
+                          captureSubmissionSchema.shape.status.parse(value),
+                      })
+                    }
+                    options={[
+                      "backlog",
+                      "ready",
+                      "in_progress",
+                      "ready_for_review",
+                      "done",
+                    ].map((value) => ({ value, label: value }))}
+                  />
                 </fieldset>
                 {evidence?.metadata && (
                   <div className="final-evidence">

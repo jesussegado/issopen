@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Chrome 0.5.1 closable information and Account help loaded; ticket 52 Ready for Review
-last_updated: "2026-09-10T08:18:19Z"
+stopped_at: Chrome 0.5.2 in-panel selectors implemented; ticket 53 awaiting release gates
+last_updated: "2026-09-10T08:40:00Z"
 last_activity: 2026-09-10
 progress:
   total_phases: 9
@@ -22,6 +22,12 @@ See: .planning/PROJECT.md (updated 2026-08-30)
 
 **Core value:** Convertir una intención humana en trabajo estructurado y seguro que ChatGPT y agentes de código externos puedan entender, ejecutar y devolver a revisión dentro de un único flujo trazable.
 **Current focus:** Chrome 0.5 replaces capture/DOM/editor with pasted/uploaded images at owner request. Ticket 51 Ready for Review; 33 owner acceptance untouched. Server deployed and managed Chrome connected. Quick 260910-d89.
+
+Follow-up 2026-09-10: ticket 53 fixes native dropdown positioning observed in
+managed Chrome 152 Linux (popup outside the browser window). SelectField lists
+stay in the panel; mouse/keyboard/filter/draft/late-read tests and real OAuth
+targeted E2E pass. Quick 260910-ehq; 0.5.2 release and managed reload pending.
+No server or permission changes. Preserve the existing real image draft.
 
 Follow-up 2026-09-10: ticket 52 adds a dismissible information notice and
 permanent Account help, quick 260910-e2r, source dbfc597. 215 tests PASS,

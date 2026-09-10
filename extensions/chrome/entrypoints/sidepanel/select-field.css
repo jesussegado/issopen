@@ -1,0 +1,55 @@
+.field-select {
+  min-width: 0;
+  margin-bottom: 12px;
+}
+button.field-select-trigger,
+button.field-select-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  overflow-wrap: anywhere;
+  font-weight: 400;
+  color: #142f29;
+  background: white;
+}
+button.field-select-trigger {
+  border-color: #a4c8bb;
+  margin-top: 6px;
+}
+button.field-select-trigger > span:first-child,
+button.field-select-option > span:first-child {
+  min-width: 0;
+}
+button.field-select-trigger:disabled,
+button.field-select-option:disabled {
+  color: #46635b;
+  background: #dce9e3;
+}
+button.field-select-trigger:hover:not(:disabled) {
+  border-color: #027067;
+  background: #f3faf7;
+}
+.field-select-options {
+  margin-top: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid #027067;
+  border-radius: 8px;
+  padding: 4px;
+  background: white;
+}
+button.field-select-option {
+  border: 0;
+  border-radius: 4px;
+}
+button.field-select-option[aria-selected="true"] {
+  font-weight: 600;
+  color: #01534c;
+}
+button.field-select-option[data-active="true"],
+button.field-select-option:hover:not(:disabled) {
+  background: #d9f3e8;
+}
