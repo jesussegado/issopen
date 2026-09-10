@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Chrome 0.5.4 styled result link and stacked actions implemented; ticket 56 awaiting release
-last_updated: "2026-09-10T08:59:19Z"
+stopped_at: Chrome 0.5.4 styles applied live preserving 0.5.3 runtime and confirmation; ticket 56 Ready for Review
+last_updated: "2026-09-10T09:03:28Z"
 last_activity: 2026-09-10
 progress:
   total_phases: 9
@@ -24,9 +24,12 @@ See: .planning/PROJECT.md (updated 2026-08-30)
 **Current focus:** Chrome 0.5 replaces capture/DOM/editor with pasted/uploaded images at owner request. Ticket 51 Ready for Review; 33 owner acceptance untouched. Server deployed and managed Chrome connected. Quick 260910-d89.
 
 Follow-up 2026-09-10: ticket 56 styles the success link and stacks final
-composer actions at full width with 12px gaps (quick 260910-f5d). CSS-only;
-320/400px geometry, link semantics and prepare-next fixture pass. Release
-0.5.4 pending. Live Chrome is already on a new form, connected, no images.
+composer actions at full width with 12px gaps (quick 260910-f5d), source
+c76a591 published. Release 0.5.4 passes 220 tests/checksum/reproducibility.
+Live Chrome had a new confirmation and one image by delivery: exact new CSS
+applied without reload, UI/confirmation/image preserved, three stacked actions
+verified. Runtime still 0.5.3; complete 0.5.4 artifact awaits a safe future reload.
+Ticket 56 Ready for Review v6, claim null; no backend or personal data changes.
 
 Follow-up 2026-09-10: ticket 54 merges destination search and selection into
 one editable combobox for Proyecto and Epic. Quick 260910-euw, source b5795e6
@@ -109,6 +112,10 @@ Progress: [░░░░░░░░░░] 0%
 ## Accumulated Context
 
 ### Decisions
+
+- [Quick 260910-f5d]: Highlight success link and vertically stack final composer
+  actions. For a CSS-only change while a confirmation is open, apply validated
+  stylesheet live rather than discard the in-memory success view by reloading.
 
 - [Quick 260910-euw]: Proyecto/Epic use one editable input-combobox each.
   Search text is transient; only an option confirms an ID. Escape/Tab/outside
@@ -199,6 +206,7 @@ Decisions are logged in PROJECT.md Key Decisions table. Current roadmap-level st
 
 | ID | Description | Date | Commits | Status | Directory |
 | --- | --- | --- | --- | --- | --- |
+| 260910-f5d | Chrome: enlace de éxito y acciones finales apiladas | 2026-09-10 | `c76a591` | 220 tests PASS; 0.5.4 CSS live, 0.5.3 runtime/confirmation preserved; 56 Ready for Review | [260910-f5d](./quick/260910-f5d-mejorar-enlace-y-apilar-acciones-de-tick/) |
 | 260910-euw | Chrome: fusionar búsqueda y selección de Proyecto/Epic | 2026-09-10 | `b5795e6` | 219 tests PASS; 0.5.3 loaded, draft preserved; 54 Ready for Review | [260910-euw](./quick/260910-euw-unificar-busqueda-y-seleccion-de-proyect/) |
 | 260910-ehq | Chrome: selectores accesibles dentro del panel | 2026-09-10 | `fb11c41` | 218 tests PASS; 0.5.2 loaded, draft preserved; 53 Ready for Review | [260910-ehq](./quick/260910-ehq-corregir-selectores-chrome-desplazados-f/) |
 | 260910-e2r | Chrome: aviso cerrable y ayuda permanente en Cuenta | 2026-09-10 | `dbfc597` | 215 tests PASS; 0.5.1 loaded, draft preserved; 52 Ready for Review | [260910-e2r](./quick/260910-e2r-convertir-informacion-de-chrome-en-aviso/) |
@@ -240,5 +248,5 @@ Items acknowledged and carried forward from previous milestone close:
 ## Session Continuity
 
 Last session: 2026-09-10
-Stopped at: Chrome 0.5.3 unified search selects loaded/connected, search/selection/cancel verified and existing image draft preserved. Backend remains 22b7e89 via GitOps 4eb5b1ec. Ticket 54 Ready for Review v6, claim null. Ticket 33 owner acceptance untouched.
-Resume file: ./quick/260910-euw-unificar-busqueda-y-seleccion-de-proyect/SUMMARY.md (derived evidence; reread live tickets/answers)
+Stopped at: Chrome new result styles applied live, runtime remains 0.5.3 to preserve an open confirmation with one image. 0.5.4 artifact ready for safe reload later. Backend remains 22b7e89 via GitOps 4eb5b1ec. Ticket 56 Ready for Review v6, claim null. Ticket 33 owner acceptance untouched.
+Resume file: ./quick/260910-f5d-mejorar-enlace-y-apilar-acciones-de-tick/SUMMARY.md (derived evidence; reread live tickets/answers)
