@@ -21,7 +21,7 @@ import {
   ticketErrors,
   ticketResponseSchema,
 } from "../../lib/tickets";
-import { Capture } from "./Capture";
+import { Images } from "./Images";
 
 type Project = { id: string; name: string };
 type Epic = { id: string; number: number; title: string };
@@ -68,7 +68,7 @@ export function Workspace({ account }: { account: AccountResponse | null }) {
     url: string;
   } | null>(null);
   const [generation, setGeneration] = useState(0);
-  const [unreviewed, setUnreviewed] = useState(false);
+  const [imageBusy, setImageBusy] = useState(false);
   const [epicReload, setEpicReload] = useState(0);
   const gate = useRef(false);
   const connected = account?.ok && account.connected ? account : null;
@@ -81,14 +81,15 @@ export function Workspace({ account }: { account: AccountResponse | null }) {
   const writable = Boolean(
     connected?.canWrite && connected.apiVersion === 1 && identity && !mismatch,
   );
-  const invalidate = useCallback(() => {
-    setEvidence(null);
-    setUnreviewed(true);
+  const changeImages = useCallback((images: string[]) => {
+    setEvidence((previous) =>
+      images.length || previous?.metadata
+        ? { image: null, images, metadata: previous?.metadata ?? null }
+        : null,
+    );
   }, []);
-  const review = useCallback((value: ReviewedEvidence) => {
-    setEvidence(value);
-    setUnreviewed(false);
-  }, []);
+  const images = evidence?.images ?? (evidence?.image ? [evidence.image] : []);
+  const supportsImages = images.length <= (connected?.maxImages ?? 1);
   useEffect(() => {
     let alive = true;
     loadDraft()
@@ -183,7 +184,15 @@ export function Workspace({ account }: { account: AccountResponse | null }) {
     };
   }
   async function send() {
-    if (gate.current || !writable || inline || created || unreviewed) return;
+    if (
+      gate.current ||
+      !writable ||
+      inline ||
+      created ||
+      imageBusy ||
+      !supportsImages
+    )
+      return;
     const parsed = captureSubmissionSchema.safeParse(
       pending ?? {
         version: 1,
@@ -191,7 +200,8 @@ export function Workspace({ account }: { account: AccountResponse | null }) {
         ...form,
         epicId: form.epicId || null,
         metadata: evidence?.metadata ?? null,
-        image: evidence?.image ?? null,
+        image: images.length === 1 ? images[0] : null,
+        ...(images.length > 1 ? { images } : {}),
       },
     );
     if (!parsed.success) {
@@ -240,7 +250,7 @@ export function Workspace({ account }: { account: AccountResponse | null }) {
     }
   }
   async function createContainer(action: "project" | "epic") {
-    if (gate.current || !writable || pending || created) return;
+    if (gate.current || !writable || pending || created || imageBusy) return;
     const message =
       inline ??
       (action === "project"
@@ -296,11 +306,12 @@ export function Workspace({ account }: { account: AccountResponse | null }) {
     }
   }
   async function discard() {
+    if (imageBusy || busy) return;
     if (
       !window.confirm(
         pending || inline
           ? "El servidor podría haber creado ya el ticket/proyecto/Epic. Revisa Issopen antes de crear otro. ¿Borrar el borrador y la clave de reintento?"
-          : "¿Borrar el borrador, la captura y todo su historial local?",
+          : "¿Borrar el borrador y las imágenes adjuntas de este navegador?",
       )
     )
       return;
@@ -317,7 +328,6 @@ export function Workspace({ account }: { account: AccountResponse | null }) {
         epicId: form.epicId,
       });
       setGeneration((g) => g + 1);
-      setUnreviewed(false);
       setError("");
     } catch {
       setStorageError(true);
@@ -329,17 +339,20 @@ export function Workspace({ account }: { account: AccountResponse | null }) {
         <p role="status">Recuperando borrador…</p>
       ) : (
         <>
-          <Capture
+          <Images
             key={generation}
-            initialEvidence={evidence}
-            onReview={review}
-            onInvalidate={invalidate}
+            images={images}
+            onChange={changeImages}
+            onBusy={setImageBusy}
             disabled={locked}
           />
           <section aria-labelledby="composer-heading">
             <h2 id="composer-heading">Crear ticket</h2>
             {!created && (
-              <fieldset className="create-destination" disabled={locked}>
+              <fieldset
+                className="create-destination"
+                disabled={locked || imageBusy}
+              >
                 <fieldset
                   className="create-shortcuts"
                   aria-label="Crear proyecto o Epic"
@@ -454,7 +467,6 @@ export function Workspace({ account }: { account: AccountResponse | null }) {
                   onClick={() => {
                     setCreated(null);
                     setEvidence(null);
-                    setUnreviewed(false);
                     setForm({
                       ...initialForm,
                       projectId: form.projectId,
@@ -616,17 +628,9 @@ export function Workspace({ account }: { account: AccountResponse | null }) {
                     </select>
                   </label>
                 </fieldset>
-                <h3>Contenido que se enviará</h3>
-                {evidence ? (
+                {evidence?.metadata && (
                   <div className="final-evidence">
-                    {evidence.image ? (
-                      <img
-                        src={evidence.image}
-                        alt="Imagen final revisada para enviar"
-                      />
-                    ) : (
-                      <p>Sin imagen adjunta</p>
-                    )}
+                    <h3>Contexto de un borrador anterior</h3>
                     {evidence.metadata?.url && <p>{evidence.metadata.url}</p>}
                     {evidence.metadata?.element && (
                       <code>
@@ -641,33 +645,20 @@ export function Workspace({ account }: { account: AccountResponse | null }) {
                     )}
                     <button
                       type="button"
-                      disabled={locked}
+                      disabled={locked || imageBusy}
                       className="secondary"
                       onClick={() => {
-                        setEvidence(null);
-                        setUnreviewed(false);
+                        setEvidence({ image: null, images, metadata: null });
                       }}
                     >
-                      Excluir toda la evidencia
+                      Quitar contexto de página
                     </button>
                   </div>
-                ) : (
-                  <p>Sin adjuntos ni contexto de página.</p>
                 )}
-                {unreviewed && (
+                {!supportsImages && connected && (
                   <p className="notice">
-                    La captura ha cambiado. Confírmala tras revisar o{" "}
-                    <button
-                      type="button"
-                      disabled={locked}
-                      onClick={() => {
-                        setUnreviewed(false);
-                        setEvidence(null);
-                      }}
-                    >
-                      Continuar sin captura
-                    </button>
-                    .
+                    Este servidor todavía no admite varias imágenes. Actualiza
+                    Issopen y vuelve a abrir el panel. Tu borrador se conserva.
                   </p>
                 )}
                 {pending && (
@@ -679,7 +670,7 @@ export function Workspace({ account }: { account: AccountResponse | null }) {
                 {inline ? (
                   <button
                     type="button"
-                    disabled={busy || !writable}
+                    disabled={busy || imageBusy || !writable}
                     onClick={() =>
                       void createContainer(
                         inline.action === "project" ? "project" : "epic",
@@ -694,7 +685,8 @@ export function Workspace({ account }: { account: AccountResponse | null }) {
                     disabled={
                       busy ||
                       !writable ||
-                      unreviewed ||
+                      imageBusy ||
+                      !supportsImages ||
                       !form.projectId ||
                       !form.title.trim()
                     }
@@ -715,7 +707,7 @@ export function Workspace({ account }: { account: AccountResponse | null }) {
             <button
               type="button"
               className="secondary"
-              disabled={busy}
+              disabled={busy || imageBusy}
               onClick={() => void discard()}
             >
               Descartar borrador

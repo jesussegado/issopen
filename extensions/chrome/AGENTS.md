@@ -1,89 +1,80 @@
 # AGENTS.md — extensión Chrome de Issopen
 
-Se aplican las instrucciones de `../../AGENTS.md`. Es un workspace pnpm de la
-misma fuente: nunca crear un `.git` independiente aquí. Canon de trabajo:
-Epic `ca26c29b-43ac-4ca0-b768-594d6779d6e7`, tickets 19–33 en Issopen.
+Se aplican las instrucciones de `../../AGENTS.md`. Workspace pnpm del mismo
+repositorio; no crear otro Git. Epic Chrome
+`ca26c29b-43ac-4ca0-b768-594d6779d6e7`; ticket 51 simplifica las imágenes
+por petición explícita del owner. El criterio personal 33 sigue independiente.
 
-## Qué hay y cómo funciona
+## Qué hace ahora (0.5.0)
 
-- WXT 0.21.4, MV3, React 19.2.8, TypeScript 6.0.3 y Zod 4.5.4, fijados en
-  package/lockfile. Build de extensión independiente de Docker/web/API.
-- `wxt.config.ts`: manifest, permisos, CSP, build y asset de marca compartido.
-- `entrypoints/background.ts`: acción del icono, apertura del panel, validación
-  del emisor, consulta de pestaña e inyección bajo activeTab.
-- `entrypoints/page.content.ts`: script runtime, frame principal, mundo
-  aislado; devuelve origen + viewport + DPR. No captura DOM ni imágenes.
-- `entrypoints/sidepanel/`: panel React en español, conexión humana, proyectos,
-  comprobación, resultado efímero, limpieza y errores accionables.
-- `sidepanel/Account.tsx`: botón de usuario en la cabecera y diálogo nativo
-  cerrado por defecto (0.4.3). Datos, proyectos y gestión sólo al abrirlo;
-  `showModal`/`close` conservan Escape y retorno del foco. `main.tsx` comparte
-  el estado de cuenta con `Workspace`: nunca desmontar cuenta/compositor/editor
-  al alternar el diálogo ni repetir OAuth o borrar borradores por abrir/cerrar.
-- `lib/account.ts`: PKCE, validación estricta de callback/state y operaciones
-  serializadas en worker; access/refresh en storage.local con TRUSTED_CONTEXTS.
-  No exponer credenciales en respuestas, storage.sync, logs o URLs. Permiso de
-  host exclusivamente para la instancia configurada al compilar (HTTPS o
-  loopback explícito de test); no ampliar trustedOrigins de la REST owner.
-- `lib/protocol.ts`: mensajes v1, schemas de frontera, URLs restringidas y
-  errores seguros; no importar dominio, base de datos o secretos del backend.
-- `lib/capture.ts` y `capture-page.ts`: capturas PNG, composición OffscreenCanvas,
-  overlay rectangular y funciones serializadas en el documento concreto. Las
-  funciones inyectadas no pueden cerrar sobre dependencias/imports externos.
-- `sidepanel/Capture.tsx`: preview local, zoom, recorte/redacción opaca,
-  rectángulos con ratón o campos numéricos y cinco pasos de deshacer/rehacer.
-- `tests/unit/`: contratos, privacidad, emisor, worker y navegación cambiante.
-- `tests/e2e/`: artefacto productivo y acción real de Chrome con perfil efímero.
-- `lib/capture-errors.ts`: catálogo de códigos y ayuda estática. El worker
-  distingue acceso, navegación, mutación de contenido y cambio de tamaño; la UI
-  no muestra excepciones crudas ni adivina causas. Si no se conoce, usa el caso
-  desconocido. Conservar todos los guards y el preview previo ante un fallo.
+OAuth humano → pegar/subir imágenes externas → proyecto/Epic y campos →
+Enviar ticket → enlace. No captura ni lee la página, no inspecciona DOM.
+El usuario recorta/redacta en su herramienta antes de adjuntar.
+No reintroducir controles de captura por seguir documentación histórica 0.3/0.4.
 
-## Invariantes y próximos tickets
+- WXT 0.21.4, MV3, React 19.2.8, TypeScript 6.0.3 y Zod 4.5.4 fijados.
+  Build independiente de Docker/API; sin nuevas dependencias.
+- `wxt.config.ts`: sólo sidePanel, identity, storage y host de la instancia.
+  clipboardRead es opcional y se pide exclusivamente al pulsar Pegar imagen.
+  Sin activeTab, scripting, all_urls, lecturas automáticas ni scripts globales.
+- `background.ts`: abre panel desde acción; emisor exacto y schemas antes de
+  OAuth/tickets. Rechaza mensajes legacy de captura/inspección.
+- `sidepanel/Images.tsx`: Ctrl+V/CmdV nativo (texto sigue pegándose como texto),
+  botón con permiso opcional/fallback, selección múltiple, miniaturas y quitar.
+  Un gate serializa lectura/conversión; un lote inválido no aplica parcialmente.
+  No leer portapapeles automáticamente ni registrarlo en logs.
+- `lib/image-import.ts`: PNG/JPEG/WebP estáticos, cabeceras/dimensiones antes de
+  decodificar, conversión local a PNG sin metadatos. Máximo 5 imágenes, 8 MiB
+  agregados tras conversión, 8 MiB por archivo de entrada y 32 MP por imagen.
+  Rechaza SVG/GIF/animaciones. Nunca subir URLs ni nombres/rutas de archivos.
+- `Workspace.tsx`: compositor y creación de proyecto/Epic inline; conserva
+  cuenta/formulario/imágenes al alternar paneles. Bloquea operaciones durante
+  preparación o envío incierto. Conserva payload y UUID para reintentar.
+- `Account.tsx`: botón de usuario y diálogo nativo cerrado por defecto,
+  Escape y retorno del foco. No desmontar el compositor al alternarlo.
+- `lib/account.ts`: PKCE/state/callback y operaciones serializadas;
+  tokens en storage.local TRUSTED_CONTEXTS, nunca respuestas/logs/storage.sync.
+- `lib/draft.ts`: un borrador IndexedDB 24 h. Las imágenes que el usuario
+  adjunta se incorporan explícitamente al borrador, sin confirmación separada.
+  No guardar clipboard crudo, EXIF, imágenes no seleccionadas ni historial.
+- `lib/tickets.ts`: rutas/contratos de API cerrados. Contrato compartido en
+  `../../src/shared/capture-contract.ts`, sin imports de servidor.
+- Los helpers/content entrypoints y Capture.tsx históricos se conservan sin
+  ruta de ejecución desde UI/worker, sin permisos de inyección. Sus unit tests
+  siguen útiles como regresión de contratos antiguos, no prueban la nueva UI.
 
-La entrega 0.4 completa el flujo técnico. `Workspace.tsx` compone tickets y
-proyectos/Epics inline; `lib/tickets.ts` limita operaciones API y respuestas;
-`lib/draft.ts` guarda sólo un borrador revisado 24 h en IndexedDB. `element.ts`
-devuelve DOM estructural acotado, no texto ni atributos arbitrarios.
-Contrato común en `../../src/shared/capture-contract.ts`. Backend/storage y
-operación: [chrome-delivery.md](../../docs/chrome-delivery.md).
-No persistir ni subir originales/historial. Si el resultado del envío es
-incierto, mantener payload/UUID bloqueados al recargar/reconectar. No enviar
-automáticamente ni renovar permisos antiguos sin nuevo consentimiento.
-El parche 0.4.1 presenta la creación inline de proyecto/Epic como dos botones
-al inicio del compositor. Usan `aria-expanded`/`aria-controls`, regiones ocultas
-y estado local que conserva los nombres al alternar. Mantener los guards de
-escritura/destino y deshabilitar ambos durante operaciones pendientes.
-La nota 0.3 siguiente es histórica, no describe los límites de 0.4.
+## Fronteras y compatibilidad
 
-La versión 0.3 añade captura local (23) y parte del editor (25) sobre OAuth (21).
-Mantener visible que no hay DOM ni envío de tickets hasta 22/24/26/28. El propietario
-aprobó recomendaciones y conservó «Crear proyecto y Epic»; no sustituir esa
-respuesta por sólo selección. Alcance y dependencias en
-[`../../docs/chrome-extension.md`](../../docs/chrome-extension.md).
+`/session.maxImages` anuncia 5. Servidor viejo sin ese campo: sólo un PNG.
+API v1 acepta `image` legacy O `images` (máximo 5), nunca ambos. No añadir
+defaults ni transformar un envío pendiente antiguo: cambiaría su hash de recibo.
+Backend normaliza, limita el agregado y crea ticket/evidencias/recibo atómicos.
+Adjuntos privados; detalle web enumera imágenes. No hay migración DB nueva.
+[API, cuota, backup y rollback](../../docs/chrome-delivery.md).
 
-- No acceso preventivo/global a webs, captura automática, incógnito o permisos
-  futuros. Abrir desde el selector del panel no equivale a otorgar activeTab.
-- No volver a `openPanelOnActionClick: true` sin comprobar la concesión real:
-  en Chromium 151 abría el panel pero no otorgaba acceso. Mantener acción
-  explícita + `sidePanel.open` y su test.
-- No tokens de agente para actuar como persona. OAuth PKCE humano revocable
-  usa `/extensions/link` y `/api/extension/v1`, con clientes por instalación
-  y caducidad máxima de 30 días; la revocación web afecta la siguiente petición.
-- Ni DOM, valores de formulario, URLs privadas ni errores crudos en logs.
-  Captura e historial quedan en RAM; sólo el PNG confirmado entra en borrador
-  local. El envío requiere acción humana y escritura OAuth autorizada.
-- El motor aborta al cambiar documento, pestaña, tamaño o DOM durante la captura;
-  no relajar estas comprobaciones sin nuevas pruebas de fugas. Respetar límites
-  de [captura](../../docs/chrome-capture.md), máscaras previas, rate limit global
-  y restauración `finally`/watchdog. No persistir originales ni historial sensible.
-- No afirmar soporte Edge/Brave ni distribución estable con tests de Chromium.
-- Conservar marca aprobada, HTML semántico y usabilidad a 320 px o más.
+El token necesita extension:write humano, no credenciales de agente.
+No ampliar permisos MCP ni consentimientos antiguos. No usar cookies owner
+en API de extensión. No registrar DOM, URL privada, imagen, token o excepción.
+Envío sólo con gesto; nunca cola/reintento automático.
 
-## Comandos (desde la raíz de Issopen)
+Restaurar un artefacto antiguo puede rechazar/borrar un borrador multiimagen:
+resolver o exportar primero cualquier borrador/operación pendiente. Mantener
+misma ruta unpacked e ID y ambos PVCs; no desinstalar. No prometer downgrade de
+datos locales 0.5 a 0.4.3. La web antigua puede no entender metadata upload.
 
-`pnpm extension:build`, `extension:dev`, `extension:check`, `extension:lint`,
-`extension:test`, `extension:e2e`, `extension:reproducible`, `extension:validate`.
-`pnpm validate` incluye la extensión. Guía de instalación/rollback en README.
-No versionar `.wxt`, `.output`, perfiles, reportes ni credenciales. No desplegar
-Kubernetes por un cambio exclusivamente de este artefacto local.
+## Validación y entrega
+
+Desde raíz: `pnpm extension:build`, `extension:check`, `extension:lint`,
+`extension:test`, `extension:e2e`, `extension:reproducible`.
+`pnpm validate` integra API/DB/web y extensión; `extension:release` exige Git
+limpio y todos los gates antes de crear ZIP/SHA/procedencia.
+
+E2E: acción nativa sin acceso a página, imágenes PNG/JPEG/WebP, Ctrl+V real,
+texto nativo, quitar/restaurar, rechazo de lotes, UI a 320/400 px, OAuth real,
+dos imágenes privadas y reintento tras respuesta perdida. Las ramas del botón
+con permisos denegados/vacío/success usan un fixture explícito; no simulan
+el test nativo de Ctrl+V. Usar sólo imágenes sintéticas/perfiles efímeros.
+
+No versionar outputs, perfiles, reportes ni secretos. Cambio sólo de extensión
+no requiere Kubernetes; la API multiimagen sí requiere despliegue por GitOps.
+No afirmar soporte Edge/Brave/Store ni aceptación personal con tests automáticos.

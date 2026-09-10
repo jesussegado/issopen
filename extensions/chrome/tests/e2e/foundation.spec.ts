@@ -32,8 +32,9 @@ test("production manifest limits network access to Issopen and explicit page ges
   expect(manifest.version).toBe(pkg.version);
   expect(manifest.manifest_version).toBe(3);
   expect(manifest.permissions.toSorted()).toEqual(
-    ["activeTab", "scripting", "sidePanel", "identity", "storage"].toSorted(),
+    ["sidePanel", "identity", "storage"].toSorted(),
   );
+  expect(manifest.optional_permissions).toEqual(["clipboardRead"]);
   for (const key of [
     "optional_host_permissions",
     "content_scripts",
@@ -69,7 +70,7 @@ test("production manifest limits network access to Issopen and explicit page ges
 });
 
 // biome-ignore lint/correctness/noEmptyPattern: Playwright requires a destructured fixture parameter.
-test("real toolbar action grants only the chosen page and opens a working side panel", async ({}, testInfo) => {
+test("real toolbar action opens images without granting access to the page", async ({}, testInfo) => {
   const context = await chromium.launchPersistentContext("", {
     channel: "chromium",
     headless: true,
@@ -108,7 +109,7 @@ test("real toolbar action grants only the chosen page and opens a working side p
     const preview = await context.newPage();
     await preview.goto(`chrome-extension://${extension.id}/sidepanel.html`);
     await expect(
-      preview.getByRole("heading", { name: "De la web a un ticket" }),
+      preview.getByRole("heading", { name: /Imágenes del ticket/ }),
     ).toBeVisible();
     await preview.setViewportSize({ width: 320, height: 800 });
     expect(
@@ -162,34 +163,44 @@ test("real toolbar action grants only the chosen page and opens a working side p
     panel.on("request", (request) => {
       if (/^https?:/.test(request.url())) requests.push(request.url());
     });
-    await panel.getByRole("button", { name: "Comprobar página" }).click();
     await expect(
-      panel.getByRole("heading", { name: "Página comprobada" }),
+      panel.getByRole("button", { name: "Subir imágenes" }),
     ).toBeVisible();
-    await expect(panel.getByRole("definition").first()).toHaveText(fixtureUrl);
+    await expect(
+      panel.getByRole("button", { name: "Capturar página" }),
+    ).toHaveCount(0);
+    await expect(
+      panel.getByRole("button", { name: "Comprobar página" }),
+    ).toHaveCount(0);
     expect(await panel.locator("body").innerText()).not.toMatch(/PRIVATE-/);
     expect(
-      await panel.evaluate(
-        () => document.documentElement.scrollWidth <= innerWidth,
+      await worker.evaluate(
+        "chrome.tabs.query({active:true,lastFocusedWindow:true}).then(t => t[0].url ?? null)",
       ),
-    ).toBe(true);
+    ).toBeNull();
+    for (const message of [
+      { version: 1, type: "inspect-active-tab" },
+      { version: 1, type: "capture", mode: "viewport" },
+    ]) {
+      expect(
+        await panel.evaluate(
+          (request) =>
+            (
+              globalThis as unknown as {
+                chrome: {
+                  runtime: { sendMessage: (v: unknown) => Promise<unknown> };
+                };
+              }
+            ).chrome.runtime.sendMessage(request),
+          message,
+        ),
+      ).toEqual({ ok: false, code: "invalid-message" });
+    }
     expect(requests).toEqual([]);
     await panel.screenshot({
       path: testInfo.outputPath("sidepanel.png"),
       fullPage: true,
     });
-    await panel.getByRole("button", { name: "Borrar comprobación" }).click();
-    await expect(
-      panel.getByRole("heading", { name: "Página comprobada" }),
-    ).toHaveCount(0);
-
-    // Different origin loses the old page grant; never silently widen access.
-    await page.goto("about:blank");
-    await panel.getByRole("button", { name: "Comprobar página" }).click();
-    await expect(panel.getByRole("alert")).toBeVisible();
-    await expect(
-      panel.getByRole("heading", { name: "Página comprobada" }),
-    ).toHaveCount(0);
     expect(errors).toEqual([]);
     await testInfo.attach("browser-version", {
       body: Buffer.from(JSON.stringify(await cdp.send("Browser.getVersion"))),

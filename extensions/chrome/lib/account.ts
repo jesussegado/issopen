@@ -26,6 +26,7 @@ export const accountResponseSchema = z.union([
       expiresAt: z.iso.datetime(),
       canWrite: z.boolean().optional(),
       apiVersion: z.number().optional(),
+      maxImages: z.number().int().min(1).max(5).optional(),
       ownerId: z.string().optional(),
       workspaceId: z.uuid().optional(),
       projects: z.array(z.object({ id: z.uuid(), name: z.string().max(120) })),
@@ -55,6 +56,7 @@ const sessionSchema = z.object({
   expiresAt: z.iso.datetime(),
   canWrite: z.boolean().optional(),
   apiVersion: z.number().optional(),
+  maxImages: z.number().int().min(1).max(5).optional(),
   ownerId: z.string().optional(),
   workspaceId: z.uuid().optional(),
 });

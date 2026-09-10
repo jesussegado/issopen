@@ -2,6 +2,8 @@ import { z } from "zod";
 
 export const captureApiVersion = 1;
 export const maximumPngBytes = 8 * 1024 * 1024;
+export const maximumImages = 5;
+export const maximumImagePixels = 32_000_000;
 export const maximumRequestBytes = 12 * 1024 * 1024;
 export const captureModeSchema = z.enum([
   "crop",
@@ -221,7 +223,13 @@ export const viewportSchema = z
   .strict();
 export const captureMetadataSchema = z
   .object({
-    mode: captureModeSchema,
+    mode: z.enum([...captureModeSchema.options, "upload"]),
+    attachmentIndex: z
+      .number()
+      .int()
+      .min(0)
+      .max(maximumImages - 1)
+      .optional(),
     url: z
       .string()
       .max(2048)
@@ -241,6 +249,22 @@ export const pngDataUrlSchema = z
   .string()
   .max(Math.ceil(maximumPngBytes / 3) * 4 + 22)
   .regex(/^data:image\/png;base64,[A-Za-z0-9+/]+={0,2}$/);
+export function pngBytes(image: string) {
+  const encoded = image.slice(22);
+  return (
+    Math.floor((encoded.length * 3) / 4) -
+    (encoded.endsWith("==") ? 2 : encoded.endsWith("=") ? 1 : 0)
+  );
+}
+export const imagesSchema = z
+  .array(pngDataUrlSchema)
+  .max(maximumImages)
+  .refine(
+    (images) =>
+      images.reduce((total, image) => total + pngBytes(image), 0) <=
+      maximumPngBytes,
+    "Images exceed the total attachment limit",
+  );
 export const captureSubmissionSchema = z
   .object({
     version: z.literal(1),
@@ -259,8 +283,13 @@ export const captureSubmissionSchema = z
     ]),
     metadata: captureMetadataSchema.nullable(),
     image: pngDataUrlSchema.nullable(),
+    images: imagesSchema.optional(),
   })
-  .strict();
+  .strict()
+  .refine(
+    (value) => !value.image || value.images === undefined,
+    "Use image or images, not both",
+  );
 export type CaptureSubmission = z.infer<typeof captureSubmissionSchema>;
 export function structuralSelector(element: ElementDescriptor) {
   return element.path

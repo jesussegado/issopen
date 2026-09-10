@@ -332,6 +332,7 @@ export function createExtensionRouter(
       name: person?.name ?? "Issopen",
       expiresAt: c.get("expiresAt"),
       apiVersion: 1,
+      maxImages: 5,
       canWrite: c.get("canWrite"),
       ownerId: c.get("ownerId"),
       workspaceId: c.get("workspaceId"),

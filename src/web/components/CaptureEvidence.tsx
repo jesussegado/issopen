@@ -48,9 +48,9 @@ export function CaptureEvidence({ issueId }: { issueId: string }) {
   return (
     <section
       className="detail-panel capture-evidence"
-      aria-label="Chrome capture evidence"
+      aria-label="Ticket images and evidence"
     >
-      <h2>Chrome capture evidence</h2>
+      <h2>Images and evidence ({rows.length})</h2>
       {error && (
         <p role="alert">
           Evidence could not be loaded.{" "}
@@ -59,7 +59,7 @@ export function CaptureEvidence({ issueId }: { issueId: string }) {
           </button>
         </p>
       )}
-      {rows.map((row) => (
+      {rows.map((row, index) => (
         <article key={row.id}>
           <p className="metadata">
             Private · Chrome extension ·{" "}
@@ -70,18 +70,18 @@ export function CaptureEvidence({ issueId }: { issueId: string }) {
               <a href={row.imageUrl} target="_blank" rel="noreferrer">
                 <img
                   src={row.imageUrl}
-                  alt="Reviewed screenshot attached to this issue"
+                  alt={`Attachment ${index + 1} for this issue`}
                   loading="lazy"
                 />
               </a>
               <p>
                 <a href={`${row.imageUrl}?download=1`}>
-                  Download reviewed PNG ({Math.ceil(row.bytes / 1024)} KiB)
+                  Download image {index + 1} ({Math.ceil(row.bytes / 1024)} KiB)
                 </a>
               </p>
             </>
           )}
-          {row.metadata && (
+          {row.metadata && row.metadata.mode !== "upload" && (
             <dl>
               <dt>Mode</dt>
               <dd>{row.metadata.mode}</dd>

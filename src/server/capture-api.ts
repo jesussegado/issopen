@@ -4,6 +4,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import {
   captureSubmissionSchema,
+  maximumPngBytes,
   maximumRequestBytes,
 } from "../shared/capture-contract.js";
 import type { OwnerSession } from "./auth.js";
@@ -281,24 +282,49 @@ export function createCaptureRouter(
             priority: input.priority,
             status: input.status,
           });
-          let file: Awaited<ReturnType<CaptureStorage["write"]>> | undefined;
-          if (input.image) {
+          const images = input.images ?? (input.image ? [input.image] : []);
+          if (images.length) {
             if (!storage) throw new CaptureError("storage", 503);
             await tx.execute(
               sql`select pg_advisory_xact_lock(hashtextextended('chrome-attachment-storage', 0))`,
             );
-            file = await storage.write(await normalizePng(input.image));
+            // Normalize/write sequentially under the shared quota lock. A failure
+            // rolls back every DB row and the receipt, never a partial ticket.
+            const normalized: Buffer[] = [];
+            let bytes = 0;
+            for (const image of images) {
+              const png = await normalizePng(image);
+              bytes += png.length;
+              if (bytes > maximumPngBytes) throw new CaptureError("size", 413);
+              normalized.push(png);
+            }
+            for (const [index, image] of normalized.entries()) {
+              const file = await storage.write(image);
+              await tx.insert(captureEvidence).values({
+                id: randomUUID(),
+                workspaceId: ctx.workspaceId,
+                ownerId: ctx.actor.id,
+                issueId: created.id,
+                metadata: input.images
+                  ? {
+                      ...(index === 0 ? input.metadata : null),
+                      mode: "upload",
+                      attachmentIndex: index,
+                    }
+                  : input.metadata,
+                ...file,
+              });
+            }
             // Never remove on uncertain commit: aged unreferenced files are GC'd by
             // the operator, so a successfully committed receipt cannot lose pixels.
           }
-          if (input.metadata || file)
+          if (input.metadata && !images.length)
             await tx.insert(captureEvidence).values({
               id: randomUUID(),
               workspaceId: ctx.workspaceId,
               ownerId: ctx.actor.id,
               issueId: created.id,
               metadata: input.metadata,
-              ...file,
             });
           return {
             issue: {
@@ -341,6 +367,11 @@ export function createEvidenceRouter(db: Database, storage?: CaptureStorage) {
           eq(captureEvidence.issueId, issueId),
           eq(captureEvidence.workspaceId, space.id),
         ),
+      )
+      .orderBy(
+        sql`coalesce(${captureEvidence.metadata}->>'attachmentIndex', '0')`,
+        captureEvidence.createdAt,
+        captureEvidence.id,
       );
     c.header("Cache-Control", "private, no-store");
     return c.json({

@@ -27,10 +27,11 @@ export default defineConfig({
   manifest: ({ mode }) => ({
     name: "Issopen",
     description:
-      "Crea tickets con capturas revisadas y DOM saneado en tus proyectos y Epics de Issopen.",
+      "Pega o sube imágenes y crea tickets en tus proyectos y Epics de Issopen.",
     minimum_chrome_version: "116",
     incognito: "not_allowed",
-    permissions: ["activeTab", "scripting", "sidePanel", "identity", "storage"],
+    permissions: ["sidePanel", "identity", "storage"],
+    optional_permissions: ["clipboardRead"],
     host_permissions: [`${instance.origin}/*`],
     action: { default_title: "Abrir Issopen" },
     commands: {

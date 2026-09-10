@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   captureMetadataSchema,
   captureSubmissionSchema,
+  imagesSchema,
   pngDataUrlSchema,
 } from "../../../src/shared/capture-contract";
 import { ticketRequestSchema } from "./tickets";
@@ -9,8 +10,10 @@ export const reviewedEvidenceSchema = z
   .object({
     image: pngDataUrlSchema.nullable(),
     metadata: captureMetadataSchema.nullable(),
+    images: imagesSchema.optional(),
   })
-  .strict();
+  .strict()
+  .refine((value) => !value.image || value.images === undefined);
 export type ReviewedEvidence = z.infer<typeof reviewedEvidenceSchema>;
 export const draftSchema = z
   .object({

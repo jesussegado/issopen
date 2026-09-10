@@ -58,9 +58,6 @@ beforeEach(() => {
   background.main();
   listener = mocks.addListener.mock.calls[0]?.[0] as Listener;
 });
-function inspect(): Promise<InspectResponse> {
-  return new Promise((resolve) => listener(request, sender, resolve));
-}
 
 describe("service worker inspection", () => {
   it("opens the panel synchronously within the toolbar gesture, without reading the page", () => {
@@ -76,13 +73,6 @@ describe("service worker inspection", () => {
       openPanelOnActionClick: false,
     });
     expect(mocks.query).not.toHaveBeenCalled();
-  });
-  it("inspects only the active top frame through a bundled script", async () => {
-    expect(await inspect()).toEqual({ ok: true, context });
-    expect(mocks.executeScript).toHaveBeenCalledWith({
-      target: { tabId: 7, frameIds: [0] },
-      files: ["/content-scripts/page.js"],
-    });
   });
   it("ignores page/content-script senders, unknown extension pages and agents", () => {
     const respond = vi.fn();
@@ -106,41 +96,19 @@ describe("service worker inspection", () => {
     });
     expect(mocks.query).not.toHaveBeenCalled();
   });
-  it("requires activeTab and rejects private or restricted pages", async () => {
-    for (const [input, code] of [
-      [[], "permission-required"],
-      [[{ id: 7 }], "permission-required"],
-      [[{ ...tab, incognito: true }], "unsupported-page"],
-      [[{ ...tab, url: "chrome://settings" }], "unsupported-page"],
-    ] as const) {
-      mocks.query.mockResolvedValue(input);
-      expect(await inspect()).toEqual({ ok: false, code });
-    }
-    expect(mocks.executeScript).not.toHaveBeenCalled();
-  });
-  it("discards a response after navigation or a tab switch", async () => {
-    for (const changed of [
-      { ...tab, url: "https://example.test/other" },
-      { ...tab, active: false },
+  it("rejects all retired capture and inspection requests without reading pages", () => {
+    for (const request of [
+      { version: 1, type: "inspect-active-tab" },
+      { version: 1, type: "capture", mode: "viewport" },
     ]) {
-      mocks.get.mockResolvedValue(changed);
-      expect(await inspect()).toEqual({ ok: false, code: "page-changed" });
+      const respond = vi.fn();
+      expect(listener(request, sender, respond)).toBe(false);
+      expect(respond).toHaveBeenCalledWith({
+        ok: false,
+        code: "invalid-message",
+      });
     }
-  });
-  it("rejects corrupted payloads and mismatched origins", async () => {
-    mocks.executeScript.mockResolvedValue([
-      { result: { ...context, dom: "private" } },
-    ]);
-    expect(await inspect()).toEqual({ ok: false, code: "unavailable" });
-    mocks.executeScript.mockResolvedValue([
-      { result: { ...context, origin: "https://other.test" } },
-    ]);
-    expect(await inspect()).toEqual({ ok: false, code: "page-changed" });
-  });
-  it("never returns raw browser errors containing private context", async () => {
-    mocks.executeScript.mockRejectedValue(
-      new Error("private URL or credential"),
-    );
-    expect(await inspect()).toEqual({ ok: false, code: "permission-required" });
+    expect(mocks.query).not.toHaveBeenCalled();
+    expect(mocks.executeScript).not.toHaveBeenCalled();
   });
 });

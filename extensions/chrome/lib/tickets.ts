@@ -100,8 +100,8 @@ export const ticketErrors: Record<z.infer<typeof ticketErrorSchema>, string> = {
   permission:
     "Reconecta Issopen y autoriza crear tickets. La conexión anterior sólo permitía lectura.",
   validation:
-    "Revisa los campos y la captura: el servidor rechazó el contenido.",
-  size: "La captura supera los límites (8 MiB / 32 megapíxeles). Recorta o excluye la imagen.",
+    "Revisa los campos y las imágenes: el servidor rechazó el contenido.",
+  size: "Las imágenes superan los límites (5 imágenes, 8 MiB en total y 32 megapíxeles por imagen). Reduce su tamaño o quita alguna.",
   quota:
     "El almacenamiento está lleno. Tu borrador se conserva; pide revisar la cuota.",
   storage:

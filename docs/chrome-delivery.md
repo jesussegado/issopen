@@ -1,4 +1,48 @@
-# Chrome 0.4 — captura a ticket, operación y seguridad
+# Chrome 0.5 — imágenes a ticket, operación y seguridad
+
+## Cambio vigente: pegar/subir imágenes (ticket 51)
+
+Petición explícita del owner: reemplazar captura, inspector y editor internos
+por Ctrl+V/CmdV, Pegar imagen y Subir imágenes (múltiple), con miniaturas/quitar.
+PNG/JPEG/WebP estáticos se decodifican y convierten localmente a PNG sin EXIF.
+Hasta 5 imágenes y 8 MiB agregados normalizados; también 8 MiB por archivo de
+entrada y 32 MP por imagen antes de decodificar. No SVG/GIF/animaciones.
+El usuario prepara/oculta información con una herramienta externa.
+
+No activeTab ni scripting. El worker rechaza captura/inspección y no lee webs.
+El pegado nativo consume sólo imágenes del evento del usuario; el texto conserva
+su comportamiento. El botón solicita clipboardRead opcional por gesto y muestra
+fallback a Ctrl+V/archivos si se deniega. No lectura automática ni de HTML/enlaces.
+Los archivos elegidos se incorporan al único borrador local 24 h; no hay
+confirmación separada. No hay red hasta Enviar ticket.
+
+API v1 añade `images?: PNG[]` (máximo 5, 8 MiB agregados), excluyente con
+`image` legacy. Los envíos pendientes antiguos se reintentan sin modificar el
+payload/hash; no añadir defaults. `/session.maxImages:5` anuncia capacidad;
+extensión nueva con servidor anterior limita el envío a una imagen.
+Desplegar servidor antes de recargar la extensión.
+
+Normalización PNG, autorización, cuota y recibos conservan los controles abajo.
+Un lote inválido no crea parte del ticket. Cada imagen crea una fila existente
+de evidencia, con metadata `mode:upload, attachmentIndex:0..4` para el orden.
+No migración DB, nuevo volumen ni permisos OAuth. Web muestra todas las imágenes
+privadas y mantiene lectura de evidencias históricas.
+
+Rollback: sólo imagen/digest por GitOps, conservando DB/recibos/ambos PVCs.
+El binario antiguo puede no mostrar metadata upload, aunque no borra adjuntos.
+No bajar la extensión a 0.4.3 con borrador multiimagen o envío pendiente:
+el parser antiguo puede descartarlo. Resolver/exportar primero y mantener ruta/ID.
+No se afirma compatibilidad de downgrade de ese borrador.
+
+Validación 0.5: selección PNG/JPEG/WebP, Ctrl+V nativo, texto pegado intacto,
+miniaturas/quitar, recarga del borrador, errores de lote/size y panel 320/400 px.
+Ramas del botón con permiso/vacío usan fixture explícito. OAuth E2E envía dos
+imágenes, pierde respuesta tras commit, recarga y reintenta sin duplicar;
+descarga owner y rechazo anónimo verificados. Integración comprueba cinco
+imágenes atómicas, orden, reintentos y rechazo sin filas parciales.
+Los tests unitarios de helpers de captura legacy no significan que siga esa UI.
+
+## Entrega histórica 0.4 y contrato operativo conservado
 
 Contrato del Epic 1 (19–33), derivado de sus respuestas aprobadas. La aceptación
 personal del owner en 33 es independiente de las pruebas técnicas. No amplía

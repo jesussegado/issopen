@@ -47,7 +47,10 @@ export function Capture({
           origin: initialEvidence.metadata?.url
             ? new URL(initialEvidence.metadata.url).origin
             : "Borrador revisado",
-          mode: initialEvidence.metadata?.mode ?? "viewport",
+          mode:
+            initialEvidence.metadata?.mode === "upload"
+              ? "viewport"
+              : (initialEvidence.metadata?.mode ?? "viewport"),
           ...(initialEvidence.metadata
             ? { metadata: initialEvidence.metadata }
             : {}),

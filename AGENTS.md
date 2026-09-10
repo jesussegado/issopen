@@ -29,6 +29,17 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+- Chrome 0.5 (ticket 51): petición del owner de sustituir captura/DOM/editor por
+  pegar Ctrl+V o subir hasta cinco imágenes externas. PNG/JPEG/WebP estáticos
+  convertidos localmente a PNG, 8 MiB agregados, 32 MP por imagen; miniaturas y
+  borrador 24 h. Sin activeTab/scripting ni lecturas de página. ClipboardRead
+  opcional sólo al pulsar Pegar imagen. Cuenta continúa en diálogo.
+  API v1 admite image legacy O images, conserva recibos y acepta borradores
+  pendientes antiguos. No hay migración DB nueva; sí release de backend.
+  Guía actual en [extensión](extensions/chrome/AGENTS.md) y
+  [entrega](docs/chrome-delivery.md). No reinstalar/downgradear con un borrador
+  nuevo pendiente: 0.4.3 puede descartarlo. El siguiente bloque 0.4 es histórico.
+
 - Chrome 0.4 implementa el flujo captura → ticket: selección DOM estructural,
   revisión/exclusión, proyecto y Epic inline, evidencia privada y borrador
   IndexedDB de 24 h con reintento idempotente. Contrato común en
@@ -569,7 +580,7 @@ dentro de un único flujo trazable.
 | WXT | `0.21.4` | Build, entrypoints, manifest y packaging | Target único MV3/Chromium en v1 |
 | `@wxt-dev/module-react` | `1.2.2` | React dentro de popup/editor/content UI | React exacto compartido con web |
 | Manifest | `manifest_version: 3` | Service worker y content scripts | Nada de background page persistente ni código remoto |
-| Chrome APIs | `activeTab`, `scripting`, `tabs.captureVisibleTab`, `identity.launchWebAuthFlow` | Captura iniciada por gesto y login | No pedir `<all_urls>` por defecto |
+| Chrome APIs | `sidePanel`, `identity`, `storage`, `clipboardRead` opcional | Imágenes externas por gesto y login (0.5) | Sin acceso a webs ni lectura automática del clipboard |
 ### PostgreSQL, ORM y migraciones
 | Tecnología | Baseline exacto | Uso | Regla |
 |---|---:|---|---|

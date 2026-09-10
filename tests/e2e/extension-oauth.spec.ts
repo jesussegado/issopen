@@ -173,48 +173,29 @@ test("Chrome completes real identity consent and disconnects without exposing to
       .getByLabel("Proyecto", { exact: true })
       .inputValue();
     const epicId = await panel.getByLabel("Epic", { exact: true }).inputValue();
-    await page.route("**/capture-fixture", (route) =>
-      route.fulfill({
-        contentType: "text/html",
-        body: '<html><body style="margin:0;background:white;min-height:1800px"><button id="pick" title="PRIVATE-DOM-DECOY" style="margin:150px 50px;width:160px;height:50px">Synthetic visual target</button><input value="PRIVATE-FORM-DECOY"></body></html>',
-      }),
+    const files = await panel.evaluate(() => {
+      const canvas = document.createElement("canvas");
+      canvas.width = 80;
+      canvas.height = 60;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw Error();
+      return ["black", "red"].map((color) => {
+        ctx.fillStyle = color;
+        ctx.fillRect(0, 0, 80, 60);
+        return canvas.toDataURL("image/png");
+      });
+    });
+    await panel.getByLabel("Seleccionar imágenes").setInputFiles(
+      files.map((data, index) => ({
+        name: `fixture-${index}.png`,
+        mimeType: "image/png",
+        buffer: Buffer.from(data.split(",")[1] ?? "", "base64"),
+      })),
     );
-    await page.goto(`${e2eBaseUrl}/capture-fixture`);
-    await page.bringToFront();
-    await panel.getByLabel("Modo", { exact: true }).selectOption("element");
-    await panel
-      .getByRole("button", { name: "Capturar página", exact: true })
-      .click();
-    await expect
-      .poll(() => page.evaluate(() => document.activeElement?.tagName))
-      .toBe("DIV");
-    await page.locator("#pick").hover();
-    await page.keyboard.press("Enter");
+    await expect(panel.getByAltText("Imagen adjunta 2")).toBeVisible();
     await expect(
-      panel.getByLabel("Previsualización de captura local"),
-    ).toHaveAttribute("aria-busy", "false");
-    // Opening account details must not remount the editor or lose unreviewed pixels.
-    const canvas = panel.getByLabel("Previsualización de captura local");
-    const beforeAccount = await canvas.evaluate((el: HTMLCanvasElement) =>
-      el.toDataURL(),
-    );
-    await accountButton.click();
-    await panel.keyboard.press("Escape");
-    await expect(accountDialog).toBeHidden();
-    expect(
-      await canvas.evaluate((el: HTMLCanvasElement) => el.toDataURL()),
-    ).toBe(beforeAccount);
-    await panel.getByLabel("X", { exact: true }).fill("0");
-    await panel.getByLabel("Y", { exact: true }).fill("0");
-    await panel.getByLabel("Ancho", { exact: true }).fill("40");
-    await panel.getByLabel("Alto", { exact: true }).fill("40");
-    await panel.getByRole("button", { name: "Aplicar ocultación" }).click();
-    await expect(
-      panel.getByLabel("Previsualización de captura local"),
-    ).toHaveAttribute("aria-busy", "false");
-    await panel
-      .getByRole("button", { name: "Confirmar captura revisada" })
-      .click();
+      panel.getByRole("status").filter({ hasText: "2 imágenes añadidas" }),
+    ).toBeVisible();
     await panel
       .getByLabel("Título", { exact: true })
       .fill("Reviewed Chrome E2E capture");
@@ -222,7 +203,7 @@ test("Chrome completes real identity consent and disconnects without exposing to
       .getByLabel("Descripción", { exact: true })
       .fill("Synthetic evidence only");
     const reviewed = await panel
-      .getByAltText("Imagen final revisada para enviar")
+      .getByAltText("Imagen adjunta 1")
       .getAttribute("src");
     const destination = await panel
       .getByLabel("Proyecto", { exact: true })
@@ -247,9 +228,10 @@ test("Chrome completes real identity consent and disconnects without exposing to
     await expect(panel.getByLabel("Epic", { exact: true })).toHaveValue(
       epicDestination,
     );
-    await expect(
-      panel.getByAltText("Imagen final revisada para enviar"),
-    ).toHaveAttribute("src", reviewed ?? "");
+    await expect(panel.getByAltText("Imagen adjunta 1")).toHaveAttribute(
+      "src",
+      reviewed ?? "",
+    );
     const worker = context.serviceWorkers()[0];
     if (!worker) throw new Error("Missing extension worker");
     await worker.evaluate(
@@ -266,9 +248,10 @@ test("Chrome completes real identity consent and disconnects without exposing to
     await expect(
       panel.getByRole("button", { name: "Reintentar envío", exact: true }),
     ).toBeEnabled();
-    await expect(
-      panel.getByAltText("Imagen final revisada para enviar"),
-    ).toHaveAttribute("src", reviewed ?? "");
+    await expect(panel.getByAltText("Imagen adjunta 1")).toHaveAttribute(
+      "src",
+      reviewed ?? "",
+    );
     await panel
       .getByRole("button", { name: "Reintentar envío", exact: true })
       .click();
@@ -283,17 +266,18 @@ test("Chrome completes real identity consent and disconnects without exposing to
     expect(JSON.stringify(payloads)).not.toContain("PRIVATE-");
     expect(payloads[0]?.projectId).toBe(projectId);
     expect(payloads[0]?.epicId).toBe(epicId);
-    expect(payloads[0]?.image).toBe(reviewed);
+    expect(payloads[0]?.image).toBeNull();
+    expect(payloads[0]?.images).toHaveLength(2);
+    expect(payloads[0]?.images?.[0]).toBe(reviewed);
+    expect(payloads[0]?.metadata).toBeNull();
     const issueUrl = await panel
       .getByRole("link", { name: "Abrir ticket en Issopen" })
       .getAttribute("href");
     await page.goto(issueUrl ?? "");
     await expect(
-      page.getByRole("heading", { name: "Chrome capture evidence" }),
+      page.getByRole("heading", { name: "Images and evidence (2)" }),
     ).toBeVisible();
-    const image = page.getByAltText(
-      "Reviewed screenshot attached to this issue",
-    );
+    const image = page.getByAltText("Attachment 1 for this issue");
     await expect
       .poll(() =>
         image.evaluate(
@@ -311,10 +295,21 @@ test("Chrome completes real identity consent and disconnects without exposing to
       return Array.from(ctx.getImageData(10, 10, 1, 1).data);
     });
     expect(black).toEqual([0, 0, 0, 255]);
-    await page.getByText("Sanitized DOM", { exact: false }).click();
-    await expect(page.locator(".capture-evidence pre")).toContainText(
-      "<button>",
-    );
+    await expect(
+      page.getByAltText("Attachment 2 for this issue"),
+    ).toBeVisible();
+    const secondUrl = await page
+      .getByAltText("Attachment 2 for this issue")
+      .getAttribute("src");
+    const anonymous = await chromium.launch();
+    try {
+      const guest = await anonymous.newContext();
+      expect(
+        (await guest.request.get(`${e2eBaseUrl}${secondUrl}`)).status(),
+      ).toBe(401);
+    } finally {
+      await anonymous.close();
+    }
     const issues = await context.request.get(
       `${e2eBaseUrl}/api/v1/projects/${projectId}/issues`,
     );

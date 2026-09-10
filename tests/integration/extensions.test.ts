@@ -191,6 +191,98 @@ function readSession(tokens: Tokens) {
 }
 
 describe("human Chrome OAuth", () => {
+  it("stores several private images in one atomic ticket, preserving order and idempotency", async () => {
+    const { tokens } = await connect(true);
+    expect(await (await readSession(tokens)).json()).toMatchObject({
+      apiVersion: 1,
+      maxImages: 5,
+    });
+    const post = (path: string, body: unknown, access = tokens.access_token) =>
+      app.request(`/api/extension/v1${path}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${access}`,
+          Origin: origin,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+    const p = await (
+      await post("/projects", {
+        name: "Uploaded images",
+        idempotencyKey: randomUUID(),
+      })
+    ).json();
+    const image = `data:image/png;base64,${syntheticPng(true).toString("base64")}`;
+    const body = {
+      version: 1,
+      idempotencyKey: randomUUID(),
+      projectId: p.project.id,
+      epicId: null,
+      title: "Five external images",
+      description: "Synthetic only",
+      priority: "medium",
+      status: "backlog",
+      metadata: null,
+      image: null,
+      images: Array.from({ length: 5 }, () => image),
+    };
+    const responses = await Promise.all([
+      post("/captures", body),
+      post("/captures", body),
+    ]);
+    expect(responses.map((r) => r.status)).toEqual([201, 201]);
+    const created = await responses[0]?.json();
+    expect(await responses[1]?.json()).toEqual(created);
+    const evidence = await (
+      await app.request(`/api/v1/issues/${created.issue.id}/evidence`, {
+        headers: headers(),
+      })
+    ).json();
+    expect(evidence.evidence).toHaveLength(5);
+    expect(
+      evidence.evidence.map(
+        (e: { metadata: { attachmentIndex: number } }) =>
+          e.metadata.attachmentIndex,
+      ),
+    ).toEqual([0, 1, 2, 3, 4]);
+    for (const row of evidence.evidence) {
+      expect(row.fileKey).toBeUndefined();
+      expect((await app.request(row.imageUrl)).status).toBe(401);
+      const response = await app.request(row.imageUrl, { headers: headers() });
+      expect(Buffer.from(await response.arrayBuffer())).toEqual(syntheticPng());
+    }
+    for (const input of [
+      { ...body, image },
+      { ...body, images: Array.from({ length: 6 }, () => image) },
+      { ...body, images: [image, "data:image/png;base64,PHN2Zy8+"] },
+    ]) {
+      expect(
+        (await post("/captures", { ...input, idempotencyKey: randomUUID() }))
+          .status,
+      ).toBe(400);
+      expect(await connection.db.select().from(issue)).toHaveLength(1);
+      expect(await connection.db.select().from(captureEvidence)).toHaveLength(
+        5,
+      );
+      expect(await connection.db.select().from(extensionReceipt)).toHaveLength(
+        2,
+      );
+    }
+    const reconnected = await connect(true);
+    expect(
+      await (
+        await post("/captures", body, reconnected.tokens.access_token)
+      ).json(),
+    ).toEqual(created);
+    expect((await post("/captures", { ...body, images: [image] })).status).toBe(
+      409,
+    );
+    const readOnly = await connect();
+    expect(
+      (await post("/captures", body, readOnly.tokens.access_token)).status,
+    ).toBe(403);
+  });
   it("creates project/Epic/capture atomically, attributes human Chrome and replays without duplicate after reauthorization", async () => {
     const { tokens } = await connect(true);
     const post = (path: string, body: unknown, access = tokens.access_token) =>
