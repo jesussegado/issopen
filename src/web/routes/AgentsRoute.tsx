@@ -26,7 +26,7 @@ const scopeLabels: Record<AgentScope, string> = {
   "issues:claim": "Claim or release work",
   "issues:write": "Edit issue fields",
   "code:link": "Link code results",
-  "issues:review": "Move work through Ready for Review",
+  "issues:review": "Move work through Ready for Human Review",
   "issues:close": "Close issues",
   "epics:create": "Create Epics (explicit opt-in)",
   "epics:write": "Edit Epics (explicit opt-in)",

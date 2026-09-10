@@ -140,6 +140,8 @@ type ProjectFormState = {
   repositoryUrl: string;
   defaultBranch: string;
   repositorySubdirectory: string;
+  showReviewColumn: boolean;
+  showDoneColumn: boolean;
 };
 
 const emptyProject: ProjectFormState = {
@@ -149,6 +151,8 @@ const emptyProject: ProjectFormState = {
   repositoryUrl: "",
   defaultBranch: "",
   repositorySubdirectory: "",
+  showReviewColumn: true,
+  showDoneColumn: true,
 };
 
 export function ProjectFormRoute({
@@ -184,6 +188,8 @@ export function ProjectFormRoute({
           repositoryUrl: project.repositoryUrl ?? "",
           defaultBranch: project.defaultBranch ?? "",
           repositorySubdirectory: project.repositorySubdirectory ?? "",
+          showReviewColumn: project.showReviewColumn,
+          showDoneColumn: project.showDoneColumn,
         }),
       )
       .catch((error) =>
@@ -212,6 +218,8 @@ export function ProjectFormRoute({
       repositoryUrl: nullable(form.repositoryUrl),
       defaultBranch: nullable(form.defaultBranch),
       repositorySubdirectory: nullable(form.repositorySubdirectory),
+      showReviewColumn: form.showReviewColumn,
+      showDoneColumn: form.showDoneColumn,
       ...(!editing ? { key: form.key } : {}),
     };
     try {
@@ -271,6 +279,40 @@ export function ProjectFormRoute({
             }
           />
         </Field>
+        <fieldset className="field-group">
+          <legend>Board columns</legend>
+          <p>
+            Choose which completion columns appear on this project's board.
+            Hidden tickets keep their status and remain available by direct
+            link.
+          </p>
+          <label className="check-row">
+            <input
+              type="checkbox"
+              checked={form.showReviewColumn}
+              onChange={(event) =>
+                update("showReviewColumn", event.currentTarget.checked)
+              }
+            />{" "}
+            <strong>Show Ready for Human Review</strong>
+            <span className="field-helper">
+              Show work waiting for a person's review.
+            </span>
+          </label>
+          <label className="check-row">
+            <input
+              type="checkbox"
+              checked={form.showDoneColumn}
+              onChange={(event) =>
+                update("showDoneColumn", event.currentTarget.checked)
+              }
+            />{" "}
+            <strong>Show Done</strong>
+            <span className="field-helper">
+              Show completed work on the active board.
+            </span>
+          </label>
+        </fieldset>
         <fieldset className="field-group">
           <legend>Repository context</legend>
           <p>

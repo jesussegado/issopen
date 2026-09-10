@@ -588,6 +588,14 @@ progress {
   gap: 16px;
   min-width: 1120px;
 }
+.board-columns-4 {
+  grid-template-columns: repeat(4, minmax(208px, 1fr));
+  min-width: 896px;
+}
+.board-columns-3 {
+  grid-template-columns: repeat(3, minmax(208px, 1fr));
+  min-width: 672px;
+}
 .board-column {
   min-width: 0;
 }
@@ -1061,7 +1069,9 @@ progress {
   .board-region {
     overflow: visible;
   }
-  .board {
+  .board,
+  .board-columns-4,
+  .board-columns-3 {
     display: grid;
     min-width: 0;
     grid-template-columns: 1fr;

@@ -1030,7 +1030,7 @@ describe("stateless Issopen MCP", () => {
     });
     expect(blockedReview.isError).toBe(true);
     expect(JSON.stringify(blockedReview)).toContain(
-      "Answer all blocking questions before moving this issue to Ready for Review",
+      "Answer all blocking questions before moving this issue to Ready for Human Review",
     );
     expect((await tracker.getIssue(workspaceId, createdIssue.id)).status).toBe(
       "backlog",

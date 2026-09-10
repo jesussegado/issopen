@@ -78,6 +78,8 @@ export const createProjectSchema = z
     repositoryUrl: repositoryUrlSchema.nullable().optional(),
     defaultBranch: optionalBoundedText(255),
     repositorySubdirectory: repositorySubdirectorySchema.nullable().optional(),
+    showReviewColumn: z.boolean().default(true),
+    showDoneColumn: z.boolean().default(true),
   })
   .strict();
 
@@ -88,6 +90,8 @@ export const updateProjectSchema = z
     repositoryUrl: repositoryUrlSchema.nullable().optional(),
     defaultBranch: optionalBoundedText(255),
     repositorySubdirectory: repositorySubdirectorySchema.nullable().optional(),
+    showReviewColumn: z.boolean().optional(),
+    showDoneColumn: z.boolean().optional(),
   })
   .strict()
   .refine((value) => Object.keys(value).length > 0, "No changes supplied");

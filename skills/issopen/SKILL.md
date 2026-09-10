@@ -23,7 +23,8 @@ con otras credenciales. Si falta conexión, explica cómo prepararla con
   Sigue el flujo de [planificación](references/planning.md).
 - **Ejecución** («implementa este ticket», «sigue implementando»): valida el
   proyecto/Epic/repositorio, respuestas y dependencias; reclama el Ready elegido,
-  implementa y verifica antes de entregar Ready for Review con evidencia.
+  implementa y verifica antes de entregar Ready for Human Review
+  (`ready_for_review`) con evidencia.
   Done requiere tanto permiso de cierre como autorización humana explícita.
   Sigue [ejecución y entrega](references/execution.md), incluida la liberación del claim.
 

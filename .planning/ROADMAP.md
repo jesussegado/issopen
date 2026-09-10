@@ -41,7 +41,7 @@ hasta que su gate y sus criterios de éxito sean verificables.
   1. An operator can use one documented Docker Compose procedure to start or resume a private Issopen with PostgreSQL persistence, bootstrap exactly one owner, open its responsive web interface from a normal desktop or mobile browser, and find no anonymous tracker or MCP access.
   2. The owner can create a project with lightweight repository context, create and prioritize issues, move them through the five fixed semantic states, and see each accepted mutation in a minimal server-attributed activity chronology.
   3. The owner can add Issopen as a personal ChatGPT plugin, complete the required authenticated flow, and ask ChatGPT to list, inspect, and update only the private project's tickets.
-  4. The owner can create and revoke a separate, hashed token for a named code-agent identity; that agent can claim an issue, update permitted fields, link a branch, commit, or pull request, and move it to Ready for Review without replacing the human owner or gaining implicit close permission.
+  4. The owner can create and revoke a separate, hashed token for a named code-agent identity; that agent can claim an issue, update permitted fields, link a branch, commit, or pull request, and move it to Ready for Human Review (`ready_for_review`) without replacing the human owner or gaining implicit close permission.
   5. Using Issopen's own board, ChatGPT prioritizes a real Issopen improvement, the selected external code agent returns its repository result, and the owner reviews and accepts or rejects it while Issopen never edits code, runs CI, merges, or deploys.
 **Plans**: 5 plans
 
@@ -60,7 +60,7 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. A person can sign in with GitHub OAuth or a one-use email magic link, safely link both methods to one account, inspect sessions, sign out, and revoke other sessions.
   2. An owner or admin can invite, inspect, and revoke collaborators; invitees can accept or reject, and owner/admin/member permissions are enforced by the server.
-  3. Humans and authorized agents can comment with clear authorship, while members receive linked invitation, mention, assignment, and Ready for Review notifications that they can read or mute.
+  3. Humans and authorized agents can comment with clear authorship, while members receive linked invitation, mention, assignment, and Ready for Human Review notifications that they can read or mute.
   4. Identifier substitution and role escalation cannot expose or mutate another workspace, project, membership, agent identity, or file capability.
   5. Authentication and MCP credentials validate origin, audience, expiration, and revocation without appearing in persisted URLs, errors, or logs.
 **Plans**: TBD

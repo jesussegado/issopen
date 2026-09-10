@@ -14,6 +14,8 @@ const project = {
   repositoryUrl: null,
   defaultBranch: null,
   repositorySubdirectory: null,
+  showReviewColumn: true,
+  showDoneColumn: true,
   version: 1,
   createdAt: "2026-08-31T12:00:00.000Z",
   updatedAt: "2026-08-31T12:00:00.000Z",

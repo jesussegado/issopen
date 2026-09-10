@@ -28,6 +28,8 @@ const project = {
   repositoryUrl: "https://git.example.test/owner/tracker",
   defaultBranch: "main",
   repositorySubdirectory: null,
+  showReviewColumn: true,
+  showDoneColumn: true,
   version: 1,
   createdAt: "2026-08-31T12:00:00.000Z",
   updatedAt: "2026-08-31T12:00:00.000Z",
@@ -268,6 +270,78 @@ describe("tracker web routes", () => {
     expect(
       screen.getByRole("button", { name: "Hide details for 1" }),
     ).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("omits disabled completion columns while keeping their statuses available", async () => {
+    const fetchMock = vi.fn(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const path = String(input);
+        if (path.endsWith("/board")) {
+          return json({
+            project: {
+              ...project,
+              showReviewColumn: false,
+              showDoneColumn: false,
+            },
+            totalIssueCount: 2,
+            hiddenIssueCount: 1,
+            columns: issueStatuses.slice(0, 3).map((status) => ({
+              status,
+              issues: status === "backlog" ? [issue] : [],
+            })),
+          });
+        }
+        if (path === `/api/v1/issues/${issue.id}` && init?.method === "PATCH") {
+          expect(JSON.parse(String(init.body))).toEqual({ status: "done" });
+          return json({ issue: { ...issue, status: "done", version: 2 } });
+        }
+        throw new Error(`Unexpected request: ${path}`);
+      },
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    render(<BoardRoute projectId={project.id} />);
+
+    await screen.findByRole("heading", { name: project.name });
+    expect(
+      screen.queryByRole("heading", { name: "Ready for Human Review" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Done" }),
+    ).not.toBeInTheDocument();
+    const statusFilter = screen.getByRole("combobox", { name: "Show status" });
+    expect(
+      within(statusFilter).queryByRole("option", {
+        name: "Ready for Human Review",
+      }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(statusFilter).queryByRole("option", { name: "Done" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText(/1 hidden ticket is/)).toBeVisible();
+
+    await user.click(
+      screen.getByRole("button", { name: "Show details for 1" }),
+    );
+    const issueStatus = screen.getByRole("combobox", {
+      name: "Change status for 1",
+    });
+    expect(
+      within(issueStatus).getByRole("option", {
+        name: "Ready for Human Review",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(issueStatus).getByRole("option", { name: "Done" }),
+    ).toBeInTheDocument();
+    await user.selectOptions(issueStatus, "done");
+
+    expect(await screen.findByText("1 moved to Done")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: `1-${issue.title}` })).toBeNull();
+    expect(screen.getByText(/2 hidden tickets are/)).toBeVisible();
+    expect(
+      screen.getByRole("heading", { name: "Issues hidden from this board" }),
+    ).toBeVisible();
   });
 
   it("filters the board by Epic and links the expanded card to its container", async () => {

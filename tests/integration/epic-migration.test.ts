@@ -94,6 +94,10 @@ it("backfills existing Epics deterministically without changing their data or ti
       deletedAt: null,
       title: "Keep association",
     });
+    expect(await tracker.getProject(workspaceId, projects[0])).toMatchObject({
+      showReviewColumn: true,
+      showDoneColumn: true,
+    });
     for (const [index, projectId] of projects.entries()) {
       expect(
         await tracker.createEpic(context, {

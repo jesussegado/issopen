@@ -516,6 +516,8 @@ export const project = pgTable(
     repositoryUrl: varchar("repository_url", { length: 2048 }),
     defaultBranch: varchar("default_branch", { length: 255 }),
     repositorySubdirectory: varchar("repository_subdirectory", { length: 512 }),
+    showReviewColumn: boolean("show_review_column").default(true).notNull(),
+    showDoneColumn: boolean("show_done_column").default(true).notNull(),
     nextIssueNumber: integer("next_issue_number").default(1).notNull(),
     nextEpicNumber: integer("next_epic_number").default(1).notNull(),
     version: integer("version").default(1).notNull(),

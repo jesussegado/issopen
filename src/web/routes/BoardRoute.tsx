@@ -100,6 +100,8 @@ export function BoardRoute({ projectId }: { projectId: string }) {
   const [project, setProject] = useState<Project | null>(null);
   const [epics, setEpics] = useState<Epic[]>([]);
   const [columns, setColumns] = useState<BoardColumn[]>([]);
+  const [totalIssueCount, setTotalIssueCount] = useState(0);
+  const [hiddenIssueCount, setHiddenIssueCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [missing, setMissing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -126,11 +128,19 @@ export function BoardRoute({ projectId }: { projectId: string }) {
       project: Project;
       columns: BoardColumn[];
       epics: Epic[];
+      totalIssueCount?: number;
+      hiddenIssueCount?: number;
     }>(`/api/v1/projects/${projectId}/board${query}`)
       .then((board) => {
+        const visibleIssueCount = board.columns.reduce(
+          (total, column) => total + column.issues.length,
+          0,
+        );
         setProject(board.project);
         setColumns(board.columns);
         setEpics(board.epics ?? []);
+        setTotalIssueCount(board.totalIssueCount ?? visibleIssueCount);
+        setHiddenIssueCount(board.hiddenIssueCount ?? 0);
         setMissing(false);
       })
       .catch((caught) => {
@@ -167,6 +177,9 @@ export function BoardRoute({ projectId }: { projectId: string }) {
       const updatedIssue: Issue = issue.questionSummary
         ? { ...response.issue, questionSummary: issue.questionSummary }
         : response.issue;
+      const targetIsVisible = columns.some(
+        (column) => column.status === updatedIssue.status,
+      );
       setColumns((current) =>
         current.map((column) => ({
           ...column,
@@ -181,16 +194,20 @@ export function BoardRoute({ projectId }: { projectId: string }) {
               : column.issues.filter((item) => item.id !== updatedIssue.id),
         })),
       );
-      setCollapsedColumns((current) => {
-        if (!current.has(updatedIssue.status)) return current;
-        const next = new Set(current);
-        next.delete(updatedIssue.status);
-        return next;
-      });
+      if (targetIsVisible) {
+        setCollapsedColumns((current) => {
+          if (!current.has(updatedIssue.status)) return current;
+          const next = new Set(current);
+          next.delete(updatedIssue.status);
+          return next;
+        });
+      } else {
+        setHiddenIssueCount((current) => current + 1);
+      }
       setAnnouncement(
         `${issueReference(updatedIssue)} moved to ${statusLabels[updatedIssue.status]}`,
       );
-      setFocusIssueId(response.issue.id);
+      setFocusIssueId(targetIsVisible ? response.issue.id : null);
     } catch (caught) {
       setError(
         caught instanceof ApiError && caught.status === 409
@@ -270,7 +287,18 @@ export function BoardRoute({ projectId }: { projectId: string }) {
         </StatusBanner>
       ) : null}
       <EpicOverview epics={epics} />
-      {issueCount === 0 && epicFilter === "all" ? (
+      {hiddenIssueCount > 0 ? (
+        <StatusBanner>
+          {hiddenIssueCount} hidden{" "}
+          {hiddenIssueCount === 1 ? "ticket" : "tickets"}{" "}
+          {hiddenIssueCount === 1 ? "is" : "are"} in columns disabled by{" "}
+          <AppLink href={`/projects/${project.id}/settings`}>
+            project settings
+          </AppLink>
+          .
+        </StatusBanner>
+      ) : null}
+      {totalIssueCount === 0 && epicFilter === "all" ? (
         <EmptyState
           heading="No issues yet"
           body="Create the first issue to start this project's backlog."
@@ -319,9 +347,9 @@ export function BoardRoute({ projectId }: { projectId: string }) {
                 }
               >
                 <option value="all">All statuses</option>
-                {issueStatuses.map((status) => (
-                  <option key={status} value={status}>
-                    {statusLabels[status]}
+                {columns.map((column) => (
+                  <option key={column.status} value={column.status}>
+                    {statusLabels[column.status]}
                   </option>
                 ))}
               </Select>
@@ -344,10 +372,25 @@ export function BoardRoute({ projectId }: { projectId: string }) {
           </div>
           {issueCount === 0 ? (
             <EmptyState
-              heading="No matching issues"
-              body="This Epic filter does not contain any tickets yet."
+              heading={
+                hiddenIssueCount > 0
+                  ? "Issues hidden from this board"
+                  : "No matching issues"
+              }
+              body={
+                hiddenIssueCount > 0
+                  ? "The matching tickets keep their status and can be shown again from project settings."
+                  : "This Epic filter does not contain any tickets yet."
+              }
               action={
-                epicFilter !== "unassigned" ? (
+                hiddenIssueCount > 0 ? (
+                  <AppLink
+                    className="button button-secondary"
+                    href={`/projects/${project.id}/settings`}
+                  >
+                    Review board settings
+                  </AppLink>
+                ) : epicFilter !== "unassigned" ? (
                   <AppLink
                     className="button button-primary"
                     href={`/projects/${project.id}/issues/new?epic=${encodeURIComponent(epicFilter)}`}
@@ -362,7 +405,7 @@ export function BoardRoute({ projectId }: { projectId: string }) {
               className="board-region"
               aria-label={`${project.name} issue board`}
             >
-              <div className="board">
+              <div className={`board board-columns-${columns.length}`}>
                 {columns.map((column) => {
                   const visibleIssues = column.issues.filter(
                     (issue) =>

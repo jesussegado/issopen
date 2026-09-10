@@ -287,11 +287,21 @@ export function createTrackerRouter({ db }: TrackerRouterDependencies) {
       projectId,
       epicFilter === "unassigned" ? null : epicFilter,
     );
+    const visibleStatuses = issueStatusValues.filter((status) => {
+      if (status === "ready_for_review") return foundProject.showReviewColumn;
+      if (status === "done") return foundProject.showDoneColumn;
+      return true;
+    });
+    const visibleStatusSet = new Set(visibleStatuses);
     return context.json({
       project: foundProject,
       epics: await tracker.listEpics(mutationContext.workspaceId, projectId),
       epicFilter: epicFilter ?? null,
-      columns: issueStatusValues.map((status) => ({
+      totalIssueCount: issues.length,
+      hiddenIssueCount: issues.filter(
+        (item) => !visibleStatusSet.has(item.status),
+      ).length,
+      columns: visibleStatuses.map((status) => ({
         status,
         issues: issues.filter((item) => item.status === status),
       })),

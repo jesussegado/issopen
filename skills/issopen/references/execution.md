@@ -27,7 +27,8 @@
    merge ni despliegue; sigue el encargo y las reglas del repo. Si están autorizados,
    ejecuta/verifica esos pasos, sin inventar referencias. Un resultado local puede
    documentarse como local sin enlace ficticio.
-8. Entrega Ready for Review y **libera explícitamente tu claim**: `move_issue` no
+8. Entrega Ready for Human Review (`ready_for_review`) y **libera explícitamente
+   tu claim**: `move_issue` no
    lo libera. Si falla liberar, informa de la propiedad residual y reintenta sólo
    conforme al contrato idempotente; no anuncies que está libre sin comprobarlo.
    Done sólo con autorización humana explícita de cierre y `issues:close`; el
@@ -36,4 +37,4 @@
 Al pausar, deja checkpoint y libera el claim propio tras guardar trabajo. Reanudar
 exige volver a leer estado actual; no recuperar por fuerza una propiedad ajena.
 Un warning no es una columna Blocked. No marcar revisión si falta una respuesta
-bloqueante ni tratar Ready for Review como aceptación humana ya concedida.
+bloqueante ni tratar Ready for Human Review como aceptación humana ya concedida.

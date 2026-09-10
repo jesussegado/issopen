@@ -397,6 +397,10 @@ describe("transactional tracker domain", () => {
       defaultBranch: "main",
       repositorySubdirectory: ".",
     });
+    expect(createdProject).toMatchObject({
+      showReviewColumn: true,
+      showDoneColumn: true,
+    });
 
     const createdIssues = await Promise.all(
       Array.from({ length: 12 }, (_, index) =>
@@ -417,7 +421,12 @@ describe("transactional tracker domain", () => {
     const updatedProject = await tracker.updateProject(
       ownerContext,
       createdProject.id,
-      { name: "Issopen Tracker", description: "Renamed without changing keys" },
+      {
+        name: "Issopen Tracker",
+        description: "Renamed without changing keys",
+        showReviewColumn: false,
+        showDoneColumn: false,
+      },
     );
     const updatedIssue = await tracker.updateIssue(
       ownerContext,
@@ -429,6 +438,10 @@ describe("transactional tracker domain", () => {
     );
 
     expect(updatedProject.key).toBe("ISS");
+    expect(updatedProject).toMatchObject({
+      showReviewColumn: false,
+      showDoneColumn: false,
+    });
     expect(updatedIssue.key).toBe("ISS-1");
     expect(updatedIssue.version).toBe(2);
     await expect(
@@ -754,7 +767,7 @@ describe("transactional tracker domain", () => {
     ).rejects.toMatchObject({
       code: "conflict",
       message:
-        "Answer all blocking questions before moving this issue to Ready for Review",
+        "Answer all blocking questions before moving this issue to Ready for Human Review",
     });
     expect((await tracker.getIssue(workspaceId, createdIssue.id)).status).toBe(
       "backlog",

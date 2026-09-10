@@ -27,6 +27,8 @@ export type Project = {
   repositoryUrl: string | null;
   defaultBranch: string | null;
   repositorySubdirectory: string | null;
+  showReviewColumn: boolean;
+  showDoneColumn: boolean;
   version: number;
   createdAt: string;
   updatedAt: string;
@@ -202,7 +204,7 @@ export const statusLabels: Record<IssueStatus, string> = {
   backlog: "Backlog",
   ready: "Ready",
   in_progress: "In Progress",
-  ready_for_review: "Ready for Review",
+  ready_for_review: "Ready for Human Review",
   done: "Done",
 };
 

@@ -38,6 +38,9 @@ describe("tracker domain contracts", () => {
         actor: "forged-owner",
       }).success,
     ).toBe(false);
+    expect(
+      createProjectSchema.parse({ name: "Issopen", key: "ISS" }),
+    ).toMatchObject({ showReviewColumn: true, showDoneColumn: true });
   });
 
   it("stores only safe bounded repository context without fetching it", () => {

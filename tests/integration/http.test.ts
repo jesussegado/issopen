@@ -402,6 +402,10 @@ describe("protected tracker REST API", () => {
   it("serves authoritative project, issue, board, link, activity and review paths", async () => {
     const createdProject = await createProjectFixture();
     expect(createdProject.key).toBe("ISS");
+    expect(createdProject).toMatchObject({
+      showReviewColumn: true,
+      showDoneColumn: true,
+    });
 
     const projects = await authenticatedRequest("/api/v1/projects");
     expect(projects.status).toBe(200);
@@ -549,6 +553,8 @@ describe("protected tracker REST API", () => {
       `/api/v1/projects/${createdProject.id}/board?epicId=${createdEpic.id}`,
     );
     const boardBody = await body<{
+      totalIssueCount: number;
+      hiddenIssueCount: number;
       columns: Array<{
         status: string;
         issues: Array<{
@@ -567,6 +573,10 @@ describe("protected tracker REST API", () => {
       "ready_for_review",
       "done",
     ]);
+    expect(boardBody).toMatchObject({
+      totalIssueCount: 1,
+      hiddenIssueCount: 0,
+    });
     expect(
       boardBody.columns.find((column) => column.status === "ready_for_review")
         ?.issues,
@@ -575,6 +585,32 @@ describe("protected tracker REST API", () => {
       boardBody.columns.find((column) => column.status === "ready_for_review")
         ?.issues[0]?.questionSummary,
     ).toEqual({ total: 1, answered: 0, unansweredBlocking: 1 });
+
+    const hiddenColumnsUpdate = await authenticatedRequest(
+      `/api/v1/projects/${createdProject.id}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({
+          showReviewColumn: false,
+          showDoneColumn: false,
+        }),
+      },
+    );
+    expect(await body(hiddenColumnsUpdate)).toMatchObject({
+      project: { showReviewColumn: false, showDoneColumn: false },
+    });
+    const boardWithHiddenColumns = await authenticatedRequest(
+      `/api/v1/projects/${createdProject.id}/board?epicId=${createdEpic.id}`,
+    );
+    expect(await body(boardWithHiddenColumns)).toMatchObject({
+      totalIssueCount: 1,
+      hiddenIssueCount: 1,
+      columns: [
+        { status: "backlog", issues: [] },
+        { status: "ready", issues: [] },
+        { status: "in_progress", issues: [] },
+      ],
+    });
 
     const answered = await authenticatedRequest(
       `/api/v1/issues/${createdIssue.id}/questions/${question.id}/answer`,
@@ -754,7 +790,7 @@ describe("protected tracker REST API", () => {
     expect(blocked.status).toBe(409);
     expect(await body(blocked)).toEqual({
       error:
-        "Answer all blocking questions before moving this issue to Ready for Review",
+        "Answer all blocking questions before moving this issue to Ready for Human Review",
     });
 
     const answered = await authenticatedRequest(

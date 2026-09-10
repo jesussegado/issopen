@@ -187,7 +187,7 @@ diferenciador es:
 crear y priorizar un issue desde el tablero o ChatGPT
   -> un agente de código externo lo reclama mediante MCP
   -> trabaja en el repositorio y enlaza branch, commit o PR
-  -> lo devuelve a Ready for Review
+  -> lo devuelve a Ready for Human Review (`ready_for_review`)
   -> una persona revisa y decide el cierre
 ```
 
@@ -484,6 +484,11 @@ Desde la raíz también es obligatorio:
 ```bash
 make validate
 ```
+
+Las preferencias `project.showReviewColumn` y `project.showDoneColumn` sólo
+controlan la visibilidad del board. Nunca deben mover, borrar ni ocultar de MCP
+los tickets; `ready_for_review` continúa siendo el valor estable del contrato y
+se presenta a personas como **Ready for Human Review**.
 
 Los cambios productivos deben seguir siendo GitOps. Argo consume
 `deploy/argocd.yaml` y `deploy/manifests`; `deploy/values.yaml` es un contrato de

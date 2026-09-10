@@ -7,7 +7,7 @@ import { expect, it } from "vitest";
 import { createDatabase } from "../../src/server/db/client.js";
 import { migrateDatabase } from "../../src/server/db/migrate.js";
 import { user, workspace } from "../../src/server/db/schema.js";
-import { AgentService, TrackerService } from "../../src/server/domain/index.js";
+import { AgentService } from "../../src/server/domain/index.js";
 
 it("adds opt-in Epic scopes without altering any existing grants and keeps old queries compatible", async () => {
   const folder = await mkdtemp(join(tmpdir(), "issopen-scope-migration-"));
@@ -32,15 +32,10 @@ it("adds opt-in Epic scopes without altering any existing grants and keeps old q
     await connection.db
       .insert(workspace)
       .values({ id: workspaceId, ownerId, name: "Scopes" });
-    const tracker = new TrackerService(connection.db);
-    const project = await tracker.createProject(
-      {
-        workspaceId,
-        actor: { type: "human", id: ownerId, displayName: "Owner" },
-        source: "rest",
-      },
-      { name: "Scopes", key: "SCOPES" },
-    );
+    const project = { id: randomUUID() };
+    // Seed the historical schema directly; today's ORM includes newer columns.
+    await connection.client`INSERT INTO project (id, workspace_id, name, key)
+      VALUES (${project.id}, ${workspaceId}, 'Scopes', 'SCOPES')`;
     const agents = new AgentService(connection.db);
     const existing = await agents.createAgent(workspaceId, {
       name: "Existing",

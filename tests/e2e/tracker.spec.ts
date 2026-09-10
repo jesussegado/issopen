@@ -35,6 +35,10 @@ test("owner completes the tracker loop with native keyboard controls", async ({
     page.getByRole("heading", { name: "Create project" }),
   ).toBeFocused();
   await page.getByLabel("Project name (required)").fill(projectName);
+  await expect(
+    page.getByRole("checkbox", { name: /Show Ready for Human Review/ }),
+  ).toBeChecked();
+  await expect(page.getByRole("checkbox", { name: /Show Done/ })).toBeChecked();
   await page
     .getByLabel("Description")
     .fill("Private end-to-end acceptance project");
@@ -206,7 +210,7 @@ test("owner completes the tracker loop with native keyboard controls", async ({
   ).not.toHaveAttribute("disabled", "");
   await answeredStatus.selectOption("ready_for_review");
   await expect(
-    page.getByText(`${issueRef} moved to Ready for Review`),
+    page.getByText(`${issueRef} moved to Ready for Human Review`),
   ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Review result" }),
@@ -232,7 +236,7 @@ test("owner completes the tracker loop with native keyboard controls", async ({
   await detailStatus.focus();
   await page.keyboard.press("ArrowDown");
   await expect(
-    page.getByText(`${issueRef} moved to Ready for Review`),
+    page.getByText(`${issueRef} moved to Ready for Human Review`),
   ).toBeVisible();
   await page.getByRole("button", { name: "Accept result" }).click();
   await expect(page.getByText("Result accepted")).toBeVisible();
@@ -241,9 +245,41 @@ test("owner completes the tracker loop with native keyboard controls", async ({
   );
   await expect(page.getByText(`Accepted result for ${issueRef}`)).toBeVisible();
 
+  await page.goto(`/projects/${issue.projectId}/settings`);
+  await page
+    .getByRole("checkbox", { name: /Show Ready for Human Review/ })
+    .uncheck();
+  await page.getByRole("checkbox", { name: /Show Done/ }).uncheck();
+  await page.getByRole("button", { name: "Save project" }).click();
+  await expect(page.getByRole("heading", { name: projectName })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Ready for Human Review" }),
+  ).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Done" })).toHaveCount(0);
+  await expect(page.getByText(/1 hidden ticket is/)).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Issues hidden from this board" }),
+  ).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          document.documentElement.scrollWidth <=
+          document.documentElement.clientWidth,
+      ),
+    )
+    .toBe(true);
+  await page.goto(`/issues/${issueId}`);
+  await expect(
+    page.getByRole("heading", { name: issueDisplayName }),
+  ).toBeVisible();
+
   // Native dialog: safe initial focus, focus trap, Escape and explicit deletion.
-  if (mobile)
-    await page.getByRole("button", { name: "Close navigation" }).click();
+  const closeNavigation = page.getByRole("button", {
+    name: "Close navigation",
+  });
+  if (mobile && (await closeNavigation.isVisible().catch(() => false)))
+    await closeNavigation.click();
   const deleteButton = page.getByRole("button", {
     name: "Delete ticket",
     exact: true,

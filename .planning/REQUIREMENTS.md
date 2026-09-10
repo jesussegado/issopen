@@ -67,7 +67,7 @@ revisión dentro de un único flujo trazable.
 - [ ] **ISSU-08**: Un miembro puede archivar y restaurar un issue sin perder sus
   comentarios, adjuntos, relaciones, referencias de código ni actividad.
 - [x] **BOARD-01**: Cada proyecto ofrece un Kanban simple con las fases
-  semánticas fijas `Backlog`, `Ready`, `In Progress`, `Ready for Review` y
+  semánticas fijas `Backlog`, `Ready`, `In Progress`, `Ready for Human Review` y
   `Done`, compartidas por la web y las herramientas MCP.
 - [x] **BOARD-02**: Una persona puede mover un issue entre estados mediante un
   control responsive y accesible por teclado; el cambio persiste y aparece en
@@ -79,7 +79,7 @@ revisión dentro de un único flujo trazable.
   reclamaciones y referencias de código, mostrando actor y fecha; comentarios,
   adjuntos y filtros se incorporan cuando existan esas superficies.
 - [ ] **NOTF-01**: La web ofrece notificaciones mínimas para invitaciones,
-  menciones, asignaciones y paso a `Ready for Review`, enlazadas al recurso que
+  menciones, asignaciones y paso a `Ready for Human Review`, enlazadas al recurso que
   las originó.
 - [ ] **NOTF-02**: Cada usuario puede marcar notificaciones como leídas y silenciar
   un issue o proyecto sin impedir que la actividad siga quedando registrada.
@@ -137,7 +137,7 @@ revisión dentro de un único flujo trazable.
   acción.
 - [x] **AGNT-05**: Un agente autorizado puede reclamar y liberar un issue; la
   reclamación tiene fecha y no sustituye ni bloquea la decisión del owner.
-- [x] **AGNT-06**: Un agente puede llevar trabajo a `Ready for Review`; pasar a
+- [x] **AGNT-06**: Un agente puede llevar trabajo a `Ready for Human Review`; pasar a
   `Done` o cerrar un issue requiere un scope independiente concedido de forma
   explícita.
 - [ ] **AGNT-07**: Reducir scopes, quitar un proyecto o revocar una credencial

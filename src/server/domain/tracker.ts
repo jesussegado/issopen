@@ -1200,7 +1200,7 @@ export class TrackerService {
         if (unansweredBlockingQuestion) {
           throw new DomainError(
             "conflict",
-            "Answer all blocking questions before moving this issue to Ready for Review",
+            "Answer all blocking questions before moving this issue to Ready for Human Review",
           );
         }
       }

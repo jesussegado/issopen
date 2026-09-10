@@ -28,7 +28,7 @@ a un commit anterior y conserva backups/cambios locales. Ver `install.md`.
 La publicación estable/piloto exige aceptación y permiso del owner sobre identidad,
 allowlist, scopes Epic y asociación de repositorio. Elegir con él una mejora real
 pequeña. No crear ni ampliar PAT, no elegir trabajo de otro Epic por inferencia.
-Esta guía o un test no demuestran que el piloto haya sucedido. Ready for Review
+Esta guía o un test no demuestran que el piloto haya sucedido. Ready for Human Review
 no significa Done y el Epic no tiene una operación de cierre propia.
 
 La CLI/editor comparten configuración, pero se deben indicar las superficies
