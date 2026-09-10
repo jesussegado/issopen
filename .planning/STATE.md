@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Web-only ticket deletion deployed and production verified; ticket 60 Ready for Review
-last_updated: "2026-09-10T09:31:50Z"
+stopped_at: Configurable human-review and Done columns deployed; ticket 61 Ready for Human Review
+last_updated: "2026-09-10T10:12:17Z"
 last_activity: 2026-09-10
 progress:
   total_phases: 9
@@ -21,7 +21,18 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-30)
 
 **Core value:** Convertir una intención humana en trabajo estructurado y seguro que ChatGPT y agentes de código externos puedan entender, ejecutar y devolver a revisión dentro de un único flujo trazable.
-**Current focus:** Chrome 0.5 replaces capture/DOM/editor with pasted/uploaded images at owner request. Ticket 51 Ready for Review; 33 owner acceptance untouched. Server deployed and managed Chrome connected. Quick 260910-d89.
+**Current focus:** Board completion columns are configurable per project and the human-facing review state is Ready for Human Review. Ticket 61 is ready for owner review; Chrome ticket 33 acceptance remains untouched.
+
+Follow-up 2026-09-10: ticket 61 presents `ready_for_review` as Ready for
+Human Review and adds independent per-project visibility for that column and
+Done. Migration 0015 defaults both flags to true; hiding is board-only and
+preserves states, direct links and MCP. Quick 260910-g1z, source 5048f51,
+GitOps ddf9d971 Synced/Healthy, digest 09d68e4, pod Ready/0 restarts and both
+PVCs unchanged. 79 unit/web + 52 integration + 8 web E2E + 76 extension unit +
+12 extension E2E, Compose and 197 homelab checks pass. Full backup restored
+isolated with 2 projects, 62 tickets, 540 events and 7 attachments; production
+has 16 migrations and both existing projects enabled. UI verified at 1440/360
+px without mutation. Ticket Ready for Human Review v6, claim null.
 
 Follow-up 2026-09-10: ticket 60 adds owner-only web deletion with confirmation,
 logical tombstone 0014, audit/retention, version guards and hidden reads/evidence.

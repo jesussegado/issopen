@@ -29,6 +29,14 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+- Ticket 61 presenta el estado interno `ready_for_review` como **Ready for
+  Human Review** y permite ocultar esa columna o Done por proyecto. La migración
+  aditiva 0015 activa ambas por defecto. Ocultar es sólo presentación: conserva
+  estado, URL directa, REST y MCP. Fuente `5048f51`, GitOps `ddf9d971`
+  `Synced/Healthy`, pod Ready sin reinicios, PVCs intactos; backup/restore y UI
+  desktop/móvil verificados. Memoria en
+  [quick 260910-g1z](.planning/quick/260910-g1z-renombrar-revision-humana-y-configurar-columnas/SUMMARY.md).
+
 - Ticket 60 añade borrado lógico **sólo web**: botón en detalle y diálogo,
   DELETE owner/same-origin con versión y conjunto de preguntas obligatorios.
   `issue.deleted_at` (migración aditiva 0014), evento `issue.deleted` append-only,
