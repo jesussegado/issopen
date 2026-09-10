@@ -29,6 +29,11 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+- Ticket 64 separa con un `gap` de 8 px el icono `+` y la etiqueta `Create
+  ticket in Epic`, sin cambiar nombre accesible ni destino. Fuente `44b1bda`,
+  GitOps `cfc0474b` `Synced/Healthy`, digest `0964635`; gate completo, restore y
+  Chrome productivo validados. Ticket Ready for Human Review v6, sin claim.
+
 - Ticket 63 sincroniza el board abierto mediante invalidación SSE autenticada y
   acotada al proyecto. El cursor procede del log de actividad append-only y no
   contiene tickets; por ello observa REST, Chrome y MCP. La UI relee estado

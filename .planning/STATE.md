@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Epic 5 tickets 62-63 delivered and Ready for Human Review; reviewing newer tickets
-last_updated: "2026-09-10T12:20:15Z"
+stopped_at: Epic 5 ticket 64 deployed and Ready for Human Review; checking for newer tickets
+last_updated: "2026-09-10T12:39:38Z"
 last_activity: 2026-09-10
 progress:
   total_phases: 9
@@ -21,7 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-30)
 
 **Core value:** Convertir una intención humana en trabajo estructurado y seguro que ChatGPT y agentes de código externos puedan entender, ejecutar y devolver a revisión dentro de un único flujo trazable.
-**Current focus:** Epic 5 frontend/usability tickets 62–63 are delivered and newer owner tickets are being reviewed; Chrome ticket 33 acceptance remains untouched.
+**Current focus:** Epic 5 frontend/usability ticket 64 is delivered and newer owner tickets are being checked; Chrome ticket 33 acceptance remains untouched.
+
+Follow-up 2026-09-10: ticket 64 gives the `+` and `Create ticket in Epic` label
+an explicit 8 px gap while retaining its accessible name and destination.
+Source 44b1bda, GitOps cfc0474b Synced/Healthy, digest 0964635; pod Ready/0
+restarts, public readiness, PostgreSQL and both PVCs verified. All 233 automated
+tests plus two expected skips pass across app and Chrome. Fresh backup restored
+isolated with 65 issues, 583 events, 10 evidences/receipts and 16 migrations;
+all attachment hashes/sizes match. Production Chrome smoke passed. Ticket Ready
+for Human Review v6, claim null.
 
 Follow-up 2026-09-10: ticket 62 fixes stale post-success Chrome attachments in
 0.5.5 (source f337430 plus formatting-only 3da9fc5); the reproducible ZIP and
