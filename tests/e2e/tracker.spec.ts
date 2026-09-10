@@ -114,9 +114,11 @@ test("owner completes the tracker loop with native keyboard controls", async ({
   ).toBeVisible();
   await expect(page.getByText(issue.key, { exact: true })).toHaveCount(0);
   await page.getByRole("link", { name: `Epic: ${epicDisplayName}` }).click();
-  await expect(
-    page.getByRole("link", { name: "Create ticket in Epic" }),
-  ).toHaveAttribute(
+  const createTicketInEpic = page.getByRole("link", {
+    name: "Create ticket in Epic",
+  });
+  await expect(createTicketInEpic).toHaveCSS("gap", "8px");
+  await expect(createTicketInEpic).toHaveAttribute(
     "href",
     `/projects/${issue.projectId}/issues/new?epic=${issue.epicId}`,
   );

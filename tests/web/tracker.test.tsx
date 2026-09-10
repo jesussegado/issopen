@@ -621,9 +621,15 @@ describe("tracker web routes", () => {
       `/projects/${project.id}?epic=${epic.id}`,
     );
     expect(screen.getByText(epic.description)).toBeVisible();
-    expect(
-      screen.getByRole("link", { name: "Create ticket in Epic" }),
-    ).toHaveAttribute(
+    const createTicketInEpic = screen.getByRole("link", {
+      name: "Create ticket in Epic",
+    });
+    expect(createTicketInEpic).toHaveClass("epic-create-button");
+    expect(within(createTicketInEpic).getByText("+")).toHaveAttribute(
+      "aria-hidden",
+      "true",
+    );
+    expect(createTicketInEpic).toHaveAttribute(
       "href",
       `/projects/${project.id}/issues/new?epic=${epic.id}`,
     );

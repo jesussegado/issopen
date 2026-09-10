@@ -257,7 +257,7 @@ export function EpicDetailRoute({ epicId }: { epicId: string }) {
             Edit Epic
           </AppLink>
           <AppLink
-            className="button button-primary"
+            className="button button-primary epic-create-button"
             href={`/projects/${project.id}/issues/new?epic=${epic.id}`}
           >
             <span aria-hidden="true">+</span> Create ticket in Epic

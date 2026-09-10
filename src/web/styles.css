@@ -413,6 +413,9 @@ progress {
   color: var(--color-muted);
   background: var(--color-disabled);
 }
+.epic-create-button {
+  gap: 8px;
+}
 .field-group {
   display: grid;
   gap: 24px;
