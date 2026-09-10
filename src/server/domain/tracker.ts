@@ -7,6 +7,7 @@ import {
   inArray,
   isNotNull,
   isNull,
+  notExists,
   or,
   sql,
 } from "drizzle-orm";
@@ -524,7 +525,7 @@ export class TrackerService {
   async getEpicDetail(workspaceId: string, epicId: string) {
     const foundEpic = await this.getEpic(workspaceId, epicId);
     const [issues, detailedEpic] = await Promise.all([
-      this.listIssues(workspaceId, foundEpic.projectId, foundEpic.id),
+      this.listIssues(workspaceId, foundEpic.projectId, foundEpic.id, true),
       this.getEpicSummary(workspaceId, epicId),
     ]);
     return {
@@ -700,6 +701,7 @@ export class TrackerService {
     workspaceId: string,
     projectId?: string,
     epicId?: string | null,
+    includeArchivedEpicIssues = false,
   ) {
     const predicate = and(
       isNull(issue.deletedAt),
@@ -710,6 +712,20 @@ export class TrackerService {
         : epicId
           ? eq(issue.epicId, epicId)
           : undefined,
+      includeArchivedEpicIssues
+        ? undefined
+        : notExists(
+            this.db
+              .select({ id: epic.id })
+              .from(epic)
+              .where(
+                and(
+                  eq(epic.workspaceId, workspaceId),
+                  eq(epic.id, issue.epicId),
+                  isNotNull(epic.archivedAt),
+                ),
+              ),
+          ),
     );
     const issues = await this.db
       .select()
@@ -804,6 +820,18 @@ export class TrackerService {
           options.status ? eq(issue.status, options.status) : undefined,
           options.priority ? eq(issue.priority, options.priority) : undefined,
           claimPredicate,
+          notExists(
+            this.db
+              .select({ id: epic.id })
+              .from(epic)
+              .where(
+                and(
+                  eq(epic.workspaceId, workspaceId),
+                  eq(epic.id, issue.epicId),
+                  isNotNull(epic.archivedAt),
+                ),
+              ),
+          ),
           after
             ? or(
                 gt(issue.projectId, after.projectId),

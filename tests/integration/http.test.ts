@@ -410,7 +410,29 @@ describe("protected tracker REST API", () => {
       ),
     ).toMatchObject({
       epics: [{ id: createdEpic.id, archivedAt: expect.any(String) }],
-      totalIssueCount: 1,
+      totalIssueCount: 0,
+      columns: [
+        { issues: [] },
+        { issues: [] },
+        { issues: [] },
+        { issues: [] },
+        { issues: [] },
+      ],
+    });
+    expect(
+      await body(
+        await authenticatedRequest(
+          `/api/v1/projects/${createdProject.id}/issues`,
+        ),
+      ),
+    ).toEqual({ issues: [] });
+    expect(
+      await body(
+        await authenticatedRequest(`/api/v1/issues/${linkedIssue.id}`),
+      ),
+    ).toMatchObject({
+      issue: { id: linkedIssue.id, status: "backlog" },
+      epic: { id: createdEpic.id, archivedAt: expect.any(String) },
     });
 
     const rejectedAssociation = await authenticatedRequest(
@@ -446,6 +468,22 @@ describe("protected tracker REST API", () => {
         )
       ).status,
     ).toBe(200);
+    expect(
+      await body(
+        await authenticatedRequest(
+          `/api/v1/projects/${createdProject.id}/board`,
+        ),
+      ),
+    ).toMatchObject({
+      totalIssueCount: 1,
+      columns: [
+        { status: "backlog", issues: [{ id: linkedIssue.id }] },
+        { status: "ready", issues: [] },
+        { status: "in_progress", issues: [] },
+        { status: "ready_for_review", issues: [] },
+        { status: "done", issues: [] },
+      ],
+    });
   });
 
   it("denies anonymous reads and mutations before resolving tracker data", async () => {

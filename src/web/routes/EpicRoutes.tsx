@@ -167,9 +167,9 @@ function ArchiveEpicControl({
         <h2 id="archive-epic-title">Archive this Epic?</h2>
         <p className="archive-epic-name">{epicLabel(epic)}</p>
         <p id="archive-epic-description">
-          Its tickets will remain linked and visible in their workflow. The Epic
-          will disappear from active lists and new ticket selectors until you
-          restore it.
+          Its tickets will remain linked with their current statuses, but they
+          will disappear from the board and active agent lists. Restoring the
+          Epic returns every ticket to its previous column.
         </p>
         {error ? <StatusBanner error>{error}</StatusBanner> : null}
         {!online ? (
@@ -467,8 +467,8 @@ export function EpicDetailRoute({ epicId }: { epicId: string }) {
       {!online ? <OfflineBanner /> : null}
       {epic.archivedAt ? (
         <StatusBanner>
-          This Epic is archived. Existing tickets remain linked, but new tickets
-          cannot be added until it is restored.
+          This Epic is archived. Its tickets keep their previous statuses but
+          stay hidden from the board until it is restored.
         </StatusBanner>
       ) : null}
       {error ? <StatusBanner error>{error}</StatusBanner> : null}

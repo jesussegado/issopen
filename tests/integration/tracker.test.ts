@@ -651,6 +651,15 @@ describe("transactional tracker domain", () => {
         (item) => item.id,
       ),
     ).toEqual([linkedIssue.id]);
+    expect(
+      (await tracker.listIssues(workspaceId, createdProject.id)).map(
+        (item) => item.id,
+      ),
+    ).toEqual([unassignedIssue.id]);
+    expect(await tracker.getIssue(workspaceId, linkedIssue.id)).toMatchObject({
+      status: linkedIssue.status,
+      epicId: createdEpic.id,
+    });
 
     await expect(
       tracker.createIssue(ownerContext, {
@@ -684,6 +693,14 @@ describe("transactional tracker domain", () => {
     expect(
       await tracker.listEpics(workspaceId, createdProject.id),
     ).toHaveLength(1);
+    expect(
+      (await tracker.listIssues(workspaceId, createdProject.id)).map(
+        (item) => ({ id: item.id, status: item.status }),
+      ),
+    ).toEqual([
+      { id: linkedIssue.id, status: linkedIssue.status },
+      { id: unassignedIssue.id, status: unassignedIssue.status },
+    ]);
     expect(
       (await connection.db.select().from(activityEvent)).map(
         (event) => event.type,

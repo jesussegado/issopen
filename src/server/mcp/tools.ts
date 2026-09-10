@@ -341,7 +341,7 @@ export function createIssopenMcpServer(
     "list_issues",
     {
       description:
-        "List a bounded, compact page of allowed issues with deterministic cursors and optional filters.",
+        "List a bounded, compact page of active allowed issues with deterministic cursors and optional filters. Tickets inherited from an archived Epic are omitted until that Epic is restored.",
       inputSchema: z
         .object({
           projectId: z.uuid().optional(),

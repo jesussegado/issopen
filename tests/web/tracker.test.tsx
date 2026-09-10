@@ -686,7 +686,7 @@ describe("tracker web routes", () => {
     render(<EpicDetailRoute epicId={epic.id} />);
     expect(
       await screen.findByText(
-        "This Epic is archived. Existing tickets remain linked, but new tickets cannot be added until it is restored.",
+        "This Epic is archived. Its tickets keep their previous statuses but stay hidden from the board until it is restored.",
       ),
     ).toBeVisible();
     expect(

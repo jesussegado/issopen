@@ -420,6 +420,15 @@ describe("stateless Issopen MCP", () => {
         epic: { id: newEpic.id, summary: { totalIssues: 0, doneIssues: 0 } },
       });
       expect(detail.structuredContent).not.toHaveProperty("issues");
+      const inheritedArchivedIssue = await tracker.createIssue(
+        mutationContext(),
+        {
+          projectId,
+          epicId: newEpic.id,
+          title: "Keep my workflow status",
+          status: "in_progress",
+        },
+      );
       await expectIdempotentReplay(client, "update_epic", {
         epicId: newEpic.id,
         title: "Edited Epic",
@@ -458,12 +467,54 @@ describe("stateless Issopen MCP", () => {
           archivedAt: expect.any(String),
         }),
       ]);
+      expect(
+        (
+          (
+            await client.callTool({
+              name: "list_issues",
+              arguments: { projectId, epicId: newEpic.id },
+            })
+          ).structuredContent as { issues: Array<{ id: string }> }
+        ).issues,
+      ).toEqual([]);
+      expect(
+        (
+          await client.callTool({
+            name: "get_issue",
+            arguments: { issueId: inheritedArchivedIssue.id },
+          })
+        ).structuredContent,
+      ).toMatchObject({
+        issue: {
+          id: inheritedArchivedIssue.id,
+          epicId: newEpic.id,
+          status: "in_progress",
+        },
+        epic: { id: newEpic.id, archivedAt: expect.any(String) },
+      });
       await expectIdempotentReplay(client, "update_epic", {
         epicId: newEpic.id,
         archived: false,
         expectedVersion: 3,
         idempotencyKey: "epic-restore",
       });
+      expect(
+        (
+          (
+            await client.callTool({
+              name: "list_issues",
+              arguments: { projectId, epicId: newEpic.id },
+            })
+          ).structuredContent as {
+            issues: Array<{ id: string; status: string }>;
+          }
+        ).issues,
+      ).toEqual([
+        expect.objectContaining({
+          id: inheritedArchivedIssue.id,
+          status: "in_progress",
+        }),
+      ]);
       for (const [name, args] of [
         ["create_epic", { projectId, title: "Denied" }],
         ["update_epic", { epicId: newEpic.id, title: "Denied" }],

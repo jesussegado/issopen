@@ -309,6 +309,11 @@ test("owner completes the tracker loop with native keyboard controls", async ({
     0,
   );
 
+  await page.goto(`/projects/${issue.projectId}`);
+  await expect(page.getByRole("link", { name: issueDisplayName })).toHaveCount(
+    0,
+  );
+
   await page.goto(`/projects/${issue.projectId}/epics`);
   await expect(
     page.getByRole("heading", { name: "No active Epics" }),
@@ -320,6 +325,14 @@ test("owner completes the tracker loop with native keyboard controls", async ({
   await expect(page.getByText("Epic restored", { exact: true })).toBeVisible();
   await expect(
     page.getByRole("link", { name: "Create ticket in Epic" }),
+  ).toBeVisible();
+  await page.goto(`/projects/${issue.projectId}`);
+  const restoredDoneColumn = page
+    .getByRole("region", { name: `${projectName} issue board` })
+    .locator("section.board-column")
+    .filter({ has: page.getByRole("heading", { name: "Done" }) });
+  await expect(
+    restoredDoneColumn.getByRole("link", { name: issueDisplayName }),
   ).toBeVisible();
 
   await page.goto(`/projects/${issue.projectId}/settings`);
