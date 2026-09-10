@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Chrome 0.4.3 account dialog loaded and verified; ticket 50 Ready for Review
-last_updated: "2026-09-10T07:28:00Z"
+stopped_at: Chrome 0.5 pasted/uploaded images deployed and loaded; ticket 51 Ready for Review
+last_updated: "2026-09-10T08:06:17Z"
 last_activity: 2026-09-10
 progress:
   total_phases: 9
@@ -21,7 +21,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-30)
 
 **Core value:** Convertir una intención humana en trabajo estructurado y seguro que ChatGPT y agentes de código externos puedan entender, ejecutar y devolver a revisión dentro de un único flujo trazable.
-**Current focus:** Chrome Epic 1 technical delivery complete: 19–32 Ready for Review, 33 has owner-acceptance warning. Version 0.4 deployed and Chrome open. Quick 260909-vje; 43 remains Done and 44 untouched.
+**Current focus:** Chrome 0.5 replaces capture/DOM/editor with pasted/uploaded images at owner request. Ticket 51 Ready for Review; 33 owner acceptance untouched. Server deployed and managed Chrome connected. Quick 260910-d89.
+
+Follow-up 2026-09-10: source 22b7e89, GitOps 4eb5b1ec Synced/Healthy; 213
+tests PASS plus Compose. ZIP/checksum/reproducibility verified. Up to five
+private images, native paste/files, local 24 h draft and atomic retry preserved.
+Same extension ID/profile, 0.5 connected with maxImages=5. Both PVCs unchanged;
+full production backup restored isolated (4 PNGs/4 receipts), post-deploy audit
+intact. No personal clipboard reads or images uploaded. Ticket 51 v6 claim null.
+Do not downgrade to 0.4.3 with multi-image draft/pending operation.
 
 Follow-up 2026-09-10: ticket 50 moves account details behind the header user
 button (quick 260910-cw3), Ready for Review v6, claim null. Release f6aa3e6:
@@ -74,6 +82,12 @@ Progress: [░░░░░░░░░░] 0%
 ## Accumulated Context
 
 ### Decisions
+
+- [Quick 260910-d89]: Owner explicitly replaces internal captures with external
+  PNG/JPEG/WebP paste/uploads, 5 images/8 MiB aggregate/32 MP each. No page access,
+  optional clipboardRead on gesture only. User-added images enter the local
+  draft; submit is the only upload. API v1 additive, no DB migration; preserve
+  legacy pending hashes, permissions and private evidence.
 
 - [Quick 260909-vje]: Chrome 0.4 adds reviewed-only IndexedDB drafts (24 h),
   owner-scoped receipts that survive reconnection, separate human write consent,
@@ -146,6 +160,7 @@ Decisions are logged in PROJECT.md Key Decisions table. Current roadmap-level st
 
 | ID | Description | Date | Commits | Status | Directory |
 | --- | --- | --- | --- | --- | --- |
+| 260910-d89 | Chrome: pegar/subir varias imágenes al ticket | 2026-09-10 | `4426dc6`, `22b7e89`; GitOps `4eb5b1ec` | 213 tests + Compose PASS; deployed/connected; 51 Ready for Review | [260910-d89](./quick/260910-d89-simplificar-chrome-a-pegar-o-subir-varia/) |
 | 260910-cw3 | Chrome: cuenta en diálogo desde el botón de usuario | 2026-09-10 | `f6aa3e6` | 217 tests PASS; 0.4.3 loaded/connected; 50 Ready for Review | [260910-cw3](./quick/260910-cw3-mover-cuenta-de-chrome-al-boton-de-usuar/) |
 | 260910-cbj | Chrome: explicar fallos de captura con causa y pasos específicos | 2026-09-10 | `db26d87` | 216 tests PASS; 0.4.2 loaded/connected; 49 Ready for Review | [260910-cbj](./quick/260910-cbj-aclarar-errores-de-captura-chrome-con-ca/) |
 | 260910-cbm | Chrome: botones Crear proyecto/Epic arriba del compositor | 2026-09-10 | `724a2da` | 183 tests PASS; 0.4.1 loaded in connected test Chrome; server unchanged | [260910-cbm](./quick/260910-cbm-mover-crear-proyecto-y-crear-epic-arriba/) |
@@ -183,5 +198,5 @@ Items acknowledged and carried forward from previous milestone close:
 ## Session Continuity
 
 Last session: 2026-09-10
-Stopped at: Chrome 0.4.3 loaded/connected, ticket 50 Ready for Review and claim released. 33 owner acceptance remains pending. Backend still on e5da82f; no new server deployment needed for extension-only patches.
-Resume file: ./quick/260910-cw3-mover-cuenta-de-chrome-al-boton-de-usuar/SUMMARY.md (derived evidence; reread live tickets/answers)
+Stopped at: Chrome 0.5 images loaded/connected, backend 22b7e89 via GitOps 4eb5b1ec Synced/Healthy. Ticket 51 Ready for Review v6, claim null. Ticket 33 owner acceptance remains untouched.
+Resume file: ./quick/260910-d89-simplificar-chrome-a-pegar-o-subir-varia/SUMMARY.md (derived evidence; reread live tickets/answers)
