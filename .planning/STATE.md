@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Chrome 0.5.4 styles applied live preserving 0.5.3 runtime and confirmation; ticket 56 Ready for Review
-last_updated: "2026-09-10T09:03:28Z"
+stopped_at: Web-only ticket deletion deployed and production verified; ticket 60 Ready for Review
+last_updated: "2026-09-10T09:31:50Z"
 last_activity: 2026-09-10
 progress:
   total_phases: 9
@@ -22,6 +22,15 @@ See: .planning/PROJECT.md (updated 2026-08-30)
 
 **Core value:** Convertir una intención humana en trabajo estructurado y seguro que ChatGPT y agentes de código externos puedan entender, ejecutar y devolver a revisión dentro de un único flujo trazable.
 **Current focus:** Chrome 0.5 replaces capture/DOM/editor with pasted/uploaded images at owner request. Ticket 51 Ready for Review; 33 owner acceptance untouched. Server deployed and managed Chrome connected. Quick 260910-d89.
+
+Follow-up 2026-09-10: ticket 60 adds owner-only web deletion with confirmation,
+logical tombstone 0014, audit/retention, version guards and hidden reads/evidence.
+No Chrome/MCP delete permissions. Quick 260910-fdz, source c8d0d1a, GitOps
+543a2f65 Synced/Healthy; pod Ready on master, both PVCs unchanged, public UI
+button/cancel tested at 1440/360 px without DELETE. 226 tests + Compose PASS,
+197 homelab PASS. Full backup restored isolated; 7 production images intact.
+Ticket Ready for Review v6, claim null. No real tickets deleted; extension
+untouched. Rollback to older binary would show tombstones: prefer roll-forward.
 
 Follow-up 2026-09-10: ticket 56 styles the success link and stacks final
 composer actions at full width with 12px gaps (quick 260910-f5d), source
