@@ -28,8 +28,26 @@ Ticket 50 (`01919640-7f8c-4a7b-a36b-fd2b3235febe`), Epic Chrome 1.
 - Homelab `make validate`: 197 PASS; catálogo/checkouts PASS (31 repos).
   Ansible y Helm ausentes: sus comprobaciones se omiten. Ningún cambio GitOps.
 
-Pendiente de registrar: gate completo del ZIP, SHA/checksum y disponibilidad en
-Chrome. La validación personal del Epic sigue en 33; no se cierra ni se responde.
+## Entrega verificada
+
+- Fuente publicada: `f6aa3e60ff1f2d6ba9aefb7bab241a3e64e129da`.
+- `pnpm extension:release` desde Git limpio: 217 pruebas PASS (78 dominio/web,
+  45 integración PostgreSQL, 8 E2E web/OAuth, 77 unitarias Chrome, 9 E2E Chrome);
+  dos skips móviles previstos. Lint, typecheck, secretos y builds reproducibles
+  PASS. ZIP de ocho ficheros y checksum comprobados.
+- Artefacto ignorado:
+  `extensions/chrome/.output/releases/issopen-chrome-0.4.3-f6aa3e60ff1f.zip`.
+  SHA-256: `abfe2fc4a8e3e08d2d5792d15ae4650c65f7998774f8d9a995f0a6a5cdb9f330`.
+- El Chrome de pruebas estaba cerrado. Se reabrió su mismo perfil aislado,
+  se cargó el artefacto en la misma ruta y se conservó el ID unpacked
+  `maclhppfbnhaeelekfdmmnmhdnmddcch`. Google Chrome 152.0.7977.82: versión 0.4.3,
+  cuenta todavía conectada, abrir/cerrar el diálogo, retorno del foco y ausencia
+  de overflow verificados. Panel dejado abierto con Cuenta cerrada. No se
+  capturó ni envió contenido productivo, ni se rellenaron formularios del owner.
+- Ticket 50 Ready for Review, v6, claim liberado y relectura independiente.
+  La aceptación personal del Epic sigue en 33; no se cierra ni se responde.
+- Sin cambios de servidor, GitOps o permisos. ZIP 0.4.2 conservado y checksum
+  vuelto a verificar para rollback. No hay publicación en Chrome Web Store.
 
 ## Rollback
 

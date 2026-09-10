@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Chrome 0.4.2 loaded and verified; error help 49 Ready for Review
-last_updated: "2026-09-10T07:08:00Z"
+stopped_at: Chrome 0.4.3 account dialog loaded and verified; ticket 50 Ready for Review
+last_updated: "2026-09-10T07:28:00Z"
 last_activity: 2026-09-10
 progress:
   total_phases: 9
@@ -22,6 +22,13 @@ See: .planning/PROJECT.md (updated 2026-08-30)
 
 **Core value:** Convertir una intención humana en trabajo estructurado y seguro que ChatGPT y agentes de código externos puedan entender, ejecutar y devolver a revisión dentro de un único flujo trazable.
 **Current focus:** Chrome Epic 1 technical delivery complete: 19–32 Ready for Review, 33 has owner-acceptance warning. Version 0.4 deployed and Chrome open. Quick 260909-vje; 43 remains Done and 44 untouched.
+
+Follow-up 2026-09-10: ticket 50 moves account details behind the header user
+button (quick 260910-cw3), Ready for Review v6, claim null. Release f6aa3e6:
+217 tests PASS, two expected skips, ZIP/checksum verified. Chrome 0.4.3 loaded
+in the same test profile/extension ID, still connected; account dialog and focus
+verified. No capture/draft loss on toggling (isolated UI and real OAuth tests).
+Previous 0.4.2 retained; no server/GitOps change or personal acceptance closure.
 
 Follow-up 2026-09-10: ticket 49 explains capture failures with safe cause codes
 and recovery steps (quick 260910-cbj), Ready for Review v6, claim null. Clean
@@ -139,6 +146,7 @@ Decisions are logged in PROJECT.md Key Decisions table. Current roadmap-level st
 
 | ID | Description | Date | Commits | Status | Directory |
 | --- | --- | --- | --- | --- | --- |
+| 260910-cw3 | Chrome: cuenta en diálogo desde el botón de usuario | 2026-09-10 | `f6aa3e6` | 217 tests PASS; 0.4.3 loaded/connected; 50 Ready for Review | [260910-cw3](./quick/260910-cw3-mover-cuenta-de-chrome-al-boton-de-usuar/) |
 | 260910-cbj | Chrome: explicar fallos de captura con causa y pasos específicos | 2026-09-10 | `db26d87` | 216 tests PASS; 0.4.2 loaded/connected; 49 Ready for Review | [260910-cbj](./quick/260910-cbj-aclarar-errores-de-captura-chrome-con-ca/) |
 | 260910-cbm | Chrome: botones Crear proyecto/Epic arriba del compositor | 2026-09-10 | `724a2da` | 183 tests PASS; 0.4.1 loaded in connected test Chrome; server unchanged | [260910-cbm](./quick/260910-cbm-mover-crear-proyecto-y-crear-epic-arriba/) |
 | 260909-vje | Complete Chrome capture-to-ticket, private storage, drafts, release and production verification | 2026-09-09 | Source `e5da82f`; GitOps `db767e30`, docs `fac0669d` | Technical delivery verified; owner acceptance in 33 | [260909-vje](./quick/260909-vje-completar-epic-chrome-dom-adjuntos-priva/) |
@@ -175,5 +183,5 @@ Items acknowledged and carried forward from previous milestone close:
 ## Session Continuity
 
 Last session: 2026-09-10
-Stopped at: Chrome 0.4.2 loaded/connected, ticket 49 Ready for Review and claim released. 33 owner acceptance remains pending. Backend still on e5da82f; no new server deployment needed for extension-only patches.
-Resume file: ./quick/260910-cbj-aclarar-errores-de-captura-chrome-con-ca/SUMMARY.md (derived evidence; reread live tickets/answers)
+Stopped at: Chrome 0.4.3 loaded/connected, ticket 50 Ready for Review and claim released. 33 owner acceptance remains pending. Backend still on e5da82f; no new server deployment needed for extension-only patches.
+Resume file: ./quick/260910-cw3-mover-cuenta-de-chrome-al-boton-de-usuar/SUMMARY.md (derived evidence; reread live tickets/answers)
