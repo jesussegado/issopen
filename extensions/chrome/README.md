@@ -1,4 +1,4 @@
-# Issopen para Chrome — piloto 0.5.4
+# Issopen para Chrome — piloto 0.5.5
 
 Crea tickets con imágenes de tu herramienta de recorte favorita.
 Ya no hace falta capturar la página ni concederle acceso a cada web.

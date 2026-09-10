@@ -29,6 +29,12 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+- Chrome 0.5.5 (ticket 62) elimina el estado engañoso de imágenes tras una
+  creación confirmada: oculta los controles editables, libera las copias en
+  memoria y confirma cuántas quedaron adjuntas. La eliminación previa al envío
+  sigue siendo inmediata; los envíos inciertos permanecen bloqueados e
+  idempotentes y no se añade borrado de adjuntos del servidor.
+
 - Epic 5 (tickets 57–59) simplifica los listados de Epics sin borrar sus
   descripciones, mantiene siempre visible `+ Create ticket in Epic` y permite
   pegar/elegir hasta cinco imágenes privadas al crear un issue desde la web.

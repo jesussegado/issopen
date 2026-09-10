@@ -65,6 +65,7 @@ export function Workspace({ account }: { account: AccountResponse | null }) {
     number: number;
     title: string;
     url: string;
+    attachmentCount: number;
   } | null>(null);
   const [generation, setGeneration] = useState(0);
   const [imageBusy, setImageBusy] = useState(false);
@@ -233,8 +234,12 @@ export function Workspace({ account }: { account: AccountResponse | null }) {
         return;
       }
       if (!("issue" in response)) throw new Error();
-      setCreated(response.issue);
+      setCreated({ ...response.issue, attachmentCount: images.length });
       setPending(null);
+      // The confirmed images now belong to the server-side ticket. Keeping an
+      // editable thumbnail here made its disabled remove button look stuck and
+      // incorrectly claimed the image had not been sent.
+      setEvidence(null);
       await clearDraft();
       await browser.storage.local.set({
         "ticket-destination": {
@@ -342,13 +347,15 @@ export function Workspace({ account }: { account: AccountResponse | null }) {
         <p role="status">Recuperando borrador…</p>
       ) : (
         <>
-          <Images
-            key={generation}
-            images={images}
-            onChange={changeImages}
-            onBusy={setImageBusy}
-            disabled={locked}
-          />
+          {!created ? (
+            <Images
+              key={generation}
+              images={images}
+              onChange={changeImages}
+              onBusy={setImageBusy}
+              disabled={locked}
+            />
+          ) : null}
           <section aria-labelledby="composer-heading">
             <h2 id="composer-heading">Crear ticket</h2>
             {!created && (
@@ -458,6 +465,14 @@ export function Workspace({ account }: { account: AccountResponse | null }) {
                 <h3>
                   Ticket creado: {created.number}-{created.title}
                 </h3>
+                {created.attachmentCount > 0 ? (
+                  <p>
+                    {created.attachmentCount}{" "}
+                    {created.attachmentCount === 1
+                      ? "imagen adjunta enviada."
+                      : "imágenes adjuntas enviadas."}
+                  </p>
+                ) : null}
                 <a href={created.url} target="_blank" rel="noreferrer">
                   Abrir ticket en Issopen
                 </a>
