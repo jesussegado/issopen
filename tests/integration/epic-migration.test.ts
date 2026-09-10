@@ -85,10 +85,13 @@ it("backfills existing Epics deterministically without changing their data or ti
 
     await migrateDatabase(container.getConnectionUri());
     const migrated = await connection.client`SELECT * FROM epic ORDER BY id`;
-    expect(migrated.map(({ number: _number, ...rest }) => rest)).toEqual([
-      ...original,
-    ]);
+    expect(
+      migrated.map(
+        ({ number: _number, archived_at: _archivedAt, ...rest }) => rest,
+      ),
+    ).toEqual([...original]);
     expect(migrated.map((item) => item.number)).toEqual([1, 2, 3, 1]);
+    expect(migrated.every((item) => item.archived_at === null)).toBe(true);
     expect(await tracker.getIssue(workspaceId, issueId)).toMatchObject({
       epicId: epics[0].id,
       deletedAt: null,

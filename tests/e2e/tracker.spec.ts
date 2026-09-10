@@ -274,6 +274,54 @@ test("owner completes the tracker loop with native keyboard controls", async ({
   );
   await expect(page.getByText(`Accepted result for ${issueRef}`)).toBeVisible();
 
+  if (
+    mobile &&
+    (await page
+      .getByRole("button", { name: "Close navigation" })
+      .isVisible()
+      .catch(() => false))
+  )
+    await page.getByRole("button", { name: "Close navigation" }).click();
+  await page.getByRole("link", { name: `Epic: ${epicDisplayName}` }).click();
+  const archiveButton = page.getByRole("button", { name: "Archive Epic" });
+  await archiveButton.click();
+  const archiveDialog = page.getByRole("dialog", {
+    name: "Archive this Epic?",
+  });
+  await expect(archiveDialog).toBeVisible();
+  await expect(archiveDialog.getByText(epicDisplayName)).toBeVisible();
+  const archiveCancel = archiveDialog.getByRole("button", { name: "Cancel" });
+  await expect(archiveCancel).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(archiveDialog).toBeHidden();
+  await expect(archiveButton).toBeFocused();
+  await archiveButton.click();
+  await archiveDialog.getByRole("button", { name: "Confirm archive" }).click();
+  await expect(page.getByText("Epic archived", { exact: true })).toBeVisible();
+  await expect(page.getByText(/This Epic is archived/)).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: issueDisplayName }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Create ticket in Epic" }),
+  ).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "View on board" })).toHaveCount(
+    0,
+  );
+
+  await page.goto(`/projects/${issue.projectId}/epics`);
+  await expect(
+    page.getByRole("heading", { name: "No active Epics" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Show archived (1)" }).click();
+  await expect(page.getByRole("link", { name: epicDisplayName })).toBeVisible();
+  await page.getByRole("link", { name: epicDisplayName }).click();
+  await page.getByRole("button", { name: "Restore Epic" }).click();
+  await expect(page.getByText("Epic restored", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Create ticket in Epic" }),
+  ).toBeVisible();
+
   await page.goto(`/projects/${issue.projectId}/settings`);
   await page
     .getByRole("checkbox", { name: /Show Ready for Human Review/ })

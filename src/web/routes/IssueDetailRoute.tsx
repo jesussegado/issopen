@@ -400,9 +400,15 @@ export function IssueDetailRoute({ issueId }: { issueId: string }) {
           <div className="issue-metadata">
             <span>Owner: You</span>
             {epic ? (
-              <AppLink className="badge epic-badge" href={`/epics/${epic.id}`}>
-                Epic: {epicLabel(epic)}
-              </AppLink>
+              <>
+                <AppLink
+                  className="badge epic-badge"
+                  href={`/epics/${epic.id}`}
+                >
+                  Epic: {epicLabel(epic)}
+                </AppLink>
+                {epic.archivedAt ? <Badge>Archived Epic</Badge> : null}
+              </>
             ) : null}
             {issue.claimedByAgentId ? (
               <Badge>Agent: {issue.claimedByAgentId}</Badge>

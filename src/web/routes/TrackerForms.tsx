@@ -463,7 +463,12 @@ export function IssueFormRoute({
             ),
           ]);
           setProject(projectResponse.project);
-          setEpics(epicResponse.epics);
+          setEpics(
+            detail.epic?.archivedAt &&
+              !epicResponse.epics.some((epic) => epic.id === detail.epic?.id)
+              ? [...epicResponse.epics, detail.epic]
+              : epicResponse.epics,
+          );
           setExpectedVersion(detail.issue.version);
           setQuestionVersions(
             (detail.questions ?? []).map(({ id, version }) => ({
@@ -623,8 +628,13 @@ export function IssueFormRoute({
           >
             <option value="">No Epic</option>
             {epics.map((epic) => (
-              <option key={epic.id} value={epic.id}>
+              <option
+                key={epic.id}
+                value={epic.id}
+                disabled={Boolean(epic.archivedAt)}
+              >
                 {epicLabel(epic)}
+                {epic.archivedAt ? " (Archived)" : ""}
               </option>
             ))}
           </Select>

@@ -47,6 +47,7 @@ export type Epic = {
   number: number;
   title: string;
   description: string;
+  archivedAt: string | null;
   version: number;
   createdAt: string;
   updatedAt: string;

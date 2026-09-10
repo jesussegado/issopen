@@ -96,8 +96,18 @@ related tickets. The board's **Show Epic** selector supports all tickets, only
 unassigned tickets or one selected Epic. The selected Epic is stored in the
 URL, so the filtered board can be bookmarked and the Epic detail can link back
 to it. Compact Epic lists omit descriptions; the detail retains the description
-and always offers creation of another related ticket. Epic detail provides
-status counts, completion progress and direct links to every related ticket.
+and offers creation of another related ticket while the Epic is active. Epic
+detail provides status counts, completion progress and direct links to every
+related ticket.
+
+An Epic can be archived after an explicit confirmation and restored from its
+detail. Archiving is reversible: it preserves the Epic number, content,
+progress and ticket associations. Archived Epics disappear from active board,
+web and Chrome selectors, but their direct pages and related tickets remain
+readable. **Manage Epics** exposes them through **Show archived**. Existing
+tickets may keep moving through the workflow or leave an archived Epic; new
+tickets cannot join one until it is restored. See
+[Epic archiving](docs/epic-archiving.md) for API, MCP and rollback details.
 
 The normal create-issue form can also paste or select up to five private PNG,
 JPEG, or WebP images (8 MiB total). The browser prepares previews and the server
@@ -109,9 +119,10 @@ REST exposes `GET/POST /api/v1/projects/:projectId/epics` and
 `epicId=<uuid>` or `epicId=unassigned`; issue create/update accepts a nullable
 `epicId`. PostgreSQL enforces the workspace/project relationship with a
 composite foreign key, while the domain records Epic creation, edits and issue
-association changes in append-only activity. There is intentionally no Epic
-hierarchy, independent lifecycle, owner, due date or delete operation in this
-MVP.
+association changes in append-only activity. Epic lists accept
+`archived=active|archived|all` and default to active. `PATCH` accepts the
+version-guarded `archived` boolean. There is intentionally no Epic hierarchy,
+owner, due date or destructive delete operation in this MVP.
 
 ## Prerequisites
 
@@ -449,6 +460,10 @@ cookies, tokens, connection strings or command output containing them.
   without a number: the new column is required. Keep the numbering support in
   a forward fix, or plan a separately approved database restore. Take a private
   PostgreSQL backup before promoting this migration.
+- Migration `0016_milky_songbird` is additive and leaves existing Epics active.
+  A binary older than Epic archiving ignores `archived_at` and would display
+  archived Epics as active again. Restore archived Epics before such a rollback
+  or prefer a forward fix; never remove the column as an application rollback.
 - Caddy and Cloudflare roll back separately. Remove the exact Caddy host block
   with the edge playbook; use only the mode-`0600` JSON created by the
   Cloudflare helper for an explicitly authorized DNS rollback.

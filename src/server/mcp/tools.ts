@@ -7,6 +7,7 @@ import {
   AgentService,
   createEpicSchema,
   DomainError,
+  epicArchiveFilterSchema,
   idempotencyKeySchema,
   McpIdempotencyService,
   type MutationContext,
@@ -158,17 +159,18 @@ export function createIssopenMcpServer(
     "list_epics",
     {
       description:
-        "List a bounded page of Epic summaries, including empty Epics, inside one allowed project.",
+        "List a bounded page of Epic summaries, including empty Epics, inside one allowed project. Active Epics are returned by default; request archived or all explicitly.",
       inputSchema: z
         .object({
           projectId: z.uuid(),
+          archived: epicArchiveFilterSchema.default("active"),
           limit: mcpPageLimitSchema,
           cursor: mcpCursorSchema,
         })
         .strict(),
       annotations: { readOnlyHint: true },
     },
-    async ({ projectId, limit, cursor }) => {
+    async ({ projectId, archived, limit, cursor }) => {
       agents.requireScope(principal, "issues:read");
       agents.requireProject(principal, projectId);
       await tracker.getProject(principal.workspaceId, projectId);
@@ -176,6 +178,7 @@ export function createIssopenMcpServer(
         schemaVersion: 1,
         tool: "list_epics",
         projectId,
+        archived,
         allowedProjectIds,
       });
       const after = decodeMcpCursor(
@@ -187,7 +190,7 @@ export function createIssopenMcpServer(
       const page = await tracker.listEpicPage(
         principal.workspaceId,
         projectId,
-        { limit, ...(after ? { after } : {}) },
+        { limit, archive: archived, ...(after ? { after } : {}) },
       );
       const last = page.items.at(-1);
       const nextCursor =
@@ -259,7 +262,7 @@ export function createIssopenMcpServer(
     "update_epic",
     {
       description:
-        "Edit only an allowed Epic's title or description; requires explicit epics:write permission and an idempotency key.",
+        "Edit an allowed Epic's title, description or archived state; requires explicit epics:write permission and an idempotency key.",
       inputSchema: z
         .object({
           ...updateEpicSchema.shape,

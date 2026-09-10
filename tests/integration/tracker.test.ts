@@ -606,6 +606,99 @@ describe("transactional tracker domain", () => {
     ).toBe("OTH-1");
   });
 
+  it("archives and restores Epics without losing tickets or accepting new associations", async () => {
+    const createdProject = await tracker.createProject(ownerContext, {
+      name: "Archive Epics",
+      key: "ARC",
+    });
+    const createdEpic = await tracker.createEpic(ownerContext, {
+      projectId: createdProject.id,
+      title: "Finished initiative",
+    });
+    const linkedIssue = await tracker.createIssue(ownerContext, {
+      projectId: createdProject.id,
+      epicId: createdEpic.id,
+      title: "Retained ticket",
+    });
+    const unassignedIssue = await tracker.createIssue(ownerContext, {
+      projectId: createdProject.id,
+      title: "Future ticket",
+    });
+
+    const archived = await tracker.updateEpic(ownerContext, createdEpic.id, {
+      archived: true,
+      expectedVersion: createdEpic.version,
+    });
+    expect(archived).toMatchObject({
+      id: createdEpic.id,
+      archivedAt: expect.any(Date),
+      version: 2,
+    });
+    expect(await tracker.listEpics(workspaceId, createdProject.id)).toEqual([]);
+    expect(
+      await tracker.listEpics(workspaceId, createdProject.id, "archived"),
+    ).toEqual([
+      expect.objectContaining({
+        id: createdEpic.id,
+        summary: expect.objectContaining({ totalIssues: 1 }),
+      }),
+    ]);
+    expect(
+      await tracker.listEpics(workspaceId, createdProject.id, "all"),
+    ).toHaveLength(1);
+    expect(
+      (await tracker.getEpicDetail(workspaceId, createdEpic.id)).issues.map(
+        (item) => item.id,
+      ),
+    ).toEqual([linkedIssue.id]);
+
+    await expect(
+      tracker.createIssue(ownerContext, {
+        projectId: createdProject.id,
+        epicId: createdEpic.id,
+        title: "Late ticket",
+      }),
+    ).rejects.toMatchObject({ code: "conflict" });
+    await expect(
+      tracker.updateIssue(ownerContext, unassignedIssue.id, {
+        epicId: createdEpic.id,
+      }),
+    ).rejects.toMatchObject({ code: "conflict" });
+    expect(
+      await tracker.updateIssue(ownerContext, linkedIssue.id, {
+        title: "Retained ticket updated",
+      }),
+    ).toMatchObject({ epicId: createdEpic.id });
+
+    await expect(
+      tracker.updateEpic(ownerContext, createdEpic.id, {
+        archived: false,
+        expectedVersion: 1,
+      }),
+    ).rejects.toMatchObject({ code: "conflict" });
+    const restored = await tracker.updateEpic(ownerContext, createdEpic.id, {
+      archived: false,
+      expectedVersion: archived.version,
+    });
+    expect(restored).toMatchObject({ archivedAt: null, version: 3 });
+    expect(
+      await tracker.listEpics(workspaceId, createdProject.id),
+    ).toHaveLength(1);
+    expect(
+      (await connection.db.select().from(activityEvent)).map(
+        (event) => event.type,
+      ),
+    ).toEqual([
+      "project.created",
+      "epic.created",
+      "issue.created",
+      "issue.created",
+      "epic.archived",
+      "issue.updated",
+      "epic.restored",
+    ]);
+  });
+
   it("keeps human ownership independent from an attributed agent claim", async () => {
     const createdProject = await tracker.createProject(ownerContext, {
       name: "Issopen",

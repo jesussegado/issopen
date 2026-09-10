@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import { ConflictReview } from "../components/ConflictReview.js";
 import {
   AppLink,
@@ -59,6 +59,147 @@ function Progress({ epic }: { epic: Epic }) {
   );
 }
 
+function ArchiveEpicControl({
+  epic,
+  onChange,
+}: {
+  epic: Epic;
+  onChange: (epic: Epic, notice: string) => void;
+}) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  const inFlight = useRef(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const online = useOnlineStatus();
+
+  async function changeArchived(archived: boolean) {
+    if (inFlight.current || !online) return;
+    inFlight.current = true;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const response = await apiRequest<{ epic: Epic }>(
+        `/api/v1/epics/${epic.id}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({
+            archived,
+            expectedVersion: epic.version,
+          }),
+        },
+      );
+      dialog.current?.close();
+      onChange(response.epic, archived ? "Epic archived" : "Epic restored");
+    } catch (caught) {
+      setError(
+        caught instanceof ApiError
+          ? caught.status === 409
+            ? "This Epic changed. Reload it and review the latest version before trying again."
+            : caught.status === 403
+              ? "You don't have permission to change this Epic."
+              : "We couldn't confirm the change. Try again; the Epic and its tickets remain safe."
+          : "We couldn't confirm the change. Check your connection and try again.",
+      );
+    } finally {
+      inFlight.current = false;
+      setSubmitting(false);
+    }
+  }
+
+  if (epic.archivedAt) {
+    return (
+      <div className="archive-epic-control">
+        <Button
+          type="button"
+          variant="secondary"
+          disabled={!online || submitting}
+          onClick={() => void changeArchived(false)}
+        >
+          {submitting ? "Restoring…" : "Restore Epic"}
+        </Button>
+        {error ? <StatusBanner error>{error}</StatusBanner> : null}
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <Button
+        type="button"
+        variant="destructive"
+        disabled={!online || submitting}
+        onClick={() => {
+          setError(null);
+          dialog.current?.showModal();
+        }}
+      >
+        Archive Epic
+      </Button>
+      <dialog
+        ref={dialog}
+        className="archive-epic-dialog"
+        aria-labelledby="archive-epic-title"
+        aria-describedby="archive-epic-description"
+        onKeyDown={(event) => {
+          if (event.key !== "Tab") return;
+          const buttons =
+            event.currentTarget.querySelectorAll<HTMLButtonElement>(
+              "button:not(:disabled)",
+            );
+          const first = buttons[0];
+          const last = buttons[buttons.length - 1];
+          if (!first || !last) {
+            event.preventDefault();
+            return;
+          }
+          if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last.focus();
+          } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+          }
+        }}
+        onCancel={(event) => {
+          if (inFlight.current) event.preventDefault();
+        }}
+      >
+        <h2 id="archive-epic-title">Archive this Epic?</h2>
+        <p className="archive-epic-name">{epicLabel(epic)}</p>
+        <p id="archive-epic-description">
+          Its tickets will remain linked and visible in their workflow. The Epic
+          will disappear from active lists and new ticket selectors until you
+          restore it.
+        </p>
+        {error ? <StatusBanner error>{error}</StatusBanner> : null}
+        {!online ? (
+          <StatusBanner error>
+            You are offline. Reconnect before archiving.
+          </StatusBanner>
+        ) : null}
+        <div className="archive-epic-actions">
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={submitting}
+            onClick={() => dialog.current?.close()}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            disabled={submitting || !online}
+            onClick={() => void changeArchived(true)}
+          >
+            {submitting ? "Archiving…" : "Confirm archive"}
+          </Button>
+        </div>
+      </dialog>
+    </>
+  );
+}
+
 export function EpicsRoute({ projectId }: { projectId: string }) {
   const [project, setProject] = useState<Project | null>(null);
   const [epics, setEpics] = useState<Epic[]>([]);
@@ -70,13 +211,16 @@ export function EpicsRoute({ projectId }: { projectId: string }) {
     [],
   );
   const [notice, setNotice] = useState<string | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const online = useOnlineStatus();
 
   useEffect(() => {
     Promise.all([
       apiRequest<{ project: Project }>(`/api/v1/projects/${projectId}`),
-      apiRequest<{ epics: Epic[] }>(`/api/v1/projects/${projectId}/epics`),
+      apiRequest<{ epics: Epic[] }>(
+        `/api/v1/projects/${projectId}/epics?archived=all`,
+      ),
     ])
       .then(([projectResponse, epicResponse]) => {
         setProject(projectResponse.project);
@@ -115,6 +259,8 @@ export function EpicsRoute({ projectId }: { projectId: string }) {
 
   if (loading) return <Skeleton label="Loading Epics…" />;
   if (missing || !project) return <UnavailableRoute />;
+  const activeEpics = epics.filter((epic) => !epic.archivedAt);
+  const archivedEpics = epics.filter((epic) => epic.archivedAt);
   return (
     <div className="detail-column">
       <div className="page-header">
@@ -136,15 +282,29 @@ export function EpicsRoute({ projectId }: { projectId: string }) {
       {notice ? <StatusBanner focus>{notice}</StatusBanner> : null}
       <div className="epic-layout">
         <section className="detail-panel" aria-labelledby="epic-list-heading">
-          <h2 id="epic-list-heading">Project Epics</h2>
-          {epics.length === 0 ? (
+          <div className="question-heading">
+            <h2 id="epic-list-heading">Project Epics</h2>
+            {archivedEpics.length > 0 ? (
+              <Button
+                type="button"
+                variant="secondary"
+                aria-expanded={showArchived}
+                aria-controls="archived-epics"
+                onClick={() => setShowArchived((current) => !current)}
+              >
+                {showArchived ? "Hide" : "Show"} archived (
+                {archivedEpics.length})
+              </Button>
+            ) : null}
+          </div>
+          {activeEpics.length === 0 ? (
             <EmptyState
-              heading="No Epics yet"
-              body="Create the first Epic to group related tickets."
+              heading="No active Epics"
+              body="Create an Epic to group related tickets, or restore an archived one."
             />
           ) : (
             <ul className="epic-list">
-              {epics.map((epic) => (
+              {activeEpics.map((epic) => (
                 <li key={epic.id} className="epic-card">
                   <AppLink
                     className="epic-card-title"
@@ -157,6 +317,30 @@ export function EpicsRoute({ projectId }: { projectId: string }) {
               ))}
             </ul>
           )}
+          {showArchived ? (
+            <div id="archived-epics" className="archived-epics">
+              <div className="question-heading">
+                <h3>Archived Epics</h3>
+                <Badge>{archivedEpics.length}</Badge>
+              </div>
+              <ul className="epic-list">
+                {archivedEpics.map((epic) => (
+                  <li key={epic.id} className="epic-card">
+                    <div className="epic-card-heading">
+                      <AppLink
+                        className="epic-card-title"
+                        href={`/epics/${epic.id}`}
+                      >
+                        {epicLabel(epic)}
+                      </AppLink>
+                      <Badge>Archived</Badge>
+                    </div>
+                    <Progress epic={epic} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
         </section>
         <section className="detail-panel" aria-labelledby="create-epic-heading">
           <h2 id="create-epic-heading">Create Epic</h2>
@@ -207,7 +391,10 @@ export function EpicDetailRoute({ epicId }: { epicId: string }) {
   const [loading, setLoading] = useState(true);
   const [missing, setMissing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const notice = new URLSearchParams(window.location.search).get("notice");
+  const [notice, setNotice] = useState<string | null>(() =>
+    new URLSearchParams(window.location.search).get("notice"),
+  );
+  const online = useOnlineStatus();
 
   useEffect(() => {
     async function load() {
@@ -239,32 +426,51 @@ export function EpicDetailRoute({ epicId }: { epicId: string }) {
         <div>
           <div className="issue-metadata">
             <Badge>Epic</Badge>
+            {epic.archivedAt ? <Badge>Archived</Badge> : null}
             <span>{project.name}</span>
           </div>
           <PageHeading>{epicLabel(epic)}</PageHeading>
         </div>
         <div className="page-actions">
-          <AppLink
-            className="button button-secondary"
-            href={`/projects/${project.id}?epic=${epic.id}`}
-          >
-            View on board
-          </AppLink>
+          {!epic.archivedAt ? (
+            <AppLink
+              className="button button-secondary"
+              href={`/projects/${project.id}?epic=${epic.id}`}
+            >
+              View on board
+            </AppLink>
+          ) : null}
           <AppLink
             className="button button-secondary"
             href={`/epics/${epic.id}/edit`}
           >
             Edit Epic
           </AppLink>
-          <AppLink
-            className="button button-primary epic-create-button"
-            href={`/projects/${project.id}/issues/new?epic=${epic.id}`}
-          >
-            <span aria-hidden="true">+</span> Create ticket in Epic
-          </AppLink>
+          {!epic.archivedAt ? (
+            <AppLink
+              className="button button-primary epic-create-button"
+              href={`/projects/${project.id}/issues/new?epic=${epic.id}`}
+            >
+              <span aria-hidden="true">+</span> Create ticket in Epic
+            </AppLink>
+          ) : null}
+          <ArchiveEpicControl
+            epic={epic}
+            onChange={(updated, message) => {
+              setEpic({ ...updated, summary: epic.summary });
+              setNotice(message);
+            }}
+          />
         </div>
       </div>
       {notice ? <StatusBanner>{notice}</StatusBanner> : null}
+      {!online ? <OfflineBanner /> : null}
+      {epic.archivedAt ? (
+        <StatusBanner>
+          This Epic is archived. Existing tickets remain linked, but new tickets
+          cannot be added until it is restored.
+        </StatusBanner>
+      ) : null}
       {error ? <StatusBanner error>{error}</StatusBanner> : null}
       <section className="detail-panel" aria-labelledby="epic-summary-heading">
         <h2 id="epic-summary-heading">Overview</h2>

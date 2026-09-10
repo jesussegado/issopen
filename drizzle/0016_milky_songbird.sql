@@ -1,0 +1,2 @@
+ALTER TABLE "epic" ADD COLUMN "archived_at" timestamp with time zone;--> statement-breakpoint
+CREATE INDEX "epic_project_archived_number_idx" ON "epic" USING btree ("project_id","archived_at","number");

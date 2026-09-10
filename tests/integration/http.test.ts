@@ -331,6 +331,123 @@ describe("protected tracker REST API", () => {
       });
     }
   });
+
+  it("archives Epics reversibly while keeping their existing tickets readable", async () => {
+    const createdProject = await createProjectFixture();
+    const createdEpic = await createEpicFixture(createdProject.id);
+    const linkedIssue = await createIssueFixture(
+      createdProject.id,
+      "backlog",
+      createdEpic.id,
+    );
+
+    const archivedResponse = await authenticatedRequest(
+      `/api/v1/epics/${createdEpic.id}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ archived: true, expectedVersion: 1 }),
+      },
+    );
+    expect(archivedResponse.status).toBe(200);
+    expect(await body(archivedResponse)).toMatchObject({
+      epic: {
+        id: createdEpic.id,
+        archivedAt: expect.any(String),
+        version: 2,
+      },
+    });
+
+    expect(
+      await body(
+        await authenticatedRequest(
+          `/api/v1/projects/${createdProject.id}/epics`,
+        ),
+      ),
+    ).toEqual({ epics: [] });
+    for (const filter of ["archived", "all"]) {
+      expect(
+        await body(
+          await authenticatedRequest(
+            `/api/v1/projects/${createdProject.id}/epics?archived=${filter}`,
+          ),
+        ),
+      ).toMatchObject({
+        epics: [
+          {
+            id: createdEpic.id,
+            archivedAt: expect.any(String),
+            summary: { totalIssues: 1 },
+          },
+        ],
+      });
+    }
+    expect(
+      (
+        await authenticatedRequest(
+          `/api/v1/projects/${createdProject.id}/epics?archived=invalid`,
+        )
+      ).status,
+    ).toBe(400);
+
+    expect(
+      await body(await authenticatedRequest(`/api/v1/epics/${createdEpic.id}`)),
+    ).toMatchObject({
+      epic: { id: createdEpic.id, summary: { totalIssues: 1 } },
+      issues: [{ id: linkedIssue.id }],
+    });
+    expect(
+      (
+        await authenticatedRequest(
+          `/api/v1/projects/${createdProject.id}/board?epicId=${createdEpic.id}`,
+        )
+      ).status,
+    ).toBe(404);
+    expect(
+      await body(
+        await authenticatedRequest(
+          `/api/v1/projects/${createdProject.id}/board`,
+        ),
+      ),
+    ).toMatchObject({
+      epics: [{ id: createdEpic.id, archivedAt: expect.any(String) }],
+      totalIssueCount: 1,
+    });
+
+    const rejectedAssociation = await authenticatedRequest(
+      `/api/v1/projects/${createdProject.id}/issues`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          title: "Cannot join archived Epic",
+          epicId: createdEpic.id,
+        }),
+      },
+    );
+    expect(rejectedAssociation.status).toBe(409);
+    expect(await body(rejectedAssociation)).toMatchObject({
+      error: expect.stringContaining("Archived Epics"),
+    });
+
+    const restoredResponse = await authenticatedRequest(
+      `/api/v1/epics/${createdEpic.id}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ archived: false, expectedVersion: 2 }),
+      },
+    );
+    expect(restoredResponse.status).toBe(200);
+    expect(await body(restoredResponse)).toMatchObject({
+      epic: { archivedAt: null, version: 3 },
+    });
+    expect(
+      (
+        await authenticatedRequest(
+          `/api/v1/projects/${createdProject.id}/board?epicId=${createdEpic.id}`,
+        )
+      ).status,
+    ).toBe(200);
+  });
+
   it("denies anonymous reads and mutations before resolving tracker data", async () => {
     const resourceId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
     const requests: Array<[string, RequestInit | undefined]> = [

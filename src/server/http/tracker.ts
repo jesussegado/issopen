@@ -15,6 +15,7 @@ import {
   createProjectSchema,
   DomainError,
   deleteIssueSchema,
+  epicArchiveFilterSchema,
   type MutationContext,
   requestChangesSchema,
   TrackerService,
@@ -89,6 +90,19 @@ function parseOptionalEpicFilter(value: string | undefined) {
   if (!parsed.success) {
     throw new DomainError("invalid", "Invalid request", [
       { field: "epicId", message: "Must be an Epic identifier or unassigned" },
+    ]);
+  }
+  return parsed.data;
+}
+
+function parseEpicArchiveFilter(value: string | undefined) {
+  const parsed = epicArchiveFilterSchema.safeParse(value ?? "active");
+  if (!parsed.success) {
+    throw new DomainError("invalid", "Invalid request", [
+      {
+        field: "archived",
+        message: "Must be active, archived or all",
+      },
     ]);
   }
   return parsed.data;
@@ -216,8 +230,13 @@ export function createTrackerRouter({ db }: TrackerRouterDependencies) {
       "projectId",
     );
     await tracker.getProject(mutationContext.workspaceId, projectId);
+    const archiveFilter = parseEpicArchiveFilter(context.req.query("archived"));
     return context.json({
-      epics: await tracker.listEpics(mutationContext.workspaceId, projectId),
+      epics: await tracker.listEpics(
+        mutationContext.workspaceId,
+        projectId,
+        archiveFilter,
+      ),
     });
   });
 
@@ -302,6 +321,9 @@ export function createTrackerRouter({ db }: TrackerRouterDependencies) {
       if (foundEpic.projectId !== projectId) {
         throw new DomainError("not_found", "Epic not found");
       }
+      if (foundEpic.archivedAt) {
+        throw new DomainError("not_found", "Epic not found");
+      }
     }
     const issues = await tracker.listIssues(
       mutationContext.workspaceId,
@@ -316,7 +338,11 @@ export function createTrackerRouter({ db }: TrackerRouterDependencies) {
     const visibleStatusSet = new Set(visibleStatuses);
     return context.json({
       project: foundProject,
-      epics: await tracker.listEpics(mutationContext.workspaceId, projectId),
+      epics: await tracker.listEpics(
+        mutationContext.workspaceId,
+        projectId,
+        "all",
+      ),
       epicFilter: epicFilter ?? null,
       totalIssueCount: issues.length,
       hiddenIssueCount: issues.filter(

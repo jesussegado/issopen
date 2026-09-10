@@ -307,6 +307,7 @@ export function BoardRoute({ projectId }: { projectId: string }) {
     0,
   );
   const repository = repositoryLabel(project.repositoryUrl);
+  const activeEpics = epics.filter((epic) => !epic.archivedAt);
   return (
     <div className="detail-column board-page">
       <div className="page-header">
@@ -348,7 +349,7 @@ export function BoardRoute({ projectId }: { projectId: string }) {
           {error}
         </StatusBanner>
       ) : null}
-      <EpicOverview epics={epics} />
+      <EpicOverview epics={activeEpics} />
       {hiddenIssueCount > 0 ? (
         <StatusBanner>
           {hiddenIssueCount} hidden{" "}
@@ -392,7 +393,7 @@ export function BoardRoute({ projectId }: { projectId: string }) {
               >
                 <option value="all">All Epics</option>
                 <option value="unassigned">No Epic</option>
-                {epics.map((epic) => (
+                {activeEpics.map((epic) => (
                   <option key={epic.id} value={epic.id}>
                     {epicLabel(epic)}
                   </option>
@@ -564,14 +565,19 @@ export function BoardRoute({ projectId }: { projectId: string }) {
                                   >
                                     <div className="issue-metadata">
                                       {issue.epicId ? (
-                                        <AppLink
-                                          className="badge epic-badge"
-                                          href={`/epics/${issue.epicId}`}
-                                        >
-                                          {issueEpic
-                                            ? epicLabel(issueEpic)
-                                            : "Epic"}
-                                        </AppLink>
+                                        <>
+                                          <AppLink
+                                            className="badge epic-badge"
+                                            href={`/epics/${issue.epicId}`}
+                                          >
+                                            {issueEpic
+                                              ? epicLabel(issueEpic)
+                                              : "Epic"}
+                                          </AppLink>
+                                          {issueEpic?.archivedAt ? (
+                                            <Badge>Archived Epic</Badge>
+                                          ) : null}
+                                        </>
                                       ) : null}
                                       <Badge>
                                         {priorityLabels[issue.priority]}

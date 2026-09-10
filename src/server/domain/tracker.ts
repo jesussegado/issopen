@@ -40,6 +40,7 @@ import {
   createProjectSchema,
   type DeleteIssueInput,
   deleteIssueSchema,
+  type EpicArchiveFilter,
   type MutationContext,
   mutationContextSchema,
   requestChangesSchema,
@@ -381,12 +382,24 @@ export class TrackerService {
     });
   }
 
-  async listEpics(workspaceId: string, projectId: string) {
+  async listEpics(
+    workspaceId: string,
+    projectId: string,
+    archive: EpicArchiveFilter = "active",
+  ) {
     const epics = await this.db
       .select()
       .from(epic)
       .where(
-        and(eq(epic.workspaceId, workspaceId), eq(epic.projectId, projectId)),
+        and(
+          eq(epic.workspaceId, workspaceId),
+          eq(epic.projectId, projectId),
+          archive === "active"
+            ? isNull(epic.archivedAt)
+            : archive === "archived"
+              ? isNotNull(epic.archivedAt)
+              : undefined,
+        ),
       )
       .orderBy(asc(epic.number));
     if (epics.length === 0) return [];
@@ -438,14 +451,20 @@ export class TrackerService {
   async listEpicPage(
     workspaceId: string,
     projectId: string,
-    options: { limit: number; after?: { number: number; id: string } },
+    options: {
+      limit: number;
+      archive?: EpicArchiveFilter;
+      after?: { number: number; id: string };
+    },
   ) {
+    const archive = options.archive ?? "active";
     const rows = await this.db
       .select({
         id: epic.id,
         projectId: epic.projectId,
         number: epic.number,
         title: epic.title,
+        archivedAt: epic.archivedAt,
         version: epic.version,
         createdAt: epic.createdAt,
         updatedAt: epic.updatedAt,
@@ -455,6 +474,11 @@ export class TrackerService {
         and(
           eq(epic.workspaceId, workspaceId),
           eq(epic.projectId, projectId),
+          archive === "active"
+            ? isNull(epic.archivedAt)
+            : archive === "archived"
+              ? isNotNull(epic.archivedAt)
+              : undefined,
           options.after
             ? or(
                 gt(epic.number, options.after.number),
@@ -499,13 +523,12 @@ export class TrackerService {
 
   async getEpicDetail(workspaceId: string, epicId: string) {
     const foundEpic = await this.getEpic(workspaceId, epicId);
-    const [issues, projectEpics] = await Promise.all([
+    const [issues, detailedEpic] = await Promise.all([
       this.listIssues(workspaceId, foundEpic.projectId, foundEpic.id),
-      this.listEpics(workspaceId, foundEpic.projectId),
+      this.getEpicSummary(workspaceId, epicId),
     ]);
-    const detailedEpic = projectEpics.find((item) => item.id === foundEpic.id);
     return {
-      epic: detailedEpic ?? { ...foundEpic, summary: emptyEpicSummary() },
+      epic: detailedEpic,
       issues,
     };
   }
@@ -516,7 +539,10 @@ export class TrackerService {
     input: UpdateEpicInput,
   ) {
     const context = parseInput(mutationContextSchema, contextInput);
-    const { expectedVersion, ...values } = parseInput(updateEpicSchema, input);
+    const { expectedVersion, archived, ...editableValues } = parseInput(
+      updateEpicSchema,
+      input,
+    );
 
     return this.transaction(async (tx) => {
       const [current] = await tx
@@ -533,13 +559,24 @@ export class TrackerService {
           "conflict",
           "This Epic changed. Your draft is preserved; read the latest version before merging and retrying.",
         );
-      const changes = changedFields(current, values);
+      const archiveChanged =
+        archived !== undefined && archived !== (current.archivedAt !== null);
+      const changes = changedFields(current, editableValues);
+      if (archiveChanged) {
+        changes.archived = {
+          from: current.archivedAt !== null,
+          to: archived,
+        };
+      }
       if (Object.keys(changes).length === 0) return current;
 
       const [updated] = await tx
         .update(epic)
         .set({
-          ...values,
+          ...editableValues,
+          ...(archiveChanged
+            ? { archivedAt: archived ? new Date() : null }
+            : {}),
           version: sql`${epic.version} + 1`,
           updatedAt: new Date(),
         })
@@ -559,8 +596,14 @@ export class TrackerService {
 
       await recordActivity(tx, context, {
         projectId: current.projectId,
-        type: "epic.updated",
-        summary: `Updated epic ${updated.number}/${updated.title}`,
+        type: archiveChanged
+          ? archived
+            ? "epic.archived"
+            : "epic.restored"
+          : "epic.updated",
+        summary: archiveChanged
+          ? `${archived ? "Archived" : "Restored"} epic ${updated.number}/${updated.title}`
+          : `Updated epic ${updated.number}/${updated.title}`,
         changes: { epicId, ...changes },
       });
       return updated;
@@ -599,7 +642,7 @@ export class TrackerService {
 
       if (values.epicId) {
         const [foundEpic] = await tx
-          .select({ id: epic.id })
+          .select({ id: epic.id, archivedAt: epic.archivedAt })
           .from(epic)
           .where(
             and(
@@ -608,8 +651,14 @@ export class TrackerService {
               eq(epic.id, values.epicId),
             ),
           )
-          .limit(1);
+          .limit(1)
+          .for("share");
         if (!foundEpic) throw new DomainError("not_found", "Epic not found");
+        if (foundEpic.archivedAt)
+          throw new DomainError(
+            "conflict",
+            "Archived Epics cannot accept new tickets",
+          );
       }
 
       const [created] = await tx
@@ -1166,9 +1215,9 @@ export class TrackerService {
           );
       }
 
-      if (values.epicId) {
+      if (values.epicId && values.epicId !== current.epicId) {
         const [foundEpic] = await tx
-          .select({ id: epic.id })
+          .select({ id: epic.id, archivedAt: epic.archivedAt })
           .from(epic)
           .where(
             and(
@@ -1177,8 +1226,14 @@ export class TrackerService {
               eq(epic.id, values.epicId),
             ),
           )
-          .limit(1);
+          .limit(1)
+          .for("share");
         if (!foundEpic) throw new DomainError("not_found", "Epic not found");
+        if (foundEpic.archivedAt)
+          throw new DomainError(
+            "conflict",
+            "Archived Epics cannot accept new tickets",
+          );
       }
 
       if (

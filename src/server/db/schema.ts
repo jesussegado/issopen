@@ -553,6 +553,7 @@ export const epic = pgTable(
     number: integer("number").notNull(),
     title: varchar("title", { length: 240 }).notNull(),
     description: text("description").default("").notNull(),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
     version: integer("version").default(1).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
@@ -573,6 +574,11 @@ export const epic = pgTable(
       table.projectId,
     ),
     index("epic_project_created_idx").on(table.projectId, table.createdAt),
+    index("epic_project_archived_number_idx").on(
+      table.projectId,
+      table.archivedAt,
+      table.number,
+    ),
     uniqueIndex("epic_project_number_uidx").on(table.projectId, table.number),
     index("epic_workspace_id_idx").on(table.workspaceId),
     check("epic_number_check", sql`${table.number} > 0`),

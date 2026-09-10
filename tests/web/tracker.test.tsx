@@ -63,6 +63,7 @@ const epic = {
   number: 7,
   title: "MCP foundations",
   description: "Close the first usable agent workflow.",
+  archivedAt: null,
   version: 1,
   createdAt: project.createdAt,
   updatedAt: project.updatedAt,
@@ -556,7 +557,10 @@ describe("tracker web routes", () => {
       async (input: RequestInfo | URL, init?: RequestInit) => {
         const path = String(input);
         if (path === `/api/v1/projects/${project.id}`) return json({ project });
-        if (path === `/api/v1/projects/${project.id}/epics`) {
+        if (
+          path === `/api/v1/projects/${project.id}/epics?archived=all` ||
+          path === `/api/v1/projects/${project.id}/epics`
+        ) {
           if (init?.method === "POST") {
             expect(JSON.parse(String(init.body))).toEqual({
               title: "Release readiness",
@@ -633,6 +637,73 @@ describe("tracker web routes", () => {
       "href",
       `/projects/${project.id}/issues/new?epic=${epic.id}`,
     );
+  });
+
+  it("reveals archived Epics separately and restores them from their detail", async () => {
+    const archivedEpic = {
+      ...epic,
+      archivedAt: "2026-09-10T12:00:00.000Z",
+      version: 2,
+    };
+    const requests: Array<{ path: string; body?: Record<string, unknown> }> =
+      [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const path = String(input);
+        requests.push({
+          path,
+          ...(init?.body
+            ? { body: JSON.parse(String(init.body)) as Record<string, unknown> }
+            : {}),
+        });
+        if (path === `/api/v1/projects/${project.id}`) return json({ project });
+        if (path === `/api/v1/projects/${project.id}/epics?archived=all`)
+          return json({ epics: [epic, archivedEpic] });
+        if (path === `/api/v1/epics/${epic.id}` && init?.method === "PATCH")
+          return json({
+            epic: { ...archivedEpic, archivedAt: null, version: 3 },
+          });
+        if (path === `/api/v1/epics/${epic.id}`)
+          return json({
+            epic: archivedEpic,
+            issues: [{ ...issue, epicId: epic.id }],
+          });
+        throw new Error(`Unexpected request: ${path}`);
+      }),
+    );
+    const user = userEvent.setup();
+    render(<EpicsRoute projectId={project.id} />);
+
+    expect(
+      await screen.findByRole("link", { name: `7-${epic.title}` }),
+    ).toBeVisible();
+    expect(screen.queryByText("Archived")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Show archived (1)" }));
+    expect(screen.getByText("Archived")).toBeVisible();
+
+    cleanup();
+    render(<EpicDetailRoute epicId={epic.id} />);
+    expect(
+      await screen.findByText(
+        "This Epic is archived. Existing tickets remain linked, but new tickets cannot be added until it is restored.",
+      ),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("link", { name: "Create ticket in Epic" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "View on board" }),
+    ).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Restore Epic" }));
+    expect(await screen.findByText("Epic restored")).toBeVisible();
+    expect(requests.at(-1)).toEqual({
+      path: `/api/v1/epics/${epic.id}`,
+      body: { archived: false, expectedVersion: 2 },
+    });
+    expect(
+      screen.getByRole("link", { name: "Create ticket in Epic" }),
+    ).toBeVisible();
   });
 
   it("adds private images while creating a web issue and retries an uncertain request safely", async () => {

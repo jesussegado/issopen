@@ -104,15 +104,21 @@ export const createEpicSchema = z
   })
   .strict();
 
+export const epicArchiveFilterSchema = z.enum(["active", "archived", "all"]);
+
 export const updateEpicSchema = z
   .object({
     title: z.string().trim().min(1).max(240).optional(),
     description: z.string().trim().max(20_000).optional(),
+    archived: z.boolean().optional(),
     expectedVersion: z.number().int().positive().optional(),
   })
   .strict()
   .refine(
-    (value) => value.title !== undefined || value.description !== undefined,
+    (value) =>
+      value.title !== undefined ||
+      value.description !== undefined ||
+      value.archived !== undefined,
     "No changes supplied",
   );
 
@@ -219,6 +225,7 @@ export type MutationContext = z.infer<typeof mutationContextSchema>;
 export type CreateProjectInput = z.input<typeof createProjectSchema>;
 export type UpdateProjectInput = z.input<typeof updateProjectSchema>;
 export type CreateEpicInput = z.input<typeof createEpicSchema>;
+export type EpicArchiveFilter = z.infer<typeof epicArchiveFilterSchema>;
 export type UpdateEpicInput = z.input<typeof updateEpicSchema>;
 export type CreateIssueInput = z.input<typeof createIssueSchema>;
 export type UpdateIssueInput = z.input<typeof updateIssueSchema>;

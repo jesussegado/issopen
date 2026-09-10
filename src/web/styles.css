@@ -740,6 +740,22 @@ progress {
   border-radius: 8px;
   background: var(--color-subtle);
 }
+.epic-card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.archived-epics {
+  display: grid;
+  gap: 16px;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--color-border);
+}
+.archived-epics h3 {
+  margin: 0;
+}
 .epic-card-title {
   font-size: 18px;
   font-weight: 700;
@@ -975,7 +991,8 @@ progress {
   overflow-wrap: anywhere;
 }
 
-.delete-ticket-dialog {
+.delete-ticket-dialog,
+.archive-epic-dialog {
   margin: auto;
   width: min(32rem, calc(100vw - 2rem));
   max-height: calc(100dvh - 2rem);
@@ -987,21 +1004,29 @@ progress {
   background: var(--color-surface);
 }
 
-.delete-ticket-dialog::backdrop {
+.delete-ticket-dialog::backdrop,
+.archive-epic-dialog::backdrop {
   background: rgb(0 0 0 / 45%);
 }
 
-.delete-ticket-name {
+.delete-ticket-name,
+.archive-epic-name {
   font-weight: 600;
   overflow-wrap: anywhere;
 }
 
-.delete-ticket-actions {
+.delete-ticket-actions,
+.archive-epic-actions {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 12px;
   margin-top: 24px;
+}
+
+.archive-epic-control {
+  display: grid;
+  gap: 8px;
 }
 
 .confirmation-dialog {

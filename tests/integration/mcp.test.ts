@@ -425,6 +425,45 @@ describe("stateless Issopen MCP", () => {
         title: "Edited Epic",
         idempotencyKey: "epic-edit",
       });
+      await expectIdempotentReplay(client, "update_epic", {
+        epicId: newEpic.id,
+        archived: true,
+        expectedVersion: 2,
+        idempotencyKey: "epic-archive",
+      });
+      expect(
+        (
+          (
+            await client.callTool({
+              name: "list_epics",
+              arguments: { projectId },
+            })
+          ).structuredContent as { epics: Array<{ id: string }> }
+        ).epics.some((item) => item.id === newEpic.id),
+      ).toBe(false);
+      expect(
+        (
+          (
+            await client.callTool({
+              name: "list_epics",
+              arguments: { projectId, archived: "archived" },
+            })
+          ).structuredContent as {
+            epics: Array<{ id: string; archivedAt: string | null }>;
+          }
+        ).epics,
+      ).toEqual([
+        expect.objectContaining({
+          id: newEpic.id,
+          archivedAt: expect.any(String),
+        }),
+      ]);
+      await expectIdempotentReplay(client, "update_epic", {
+        epicId: newEpic.id,
+        archived: false,
+        expectedVersion: 3,
+        idempotencyKey: "epic-restore",
+      });
       for (const [name, args] of [
         ["create_epic", { projectId, title: "Denied" }],
         ["update_epic", { epicId: newEpic.id, title: "Denied" }],
@@ -448,6 +487,8 @@ describe("stateless Issopen MCP", () => {
       expect(events.map((event) => event.type)).toEqual([
         "epic.created",
         "epic.updated",
+        "epic.archived",
+        "epic.restored",
       ]);
       expect(events.every((event) => event.source === "mcp")).toBe(true);
     } finally {
