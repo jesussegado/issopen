@@ -61,9 +61,6 @@ function EpicOverview({ epics }: { epics: Epic[] }) {
                     {totalIssues} {totalIssues === 1 ? "ticket" : "tickets"}
                   </Badge>
                 </div>
-                <p className="metadata">
-                  {epic.description || "No description"}
-                </p>
                 <div className="epic-progress">
                   <div className="epic-progress-label">
                     <span>

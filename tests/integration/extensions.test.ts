@@ -191,6 +191,80 @@ function readSession(tokens: Tokens) {
 }
 
 describe("human Chrome OAuth", () => {
+  it("creates a web issue with private images atomically and replays without duplicates", async () => {
+    const createdProject = await app.request("/api/v1/projects", {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({
+        name: "Web uploads",
+        key: "WEB",
+        description: "",
+      }),
+    });
+    expect(createdProject.status).toBe(201);
+    const projectId = (
+      (await createdProject.json()) as { project: { id: string } }
+    ).project.id;
+    const png = `data:image/png;base64,${syntheticPng(true).toString("base64")}`;
+    const body = {
+      idempotencyKey: randomUUID(),
+      projectId,
+      epicId: null,
+      title: "Web screenshots",
+      description: "Created by the owner web session",
+      priority: "high",
+      status: "backlog",
+      images: [png, png],
+    };
+    const post = (value: unknown, requestHeaders = headers()) =>
+      app.request("/api/v1/captures", {
+        method: "POST",
+        headers: requestHeaders,
+        body: JSON.stringify(value),
+      });
+
+    const responses = await Promise.all([post(body), post(body)]);
+    expect(responses.map((response) => response.status)).toEqual([201, 201]);
+    const first = await responses[0]?.json();
+    expect(await responses[1]?.json()).toEqual(first);
+    expect(await connection.db.select().from(issue)).toHaveLength(1);
+    expect(await connection.db.select().from(captureEvidence)).toHaveLength(2);
+    expect(await connection.db.select().from(extensionReceipt)).toHaveLength(1);
+    const [event] = await connection.db
+      .select()
+      .from(activityEvent)
+      .where(eq(activityEvent.issueId, first.issue.id));
+    expect(event?.source).toBe("rest");
+    const evidence = await (
+      await app.request(`/api/v1/issues/${first.issue.id}/evidence`, {
+        headers: headers(),
+      })
+    ).json();
+    expect(
+      evidence.evidence.map(
+        (row: { metadata: { mode: string; attachmentIndex: number } }) =>
+          row.metadata,
+      ),
+    ).toEqual([
+      { mode: "upload", attachmentIndex: 0 },
+      { mode: "upload", attachmentIndex: 1 },
+    ]);
+    expect((await post({ ...body, title: "Changed" })).status).toBe(409);
+    expect(
+      (
+        await post({
+          ...body,
+          idempotencyKey: randomUUID(),
+          images: ["data:image/png;base64,PHN2Zy8+"],
+        })
+      ).status,
+    ).toBe(400);
+    expect(await connection.db.select().from(issue)).toHaveLength(1);
+    expect(
+      (await app.request("/api/v1/captures", { method: "POST" })).status,
+    ).toBe(401);
+  });
+
   it("cannot delete through extension credentials; web deletion hides evidence and prevents capture replay resurrection", async () => {
     const { tokens } = await connect(true);
     const extensionHeaders = {

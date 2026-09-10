@@ -29,6 +29,16 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+- Epic 5 (tickets 57–59) simplifica los listados de Epics sin borrar sus
+  descripciones, mantiene siempre visible `+ Create ticket in Epic` y permite
+  pegar/elegir hasta cinco imágenes privadas al crear un issue desde la web.
+  `POST /api/v1/captures` es owner/same-origin, estricto, idempotente y atómico;
+  reutiliza normalización, recibos, tabla de evidencia y PVC existentes sin
+  migración. Un resultado de red incierto bloquea el borrador y reintenta la
+  misma petición. Contrato y rollback en
+  [Epic 5 frontend](docs/epic-5-frontend.md); memoria en
+  [quick 260910-h2k](.planning/quick/260910-h2k-completar-epic-5-frontend-y-usabilidad/SUMMARY.md).
+
 - Ticket 61 presenta el estado interno `ready_for_review` como **Ready for
   Human Review** y permite ocultar esa columna o Done por proyecto. La migración
   aditiva 0015 activa ambas por defecto. Ocultar es sólo presentación: conserva

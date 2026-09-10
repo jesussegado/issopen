@@ -1,5 +1,6 @@
 import { type FormEvent, useEffect, useState } from "react";
 import { ConflictReview } from "../components/ConflictReview.js";
+import { IssueImages } from "../components/IssueImages.js";
 import {
   AppLink,
   Button,
@@ -424,6 +425,11 @@ export function IssueFormRoute({
     { id: string; version: number }[]
   >([]);
   const [conflict, setConflict] = useState(false);
+  const [images, setImages] = useState<string[]>([]);
+  const [idempotencyKey, setIdempotencyKey] = useState(() =>
+    crypto.randomUUID(),
+  );
+  const [uncertainCreate, setUncertainCreate] = useState(false);
   const [form, setForm] = useState<IssueFormState>({
     title: "",
     description: "",
@@ -508,15 +514,15 @@ export function IssueFormRoute({
     setSubmitting(true);
     try {
       const response = await apiRequest<{ issue: Issue }>(
-        editing
-          ? `/api/v1/issues/${issueId}`
-          : `/api/v1/projects/${project.id}/issues`,
+        editing ? `/api/v1/issues/${issueId}` : "/api/v1/captures",
         {
           method: editing ? "PATCH" : "POST",
           body: JSON.stringify({
             ...form,
             epicId: form.epicId || null,
-            ...(editing ? { expectedVersion, questionVersions } : {}),
+            ...(editing
+              ? { expectedVersion, questionVersions }
+              : { idempotencyKey, projectId: project.id, images }),
           }),
         },
       );
@@ -525,7 +531,19 @@ export function IssueFormRoute({
       );
     } catch (error) {
       if (error instanceof ApiError && error.status === 409) setConflict(true);
-      setErrors(errorDetails(error));
+      if (!editing && !(error instanceof ApiError)) {
+        setUncertainCreate(true);
+        setErrors([
+          {
+            field: "request",
+            message:
+              "The connection ended before Issopen confirmed the result. The form is locked so Retry safely can reuse the same request without creating a duplicate.",
+          },
+        ]);
+      } else {
+        if (!editing) setIdempotencyKey(crypto.randomUUID());
+        setErrors(errorDetails(error));
+      }
     } finally {
       setSubmitting(false);
     }
@@ -566,6 +584,7 @@ export function IssueFormRoute({
             id="title"
             required
             maxLength={240}
+            disabled={uncertainCreate}
             value={form.title}
             onChange={(event) =>
               setForm({ ...form, title: event.currentTarget.value })
@@ -581,6 +600,7 @@ export function IssueFormRoute({
           <TextArea
             id="description"
             maxLength={50000}
+            disabled={uncertainCreate}
             value={form.description}
             onChange={(event) =>
               setForm({ ...form, description: event.currentTarget.value })
@@ -596,6 +616,7 @@ export function IssueFormRoute({
           <Select
             id="epic"
             value={form.epicId}
+            disabled={uncertainCreate}
             onChange={(event) =>
               setForm({ ...form, epicId: event.currentTarget.value })
             }
@@ -612,6 +633,7 @@ export function IssueFormRoute({
           <Select
             id="priority"
             value={form.priority}
+            disabled={uncertainCreate}
             onChange={(event) =>
               setForm({
                 ...form,
@@ -630,6 +652,7 @@ export function IssueFormRoute({
           <Select
             id="status"
             value={form.status}
+            disabled={uncertainCreate}
             onChange={(event) =>
               setForm({
                 ...form,
@@ -644,9 +667,22 @@ export function IssueFormRoute({
             ))}
           </Select>
         </Field>
+        {!editing ? (
+          <IssueImages
+            images={images}
+            onChange={setImages}
+            disabled={uncertainCreate || submitting}
+          />
+        ) : null}
         <div className="form-actions">
           <Button type="submit" disabled={submitting || !online}>
-            {submitting ? "Saving…" : editing ? "Save issue" : "Create issue"}
+            {submitting
+              ? "Saving…"
+              : editing
+                ? "Save issue"
+                : uncertainCreate
+                  ? "Retry safely"
+                  : "Create issue"}
           </Button>
           <AppLink
             className="button button-secondary"

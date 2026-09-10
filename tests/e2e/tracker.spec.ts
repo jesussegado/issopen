@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { syntheticPng } from "../fixtures/png.js";
 import { e2eBaseUrl, e2eOwner } from "./fixtures.js";
 
 test("owner completes the tracker loop with native keyboard controls", async ({
@@ -62,9 +63,15 @@ test("owner completes the tracker loop with native keyboard controls", async ({
   await page.getByRole("button", { name: "Create Epic" }).click();
   await expect(page.getByText("Epic created")).toBeVisible();
   await expect(page).toHaveURL(/\/projects\/[^/]+\/epics$/);
+  await expect(
+    page.getByText("Group the complete private MVP workflow."),
+  ).toHaveCount(0);
   await page.getByRole("link", { name: epicDisplayName }).click();
   await expect(
     page.getByRole("heading", { name: epicDisplayName }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Group the complete private MVP workflow."),
   ).toBeVisible();
   await page.getByRole("link", { name: "Create ticket in Epic" }).click();
   await expect(
@@ -76,6 +83,12 @@ test("owner completes the tracker loop with native keyboard controls", async ({
     .getByLabel("Description")
     .fill("A plain-text result must remain accessible.");
   await page.getByLabel("Priority").selectOption("high");
+  await page.getByLabel("Choose images").setInputFiles({
+    name: "review.png",
+    mimeType: "image/png",
+    buffer: syntheticPng(true),
+  });
+  await expect(page.getByText(/Image added/)).toBeVisible();
   await page.getByRole("button", { name: "Create issue" }).click();
   await expect(page.getByText("Issue created")).toBeVisible();
   await expect(
@@ -93,7 +106,21 @@ test("owner completes the tracker loop with native keyboard controls", async ({
   await expect(
     page.getByRole("heading", { name: issueDisplayName }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Images and evidence (1)" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("img", { name: "Attachment 1 for this issue" }),
+  ).toBeVisible();
   await expect(page.getByText(issue.key, { exact: true })).toHaveCount(0);
+  await page.getByRole("link", { name: `Epic: ${epicDisplayName}` }).click();
+  await expect(
+    page.getByRole("link", { name: "Create ticket in Epic" }),
+  ).toHaveAttribute(
+    "href",
+    `/projects/${issue.projectId}/issues/new?epic=${issue.epicId}`,
+  );
+  await page.getByRole("link", { name: issueDisplayName }).click();
   const question = await page.request.post(
     `${e2eBaseUrl}/api/v1/issues/${issueId}/questions`,
     {

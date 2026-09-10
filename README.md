@@ -95,8 +95,14 @@ Open **Manage Epics** from a project board to create an Epic or inspect its
 related tickets. The board's **Show Epic** selector supports all tickets, only
 unassigned tickets or one selected Epic. The selected Epic is stored in the
 URL, so the filtered board can be bookmarked and the Epic detail can link back
-to it. Epic detail provides status counts, completion progress and direct links
-to every related ticket.
+to it. Compact Epic lists omit descriptions; the detail retains the description
+and always offers creation of another related ticket. Epic detail provides
+status counts, completion progress and direct links to every related ticket.
+
+The normal create-issue form can also paste or select up to five private PNG,
+JPEG, or WebP images (8 MiB total). The browser prepares previews and the server
+validates, strips metadata, and stores the PNG evidence atomically with an
+idempotent issue creation. See [Epic 5 frontend delivery](docs/epic-5-frontend.md).
 
 REST exposes `GET/POST /api/v1/projects/:projectId/epics` and
 `GET/PATCH /api/v1/epics/:epicId`. Project issue lists and boards accept

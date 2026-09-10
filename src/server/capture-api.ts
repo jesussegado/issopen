@@ -3,7 +3,9 @@ import { and, eq, isNull, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import {
+  type CaptureMetadata,
   captureSubmissionSchema,
+  imagesSchema,
   maximumPngBytes,
   maximumRequestBytes,
 } from "../shared/capture-contract.js";
@@ -43,6 +45,24 @@ const epicInput = z
   .object({
     idempotencyKey: z.uuid(),
     title: z.string().trim().min(1).max(240),
+  })
+  .strict();
+const webCaptureInput = z
+  .object({
+    idempotencyKey: z.uuid(),
+    projectId: z.uuid(),
+    epicId: z.uuid().nullable(),
+    title: z.string().trim().min(1).max(240),
+    description: z.string().trim().max(50000),
+    priority: z.enum(["low", "medium", "high", "urgent"]),
+    status: z.enum([
+      "backlog",
+      "ready",
+      "in_progress",
+      "ready_for_review",
+      "done",
+    ]),
+    images: imagesSchema,
   })
   .strict();
 function canonical(value: unknown): string {
@@ -92,6 +112,7 @@ async function context(
   db: Database,
   workspaceId: string,
   ownerId: string,
+  source: MutationContext["source"] = "chrome_extension",
 ): Promise<MutationContext> {
   const [person] = await db
     .select({ name: user.name })
@@ -100,10 +121,113 @@ async function context(
   return {
     workspaceId,
     actor: { type: "human", id: ownerId, displayName: person?.name ?? "Owner" },
-    source: "chrome_extension",
+    source,
   };
 }
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
+
+async function storeImages(
+  tx: Transaction,
+  storage: CaptureStorage | undefined,
+  ctx: MutationContext,
+  issueId: string,
+  images: string[],
+  metadata: CaptureMetadata | null,
+  uploadedImages: boolean,
+) {
+  if (images.length === 0) return;
+  if (!storage) throw new CaptureError("storage", 503);
+  await tx.execute(
+    sql`select pg_advisory_xact_lock(hashtextextended('chrome-attachment-storage', 0))`,
+  );
+  const normalized: Buffer[] = [];
+  let bytes = 0;
+  for (const image of images) {
+    const png = await normalizePng(image);
+    bytes += png.length;
+    if (bytes > maximumPngBytes) throw new CaptureError("size", 413);
+    normalized.push(png);
+  }
+  for (const [index, image] of normalized.entries()) {
+    const file = await storage.write(image);
+    await tx.insert(captureEvidence).values({
+      id: randomUUID(),
+      workspaceId: ctx.workspaceId,
+      ownerId: ctx.actor.id,
+      issueId,
+      metadata: uploadedImages
+        ? {
+            ...(index === 0 && metadata ? metadata : {}),
+            mode: "upload",
+            attachmentIndex: index,
+          }
+        : metadata,
+      ...file,
+    });
+  }
+  // Never remove on uncertain commit: aged unreferenced files are GC'd by the
+  // operator, so a successfully committed receipt cannot lose pixels.
+}
+
+type CapturedIssueInput = z.infer<typeof webCaptureInput> & {
+  metadata: CaptureMetadata | null;
+};
+
+async function createCapturedIssue(
+  db: Database,
+  storage: CaptureStorage | undefined,
+  ctx: MutationContext,
+  operation: "capture" | "web_capture",
+  input: CapturedIssueInput,
+  base: string,
+  uploadedImages: boolean,
+  receiptPayload: unknown = input,
+) {
+  return once(
+    db,
+    ctx,
+    operation,
+    input.idempotencyKey,
+    receiptPayload,
+    async (tx, tracker) => {
+      const created = await tracker.createIssue(ctx, {
+        projectId: input.projectId,
+        epicId: input.epicId,
+        title: input.title,
+        description: input.description,
+        priority: input.priority,
+        status: input.status,
+      });
+      await storeImages(
+        tx,
+        storage,
+        ctx,
+        created.id,
+        input.images,
+        input.metadata,
+        uploadedImages,
+      );
+      if (input.metadata && input.images.length === 0)
+        await tx.insert(captureEvidence).values({
+          id: randomUUID(),
+          workspaceId: ctx.workspaceId,
+          ownerId: ctx.actor.id,
+          issueId: created.id,
+          metadata: input.metadata,
+        });
+      return {
+        issue: {
+          id: created.id,
+          key: created.key,
+          number: created.number,
+          title: created.title,
+          url: new URL(`/issues/${created.id}`, base).toString(),
+        },
+      };
+    },
+  );
+}
+
 async function once(
   db: Database,
   ctx: MutationContext,
@@ -162,7 +286,21 @@ async function once(
 function errorResult(error: Error) {
   if (error instanceof CaptureError)
     return Response.json(
-      { code: error.code, error: error.code },
+      {
+        code: error.code,
+        error:
+          error.code === "validation"
+            ? "One or more image attachments are invalid"
+            : error.code === "size"
+              ? "The image attachments exceed the allowed limits"
+              : error.code === "quota"
+                ? "Private image storage has no available capacity"
+                : error.code === "storage"
+                  ? "Private image storage is temporarily unavailable"
+                  : error.code === "conflict"
+                    ? "This request key was already used with different content"
+                    : "Image processing is busy; retry manually",
+      },
       { status: error.status },
     );
   if (error instanceof z.ZodError)
@@ -274,77 +412,17 @@ export function createCaptureRouter(
   router.post("/captures", async (c) => {
     const input = captureSubmissionSchema.parse(await boundedJson(c.req.raw));
     const ctx = await context(db, c.get("workspaceId"), c.get("ownerId"));
+    const images = input.images ?? (input.image ? [input.image] : []);
     return c.json(
-      await once(
+      await createCapturedIssue(
         db,
+        storage,
         ctx,
         "capture",
-        input.idempotencyKey,
+        { ...input, images, metadata: input.metadata },
+        base,
+        input.images !== undefined,
         input,
-        async (tx, tracker) => {
-          // The DB transaction rolls back ticket/number/activity together on failure.
-          const created = await tracker.createIssue(ctx, {
-            projectId: input.projectId,
-            epicId: input.epicId,
-            title: input.title,
-            description: input.description,
-            priority: input.priority,
-            status: input.status,
-          });
-          const images = input.images ?? (input.image ? [input.image] : []);
-          if (images.length) {
-            if (!storage) throw new CaptureError("storage", 503);
-            await tx.execute(
-              sql`select pg_advisory_xact_lock(hashtextextended('chrome-attachment-storage', 0))`,
-            );
-            // Normalize/write sequentially under the shared quota lock. A failure
-            // rolls back every DB row and the receipt, never a partial ticket.
-            const normalized: Buffer[] = [];
-            let bytes = 0;
-            for (const image of images) {
-              const png = await normalizePng(image);
-              bytes += png.length;
-              if (bytes > maximumPngBytes) throw new CaptureError("size", 413);
-              normalized.push(png);
-            }
-            for (const [index, image] of normalized.entries()) {
-              const file = await storage.write(image);
-              await tx.insert(captureEvidence).values({
-                id: randomUUID(),
-                workspaceId: ctx.workspaceId,
-                ownerId: ctx.actor.id,
-                issueId: created.id,
-                metadata: input.images
-                  ? {
-                      ...(index === 0 ? input.metadata : null),
-                      mode: "upload",
-                      attachmentIndex: index,
-                    }
-                  : input.metadata,
-                ...file,
-              });
-            }
-            // Never remove on uncertain commit: aged unreferenced files are GC'd by
-            // the operator, so a successfully committed receipt cannot lose pixels.
-          }
-          if (input.metadata && !images.length)
-            await tx.insert(captureEvidence).values({
-              id: randomUUID(),
-              workspaceId: ctx.workspaceId,
-              ownerId: ctx.actor.id,
-              issueId: created.id,
-              metadata: input.metadata,
-            });
-          return {
-            issue: {
-              id: created.id,
-              key: created.key,
-              number: created.number,
-              title: created.title,
-              url: new URL(`/issues/${created.id}`, base).toString(),
-            },
-          };
-        },
       ),
       201,
     );
@@ -355,6 +433,28 @@ export function createCaptureRouter(
 export function createEvidenceRouter(db: Database, storage?: CaptureStorage) {
   const router = new Hono<{ Variables: { ownerSession: OwnerSession } }>();
   router.onError(errorResult);
+  router.post("/captures", async (c) => {
+    const input = webCaptureInput.parse(await boundedJson(c.req.raw));
+    const owner = c.get("ownerSession").user;
+    const [space] = await db
+      .select({ id: workspace.id })
+      .from(workspace)
+      .where(eq(workspace.ownerId, owner.id));
+    if (!space) throw new DomainError("not_found", "Workspace not found");
+    const ctx = await context(db, space.id, owner.id, "rest");
+    return c.json(
+      await createCapturedIssue(
+        db,
+        storage,
+        ctx,
+        "web_capture",
+        { ...input, metadata: null },
+        new URL(c.req.url).origin,
+        true,
+      ),
+      201,
+    );
+  });
   router.get("/extensions/storage", async (c) => {
     if (!storage) throw new CaptureError("storage", 503);
     c.header("Cache-Control", "private, no-store");

@@ -146,17 +146,12 @@ export function EpicsRoute({ projectId }: { projectId: string }) {
             <ul className="epic-list">
               {epics.map((epic) => (
                 <li key={epic.id} className="epic-card">
-                  <div>
-                    <AppLink
-                      className="epic-card-title"
-                      href={`/epics/${epic.id}`}
-                    >
-                      {epicLabel(epic)}
-                    </AppLink>
-                    <p className="metadata">
-                      {epic.description || "No description"}
-                    </p>
-                  </div>
+                  <AppLink
+                    className="epic-card-title"
+                    href={`/epics/${epic.id}`}
+                  >
+                    {epicLabel(epic)}
+                  </AppLink>
                   <Progress epic={epic} />
                 </li>
               ))}
@@ -261,6 +256,12 @@ export function EpicDetailRoute({ epicId }: { epicId: string }) {
           >
             Edit Epic
           </AppLink>
+          <AppLink
+            className="button button-primary"
+            href={`/projects/${project.id}/issues/new?epic=${epic.id}`}
+          >
+            <span aria-hidden="true">+</span> Create ticket in Epic
+          </AppLink>
         </div>
       </div>
       {notice ? <StatusBanner>{notice}</StatusBanner> : null}
@@ -286,14 +287,6 @@ export function EpicDetailRoute({ epicId }: { epicId: string }) {
           <EmptyState
             heading="No related tickets"
             body="Assign an existing ticket or create one inside this Epic."
-            action={
-              <AppLink
-                className="button button-primary"
-                href={`/projects/${project.id}/issues/new?epic=${epic.id}`}
-              >
-                Create ticket in Epic
-              </AppLink>
-            }
           />
         ) : (
           <ul className="epic-issue-list">

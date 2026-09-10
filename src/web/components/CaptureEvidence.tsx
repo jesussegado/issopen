@@ -62,8 +62,7 @@ export function CaptureEvidence({ issueId }: { issueId: string }) {
       {rows.map((row, index) => (
         <article key={row.id}>
           <p className="metadata">
-            Private · Chrome extension ·{" "}
-            {new Date(row.createdAt).toLocaleString()}
+            Private image · {new Date(row.createdAt).toLocaleString()}
           </p>
           {row.imageUrl && (
             <>

@@ -18,6 +18,7 @@ import {
 import { IssueDetailRoute } from "../../src/web/routes/IssueDetailRoute.js";
 import { IssueFormRoute } from "../../src/web/routes/TrackerForms.js";
 import { issueStatuses } from "../../src/web/types.js";
+import { syntheticPng } from "../fixtures/png.js";
 
 const project = {
   id: "11111111-1111-4111-8111-111111111111",
@@ -384,6 +385,9 @@ describe("tracker web routes", () => {
     ).toHaveAttribute("href", `/epics/${epic.id}`);
     expect(within(epicOverview).getByText("1 ticket")).toBeVisible();
     expect(within(epicOverview).getByText("0/1 done")).toBeVisible();
+    expect(
+      within(epicOverview).queryByText(epic.description),
+    ).not.toBeInTheDocument();
     await user.selectOptions(screen.getByLabelText("Show Epic"), epic.id);
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith(
@@ -470,6 +474,7 @@ describe("tracker web routes", () => {
     ).toBeVisible();
     expect(screen.getByText("0 done")).toBeVisible();
     expect(screen.getByText("1 tickets · 0%")).toBeVisible();
+    expect(screen.queryByText(epic.description)).not.toBeInTheDocument();
     await user.type(
       screen.getByLabelText("Title (required)"),
       "Release readiness",
@@ -509,6 +514,72 @@ describe("tracker web routes", () => {
     expect(screen.getByRole("link", { name: "View on board" })).toHaveAttribute(
       "href",
       `/projects/${project.id}?epic=${epic.id}`,
+    );
+    expect(screen.getByText(epic.description)).toBeVisible();
+    expect(
+      screen.getByRole("link", { name: "Create ticket in Epic" }),
+    ).toHaveAttribute(
+      "href",
+      `/projects/${project.id}/issues/new?epic=${epic.id}`,
+    );
+  });
+
+  it("adds private images while creating a web issue and retries an uncertain request safely", async () => {
+    const submitted: Record<string, unknown>[] = [];
+    let attempts = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const path = String(input);
+        if (path === `/api/v1/projects/${project.id}`) return json({ project });
+        if (path === `/api/v1/projects/${project.id}/epics`)
+          return json({ epics: [epic] });
+        if (path === "/api/v1/captures" && init?.method === "POST") {
+          submitted.push(JSON.parse(String(init.body)));
+          attempts++;
+          if (attempts === 1) throw new TypeError("connection ended");
+          return json({ issue }, 201);
+        }
+        throw new Error(`Unexpected request: ${path}`);
+      }),
+    );
+    window.history.replaceState(
+      {},
+      "",
+      `/projects/${project.id}/issues/new?epic=${epic.id}`,
+    );
+    const user = userEvent.setup();
+    render(<IssueFormRoute projectId={project.id} />);
+
+    await screen.findByRole("heading", { name: "Create issue" });
+    expect(screen.getByLabelText(/^Epic/)).toHaveValue(epic.id);
+    const file = new File([syntheticPng(true)], "review.png", {
+      type: "image/png",
+    });
+    await user.upload(screen.getByLabelText("Choose images"), file);
+    expect(await screen.findByText(/Image added/)).toBeVisible();
+    expect(screen.getByRole("img", { name: "Attachment 1" })).toBeVisible();
+    await user.type(screen.getByLabelText("Title (required)"), "Web evidence");
+    await user.click(screen.getByRole("button", { name: "Create issue" }));
+
+    expect(
+      await screen.findByRole("button", { name: "Retry safely" }),
+    ).toBeVisible();
+    expect(screen.getByLabelText("Title (required)")).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "Retry safely" }));
+    await waitFor(() =>
+      expect(window.location.pathname).toBe(`/issues/${issue.id}`),
+    );
+    expect(submitted).toHaveLength(2);
+    expect(submitted[1]).toEqual(submitted[0]);
+    expect(submitted[0]).toMatchObject({
+      projectId: project.id,
+      epicId: epic.id,
+      title: "Web evidence",
+      images: [expect.stringMatching(/^data:image\/png;base64,/)],
+    });
+    expect(submitted[0]?.idempotencyKey).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
     );
   });
 
