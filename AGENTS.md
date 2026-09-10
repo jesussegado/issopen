@@ -38,6 +38,10 @@ haya conflicto, usa este orden:
   misma petición. Contrato y rollback en
   [Epic 5 frontend](docs/epic-5-frontend.md); memoria en
   [quick 260910-h2k](.planning/quick/260910-h2k-completar-epic-5-frontend-y-usabilidad/SUMMARY.md).
+  Fuente `b7c48cb`, GitOps `c9c46e9e` `Synced/Healthy`, imagen productiva por
+  digest `bd534bb`; pod Ready sin reinicios y PVCs intactos. Backup/restore y
+  smoke autenticado desktop/móvil pasaron sin mutar datos. Los tickets 57–59
+  están en Ready for Human Review v6, sin preguntas ni claims activos.
 
 - Ticket 61 presenta el estado interno `ready_for_review` como **Ready for
   Human Review** y permite ocultar esa columna o Done por proyecto. La migración

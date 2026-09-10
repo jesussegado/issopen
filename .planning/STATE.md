@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Configurable human-review and Done columns deployed; ticket 61 Ready for Human Review
-last_updated: "2026-09-10T10:12:17Z"
+stopped_at: Epic 5 tickets 57-59 deployed and Ready for Human Review
+last_updated: "2026-09-10T11:20:30Z"
 last_activity: 2026-09-10
 progress:
   total_phases: 9
@@ -21,7 +21,18 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-30)
 
 **Core value:** Convertir una intención humana en trabajo estructurado y seguro que ChatGPT y agentes de código externos puedan entender, ejecutar y devolver a revisión dentro de un único flujo trazable.
-**Current focus:** Board completion columns are configurable per project and the human-facing review state is Ready for Human Review. Ticket 61 is ready for owner review; Chrome ticket 33 acceptance remains untouched.
+**Current focus:** Epic 5 frontend/usability tickets 57–59 are deployed and ready for owner review; Chrome ticket 33 acceptance remains untouched.
+
+Follow-up 2026-09-10: Epic 5 tickets 57–59 simplify compact Epic listings,
+add private paste/file images to normal web ticket creation, and keep
+`+ Create ticket in Epic` visible for populated Epics. Source b7c48cb, GitOps
+c9c46e9e Synced/Healthy, runtime digest bd534bb; pod Ready/0 restarts, PostgreSQL
+and both PVCs preserved. 80 unit/web + 53 integration + 8 web E2E (2 expected
+skips) + 76 Chrome unit + 12 Chrome E2E, Compose and 197 homelab checks pass.
+Fresh backup restored without network with all nine attachment hashes/sizes
+matching. Authenticated desktop/mobile production smoke passed without mutation.
+MCP links/evidence are present; tickets 57, 58 and 59 are Ready for Human Review
+v6, claim null, with no unanswered questions.
 
 Follow-up 2026-09-10: ticket 61 presents `ready_for_review` as Ready for
 Human Review and adds independent per-project visibility for that column and

@@ -28,8 +28,26 @@
   all nine attachment sizes and SHA-256 hashes PASS. Temporary restore was
   stopped and removed; extracted copy moved to desktop trash.
 
-## Pending in this summary revision
+## Production release
 
-Immutable image publication, GitOps reconciliation, production smoke checks,
-MCP evidence links/status transitions, and exact revisions are recorded after
-deployment rather than predicted here.
+- Source `b7c48cbee00370b5d7b59f0611f93b03ff9894b2` was pushed to `main`.
+- Immutable image `registry.serviciosegado.com/issopen:epic5-b7c48cb` was
+  published as OCI digest
+  `sha256:bd534bb85fd3c7f4bb856ac32920e29cd6ae4370ee096b355d844e10262e183c`.
+- GitOps revision `c9c46e9e2984c2c8376279bd8b0ad74f1a16748e` reconciled as
+  `Synced/Healthy`. Pod `issopen-856cf9d8d7-zknnl` is Ready with zero restarts
+  and runs that exact digest. PostgreSQL and both PVC UIDs were preserved.
+- Public readiness returns HTTP 200 with HSTS. Authenticated production smoke
+  at 1440 px and 360 px verified image controls without overflow, compact Epic
+  listings, retained Epic detail descriptions, and the always-visible creation
+  action on populated Epic 5. The smoke did not create tickets or upload images.
+- Post-deploy database counts remain 64 issues, 553 activity events, 9 capture
+  evidence rows, 9 extension receipts, and 16 migrations.
+
+## Issopen tracking
+
+- MCP links the source commit and verification evidence to tickets 57, 58 and
+  59. All three are `ready_for_review` version 6, have no unanswered questions,
+  and have no active agent claim.
+- The owner retains the final human acceptance decision; none of these tickets
+  was closed automatically.
