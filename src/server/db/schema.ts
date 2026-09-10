@@ -622,6 +622,7 @@ export const issue = pgTable(
       .references(() => user.id, { onDelete: "restrict" }),
     claimedByAgentId: text("claimed_by_agent_id"),
     claimedAt: timestamp("claimed_at", { withTimezone: true }),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
     version: integer("version").default(1).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()

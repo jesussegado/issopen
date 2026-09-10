@@ -197,6 +197,69 @@ afterAll(async () => {
 });
 
 describe("protected tracker REST API", () => {
+  it("only allows authenticated same-origin owner deletion and keeps repeated DELETE safe", async () => {
+    const p = await createProjectFixture();
+    const e = await createEpicFixture(p.id);
+    const i = await createIssueFixture(p.id, "backlog", e.id);
+    const path = `/api/v1/issues/${i.id}`;
+    const init = {
+      method: "DELETE",
+      body: JSON.stringify({
+        expectedVersion: i.version,
+        questionVersions: [],
+      }),
+    };
+    expect((await app.request(path, init)).status).toBe(401);
+    for (const origin of [
+      undefined,
+      "https://hostile.example",
+      "chrome-extension://abcdefghijklmnopabcdefghijklmnop",
+    ]) {
+      const headers = new Headers({
+        Cookie: cookie,
+        "Content-Type": "application/json",
+      });
+      if (origin) headers.set("Origin", origin);
+      expect((await app.request(path, { ...init, headers })).status).toBe(403);
+    }
+    expect(
+      (await authenticatedRequest(path, { ...init, body: "{}" })).status,
+    ).toBe(400);
+    expect(
+      (
+        await authenticatedRequest(path, {
+          ...init,
+          body: JSON.stringify({ expectedVersion: 999, questionVersions: [] }),
+        })
+      ).status,
+    ).toBe(409);
+    const response = await authenticatedRequest(path, init);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      deleted: true,
+      issueId: i.id,
+      projectId: p.id,
+    });
+    expect((await authenticatedRequest(path, init)).status).toBe(200);
+    for (const suffix of ["", "/activity", "/evidence"])
+      expect((await authenticatedRequest(`${path}${suffix}`)).status).toBe(404);
+    expect(
+      (
+        await authenticatedRequest(path, {
+          method: "PATCH",
+          body: JSON.stringify({ title: "Resurrect?" }),
+        })
+      ).status,
+    ).toBe(404);
+    const board = await (
+      await authenticatedRequest(`/api/v1/projects/${p.id}/board`)
+    ).json();
+    expect(
+      board.columns.flatMap((column: { issues: unknown[] }) => column.issues),
+    ).toEqual([]);
+    expect(board.epics[0].summary.totalIssues).toBe(0);
+  });
+
   it("returns HTTP 409 for stale web issue and Epic plans without overwriting saved data", async () => {
     const p = await createProjectFixture();
     const i = await createIssueFixture(p.id);

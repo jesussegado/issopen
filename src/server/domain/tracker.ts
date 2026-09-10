@@ -38,6 +38,8 @@ import {
   createIssueQuestionSchema,
   createIssueSchema,
   createProjectSchema,
+  type DeleteIssueInput,
+  deleteIssueSchema,
   type MutationContext,
   mutationContextSchema,
   requestChangesSchema,
@@ -398,6 +400,7 @@ export class TrackerService {
       .from(issue)
       .where(
         and(
+          isNull(issue.deletedAt),
           eq(issue.workspaceId, workspaceId),
           eq(issue.projectId, projectId),
           inArray(
@@ -478,6 +481,7 @@ export class TrackerService {
       .from(issue)
       .where(
         and(
+          isNull(issue.deletedAt),
           eq(issue.workspaceId, workspaceId),
           eq(issue.projectId, found.projectId),
           eq(issue.epicId, epicId),
@@ -649,6 +653,7 @@ export class TrackerService {
     epicId?: string | null,
   ) {
     const predicate = and(
+      isNull(issue.deletedAt),
       eq(issue.workspaceId, workspaceId),
       projectId ? eq(issue.projectId, projectId) : undefined,
       epicId === null
@@ -740,6 +745,7 @@ export class TrackerService {
       .from(issue)
       .where(
         and(
+          isNull(issue.deletedAt),
           eq(issue.workspaceId, workspaceId),
           inArray(issue.projectId, options.projectIds),
           options.projectId
@@ -809,7 +815,13 @@ export class TrackerService {
     const [found] = await this.db
       .select()
       .from(issue)
-      .where(and(eq(issue.workspaceId, workspaceId), eq(issue.id, issueId)))
+      .where(
+        and(
+          isNull(issue.deletedAt),
+          eq(issue.workspaceId, workspaceId),
+          eq(issue.id, issueId),
+        ),
+      )
       .limit(1);
     if (!found) throw new DomainError("not_found", "Issue not found");
     return found;
@@ -872,11 +884,13 @@ export class TrackerService {
         .from(issue)
         .where(
           and(
+            isNull(issue.deletedAt),
             eq(issue.workspaceId, context.workspaceId),
             eq(issue.id, issueId),
           ),
         )
-        .limit(1);
+        .limit(1)
+        .for("update");
       if (!currentIssue) throw new DomainError("not_found", "Issue not found");
 
       const [created] = await tx
@@ -933,6 +947,7 @@ export class TrackerService {
         .from(issue)
         .where(
           and(
+            isNull(issue.deletedAt),
             eq(issue.workspaceId, context.workspaceId),
             eq(issue.id, issueId),
           ),
@@ -996,6 +1011,7 @@ export class TrackerService {
         .from(issue)
         .where(
           and(
+            isNull(issue.deletedAt),
             eq(issue.workspaceId, context.workspaceId),
             eq(issue.id, issueId),
           ),
@@ -1114,6 +1130,7 @@ export class TrackerService {
         .from(issue)
         .where(
           and(
+            isNull(issue.deletedAt),
             eq(issue.workspaceId, context.workspaceId),
             eq(issue.id, issueId),
           ),
@@ -1200,6 +1217,7 @@ export class TrackerService {
         })
         .where(
           and(
+            isNull(issue.deletedAt),
             eq(issue.workspaceId, context.workspaceId),
             eq(issue.id, issueId),
             eq(issue.version, expectedVersion ?? current.version),
@@ -1225,6 +1243,100 @@ export class TrackerService {
     });
   }
 
+  async deleteIssue(
+    contextInput: MutationContext,
+    issueId: string,
+    input: DeleteIssueInput,
+  ) {
+    const context = parseInput(mutationContextSchema, contextInput);
+    requireHuman(context);
+    if (context.source !== "rest")
+      throw new DomainError(
+        "forbidden",
+        "Deletion is only available on the web",
+      );
+    const values = parseInput(deleteIssueSchema, input);
+    return this.transaction(async (tx) => {
+      const [ownedWorkspace] = await tx
+        .select({ id: workspace.id })
+        .from(workspace)
+        .where(
+          and(
+            eq(workspace.id, context.workspaceId),
+            eq(workspace.ownerId, context.actor.id),
+          ),
+        );
+      if (!ownedWorkspace) throw new DomainError("forbidden", "Owner required");
+      // Include tombstones here only: a lost DELETE response can be retried safely.
+      const [current] = await tx
+        .select()
+        .from(issue)
+        .where(
+          and(
+            eq(issue.workspaceId, context.workspaceId),
+            eq(issue.id, issueId),
+          ),
+        )
+        .limit(1)
+        .for("update");
+      if (!current) throw new DomainError("not_found", "Issue not found");
+      const result = { deleted: true, issueId, projectId: current.projectId };
+      if (current.deletedAt) return result;
+      if (current.version !== values.expectedVersion)
+        throw new DomainError(
+          "conflict",
+          "This ticket changed. Reload and review it before deleting.",
+        );
+      const actual = await tx
+        .select({ id: issueQuestion.id, version: issueQuestion.version })
+        .from(issueQuestion)
+        .where(
+          and(
+            eq(issueQuestion.workspaceId, context.workspaceId),
+            eq(issueQuestion.issueId, issueId),
+          ),
+        );
+      const versions = new Map(
+        values.questionVersions.map(({ id, version }) => [id, version]),
+      );
+      if (
+        actual.length !== versions.size ||
+        actual.some(({ id, version }) => versions.get(id) !== version)
+      )
+        throw new DomainError(
+          "conflict",
+          "Questions or answers changed. Reload and review them before deleting.",
+        );
+      const now = new Date();
+      await tx
+        .update(issue)
+        .set({
+          deletedAt: now,
+          updatedAt: now,
+          version: sql`${issue.version} + 1`,
+          claimedAt: null,
+          claimedByAgentId: null,
+        })
+        .where(
+          and(
+            eq(issue.workspaceId, context.workspaceId),
+            eq(issue.id, issueId),
+          ),
+        );
+      await recordActivity(tx, context, {
+        projectId: current.projectId,
+        issueId,
+        type: "issue.deleted",
+        summary: `Deleted ${current.key}`,
+        changes: {
+          deletedAt: { from: null, to: now.toISOString() },
+          claimedByAgentId: { from: current.claimedByAgentId, to: null },
+        },
+      });
+      return result;
+    });
+  }
+
   async claimIssue(
     contextInput: MutationContext,
     issueId: string,
@@ -1242,11 +1354,13 @@ export class TrackerService {
         .from(issue)
         .where(
           and(
+            isNull(issue.deletedAt),
             eq(issue.workspaceId, context.workspaceId),
             eq(issue.id, issueId),
           ),
         )
-        .limit(1);
+        .limit(1)
+        .for("update");
       if (!current) throw new DomainError("not_found", "Issue not found");
       if (current.claimedByAgentId === normalizedAgentId) return current;
       if (current.claimedByAgentId) {
@@ -1264,6 +1378,7 @@ export class TrackerService {
         })
         .where(
           and(
+            isNull(issue.deletedAt),
             eq(issue.workspaceId, context.workspaceId),
             eq(issue.id, issueId),
             sql`${issue.claimedByAgentId} is null`,
@@ -1295,11 +1410,13 @@ export class TrackerService {
         .from(issue)
         .where(
           and(
+            isNull(issue.deletedAt),
             eq(issue.workspaceId, context.workspaceId),
             eq(issue.id, issueId),
           ),
         )
-        .limit(1);
+        .limit(1)
+        .for("update");
       if (!current) throw new DomainError("not_found", "Issue not found");
       if (!current.claimedByAgentId) return current;
       if (
@@ -1319,6 +1436,7 @@ export class TrackerService {
         })
         .where(
           and(
+            isNull(issue.deletedAt),
             eq(issue.workspaceId, context.workspaceId),
             eq(issue.id, issueId),
           ),
@@ -1353,11 +1471,13 @@ export class TrackerService {
         .from(issue)
         .where(
           and(
+            isNull(issue.deletedAt),
             eq(issue.workspaceId, context.workspaceId),
             eq(issue.id, issueId),
           ),
         )
-        .limit(1);
+        .limit(1)
+        .for("update");
       if (!current) throw new DomainError("not_found", "Issue not found");
 
       const [createdLink] = await tx
@@ -1376,6 +1496,7 @@ export class TrackerService {
         .set({ version: sql`${issue.version} + 1`, updatedAt: new Date() })
         .where(
           and(
+            isNull(issue.deletedAt),
             eq(issue.workspaceId, context.workspaceId),
             eq(issue.id, issueId),
           ),
@@ -1481,11 +1602,13 @@ export class TrackerService {
         .from(issue)
         .where(
           and(
+            isNull(issue.deletedAt),
             eq(issue.workspaceId, context.workspaceId),
             eq(issue.id, issueId),
           ),
         )
-        .limit(1);
+        .limit(1)
+        .for("update");
       if (!current) throw new DomainError("not_found", "Issue not found");
       if (current.status !== "ready_for_review") {
         throw new DomainError(
@@ -1504,6 +1627,7 @@ export class TrackerService {
         })
         .where(
           and(
+            isNull(issue.deletedAt),
             eq(issue.workspaceId, context.workspaceId),
             eq(issue.id, issueId),
             eq(issue.status, "ready_for_review"),

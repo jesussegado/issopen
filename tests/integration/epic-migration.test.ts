@@ -76,11 +76,11 @@ it("backfills existing Epics deterministically without changing their data or ti
         VALUES (${epic.id}, ${workspaceId}, ${epic.projectId}, ${`Original ${epic.id}`}, 'Keep me', ${epic.date})`;
     }
     const tracker = new TrackerService(connection.db);
-    const issue = await tracker.createIssue(context, {
-      projectId: projects[0],
-      epicId: epics[0].id,
-      title: "Keep association",
-    });
+    // Seed the historical schema directly, not through today's ORM columns.
+    const issueId = randomUUID();
+    await connection.client`INSERT INTO issue
+      (id, workspace_id, project_id, epic_id, number, key, title, human_owner_id)
+      VALUES (${issueId}, ${workspaceId}, ${projects[0]}, ${epics[0].id}, 1, 'EP0-1', 'Keep association', ${ownerId})`;
     const original = await connection.client`SELECT * FROM epic ORDER BY id`;
 
     await migrateDatabase(container.getConnectionUri());
@@ -89,9 +89,11 @@ it("backfills existing Epics deterministically without changing their data or ti
       ...original,
     ]);
     expect(migrated.map((item) => item.number)).toEqual([1, 2, 3, 1]);
-    expect((await tracker.getIssue(workspaceId, issue.id)).epicId).toBe(
-      epics[0].id,
-    );
+    expect(await tracker.getIssue(workspaceId, issueId)).toMatchObject({
+      epicId: epics[0].id,
+      deletedAt: null,
+      title: "Keep association",
+    });
     for (const [index, projectId] of projects.entries()) {
       expect(
         await tracker.createEpic(context, {

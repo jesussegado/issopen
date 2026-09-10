@@ -91,6 +91,14 @@ export class McpIdempotencyService {
             "Idempotency key was already used with a different payload",
           );
         }
+        const previous = z
+          .object({ issue: z.object({ id: z.uuid() }) })
+          .safeParse(existing.response);
+        if (previous.success)
+          await new TrackerService(tx).getIssue(
+            principal.workspaceId,
+            previous.data.issue.id,
+          );
         return existing.response as T;
       }
 

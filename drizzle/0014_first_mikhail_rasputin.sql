@@ -1,0 +1,1 @@
+ALTER TABLE "issue" ADD COLUMN "deleted_at" timestamp with time zone;

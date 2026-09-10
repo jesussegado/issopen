@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import {
@@ -17,6 +17,7 @@ import type { Database } from "./db/client.js";
 import {
   captureEvidence,
   extensionReceipt,
+  issue,
   user,
   workspace,
 } from "./db/schema.js";
@@ -132,6 +133,14 @@ async function once(
       );
     if (receipt) {
       if (receipt.requestHash !== hash) throw new CaptureError("conflict", 409);
+      const previous = z
+        .object({ issue: z.object({ id: z.uuid() }) })
+        .safeParse(receipt.response);
+      if (previous.success)
+        await new TrackerService(tx).getIssue(
+          ctx.workspaceId,
+          previous.data.issue.id,
+        );
       return receipt.response;
     }
     const response = JSON.parse(
@@ -394,9 +403,17 @@ export function createEvidenceRouter(db: Database, storage?: CaptureStorage) {
       .select({ evidence: captureEvidence })
       .from(captureEvidence)
       .innerJoin(workspace, eq(workspace.id, captureEvidence.workspaceId))
+      .innerJoin(
+        issue,
+        and(
+          eq(issue.id, captureEvidence.issueId),
+          eq(issue.workspaceId, captureEvidence.workspaceId),
+        ),
+      )
       .where(
         and(
           eq(captureEvidence.id, id),
+          isNull(issue.deletedAt),
           eq(workspace.ownerId, c.get("ownerSession").user.id),
         ),
       );

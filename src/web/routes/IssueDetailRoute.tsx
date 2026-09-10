@@ -6,6 +6,7 @@ import {
   useState,
 } from "react";
 import { CaptureEvidence } from "../components/CaptureEvidence.js";
+import { DeleteIssueButton } from "../components/DeleteIssueButton.js";
 import {
   AppLink,
   Badge,
@@ -410,12 +411,20 @@ export function IssueDetailRoute({ issueId }: { issueId: string }) {
             )}
           </div>
         </div>
-        <AppLink
-          className="button button-secondary"
-          href={`/issues/${issue.id}/edit`}
-        >
-          Edit issue
-        </AppLink>
+        <div className="page-actions">
+          <AppLink
+            className="button button-secondary"
+            href={`/issues/${issue.id}/edit`}
+          >
+            Edit issue
+          </AppLink>
+          <DeleteIssueButton
+            key={issue.id}
+            issue={issue}
+            questions={questions}
+            disabled={submitting !== null}
+          />
+        </div>
       </div>
       {notice ? <StatusBanner>{notice}</StatusBanner> : null}
       {!online ? <OfflineBanner /> : null}

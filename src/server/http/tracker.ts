@@ -13,6 +13,7 @@ import {
   createIssueSchema,
   createProjectSchema,
   DomainError,
+  deleteIssueSchema,
   type MutationContext,
   requestChangesSchema,
   TrackerService,
@@ -302,6 +303,15 @@ export function createTrackerRouter({ db }: TrackerRouterDependencies) {
     const issueId = parseIdentifier(context.req.param("issueId"), "issueId");
     return context.json(
       await tracker.getIssueDetail(mutationContext.workspaceId, issueId),
+    );
+  });
+
+  router.delete("/issues/:issueId", async (context) => {
+    const mutationContext = await ownerContext(db, context.get("ownerSession"));
+    const issueId = parseIdentifier(context.req.param("issueId"), "issueId");
+    const input = await parseBody(context, deleteIssueSchema);
+    return context.json(
+      await tracker.deleteIssue(mutationContext, issueId, input),
     );
   });
 

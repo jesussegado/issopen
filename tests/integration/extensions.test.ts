@@ -191,6 +191,86 @@ function readSession(tokens: Tokens) {
 }
 
 describe("human Chrome OAuth", () => {
+  it("cannot delete through extension credentials; web deletion hides evidence and prevents capture replay resurrection", async () => {
+    const { tokens } = await connect(true);
+    const extensionHeaders = {
+      Authorization: `Bearer ${tokens.access_token}`,
+      Origin: origin,
+      "Content-Type": "application/json",
+    };
+    const post = (path: string, body: unknown) =>
+      app.request(`/api/extension/v1${path}`, {
+        method: "POST",
+        headers: extensionHeaders,
+        body: JSON.stringify(body),
+      });
+    const p = await (
+      await post("/projects", {
+        name: "Delete capture",
+        idempotencyKey: randomUUID(),
+      })
+    ).json();
+    const body = {
+      version: 1,
+      idempotencyKey: randomUUID(),
+      projectId: p.project.id,
+      title: "Synthetic deletion",
+      epicId: null,
+      description: "",
+      priority: "medium",
+      status: "backlog",
+      metadata: null,
+      image: `data:image/png;base64,${syntheticPng().toString("base64")}`,
+    };
+    const response = await post("/captures", body);
+    expect(response.status).toBe(201);
+    const created = await response.json();
+    const path = `/api/v1/issues/${created.issue.id}`;
+    const evidence = await (
+      await app.request(`${path}/evidence`, { headers: headers() })
+    ).json();
+    const imageUrl = evidence.evidence[0].imageUrl;
+    expect((await app.request(imageUrl, { headers: headers() })).status).toBe(
+      200,
+    );
+    const init = {
+      method: "DELETE",
+      body: JSON.stringify({ expectedVersion: 1, questionVersions: [] }),
+    };
+    expect(
+      (await app.request(path, { ...init, headers: extensionHeaders })).status,
+    ).toBe(401);
+    expect(
+      (
+        await app.request(`/api/extension/v1/issues/${created.issue.id}`, {
+          ...init,
+          headers: extensionHeaders,
+        })
+      ).status,
+    ).toBe(404);
+    expect(
+      (await app.request(path, { ...init, headers: headers() })).status,
+    ).toBe(200);
+    expect((await app.request(imageUrl, { headers: headers() })).status).toBe(
+      404,
+    );
+    expect(
+      (await app.request(`${imageUrl}?download=1`, { headers: headers() }))
+        .status,
+    ).toBe(404);
+    expect(
+      (await app.request(`${path}/evidence`, { headers: headers() })).status,
+    ).toBe(404);
+    expect((await post("/captures", body)).status).toBe(404);
+    expect(await connection.db.select().from(issue)).toHaveLength(1);
+    expect(await connection.db.select().from(extensionReceipt)).toHaveLength(2);
+    expect(await auditCaptures(connection.db, storage)).toMatchObject({
+      verified: 1,
+      invalid: 0,
+      quarantined: 0,
+    });
+  });
+
   it("stores several private images in one atomic ticket, preserving order and idempotency", async () => {
     const { tokens } = await connect(true);
     expect(await (await readSession(tokens)).json()).toMatchObject({

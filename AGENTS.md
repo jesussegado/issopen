@@ -29,6 +29,16 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+- Ticket 60 añade borrado lógico **sólo web**: botón en detalle y diálogo,
+  DELETE owner/same-origin con versión y conjunto de preguntas obligatorios.
+  `issue.deleted_at` (migración aditiva 0014), evento `issue.deleted` append-only,
+  liberación del claim, sin reutilizar números ni purgar historial/adjuntos.
+  Excluido de tableros, Epics, MCP y URLs privadas de imágenes; mutadores toman
+  lock de fila y los replays no resucitan tickets borrados. No añade scopes ni
+  borrado en MCP/extensión. Recuperación sólo administrativa, sin papelera web.
+  Tras usarlo no hacer rollback a un binario anterior sin valorar que volvería
+  a mostrar esos tickets. Operación en [borrado de tickets](docs/ticket-deletion.md).
+
 - Chrome 0.5.4 (ticket 56) mejora el enlace de ticket creado y apila las
   acciones finales del compositor, a ancho completo y con separación. Cambio
   visual acotado; sin modificar lógica de envío, permisos ni backend.

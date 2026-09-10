@@ -13,6 +13,7 @@ import {
   activityEvent,
   agentIdentity,
   codeLink,
+  issue,
   issueComment,
   user,
   workspace,
@@ -70,6 +71,229 @@ afterAll(async () => {
 });
 
 describe("transactional tracker domain", () => {
+  it("soft-deletes exactly once, hides all reads and preserves audit, questions and numbering", async () => {
+    const p = await tracker.createProject(ownerContext, {
+      name: "Deletion",
+      key: "DEL",
+    });
+    const e = await tracker.createEpic(ownerContext, {
+      projectId: p.id,
+      title: "Epic",
+    });
+    const i = await tracker.createIssue(ownerContext, {
+      projectId: p.id,
+      epicId: e.id,
+      title: "Delete me",
+    });
+    await tracker.addIssueComment(ownerContext, i.id, { body: "Keep history" });
+    const q = await tracker.createIssueQuestion(ownerContext, i.id, {
+      prompt: "Choose?",
+      recommendation: "A",
+      options: [{ label: "A" }, { label: "B" }],
+      recommendedOptionIndex: 0,
+    });
+    const input = {
+      expectedVersion: i.version,
+      questionVersions: [{ id: q.id, version: q.version }],
+    };
+    const results = await Promise.all([
+      tracker.deleteIssue(ownerContext, i.id, input),
+      tracker.deleteIssue(ownerContext, i.id, input),
+    ]);
+    expect(results[0]).toEqual(results[1]);
+    expect(await tracker.listIssues(workspaceId, p.id)).toEqual([]);
+    expect(
+      (
+        await tracker.listIssuePage(workspaceId, {
+          projectIds: [p.id],
+          claim: "any",
+          agentId: ownerId,
+          limit: 50,
+        })
+      ).items,
+    ).toEqual([]);
+    expect((await tracker.getEpicDetail(workspaceId, e.id)).issues).toEqual([]);
+    expect(
+      (await tracker.getEpicSummary(workspaceId, e.id)).summary.totalIssues,
+    ).toBe(0);
+    expect(
+      (await tracker.listEpics(workspaceId, p.id))[0]?.summary.totalIssues,
+    ).toBe(0);
+    for (const read of [
+      () => tracker.getIssueDetail(workspaceId, i.id),
+      () => tracker.listIssueQuestions(workspaceId, i.id),
+      () => tracker.listIssueComments(workspaceId, i.id),
+      () => tracker.listActivity(workspaceId, i.id),
+      () => tracker.listActivityPage(workspaceId, i.id, { limit: 50 }),
+    ])
+      await expect(read()).rejects.toMatchObject({ code: "not_found" });
+    const [retained] = await connection.db
+      .select()
+      .from(issue)
+      .where(eq(issue.id, i.id));
+    expect(retained).toMatchObject({
+      deletedAt: expect.any(Date),
+      version: 2,
+      claimedByAgentId: null,
+      claimedAt: null,
+    });
+    expect(await connection.db.select().from(issueComment)).toHaveLength(1);
+    const events = await connection.db.select().from(activityEvent);
+    expect(events.filter(({ type }) => type === "issue.deleted")).toHaveLength(
+      1,
+    );
+    expect(events.find(({ type }) => type === "issue.deleted")).toMatchObject({
+      actorId: ownerId,
+      source: "rest",
+    });
+    expect(
+      (
+        await tracker.createIssue(ownerContext, {
+          projectId: p.id,
+          title: "Next",
+        })
+      ).number,
+    ).toBe(i.number + 1);
+  });
+
+  it("rejects agents, extension context, other owners and stale deletion confirmations", async () => {
+    const p = await tracker.createProject(ownerContext, {
+      name: "Delete guards",
+      key: "DG",
+    });
+    const i = await tracker.createIssue(ownerContext, {
+      projectId: p.id,
+      title: "Keep me",
+    });
+    const input = { expectedVersion: i.version, questionVersions: [] };
+    for (const ctx of [
+      {
+        ...ownerContext,
+        actor: { ...ownerContext.actor, type: "agent" as const },
+        authorization: { canCloseIssues: true },
+      },
+      { ...ownerContext, source: "chrome_extension" as const },
+      {
+        ...ownerContext,
+        actor: {
+          ...ownerContext.actor,
+          id: "44444444-4444-4444-8444-444444444444",
+        },
+      },
+    ])
+      await expect(tracker.deleteIssue(ctx, i.id, input)).rejects.toMatchObject(
+        { code: "forbidden" },
+      );
+    await expect(
+      tracker.deleteIssue(ownerContext, i.id, { ...input, expectedVersion: 2 }),
+    ).rejects.toMatchObject({ code: "conflict" });
+    await expect(
+      tracker.deleteIssue(ownerContext, i.id, {} as never),
+    ).rejects.toMatchObject({ code: "invalid" });
+    const q = await tracker.createIssueQuestion(ownerContext, i.id, {
+      prompt: "Choose?",
+      recommendation: "A",
+      options: [{ label: "A" }, { label: "B" }],
+      recommendedOptionIndex: 0,
+    });
+    await expect(
+      tracker.deleteIssue(ownerContext, i.id, input),
+    ).rejects.toMatchObject({ code: "conflict" });
+    await tracker.answerIssueQuestion(ownerContext, i.id, q.id, {
+      kind: "other",
+      text: "Changed",
+    });
+    await expect(
+      tracker.deleteIssue(ownerContext, i.id, {
+        ...input,
+        questionVersions: [{ id: q.id, version: q.version }],
+      }),
+    ).rejects.toMatchObject({ code: "conflict" });
+    const otherOwner = "44444444-4444-4444-8444-444444444444";
+    const otherWorkspace = "55555555-5555-4555-8555-555555555555";
+    await createFixtureWorkspace(otherWorkspace, otherOwner);
+    await expect(
+      tracker.deleteIssue(
+        {
+          ...ownerContext,
+          workspaceId: otherWorkspace,
+          actor: { ...ownerContext.actor, id: otherOwner },
+        },
+        i.id,
+        input,
+      ),
+    ).rejects.toMatchObject({ code: "not_found" });
+    expect((await tracker.getIssue(workspaceId, i.id)).deletedAt).toBeNull();
+  });
+
+  it("rejects every mutation of a deleted ticket and serializes competing edits", async () => {
+    const p = await tracker.createProject(ownerContext, {
+      name: "Race",
+      key: "RC",
+    });
+    const i = await tracker.createIssue(ownerContext, {
+      projectId: p.id,
+      title: "Race",
+    });
+    const q = await tracker.createIssueQuestion(ownerContext, i.id, {
+      prompt: "Choose?",
+      recommendation: "A",
+      options: [{ label: "A" }, { label: "B" }],
+      recommendedOptionIndex: 0,
+    });
+    const input = {
+      expectedVersion: i.version,
+      questionVersions: [{ id: q.id, version: q.version }],
+    };
+    const results = await Promise.allSettled([
+      tracker.deleteIssue(ownerContext, i.id, input),
+      tracker.updateIssue(ownerContext, i.id, {
+        title: "Raced edit",
+        expectedVersion: i.version,
+      }),
+    ]);
+    expect(results.filter(({ status }) => status === "fulfilled")).toHaveLength(
+      1,
+    );
+    const [row] = await connection.db
+      .select()
+      .from(issue)
+      .where(eq(issue.id, i.id));
+    if (!row?.deletedAt)
+      await tracker.deleteIssue(ownerContext, i.id, {
+        ...input,
+        expectedVersion: row?.version ?? 0,
+      });
+    const before = await connection.db.select().from(activityEvent);
+    for (const mutate of [
+      () => tracker.updateIssue(ownerContext, i.id, { title: "Restore?" }),
+      () => tracker.addIssueComment(ownerContext, i.id, { body: "Too late" }),
+      () =>
+        tracker.createIssueQuestion(ownerContext, i.id, {
+          prompt: "Choose?",
+          recommendation: "A",
+          options: [{ label: "A" }, { label: "B" }],
+          recommendedOptionIndex: 0,
+        }),
+      () =>
+        tracker.answerIssueQuestion(ownerContext, i.id, q.id, {
+          kind: "other",
+          text: "Too late",
+        }),
+      () => tracker.claimIssue(ownerContext, i.id, ownerId),
+      () => tracker.releaseIssue(ownerContext, i.id),
+      () =>
+        tracker.addCodeLink(ownerContext, i.id, {
+          type: "commit",
+          url: "https://example.test/commit",
+        }),
+      () => tracker.acceptResult(ownerContext, i.id),
+      () => tracker.requestChanges(ownerContext, i.id, { reason: "Too late" }),
+    ])
+      await expect(mutate()).rejects.toMatchObject({ code: "not_found" });
+    expect(await connection.db.select().from(activityEvent)).toEqual(before);
+  });
+
   it("atomically rejects concurrent stale issue and Epic drafts", async () => {
     const p = await tracker.createProject(ownerContext, {
       name: "Concurrency",

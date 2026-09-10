@@ -240,4 +240,80 @@ test("owner completes the tracker loop with native keyboard controls", async ({
     "done",
   );
   await expect(page.getByText(`Accepted result for ${issueRef}`)).toBeVisible();
+
+  // Native dialog: safe initial focus, focus trap, Escape and explicit deletion.
+  if (mobile)
+    await page.getByRole("button", { name: "Close navigation" }).click();
+  const deleteButton = page.getByRole("button", {
+    name: "Delete ticket",
+    exact: true,
+  });
+  await deleteButton.click();
+  const dialog = page.getByRole("dialog", { name: "Delete this ticket?" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText(issueDisplayName)).toBeVisible();
+  const cancel = dialog.getByRole("button", { name: "Cancel" });
+  await expect(cancel).toBeFocused();
+  await dialog.screenshot({ path: testInfo.outputPath("delete-ticket.png") });
+  await page.keyboard.press("Shift+Tab");
+  await expect(
+    dialog.getByRole("button", { name: "Confirm deletion" }),
+  ).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(cancel).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await expect(deleteButton).toBeFocused();
+  expect(
+    (await page.request.get(`${e2eBaseUrl}/api/v1/issues/${issueId}`)).status(),
+  ).toBe(200);
+  await deleteButton.click();
+  await cancel.click();
+  await expect(dialog).toBeHidden();
+  await deleteButton.click();
+  await expect
+    .poll(() =>
+      dialog.evaluate((element) => element.scrollWidth <= element.clientWidth),
+    )
+    .toBe(true);
+  const endpoint = `**/api/v1/issues/${issueId}`;
+  await page.route(endpoint, (route) =>
+    route.request().method() === "DELETE"
+      ? route.abort("failed")
+      : route.continue(),
+  );
+  await dialog.getByRole("button", { name: "Confirm deletion" }).click();
+  await expect(dialog.getByRole("alert")).toContainText(
+    "Check your connection and retry",
+  );
+  await expect(dialog).toBeVisible();
+  expect(
+    (await page.request.get(`${e2eBaseUrl}/api/v1/issues/${issueId}`)).status(),
+  ).toBe(200);
+  await page.unroute(endpoint);
+  await page.route(endpoint, (route) =>
+    route.request().method() === "DELETE"
+      ? route.fulfill({
+          status: 409,
+          contentType: "application/json",
+          body: JSON.stringify({ error: "Changed" }),
+        })
+      : route.continue(),
+  );
+  await dialog.getByRole("button", { name: "Confirm deletion" }).click();
+  await expect(dialog.getByRole("alert")).toContainText(
+    "Cancel, reload and review",
+  );
+  await page.unroute(endpoint);
+  await cancel.click();
+  await deleteButton.click();
+  await dialog.getByRole("button", { name: "Confirm deletion" }).click();
+  await expect(page).toHaveURL(/\/projects\/[^/]+\?notice=Ticket%20deleted$/);
+  await expect(page.getByText("Ticket deleted", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: issueDisplayName })).toHaveCount(
+    0,
+  );
+  expect(
+    (await page.request.get(`${e2eBaseUrl}/api/v1/issues/${issueId}`)).status(),
+  ).toBe(404);
 });

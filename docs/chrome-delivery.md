@@ -138,8 +138,10 @@ owner/ticket/fecha en DB; `O_NOFOLLOW`, validación de claves y checksum en lect
 Se reserva margen libre de disco. GET owner `/api/v1/extensions/storage` muestra
 bytes/cuota para operación. Sin variable, aún pueden crearse tickets sin imagen.
 
-Conservar mientras exista el ticket. No se implementa borrado de tickets en este
-corte. Huérfanos por transacción fallida nunca se sirven. Operación:
+El borrado lógico web posterior (ticket 60) conserva las evidencias y su cuota,
+pero bloquea sus URLs y replays de captura. No amplía permisos de Chrome.
+Ver [borrado y retención](ticket-deletion.md). Huérfanos por transacción fallida
+nunca se sirven. Operación:
 
 ```bash
 # Con entorno privado inyectado; nunca pegar valores en consola/documentos.

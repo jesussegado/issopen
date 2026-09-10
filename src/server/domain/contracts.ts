@@ -152,6 +152,13 @@ export const updateIssueSchema = z
     "No changes supplied",
   );
 
+export const deleteIssueSchema = z
+  .object({
+    expectedVersion: z.number().int().positive(),
+    questionVersions: questionVersionsSchema,
+  })
+  .strict();
+
 export const addCodeLinkSchema = z
   .object({
     type: codeLinkTypeSchema,
@@ -211,6 +218,7 @@ export type CreateEpicInput = z.input<typeof createEpicSchema>;
 export type UpdateEpicInput = z.input<typeof updateEpicSchema>;
 export type CreateIssueInput = z.input<typeof createIssueSchema>;
 export type UpdateIssueInput = z.input<typeof updateIssueSchema>;
+export type DeleteIssueInput = z.input<typeof deleteIssueSchema>;
 export type AddCodeLinkInput = z.infer<typeof addCodeLinkSchema>;
 export type AddIssueCommentInput = z.infer<typeof addIssueCommentSchema>;
 export type CreateIssueQuestionInput = z.input<

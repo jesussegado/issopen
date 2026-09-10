@@ -236,6 +236,74 @@ afterAll(async () => {
 });
 
 describe("stateless Issopen MCP", () => {
+  it("has no delete tool and cannot read, mutate or replay creation of a web-deleted ticket", async () => {
+    const agent = await new AgentService(connection.db).createAgent(
+      workspaceId,
+      { name: "Delete fixture", projectIds: [projectId] },
+    );
+    const client = await mcpClient(agent.token);
+    try {
+      expect(
+        (await client.listTools()).tools.some(({ name }) =>
+          /delete.*issue|delete.*ticket/.test(name),
+        ),
+      ).toBe(false);
+      const args = {
+        projectId,
+        title: "Synthetic deleted ticket",
+        idempotencyKey: "deleted-create-replay",
+      };
+      const result = await client.callTool({
+        name: "create_issue",
+        arguments: args,
+      });
+      expect(result.isError).not.toBe(true);
+      const created = (
+        result.structuredContent as { issue: { id: string; version: number } }
+      ).issue;
+      await tracker.deleteIssue(mutationContext(), created.id, {
+        expectedVersion: created.version,
+        questionVersions: [],
+      });
+      for (const [name, arguments_] of [
+        ["get_issue", { issueId: created.id }],
+        ["create_issue", args],
+        [
+          "claim_issue",
+          { issueId: created.id, idempotencyKey: "deleted-claim" },
+        ],
+        [
+          "add_comment",
+          {
+            issueId: created.id,
+            body: "Too late",
+            idempotencyKey: "deleted-comment",
+          },
+        ],
+      ] as const)
+        expect(
+          (await client.callTool({ name, arguments: arguments_ })).isError,
+        ).toBe(true);
+      const listed = await client.callTool({
+        name: "list_issues",
+        arguments: { projectId },
+      });
+      expect(JSON.stringify(listed.structuredContent)).not.toContain(
+        created.id,
+      );
+      expect(
+        (
+          await connection.db
+            .select()
+            .from(issue)
+            .where(eq(issue.id, created.id))
+        )[0]?.deletedAt,
+      ).not.toBeNull();
+    } finally {
+      await client.close();
+    }
+  });
+
   it("replays a guarded mutation before checking later versions and rejects new stale operations", async () => {
     const agent = await new AgentService(connection.db).createAgent(
       workspaceId,
