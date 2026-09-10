@@ -126,6 +126,40 @@ button.secondary {
   background: white;
   color: #027067;
 }
+/* Final composer actions form one column, including the success state.
+   Leave image controls, inline creation and selector options untouched. */
+section[aria-labelledby="composer-heading"] > button,
+section[aria-labelledby="composer-heading"] > [role="status"] > button {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+}
+section[aria-labelledby="composer-heading"] > [role="status"] > a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 14px;
+  border: 1px solid #a4c8bb;
+  border-radius: 10px;
+  background: #e4f5ec;
+  color: #01534c;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 2px 4px rgb(20 47 41 / 6%);
+}
+section[aria-labelledby="composer-heading"] > [role="status"] > a::after {
+  content: "↗";
+  flex-shrink: 0;
+  font-size: 22px;
+  line-height: 1;
+}
+section[aria-labelledby="composer-heading"] > [role="status"] > a:hover {
+  border-color: #027067;
+  background: #d9f3e8;
+}
 .result {
   margin-top: 16px;
   border-top: 1px solid #c5d9d1;
@@ -250,6 +284,11 @@ input:focus-visible,
 a:focus-visible {
   outline: 3px solid #027067;
   outline-offset: 2px;
+}
+section[aria-labelledby="composer-heading"]
+  > [role="status"]
+  > a:focus-visible {
+  outline-offset: 3px;
 }
 .capture-canvas {
   display: block;

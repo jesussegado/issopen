@@ -5,7 +5,7 @@ repositorio; no crear otro Git. Epic Chrome
 `ca26c29b-43ac-4ca0-b768-594d6779d6e7`; ticket 51 simplifica las imágenes
 por petición explícita del owner. El criterio personal 33 sigue independiente.
 
-## Qué hace ahora (0.5.3)
+## Qué hace ahora (0.5.4)
 
 OAuth humano → pegar/subir imágenes externas → proyecto/Epic y campos →
 Enviar ticket → enlace. No captura ni lee la página, no inspecciona DOM.
@@ -30,6 +30,12 @@ No reintroducir controles de captura por seguir documentación histórica 0.3/0.
 - `Workspace.tsx`: compositor y creación de proyecto/Epic inline; conserva
   cuenta/formulario/imágenes al alternar paneles. Bloquea operaciones durante
   preparación o envío incierto. Conserva payload y UUID para reintentar.
+- `style.css`: las acciones finales del compositor son una columna a ancho
+  completo con 12px de separación; enlace de éxito destacado y flecha externa.
+  Selectores CSS acotados al compositor y su estado de éxito; no apilar opciones
+  de combobox ni alterar los controles de imágenes/creación inline.
+  El éxito actual vive en RAM: no recargar una confirmación sin considerar que
+  se perderá esa vista (el ticket ya creado no se borra ni se vuelve a enviar).
 - `SelectField.tsx`: proyecto/Epic usan un único input-combobox buscable, sin
   otro input de búsqueda encima. El filtro ignora mayúsculas/tildes y no cambia
   el ID confirmado; sólo elegir una opción llama onChange. Escape/Tab/fuera

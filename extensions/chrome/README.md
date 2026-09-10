@@ -1,4 +1,4 @@
-# Issopen para Chrome — piloto 0.5.3
+# Issopen para Chrome — piloto 0.5.4
 
 Crea tickets con imágenes de tu herramienta de recorte favorita.
 Ya no hace falta capturar la página ni concederle acceso a cada web.
@@ -17,6 +17,11 @@ Ya no hace falta capturar la página ni concederle acceso a cada web.
 6. Elige proyecto/Epic, título y descripción; pulsa **Enviar ticket**.
    También puedes crear proyecto/Epic desde los botones del compositor.
    Verás el enlace al ticket; no se abre automáticamente.
+
+Tras crear un ticket, **Abrir ticket en Issopen** aparece como una tarjeta
+destacada con flecha externa. **Preparar otro ticket** y **Descartar borrador**
+van debajo, a ancho completo y separados. Enviar/reintentar y descartar también
+se apilan antes de crear el ticket; no se amontonan en paneles estrechos.
 
 **Proyecto** y **Epic** tienen un único campo de búsqueda y selección: haz clic
 para ver las opciones o escribe para filtrar (sin distinguir mayúsculas/tildes).

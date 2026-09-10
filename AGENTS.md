@@ -29,6 +29,10 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+- Chrome 0.5.4 (ticket 56) mejora el enlace de ticket creado y apila las
+  acciones finales del compositor, a ancho completo y con separación. Cambio
+  visual acotado; sin modificar lógica de envío, permisos ni backend.
+
 - Chrome 0.5.3 (ticket 54) fusiona búsqueda y selección de Proyecto/Epic en
   un único input-combobox por destino. Texto de filtro transitorio, selección
   confirmada por clic/Enter, cancelación sin modificar IDs ni borradores.
