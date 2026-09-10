@@ -93,7 +93,10 @@ export async function prepareCapturePage(full: boolean) {
   const root = document.documentElement;
   const stateWindow = window as unknown as {
     __issopenCaptureCleanup?: () => void;
-    __issopenCaptureValid?: () => boolean;
+    __issopenCaptureValid?: () =>
+      | "ready"
+      | "content-changed"
+      | "viewport-changed";
   };
   stateWindow.__issopenCaptureCleanup?.();
   const originalX = scrollX,
@@ -104,7 +107,7 @@ export async function prepareCapturePage(full: boolean) {
   const changed: { element: HTMLElement; value: string; priority: string }[] =
     [];
   const elements = document.querySelectorAll<HTMLElement>("*");
-  if (elements.length > 20000) throw new Error("Page is too complex");
+  if (elements.length > 20000) return { error: "page-too-complex" as const };
   for (const element of elements) {
     const sensitive =
       element.matches(
@@ -137,11 +140,15 @@ export async function prepareCapturePage(full: boolean) {
     characterData: true,
     attributes: true,
   });
-  stateWindow.__issopenCaptureValid = () =>
-    valid &&
-    innerWidth === originalWidth &&
-    innerHeight === originalHeight &&
-    devicePixelRatio === originalDpr;
+  stateWindow.__issopenCaptureValid = () => {
+    if (
+      innerWidth !== originalWidth ||
+      innerHeight !== originalHeight ||
+      devicePixelRatio !== originalDpr
+    )
+      return "viewport-changed";
+    return valid ? "ready" : "content-changed";
+  };
   let timer: ReturnType<typeof setTimeout>;
   function cleanup() {
     clearTimeout(timer);
@@ -193,7 +200,12 @@ export function restoreCapturePage() {
 export function validCapturePage() {
   return (
     (
-      window as unknown as { __issopenCaptureValid?: () => boolean }
-    ).__issopenCaptureValid?.() === true
+      window as unknown as {
+        __issopenCaptureValid?: () =>
+          | "ready"
+          | "content-changed"
+          | "viewport-changed";
+      }
+    ).__issopenCaptureValid?.() ?? "page-unavailable"
   );
 }

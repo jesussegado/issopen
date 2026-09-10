@@ -2,6 +2,11 @@ import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { resolve } from "node:path";
 import { chromium, expect, type Page, test } from "@playwright/test";
+import {
+  prepareCapturePage,
+  restoreCapturePage,
+  validCapturePage,
+} from "../../lib/capture-page";
 
 const output = resolve(".output/chrome-mv3");
 const server = createServer((_req, res) => {
@@ -267,6 +272,71 @@ test("captures viewport/crop/full page and edits only flattened local pixels", a
 });
 
 // biome-ignore lint/correctness/noEmptyPattern: Playwright requires destructured fixtures.
+test("explains missing access and recovers through the real toolbar action", async ({}, info) => {
+  const { context, page, panel } = await openCapture();
+  try {
+    // Same synthetic fixture on another origin revokes the initial activeTab grant.
+    await page.goto(url.replace("127.0.0.1", "localhost"));
+    await stableViewport(page);
+    await take(panel, "viewport");
+    const alert = panel.getByRole("alert");
+    await expect(alert).toHaveAttribute("data-capture-error", "page-access");
+    await expect(alert).toContainText("No podemos acceder a esta pestaña");
+    await expect(alert).toContainText(
+      "Estar conectado a Issopen no concede acceso",
+    );
+    await expect(alert).toContainText("icono de Issopen en la barra de Chrome");
+    await expect(alert).toContainText("Esta captura no se ha enviado");
+    await alert.screenshot({
+      path: info.outputPath("capture-access-error.png"),
+    });
+    await expect(panel.locator("canvas")).toHaveCount(0);
+    const cdp = await context.browser()?.newBrowserCDPSession();
+    if (!cdp) throw new Error("Missing CDP");
+    const { extensions } = await cdp.send("Extensions.getExtensions");
+    const extension = extensions.find((e) => e.name === "Issopen");
+    const { targetInfos } = await cdp.send("Target.getTargets", {
+      filter: [{ type: "tab" }],
+    });
+    const tab = targetInfos.find((t) => t.url === page.url());
+    if (!extension || !tab) throw new Error("Missing extension/fixture");
+    await page.bringToFront();
+    await cdp.send("Extensions.triggerAction", {
+      id: extension.id,
+      targetId: tab.targetId,
+    });
+    await stableViewport(page);
+    await take(panel, "viewport");
+    await expect(panel.locator("canvas")).toHaveAttribute("aria-busy", "false");
+    await expect(alert).toHaveCount(0);
+  } finally {
+    await context.close();
+  }
+});
+
+// biome-ignore lint/correctness/noEmptyPattern: Playwright requires a destructured fixture parameter.
+test("detects browser viewport changes separately from document mutations", async ({}) => {
+  const { context, page } = await openCapture();
+  try {
+    await page.evaluate(prepareCapturePage, false);
+    await expect.poll(() => page.evaluate(validCapturePage)).toBe("ready");
+    await page.setViewportSize({ width: 900, height: 650 });
+    await expect
+      .poll(() => page.evaluate(validCapturePage))
+      .toBe("viewport-changed");
+    await page.evaluate(restoreCapturePage);
+    await expect
+      .poll(() => page.evaluate(validCapturePage))
+      .toBe("page-unavailable");
+    expect(
+      await page.locator("input").evaluate((e) => getComputedStyle(e).opacity),
+    ).toBe("1");
+  } finally {
+    await context.close();
+  }
+});
+
+// biome-ignore lint/correctness/noEmptyPattern: Playwright requires a destructured fixture parameter.
 test("scales a crop at DPR 2 / zoom 125%, cancels and safely rejects oversized or changing pages", async ({}) => {
   test.setTimeout(60000);
   const { context, page, panel, worker, requests } = await openCapture(2);
@@ -335,7 +405,19 @@ test("scales a crop at DPR 2 / zoom 125%, cancels and safely rejects oversized o
       observer.observe(input, { attributes: true });
     });
     await take(panel, "viewport");
-    await expect(panel.getByRole("alert")).toContainText("No se pudo capturar");
+    await expect(panel.getByRole("alert")).toHaveAttribute(
+      "data-capture-error",
+      "content-changed",
+    );
+    await expect(panel.getByRole("alert")).toContainText(
+      "La página cambió mientras capturábamos",
+    );
+    await expect(panel.getByRole("alert")).toContainText(
+      "Cambiar a recorte no evita esta protección",
+    );
+    await expect(panel.getByRole("alert")).toContainText(
+      "La previsualización anterior sigue disponible",
+    );
     expect(
       await page
         .locator("input")

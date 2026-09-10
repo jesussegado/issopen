@@ -10,7 +10,12 @@ import {
   captureResponseSchema,
   pixelRect,
 } from "../../lib/capture";
+import {
+  type CaptureErrorCode,
+  captureProblems,
+} from "../../lib/capture-errors";
 import type { ReviewedEvidence } from "../../lib/draft";
+import "./capture-errors.css";
 
 export function Capture({
   onReview,
@@ -27,7 +32,8 @@ export function Capture({
     "crop",
   );
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<CaptureErrorCode | null>(null);
+  const problem = error ? captureProblems[error] : null;
   const [result, setResult] = useState<Extract<
     CaptureResponse,
     { ok: true }
@@ -119,7 +125,7 @@ export function Capture({
     )
       return;
     setBusy(true);
-    setError("");
+    setError(null);
     try {
       const response = captureResponseSchema.parse(
         await browser.runtime.sendMessage({
@@ -129,7 +135,7 @@ export function Capture({
         }),
       );
       if (!response.ok) {
-        setError(response.message);
+        setError(response.code ?? "capture-failed");
         return;
       }
       setResult(response);
@@ -143,9 +149,7 @@ export function Capture({
       });
       await browser.storage.local.set({ "capture-mode": mode });
     } catch {
-      setError(
-        "El panel perdió la conexión. Recarga la extensión y vuelve a capturar.",
-      );
+      setError("extension-unavailable");
     } finally {
       setBusy(false);
     }
@@ -237,10 +241,24 @@ export function Capture({
             Enter confirma.
           </p>
         )}
-        {error && (
-          <p className="error" role="alert">
-            {error}
-          </p>
+        {problem && (
+          <div
+            className="error capture-error"
+            role="alert"
+            data-capture-error={error}
+          >
+            <strong>{problem.title}</strong>
+            <p>{problem.description}</p>
+            <ol>
+              {problem.steps.map((step) => (
+                <li key={step}>{step}</li>
+              ))}
+            </ol>
+            <p className="capture-error-safety">
+              Esta captura no se ha enviado.
+              {dataUrl ? " La previsualización anterior sigue disponible." : ""}
+            </p>
+          </div>
         )}
         {result && dataUrl && (
           <div className="capture-editor">

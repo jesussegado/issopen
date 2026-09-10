@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Chrome 0.4 delivered and production verified; ticket 33 owner acceptance pending
+stopped_at: Chrome capture error help 49 verified locally; extension 0.4.2 release in progress
 last_updated: "2026-09-09T21:50:00Z"
 last_activity: 2026-09-09
 progress:
@@ -22,6 +22,11 @@ See: .planning/PROJECT.md (updated 2026-08-30)
 
 **Core value:** Convertir una intención humana en trabajo estructurado y seguro que ChatGPT y agentes de código externos puedan entender, ejecutar y devolver a revisión dentro de un único flujo trazable.
 **Current focus:** Chrome Epic 1 technical delivery complete: 19–32 Ready for Review, 33 has owner-acceptance warning. Version 0.4 deployed and Chrome open. Quick 260909-vje; 43 remains Done and 44 untouched.
+
+Follow-up 2026-09-10: ticket 49 explains capture failures with safe cause codes
+and recovery steps (quick 260910-cbj). Initial extension gates pass: 77 unit,
+8 E2E. Extension 0.4.2 release in progress; no server/GitOps change. Parallel
+creation buttons 724a2da retained. Historical screenshot cause remains unknown.
 
 ## Current Position
 

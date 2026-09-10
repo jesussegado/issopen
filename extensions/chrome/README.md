@@ -1,4 +1,4 @@
-# Issopen para Chrome — piloto 0.4.1
+# Issopen para Chrome — piloto 0.4.2
 
 Flujo del [Epic de Chrome](https://issopen.serviciosegado.com/epics/ca26c29b-43ac-4ca0-b768-594d6779d6e7):
 OAuth humano, capturas y DOM saneado, revisión, creación de proyecto/Epic/ticket,
@@ -50,6 +50,27 @@ Si abres el panel desde el selector de paneles de Chrome, puede no haber permiso
 para la página. Pulsa el icono de Issopen en esa pestaña y reintenta. Si navegas
 a otro origen o cambias de pestaña, vuelve a concederlo desde el icono. Las
 páginas internas, tiendas, archivos locales e incógnito no están soportados.
+
+### Entender un fallo de captura
+
+Desde 0.4.2 el aviso muestra una causa identificada y pasos concretos:
+
+- **No podemos acceder a esta pestaña**: vuelve a la web y pulsa el icono de
+  Issopen en la barra de Chrome antes de capturar. El login de Issopen y el
+  permiso para leer la pestaña son cosas distintas.
+- **La página cambió mientras capturábamos**: espera a que termine de actualizarse;
+  si ofrece una opción para pausar actualizaciones, úsala. Recortar no evita la
+  protección que impide capturar contenido nuevo aún no ocultado.
+- **Ha cambiado el tamaño de la página**: ajusta ventana/panel/zoom antes de
+  iniciar; repite sin redimensionar durante la captura.
+- **No se pudo completar la captura**: causa desconocida, sin inventar un fallo
+  de permisos o de red. Indica el modo y los pasos para reproducirlo.
+
+Los fallos de captura no envían una imagen al servidor y conservan la
+previsualización anterior. Cerrar el panel sigue perdiendo una captura aún no
+confirmada: revisa ese aviso antes de recargar. Las excepciones crudas de Chrome
+no se muestran ni registran; sólo códigos permitidos y textos estáticos.
+Referencia: [permiso temporal activeTab](https://developer.chrome.com/docs/extensions/develop/concepts/activeTab).
 
 Para actualizar: vuelve a construir, pulsa **Recargar** en `chrome://extensions`
 y cierra/reabre el panel. Desactivar/eliminar la extensión revierte esta entrega;

@@ -29,6 +29,10 @@ Epic `ca26c29b-43ac-4ca0-b768-594d6779d6e7`, tickets 19–33 en Issopen.
   rectángulos con ratón o campos numéricos y cinco pasos de deshacer/rehacer.
 - `tests/unit/`: contratos, privacidad, emisor, worker y navegación cambiante.
 - `tests/e2e/`: artefacto productivo y acción real de Chrome con perfil efímero.
+- `lib/capture-errors.ts`: catálogo de códigos y ayuda estática. El worker
+  distingue acceso, navegación, mutación de contenido y cambio de tamaño; la UI
+  no muestra excepciones crudas ni adivina causas. Si no se conoce, usa el caso
+  desconocido. Conservar todos los guards y el preview previo ante un fallo.
 
 ## Invariantes y próximos tickets
 
