@@ -22,5 +22,12 @@
   `5daed7ee940a1dfe29e61eef5f5d8aa85529943eff34b3d77f60941b52f2f680`.
 - Secret scan: PASS.
 
-Source publication, managed-profile reload and MCP transition are recorded
-after the immutable source revision exists.
+- Source implementation `f337430c05a166e417bba35a09884a258c3e1f59` and
+  formatting-only follow-up `3da9fc519fe806de3a6e9171ee2efd40311fd3b2`
+  are published on `main`.
+- Reproducible release archive
+  `.output/releases/issopen-chrome-0.5.5-3da9fc519fe8.zip` has SHA-256
+  `528a89c01b086e80a91ad34b82d066a427b0de8154ac9a4c34adb8024288cbe5`.
+- Managed Chrome kept extension ID `maclhppfbnhaeelekfdmmnmhdnmddcch`, loaded
+  version 0.5.5 and showed no retained image or remove button after confirmed
+  creation. Ticket 62 is Ready for Human Review v6 without an active claim.

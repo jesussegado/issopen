@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Epic 5 tickets 57-59 deployed and Ready for Human Review
-last_updated: "2026-09-10T11:20:30Z"
+stopped_at: Epic 5 tickets 62-63 delivered and Ready for Human Review; reviewing newer tickets
+last_updated: "2026-09-10T12:20:15Z"
 last_activity: 2026-09-10
 progress:
   total_phases: 9
@@ -21,7 +21,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-30)
 
 **Core value:** Convertir una intención humana en trabajo estructurado y seguro que ChatGPT y agentes de código externos puedan entender, ejecutar y devolver a revisión dentro de un único flujo trazable.
-**Current focus:** Epic 5 frontend/usability tickets 57–59 are deployed and ready for owner review; Chrome ticket 33 acceptance remains untouched.
+**Current focus:** Epic 5 frontend/usability tickets 62–63 are delivered and newer owner tickets are being reviewed; Chrome ticket 33 acceptance remains untouched.
+
+Follow-up 2026-09-10: ticket 62 fixes stale post-success Chrome attachments in
+0.5.5 (source f337430 plus formatting-only 3da9fc5); the reproducible ZIP and
+checksum passed and the managed profile retained its extension ID. Ticket 63
+adds project-scoped authenticated SSE plus focus/online/visibility/30 s
+reconciliation (source 65f2720). GitOps db1f864f is Synced/Healthy on digest
+8f26ffd; pod Ready/0 restarts, PostgreSQL and both PVCs preserved, readiness
+public. Full gates, Compose, 197 homelab checks and isolated backup restore
+passed. A live owner SSE stream observed an MCP activity mutation. Both tickets
+are Ready for Human Review v6 with no active claim.
 
 Follow-up 2026-09-10: Epic 5 tickets 57–59 simplify compact Epic listings,
 add private paste/file images to normal web ticket creation, and keep

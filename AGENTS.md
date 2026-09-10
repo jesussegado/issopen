@@ -33,13 +33,17 @@ haya conflicto, usa este orden:
   acotada al proyecto. El cursor procede del log de actividad append-only y no
   contiene tickets; por ello observa REST, Chrome y MCP. La UI relee estado
   autoritativo en eventos, foco, visibilidad, vuelta de red y reconciliación de
-  30 s, sin perder filtros, columnas plegadas ni tarjetas abiertas.
+  30 s, sin perder filtros, columnas plegadas ni tarjetas abiertas. Fuente
+  `65f2720`, GitOps `db1f864f` `Synced/Healthy`, digest `8f26ffd`; producción y
+  restore aislado validados. Ticket Ready for Human Review v6, sin claim.
 
 - Chrome 0.5.5 (ticket 62) elimina el estado engañoso de imágenes tras una
   creación confirmada: oculta los controles editables, libera las copias en
   memoria y confirma cuántas quedaron adjuntas. La eliminación previa al envío
   sigue siendo inmediata; los envíos inciertos permanecen bloqueados e
-  idempotentes y no se añade borrado de adjuntos del servidor.
+  idempotentes y no se añade borrado de adjuntos del servidor. Fuentes
+  `f337430`/`3da9fc5`, ZIP reproducible y perfil Chrome administrado validados;
+  ticket Ready for Human Review v6, sin claim.
 
 - Epic 5 (tickets 57–59) simplifica los listados de Epics sin borrar sus
   descripciones, mantiene siempre visible `+ Create ticket in Epic` y permite
