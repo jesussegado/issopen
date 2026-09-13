@@ -23,6 +23,35 @@ export type Session = {
   } | null;
 };
 
+export type InvitationState =
+  | "pending"
+  | "claimed"
+  | "expired"
+  | "accepted"
+  | "revoked";
+
+export type WorkspaceInvitation = {
+  id: string;
+  email: string;
+  role: "member";
+  state: InvitationState;
+  projectIds: string[];
+  expiresAt: string;
+  claimedAt: string | null;
+  acceptedAt: string | null;
+  revokedAt: string | null;
+  createdAt: string;
+};
+
+export type WorkspaceMember = {
+  userId: string;
+  name: string;
+  email: string;
+  role: "owner" | "member";
+  projectIds: string[] | null;
+  createdAt: string;
+};
+
 export type Project = {
   id: string;
   workspaceId: string;

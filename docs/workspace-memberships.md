@@ -34,6 +34,10 @@ return `403` with an actionable message.
   grants, role changes, project grants/revocations and membership revocation.
   It records the subject and human actor; invitation work must use the central
   membership service rather than mutate membership rows from route handlers.
+- `workspace_invitation`, `workspace_invitation_project` and
+  `workspace_invitation_event` implement the hash-only, one-use invitation
+  protocol. Its complete lifecycle, Google proof and recovery contract is in
+  [Member invitations](member-invitations.md).
 - The legacy `workspace.owner_id` remains the canonical instance owner and is
   retained for backward compatibility. An `owner` membership that does not
   match it is rejected by the authorization resolver.
@@ -45,7 +49,8 @@ or `requireProjectAccess` for project data, and build mutations through
 
 ## Migration and rollback
 
-Migration `0017_bright_fabian_cortez` is additive. It creates the three tables,
+Migration `0017_bright_fabian_cortez` is additive. It creates the three role
+and membership tables,
 backfills each existing `workspace.owner_id` as an Owner membership and appends
 one deterministic `membership.backfilled` event. Existing workspace, project,
 Epic, ticket and session rows are not rewritten.

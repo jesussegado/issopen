@@ -78,6 +78,7 @@ export const account = pgTable(
       .notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
+      .$onUpdate(() => new Date())
       .notNull(),
   },
   (table) => [
@@ -376,6 +377,64 @@ export const workspaceMembership = pgTable(
   ],
 );
 
+export const workspaceInvitation = pgTable(
+  "workspace_invitation",
+  {
+    id: text("id").primaryKey(),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => workspace.id, { onDelete: "restrict" }),
+    email: varchar("email", { length: 320 }).notNull(),
+    role: workspaceRole("role").default("member").notNull(),
+    tokenHash: varchar("token_hash", { length: 64 }).notNull().unique(),
+    createdByUserId: text("created_by_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    claimedByUserId: text("claimed_by_user_id").references(() => user.id, {
+      onDelete: "restrict",
+    }),
+    provisionalSessionId: text("provisional_session_id").references(
+      () => session.id,
+      { onDelete: "set null" },
+    ),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    claimedAt: timestamp("claimed_at", { withTimezone: true }),
+    acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("workspace_invitation_id_workspace_uidx").on(
+      table.id,
+      table.workspaceId,
+    ),
+    uniqueIndex("workspace_invitation_active_email_uidx")
+      .on(table.workspaceId, table.email)
+      .where(sql`${table.acceptedAt} IS NULL AND ${table.revokedAt} IS NULL`),
+    index("workspace_invitation_workspace_created_idx").on(
+      table.workspaceId,
+      table.createdAt,
+    ),
+    index("workspace_invitation_expiry_idx").on(table.expiresAt),
+    index("workspace_invitation_provisional_session_idx").on(
+      table.provisionalSessionId,
+    ),
+    check(
+      "workspace_invitation_token_hash_check",
+      sql`${table.tokenHash} ~ '^[0-9a-f]{64}$'`,
+    ),
+    check(
+      "workspace_invitation_member_role_check",
+      sql`${table.role} = 'member'::workspace_role`,
+    ),
+  ],
+);
+
 export const issueStatusValues = [
   "backlog",
   "ready",
@@ -634,6 +693,59 @@ export const membershipEvent = pgTable(
     ),
     index("membership_event_subject_created_idx").on(
       table.subjectUserId,
+      table.createdAt,
+    ),
+  ],
+);
+
+export const workspaceInvitationProject = pgTable(
+  "workspace_invitation_project",
+  {
+    invitationId: text("invitation_id").notNull(),
+    workspaceId: text("workspace_id").notNull(),
+    projectId: text("project_id").notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.invitationId, table.projectId] }),
+    foreignKey({
+      columns: [table.invitationId, table.workspaceId],
+      foreignColumns: [workspaceInvitation.id, workspaceInvitation.workspaceId],
+      name: "workspace_invitation_project_invitation_workspace_fk",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.projectId, table.workspaceId],
+      foreignColumns: [project.id, project.workspaceId],
+      name: "workspace_invitation_project_project_workspace_fk",
+    }).onDelete("cascade"),
+    index("workspace_invitation_project_workspace_idx").on(table.workspaceId),
+  ],
+);
+
+export const workspaceInvitationEvent = pgTable(
+  "workspace_invitation_event",
+  {
+    id: text("id").primaryKey(),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => workspace.id, { onDelete: "restrict" }),
+    invitationId: text("invitation_id")
+      .notNull()
+      .references(() => workspaceInvitation.id, { onDelete: "restrict" }),
+    actorUserId: text("actor_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    type: varchar("type", { length: 64 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("workspace_invitation_event_invitation_created_idx").on(
+      table.invitationId,
+      table.createdAt,
+    ),
+    index("workspace_invitation_event_workspace_created_idx").on(
+      table.workspaceId,
       table.createdAt,
     ),
   ],
@@ -944,6 +1056,7 @@ export const workspaceRelations = relations(workspace, ({ many, one }) => ({
   owner: one(user, { fields: [workspace.ownerId], references: [user.id] }),
   memberships: many(workspaceMembership),
   membershipEvents: many(membershipEvent),
+  invitations: many(workspaceInvitation),
 }));
 
 export const workspaceMembershipRelations = relations(
@@ -1012,7 +1125,44 @@ export const projectRelations = relations(project, ({ many, one }) => ({
   issues: many(issue),
   activity: many(activityEvent),
   memberships: many(projectMembership),
+  invitationProjects: many(workspaceInvitationProject),
 }));
+
+export const workspaceInvitationRelations = relations(
+  workspaceInvitation,
+  ({ many, one }) => ({
+    workspace: one(workspace, {
+      fields: [workspaceInvitation.workspaceId],
+      references: [workspace.id],
+    }),
+    projects: many(workspaceInvitationProject),
+    events: many(workspaceInvitationEvent),
+  }),
+);
+
+export const workspaceInvitationProjectRelations = relations(
+  workspaceInvitationProject,
+  ({ one }) => ({
+    invitation: one(workspaceInvitation, {
+      fields: [workspaceInvitationProject.invitationId],
+      references: [workspaceInvitation.id],
+    }),
+    project: one(project, {
+      fields: [workspaceInvitationProject.projectId],
+      references: [project.id],
+    }),
+  }),
+);
+
+export const workspaceInvitationEventRelations = relations(
+  workspaceInvitationEvent,
+  ({ one }) => ({
+    invitation: one(workspaceInvitation, {
+      fields: [workspaceInvitationEvent.invitationId],
+      references: [workspaceInvitation.id],
+    }),
+  }),
+);
 
 export const projectMembershipRelations = relations(
   projectMembership,

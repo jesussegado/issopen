@@ -72,6 +72,7 @@ function Navigation({
 }) {
   const link = (href: string, label: string) => (
     <AppLink
+      key={href}
       className="nav-link"
       href={href}
       aria-current={pathname === href ? "page" : undefined}
@@ -86,6 +87,7 @@ function Navigation({
       {role === "owner" ? link("/projects/new", "Create project") : null}
       <div className="nav-divider" />
       {role === "owner" ? link("/agents", "Agents") : null}
+      {role === "owner" ? link("/members", "Members") : null}
       {role === "owner" ? link("/connect", "Connect ChatGPT") : null}
       {link("/extensions", "Extensiones Chrome")}
     </nav>
@@ -137,6 +139,7 @@ export function AuthenticatedShell({
             <span className="metadata">
               Role: {session.workspace.role === "owner" ? "Owner" : "Member"}
             </span>
+            <AppLink href="/account">Account</AppLink>
             {session.workspace.role === "owner" ? (
               <AppLink href="/workspace">Workspace settings</AppLink>
             ) : null}

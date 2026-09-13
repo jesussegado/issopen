@@ -24,6 +24,7 @@ import {
 } from "./extensions.js";
 import {
   createAgentRouter,
+  createInvitationRouter,
   createTrackerRouter,
   domainErrorResponse,
 } from "./http/index.js";
@@ -33,6 +34,7 @@ import {
   requireWorkspaceOwner,
   resolveHumanAccess,
 } from "./human-access.js";
+import { InvitationService } from "./invitations.js";
 import { createIssopenMcpHandler } from "./mcp/index.js";
 
 type AppBindings = {
@@ -108,6 +110,16 @@ export function createApp({
   app.get("/api/public/auth-providers", (context) =>
     context.json({ google: googleAuthEnabled }),
   );
+  app.get("/api/public/invitations/:token", async (context) => {
+    context.header("Cache-Control", "no-store");
+    context.header("Referrer-Policy", "no-referrer");
+    const invitation = await new InvitationService(db).inspect(
+      context.req.param("token"),
+    );
+    return invitation
+      ? context.json({ invitation })
+      : context.json({ error: "Invitation not found" }, 404);
+  });
 
   app.on(["GET", "POST"], "/api/auth/sign-up/*", (context) =>
     context.json({ error: "Not found" }, 404),
@@ -307,6 +319,10 @@ export function createApp({
 
   app.route("/api/v1", createTrackerRouter({ db }));
   app.route("/api/v1", createAgentRouter({ db }));
+  app.route(
+    "/api/v1",
+    createInvitationRouter({ db, baseUrl: String(auth.options.baseURL) }),
+  );
   app.route("/api/v1", createExtensionOwnerRouter(db, auth));
   app.route("/api/v1", createEvidenceRouter(db, captureStorage));
 

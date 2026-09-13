@@ -3,6 +3,7 @@ import { AuthenticatedShell, PublicShell } from "./components/Shell.js";
 import { Skeleton, StatusBanner } from "./components/ui.js";
 import { apiRequest } from "./lib/api.js";
 import { navigate, useLocation } from "./lib/navigation.js";
+import { AccountRoute } from "./routes/AccountRoute.js";
 import { AgentsRoute } from "./routes/AgentsRoute.js";
 import { BoardRoute } from "./routes/BoardRoute.js";
 import { ConnectRoute, ConsentRoute } from "./routes/ConnectRoute.js";
@@ -12,7 +13,13 @@ import {
   EpicsRoute,
 } from "./routes/EpicRoutes.js";
 import { ExtensionsRoute } from "./routes/ExtensionsRoute.js";
+import {
+  InvitationCompleteRoute,
+  InvitationLinkRoute,
+  InvitationRedeemRoute,
+} from "./routes/InvitationRoutes.js";
 import { IssueDetailRoute } from "./routes/IssueDetailRoute.js";
+import { MembersRoute } from "./routes/MembersRoute.js";
 import {
   SignInRoute,
   StatusRoute,
@@ -44,16 +51,18 @@ export function App() {
     });
     if (response.status === 401) {
       setScreen({ kind: "anonymous" });
-      return;
+      return null;
     }
     if (!response.ok) {
       setScreen({ kind: "error" });
-      return;
+      return null;
     }
+    const session = (await response.json()) as Session;
     setScreen({
       kind: "authenticated",
-      session: (await response.json()) as Session,
+      session,
     });
+    return session;
   }, []);
 
   useEffect(() => {
@@ -76,6 +85,21 @@ export function App() {
         </StatusBanner>
       </PublicShell>
     );
+  const inviteMatch = pathname.match(/^\/invite\/([^/]+)$/);
+  if (inviteMatch?.[1]) {
+    return (
+      <PublicShell>
+        <InvitationRedeemRoute
+          token={inviteMatch[1]}
+          authenticated={screen.kind === "authenticated"}
+          onRedeemed={async (invitationId) => {
+            await readSession();
+            navigate(`/invitations/${invitationId}/link`, true);
+          }}
+        />
+      </PublicShell>
+    );
+  }
   if (screen.kind === "anonymous") {
     if (pathname !== "/sign-in")
       navigate(`/sign-in?returnTo=${encodeURIComponent(location)}`, true);
@@ -83,6 +107,33 @@ export function App() {
       <SignInRoute
         onSignedIn={(session) => setScreen({ kind: "authenticated", session })}
       />
+    );
+  }
+  const invitationLinkMatch = pathname.match(/^\/invitations\/([^/]+)\/link$/);
+  const invitationCompleteMatch = pathname.match(
+    /^\/invitations\/([^/]+)\/complete$/,
+  );
+  if (invitationLinkMatch?.[1]) {
+    return (
+      <PublicShell>
+        <InvitationLinkRoute
+          invitationId={invitationLinkMatch[1]}
+          email={screen.session.user.email}
+        />
+      </PublicShell>
+    );
+  }
+  if (invitationCompleteMatch?.[1]) {
+    return (
+      <PublicShell>
+        <InvitationCompleteRoute
+          invitationId={invitationCompleteMatch[1]}
+          onAccepted={async () => {
+            await readSession();
+            navigate("/", true);
+          }}
+        />
+      </PublicShell>
     );
   }
   if (!screen.session.workspace) {
@@ -173,6 +224,9 @@ function AuthenticatedApp({
     route = <ProjectFormRoute onProjectsChanged={refreshProjects} />;
   else if (pathname === "/agents" && session.workspace.role === "owner")
     route = <AgentsRoute projects={projects} />;
+  else if (pathname === "/members" && session.workspace.role === "owner")
+    route = <MembersRoute projects={projects} />;
+  else if (pathname === "/account") route = <AccountRoute session={session} />;
   else if (pathname === "/connect" && session.workspace.role === "owner")
     route = <ConnectRoute />;
   else if (pathname === "/extensions") route = <ExtensionsRoute />;

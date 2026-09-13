@@ -210,8 +210,136 @@ describe("owner web entry", () => {
       screen.queryByRole("link", { name: "Connect ChatGPT" }),
     ).not.toBeInTheDocument();
     expect(
+      screen.queryByRole("link", { name: "Members" }),
+    ).not.toBeInTheDocument();
+    expect(
       screen.getAllByRole("link", { name: "Extensiones Chrome" }).length,
     ).toBeGreaterThan(0);
+  });
+
+  it("lets the owner create project-scoped invitations and manage members", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const path = String(input);
+        if (path === "/api/v1/session") return json(ownerSession);
+        if (path === "/api/v1/projects")
+          return json({
+            projects: [
+              {
+                id: "project-1",
+                workspaceId: "workspace-1",
+                name: "Issopen",
+                key: "ISSOPEN",
+                description: "",
+                repositoryUrl: null,
+                defaultBranch: null,
+                repositorySubdirectory: null,
+                showReviewColumn: true,
+                showDoneColumn: true,
+                version: 1,
+                createdAt: "2026-09-13T10:00:00.000Z",
+                updatedAt: "2026-09-13T10:00:00.000Z",
+              },
+            ],
+          });
+        if (path === "/api/v1/members")
+          return json({
+            invitations: [],
+            members: [
+              {
+                userId: "owner-1",
+                name: "Owner",
+                email: "owner@example.test",
+                role: "owner",
+                projectIds: null,
+                createdAt: "2026-09-13T10:00:00.000Z",
+              },
+            ],
+          });
+        throw new Error(`Unexpected request: ${path}`);
+      }),
+    );
+    window.history.replaceState({}, "", "/members");
+    render(<App />);
+
+    expect(
+      await screen.findByRole("heading", { name: "Members and invitations" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("Google account email (required)"),
+    ).toBeEnabled();
+    expect(screen.getByRole("checkbox", { name: /Issopen/ })).toBeEnabled();
+    expect(await screen.findByText("owner@example.test")).toBeInTheDocument();
+    expect(
+      screen.getAllByRole("link", { name: "Members" }).length,
+    ).toBeGreaterThan(0);
+  });
+
+  it("redeems a private invitation before asking for explicit Google verification", async () => {
+    let sessionReads = 0;
+    const provisionalSession = {
+      user: {
+        id: "invited-1",
+        name: "Invited",
+        email: "member@example.test",
+      },
+      workspace: null,
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const path = String(input);
+        if (path === "/api/v1/session") {
+          sessionReads += 1;
+          return sessionReads === 1
+            ? json({ error: "Authentication required" }, 401)
+            : json(provisionalSession);
+        }
+        if (path.startsWith("/api/public/invitations/"))
+          return json({
+            invitation: {
+              id: "11111111-1111-4111-8111-111111111111",
+              workspaceName: "My workspace",
+              email: "me****@example.test",
+              state: "pending",
+              expiresAt: "2026-09-20T10:00:00.000Z",
+            },
+          });
+        if (path === "/api/auth/invitations/redeem")
+          return json({
+            invitationId: "11111111-1111-4111-8111-111111111111",
+            requiresGoogleVerification: true,
+          });
+        if (path === "/api/public/auth-providers")
+          return json({ google: true });
+        throw new Error(`Unexpected request: ${path}`);
+      }),
+    );
+    window.history.replaceState(
+      {},
+      "",
+      "/invite/abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQ",
+    );
+    const user = userEvent.setup();
+    render(<App />);
+
+    expect(
+      await screen.findByRole("heading", { name: "Join My workspace" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("me****@example.test")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Continue securely" }));
+    expect(
+      await screen.findByRole("heading", {
+        name: "Verify your Google account",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Verify with Google" }),
+    ).toBeEnabled();
+    expect(window.location.pathname).toBe(
+      "/invitations/11111111-1111-4111-8111-111111111111/link",
+    );
   });
 
   it("keeps protected content out of an anonymous response", async () => {

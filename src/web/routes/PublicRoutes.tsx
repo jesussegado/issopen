@@ -141,7 +141,13 @@ export function SignInRoute({
       }
       const session = await apiRequest<Session>("/api/v1/session");
       onSignedIn(session);
-      navigate(session.workspace ? returnPath() : "/workspace/new", true);
+      const intended = returnPath();
+      const invitationFlow =
+        intended.startsWith("/invite/") || intended.startsWith("/invitations/");
+      navigate(
+        session.workspace || invitationFlow ? intended : "/workspace/new",
+        true,
+      );
     } catch {
       setError("We couldn't sign you in. Check your connection and try again.");
     } finally {

@@ -373,6 +373,117 @@ textarea:disabled {
   display: grid;
   gap: 24px;
 }
+.page-stack {
+  display: grid;
+  width: min(100%, 960px);
+  gap: 24px;
+  margin: 0 auto;
+}
+.page-stack h1,
+.page-stack h2,
+.page-stack p,
+.form-stack h2,
+.form-stack p {
+  margin-bottom: 0;
+}
+.button-row,
+.section-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.section-heading {
+  justify-content: space-between;
+}
+.section-heading h2 {
+  margin: 0;
+}
+.choice-group {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.choice-group legend {
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.choice-row {
+  display: flex;
+  min-height: 48px;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-subtle);
+}
+.choice-row input {
+  flex: 0 0 auto;
+  margin-top: 4px;
+}
+.choice-row span {
+  display: grid;
+  gap: 2px;
+}
+.invitation-link-input {
+  min-height: 40px;
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--color-control-border);
+  border-radius: 8px;
+  color: var(--color-text);
+  background: var(--color-subtle);
+  font-family: var(--font-mono);
+}
+.access-list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.access-list-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-subtle);
+  overflow-wrap: anywhere;
+}
+.access-list-item p {
+  margin: 4px 0 0;
+}
+.access-actions {
+  display: grid;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+.metadata-list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+.metadata-list div {
+  display: grid;
+  grid-template-columns: minmax(100px, 1fr) minmax(0, 2fr);
+  gap: 16px;
+}
+.metadata-list dt {
+  color: var(--color-muted);
+  font-size: 14px;
+  font-weight: 600;
+}
+.metadata-list dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
 .field {
   display: grid;
   gap: 8px;
@@ -1115,6 +1226,18 @@ progress {
   .page-header {
     display: grid;
     gap: 16px;
+  }
+  .access-list-item {
+    display: grid;
+  }
+  .access-actions,
+  .access-actions .button,
+  .button-row .button {
+    width: 100%;
+  }
+  .metadata-list div {
+    grid-template-columns: 1fr;
+    gap: 4px;
   }
   .page-actions {
     width: 100%;

@@ -10,6 +10,7 @@ import type { Database } from "./db/client.js";
 import * as schema from "./db/schema.js";
 import { agentScopeValues } from "./db/schema.js";
 import { extensionResource, extensionScopes } from "./extensions.js";
+import { invitationAuthPlugin } from "./invitations.js";
 
 export function createAuth(db: Database, config: AppConfig) {
   const oauthScopes = [...agentScopeValues, ...extensionScopes];
@@ -49,9 +50,19 @@ export function createAuth(db: Database, config: AppConfig) {
       maxPasswordLength: 128,
       revokeSessionsOnPasswordReset: true,
     },
+    account: {
+      accountLinking: {
+        enabled: true,
+        disableImplicitLinking: true,
+        allowDifferentEmails: false,
+        requireLocalEmailVerified: true,
+        updateUserInfoOnLink: false,
+      },
+    },
     disabledPaths: ["/sign-up/email"],
     plugins: [
       jwt(),
+      invitationAuthPlugin(db),
       ...(config.googleOAuth
         ? [
             genericOAuth({

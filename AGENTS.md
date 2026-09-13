@@ -37,6 +37,16 @@ haya conflicto, usa este orden:
   credenciales. Unlisted no es control de acceso: el piloto sigue siendo por
   invitación. Hasta que 86 sea aprobado no afirmar que existe una versión Store.
 
+- Ticket 81 implementa invitaciones Member de siete días con token aleatorio
+  guardado sólo como hash, enlace de revelado único/rotación, sesión provisional
+  de 15 minutos sin acceso y vinculación Google explícita con email verificado
+  idéntico. El Owner gestiona invitaciones y miembros en `/members`; revocar una
+  invitación sólo invalida su sesión provisional, mientras retirar un miembro
+  revoca sesiones y OAuth propios. Migración aditiva `0018_steady_ironclad` y
+  contrato en [invitaciones de miembros](docs/member-invitations.md). No marcar
+  la aceptación externa cerrada hasta probarla con una segunda cuenta Google
+  real después de configurar 79.
+
 - Ticket 66 añade archivado reversible de Epics. Sus tickets heredan el
   archivado sin cambiar de estado: desaparecen del board, de la colección REST
   activa y de `list_issues`, pero conservan acceso directo, datos y actividad;

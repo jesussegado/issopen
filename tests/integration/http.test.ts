@@ -3,7 +3,7 @@ import {
   PostgreSqlContainer,
   type StartedPostgreSqlContainer,
 } from "@testcontainers/postgresql";
-import { count } from "drizzle-orm";
+import { count, eq } from "drizzle-orm";
 import pino from "pino";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { bootstrapOwner } from "../../scripts/owner.js";
@@ -25,6 +25,8 @@ import {
   projectMembership,
   user,
   workspace,
+  workspaceInvitation,
+  workspaceInvitationEvent,
   workspaceMembership,
 } from "../../src/server/db/schema.js";
 import {
@@ -267,6 +269,320 @@ afterAll(async () => {
 });
 
 describe("protected tracker REST API", () => {
+  it("invites a member through a one-use link, explicit Google proof and revocable access", async () => {
+    const assignedProject = await createProjectFixture("Invited", "INVITE");
+    const privateProject = await createProjectFixture("Owner only", "OWNER");
+    const invitedEmail = "new-member@example.test";
+
+    const created = await authenticatedRequest("/api/v1/invitations", {
+      method: "POST",
+      body: JSON.stringify({
+        email: `  ${invitedEmail.toUpperCase()}  `,
+        projectIds: [assignedProject.id],
+      }),
+    });
+    expect(created.status).toBe(201);
+    const creation = await body<{
+      invitation: { id: string; email: string; state: string };
+      inviteUrl: string;
+    }>(created);
+    expect(creation.invitation).toMatchObject({
+      email: invitedEmail,
+      state: "pending",
+    });
+    const token = new URL(creation.inviteUrl).pathname.split("/").at(-1) ?? "";
+    expect(token).toMatch(/^[A-Za-z0-9_-]{43}$/);
+
+    const [stored] = await connection.db
+      .select()
+      .from(workspaceInvitation)
+      .where(eq(workspaceInvitation.id, creation.invitation.id));
+    expect(stored?.tokenHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(stored?.tokenHash).not.toBe(token);
+
+    const inspected = await app.request(`/api/public/invitations/${token}`);
+    expect(inspected.status).toBe(200);
+    const publicText = await inspected.clone().text();
+    expect(publicText).not.toContain(invitedEmail);
+    expect(await inspected.json()).toMatchObject({
+      invitation: {
+        id: creation.invitation.id,
+        workspaceName: "HTTP workspace",
+        state: "pending",
+      },
+    });
+
+    const redeemed = await app.request("/api/auth/invitations/redeem", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Origin: baseUrl },
+      body: JSON.stringify({ token }),
+    });
+    expect(redeemed.status).toBe(200);
+    expect(await redeemed.json()).toEqual({
+      invitationId: creation.invitation.id,
+      requiresGoogleVerification: true,
+    });
+    const provisionalCookie =
+      redeemed.headers.get("set-cookie")?.split(";", 1)[0] ?? "";
+    expect(provisionalCookie).toContain("issopen.session_token=");
+
+    const anonymousReplay = await app.request("/api/auth/invitations/redeem", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Origin: baseUrl },
+      body: JSON.stringify({ token }),
+    });
+    expect(anonymousReplay.status).toBe(409);
+
+    const authenticatedResume = await app.request(
+      "/api/auth/invitations/redeem",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: provisionalCookie,
+          Origin: baseUrl,
+        },
+        body: JSON.stringify({ token }),
+      },
+    );
+    expect(authenticatedResume.status).toBe(200);
+    expect(authenticatedResume.headers.get("set-cookie")).toBeNull();
+
+    const beforeGoogle = await app.request("/api/auth/invitations/accept", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Cookie: provisionalCookie,
+        Origin: baseUrl,
+      },
+      body: JSON.stringify({ invitationId: creation.invitation.id }),
+    });
+    expect(beforeGoogle.status).toBe(403);
+    expect(await beforeGoogle.json()).toMatchObject({
+      code: "GOOGLE_REAUTH_REQUIRED",
+    });
+
+    const [claimed] = await connection.db
+      .select()
+      .from(workspaceInvitation)
+      .where(eq(workspaceInvitation.id, creation.invitation.id));
+    expect(claimed?.claimedByUserId).toBeTruthy();
+    if (!claimed?.claimedByUserId || !claimed.claimedAt) {
+      throw new Error("Expected a claimed invitation");
+    }
+    await connection.db.insert(account).values({
+      id: randomUUID(),
+      issuer: "https://accounts.google.com",
+      accountId: "synthetic-google-subject",
+      providerId: "google",
+      userId: claimed.claimedByUserId,
+      updatedAt: new Date(claimed.claimedAt.getTime() + 1_000),
+    });
+
+    const accepted = await app.request("/api/auth/invitations/accept", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Cookie: provisionalCookie,
+        Origin: baseUrl,
+      },
+      body: JSON.stringify({ invitationId: creation.invitation.id }),
+    });
+    expect(accepted.status).toBe(200);
+    expect(await accepted.json()).toMatchObject({
+      membership: {
+        invitationId: creation.invitation.id,
+        role: "member",
+      },
+    });
+    const memberCookie = accepted.headers.get("set-cookie")?.split(";", 1)[0];
+    if (!memberCookie) throw new Error("Expected a full member session cookie");
+
+    const visibleProjects = await requestWithCookie(
+      memberCookie,
+      "/api/v1/projects",
+    );
+    expect(visibleProjects.status).toBe(200);
+    expect(
+      (
+        await body<{ projects: Array<{ id: string }> }>(visibleProjects)
+      ).projects.map((item) => item.id),
+    ).toEqual([assignedProject.id]);
+    expect(
+      (
+        await requestWithCookie(
+          memberCookie,
+          `/api/v1/projects/${privateProject.id}`,
+        )
+      ).status,
+    ).toBe(404);
+
+    const members = await authenticatedRequest("/api/v1/members");
+    expect(members.status).toBe(200);
+    const memberList = await body<{
+      members: Array<{
+        userId: string;
+        role: string;
+        projectIds: string[] | null;
+      }>;
+    }>(members);
+    expect(
+      memberList.members.find(
+        (member) => member.userId === claimed.claimedByUserId,
+      ),
+    ).toMatchObject({
+      role: "member",
+      projectIds: [assignedProject.id],
+    });
+
+    const removed = await authenticatedRequest(
+      `/api/v1/members/${claimed.claimedByUserId}`,
+      { method: "DELETE" },
+    );
+    expect(removed.status).toBe(200);
+    expect(
+      (await requestWithCookie(memberCookie, "/api/v1/session")).status,
+    ).toBe(401);
+    await expect(
+      connection.db
+        .update(workspaceInvitationEvent)
+        .set({ type: "tampered" })
+        .where(
+          eq(workspaceInvitationEvent.invitationId, creation.invitation.id),
+        ),
+    ).rejects.toThrow();
+  });
+
+  it("expires, rotates and revokes invitation links without silently merging accounts", async () => {
+    const assignedProject = await createProjectFixture("Shared", "SHARED");
+    const createInvite = async (email: string) => {
+      const response = await authenticatedRequest("/api/v1/invitations", {
+        method: "POST",
+        body: JSON.stringify({ email, projectIds: [assignedProject.id] }),
+      });
+      expect(response.status).toBe(201);
+      const result = await body<{
+        invitation: { id: string };
+        inviteUrl: string;
+      }>(response);
+      return {
+        id: result.invitation.id,
+        token: new URL(result.inviteUrl).pathname.split("/").at(-1) ?? "",
+      };
+    };
+    const redeem = (token: string, sessionCookie?: string) =>
+      app.request("/api/auth/invitations/redeem", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Origin: baseUrl,
+          ...(sessionCookie ? { Cookie: sessionCookie } : {}),
+        },
+        body: JSON.stringify({ token }),
+      });
+
+    const revocable = await createInvite("revoked@example.test");
+    const claimed = await redeem(revocable.token);
+    expect(claimed.status).toBe(200);
+    const claimedCookie = claimed.headers.get("set-cookie")?.split(";", 1)[0];
+    if (!claimedCookie) throw new Error("Expected a provisional session");
+    expect(
+      (
+        await authenticatedRequest(
+          `/api/v1/invitations/${revocable.id}/revoke`,
+          { method: "POST" },
+        )
+      ).status,
+    ).toBe(200);
+    expect((await redeem(revocable.token, claimedCookie)).status).toBe(403);
+    expect(
+      (
+        await app.request("/api/auth/invitations/accept", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Origin: baseUrl,
+            Cookie: claimedCookie,
+          },
+          body: JSON.stringify({ invitationId: revocable.id }),
+        })
+      ).status,
+    ).toBe(401);
+
+    const expiring = await createInvite("expired@example.test");
+    await connection.db
+      .update(workspaceInvitation)
+      .set({ expiresAt: new Date(0) })
+      .where(eq(workspaceInvitation.id, expiring.id));
+    expect((await redeem(expiring.token)).status).toBe(410);
+
+    const rotating = await createInvite("rotated@example.test");
+    const resent = await authenticatedRequest(
+      `/api/v1/invitations/${rotating.id}/resend`,
+      { method: "POST" },
+    );
+    expect(resent.status).toBe(200);
+    const resentBody = await body<{ inviteUrl: string }>(resent);
+    const rotatedToken =
+      new URL(resentBody.inviteUrl).pathname.split("/").at(-1) ?? "";
+    expect(rotatedToken).not.toBe(rotating.token);
+    expect(
+      (await app.request(`/api/public/invitations/${rotating.token}`)).status,
+    ).toBe(404);
+    expect((await redeem(rotatedToken)).status).toBe(200);
+
+    const existingUser = {
+      id: randomUUID(),
+      email: "existing@example.test",
+      name: "Existing account",
+      password: "synthetic-existing-member-password-1",
+    };
+    const password = await (await auth.$context).password.hash(
+      existingUser.password,
+    );
+    await connection.db.insert(user).values({
+      id: existingUser.id,
+      email: existingUser.email,
+      name: existingUser.name,
+      emailVerified: true,
+    });
+    await connection.db.insert(account).values({
+      id: randomUUID(),
+      issuer: "local:credential",
+      accountId: existingUser.id,
+      providerId: "credential",
+      userId: existingUser.id,
+      password,
+    });
+    const existingInvite = await createInvite(existingUser.email);
+    const anonymousExisting = await redeem(existingInvite.token);
+    expect(anonymousExisting.status).toBe(409);
+    expect(await anonymousExisting.json()).toMatchObject({
+      code: "EXISTING_ACCOUNT_REQUIRES_SIGN_IN",
+    });
+    expect((await redeem(existingInvite.token, cookie)).status).toBe(403);
+
+    const signedIn = await app.request("/api/auth/sign-in/email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Origin: baseUrl },
+      body: JSON.stringify({
+        email: existingUser.email,
+        password: existingUser.password,
+      }),
+    });
+    expect(signedIn.status).toBe(200);
+    const existingCookie = signedIn.headers.get("set-cookie")?.split(";", 1)[0];
+    if (!existingCookie) throw new Error("Expected existing account session");
+    const explicitRedeem = await redeem(existingInvite.token, existingCookie);
+    expect(explicitRedeem.status).toBe(200);
+    expect(explicitRedeem.headers.get("set-cookie")).toBeNull();
+    const [membershipCount] = await connection.db
+      .select({ value: count() })
+      .from(workspaceMembership)
+      .where(eq(workspaceMembership.userId, existingUser.id));
+    expect(membershipCount?.value).toBe(0);
+  });
+
   it("limits members to assigned projects and keeps owner-only APIs protected", async () => {
     const allowedProject = await createProjectFixture("Allowed", "ALLOW");
     const privateProject = await createProjectFixture("Private", "PRIV");
@@ -333,6 +649,18 @@ describe("protected tracker REST API", () => {
       ).status,
     ).toBe(403);
     expect((await memberRequest("/api/v1/agents")).status).toBe(403);
+    expect((await memberRequest("/api/v1/members")).status).toBe(403);
+    expect(
+      (
+        await memberRequest("/api/v1/invitations", {
+          method: "POST",
+          body: JSON.stringify({
+            email: "forbidden@example.test",
+            projectIds: [allowedProject.id],
+          }),
+        })
+      ).status,
+    ).toBe(403);
     expect((await memberRequest("/api/v1/mcp/config")).status).toBe(403);
     expect(
       (
