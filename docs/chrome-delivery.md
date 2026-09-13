@@ -1,4 +1,24 @@
-# Chrome 0.5 — imágenes a ticket, operación y seguridad
+# Chrome 0.6 — miembros invitados, imágenes a ticket y seguridad
+
+## Miembros invitados (ticket 82)
+
+La instalación pertenece a la persona autenticada, no al Owner del workspace.
+`GET /session` devuelve `userId`, `workspaceRole` y mantiene `ownerId` como alias
+temporal para extensiones 0.5.x. La identidad del borrador es
+`userId:workspaceId`: cambiar de persona bloquea el envío del borrador anterior
+hasta descartarlo o volver a su cuenta.
+
+Owner ve todos sus proyectos y puede crear proyectos. Member sólo recibe los
+proyectos de `project_membership`, no ve Crear proyecto y puede trabajar con
+Epics, tickets e imágenes dentro de esa lista. El servidor resuelve de nuevo la
+membresía y los proyectos en cada request: no confía en opciones ocultas por la
+UI. Las instalaciones se enumeran y revocan sólo para su propia persona.
+
+Retirar un miembro elimina su sesión y revoca sus access tokens, refresh tokens
+y clientes OAuth. La siguiente petición o refresh de Chrome falla y obliga a
+aceptar una invitación válida y reconectar. Un error de acceso no borra ni envía
+el borrador automáticamente. Las pruebas de integración cubren dos personas,
+proyecto privado no enumerable, atribución Member y revocación inmediata.
 
 ## Cambio vigente: pegar/subir imágenes (ticket 51)
 
@@ -75,8 +95,8 @@ de servidor en la extensión. Rutas bajo `/api/extension/v1`:
 
 | Operación | Entrada / resultado |
 | --- | --- |
-| GET `/session` | identidad, caducidad, `apiVersion:1`, `canWrite` |
-| GET `/projects` | proyectos del workspace owner |
+| GET `/session` | persona, rol, workspace, caducidad, `apiVersion:1`, `canWrite` |
+| GET `/projects` | proyectos permitidos para Owner/Member |
 | GET `/projects/:id/epics` | id, número y título del mismo proyecto |
 | POST `/projects` | UUID idempotente + nombre; clave interna generada |
 | POST `/projects/:id/epics` | UUID idempotente + título |
@@ -84,7 +104,7 @@ de servidor en la extensión. Rutas bajo `/api/extension/v1`:
 | POST `/disconnect` | revoca exclusivamente la instalación actual |
 
 Cada escritura requiere `extension:write` **en el token y cliente**, además de
-`extension:read`, audience de extensión, firma, owner, cliente activo y origen
+`extension:read`, audience de extensión, firma, persona, cliente activo y origen
 si está presente. Conexiones antiguas no adquieren escritura: desconectar y
 reconectar para nuevo consentimiento. El registro dinámico MCP no concede estos
 scopes y los permisos de agente siguen separados. No se usan cookies owner en
@@ -99,7 +119,7 @@ son los del preview; el encoding/checksum puede cambiar sin cambiar la imagen.
 No SVG, JPEG, APNG, rutas de cliente, SSRF ni fetch servidor de la URL capturada.
 
 Ticket, número, actividad humana `chrome_extension`, evidencia y recibo se
-confirman en una transacción. Recibo único por workspace/owner/operación/UUID,
+confirman en una transacción. Recibo único por workspace/persona/operación/UUID,
 hash canónico del payload y respuesta. Sobrevive reconexión/revocación y no
 caduca automáticamente: un reintento viejo tampoco duplica. Cambiar el payload
 con el mismo UUID produce 409. La imagen se sincroniza antes del commit; un
@@ -117,13 +137,13 @@ Un solo borrador en IndexedDB del origen de extensión; hasta 24 h desde cambio.
 TTL verificado en lectura y limpieza al arrancar worker/panel; con Chrome
 apagado no puede ejecutarse borrado puntual, pero nunca se restaura uno vencido.
 Sin `unlimitedStorage`, sync, alarmas, colas de envío o telemetría. Su identidad
-owner/workspace impide enviar desde otra cuenta. El envío incierto conserva
+persona/workspace impide enviar desde otra cuenta. El envío incierto conserva
 payload/UUID al recargar. Descartar advierte si el servidor pudo crear ya algo.
 OAuth se guarda en `storage.local` con `TRUSTED_CONTEXTS`; el panel es también un
 contexto privilegiado pero no recibe tokens mediante nuestro protocolo. Una
 compromisión de código privilegiado sigue siendo una frontera crítica.
 
-Evidencias: GET owner `/api/v1/issues/:id/evidence` y
+Evidencias: GET autorizado `/api/v1/issues/:id/evidence` y
 `/api/v1/evidence/:id/image[?download=1]`; descarga requiere sesión y workspace,
 `private, no-store`, `nosniff`, CSP sandbox y nombre generado. No filesystem keys
 en respuestas. DOM se renderiza como texto y es colapsable/copiable; móvil

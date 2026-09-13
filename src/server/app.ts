@@ -16,7 +16,7 @@ import {
 } from "./db/schema.js";
 import { DomainError } from "./domain/index.js";
 import {
-  createExtensionOwnerRouter,
+  createExtensionAccountRouter,
   createExtensionRouter,
   extensionOAuthGuard,
   isExtensionClientId,
@@ -323,7 +323,7 @@ export function createApp({
     "/api/v1",
     createInvitationRouter({ db, baseUrl: String(auth.options.baseURL) }),
   );
-  app.route("/api/v1", createExtensionOwnerRouter(db, auth));
+  app.route("/api/v1", createExtensionAccountRouter(db, auth));
   app.route("/api/v1", createEvidenceRouter(db, captureStorage));
 
   app.all("/api/v1/*", (context) =>

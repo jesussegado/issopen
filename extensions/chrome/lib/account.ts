@@ -27,8 +27,10 @@ export const accountResponseSchema = z.union([
       canWrite: z.boolean().optional(),
       apiVersion: z.number().optional(),
       maxImages: z.number().int().min(1).max(5).optional(),
+      userId: z.string().optional(),
       ownerId: z.string().optional(),
       workspaceId: z.uuid().optional(),
+      workspaceRole: z.enum(["owner", "member"]).optional(),
       projects: z.array(z.object({ id: z.uuid(), name: z.string().max(120) })),
     })
     .strict(),
@@ -57,8 +59,10 @@ const sessionSchema = z.object({
   canWrite: z.boolean().optional(),
   apiVersion: z.number().optional(),
   maxImages: z.number().int().min(1).max(5).optional(),
+  userId: z.string().optional(),
   ownerId: z.string().optional(),
   workspaceId: z.uuid().optional(),
+  workspaceRole: z.enum(["owner", "member"]).optional(),
 });
 const projectsSchema = z.object({
   projects: z.array(z.object({ id: z.uuid(), name: z.string().max(120) })),
@@ -247,7 +251,7 @@ export async function handleAccount(
       return {
         ok: false,
         message:
-          "No se pudo completar la conexión. Si cerraste el acceso, puedes volver a conectar. Si ha caducado o se revocó, vincula Issopen de nuevo.",
+          "No se pudo conectar con Issopen. Abre la web con tu sesión de Google, acepta primero la invitación si está pendiente y vuelve a intentarlo. Si el propietario retiró tu acceso o caducó la vinculación, necesitarás una invitación o conexión nueva.",
       } as AccountResponse;
     }
   })();

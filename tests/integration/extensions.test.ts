@@ -22,6 +22,7 @@ import {
 } from "../../src/server/db/client.js";
 import { migrateDatabase } from "../../src/server/db/migrate.js";
 import {
+  account,
   activityEvent,
   agentIdentity,
   captureEvidence,
@@ -29,6 +30,10 @@ import {
   issue,
   oauthClient,
   project,
+  projectMembership,
+  user,
+  workspace,
+  workspaceMembership,
 } from "../../src/server/db/schema.js";
 import { syntheticPng } from "../fixtures/png.js";
 
@@ -49,8 +54,8 @@ let auth: IssopenAuth;
 let app: ReturnType<typeof createApp>;
 let cookie: string;
 let storage: CaptureStorage;
-const headers = () => ({
-  Cookie: cookie,
+const headers = (sessionCookie = cookie) => ({
+  Cookie: sessionCookie,
   Origin: base,
   "Content-Type": "application/json",
 });
@@ -110,11 +115,11 @@ afterAll(async () => {
   await connection?.close();
   await container?.stop();
 });
-async function link() {
+async function link(sessionCookie = cookie) {
   const installationId = randomUUID();
   const response = await app.request("/api/v1/extensions/link", {
     method: "POST",
-    headers: headers(),
+    headers: headers(sessionCookie),
     body: JSON.stringify({
       installationId,
       extensionId,
@@ -130,17 +135,17 @@ async function link() {
       .authorizeUrl,
   };
 }
-async function grant(accept = true, write = false) {
-  const linked = await link();
+async function grant(accept = true, write = false, sessionCookie = cookie) {
+  const linked = await link(sessionCookie);
   const authorization = await app.request(linked.authorizeUrl, {
-    headers: { Cookie: cookie },
+    headers: { Cookie: sessionCookie },
   });
   expect(authorization.status).toBe(302);
   const consentUrl = new URL(authorization.headers.get("location") ?? "", base);
   expect(consentUrl.pathname).toBe("/consent");
   const response = await app.request("/api/auth/oauth2/consent", {
     method: "POST",
-    headers: headers(),
+    headers: headers(sessionCookie),
     body: JSON.stringify({
       accept,
       scope: write
@@ -169,8 +174,8 @@ function token(params: Record<string, string>) {
     body: new URLSearchParams({ ...params, resource }),
   });
 }
-async function connect(write = false) {
-  const grant_ = await grant(true, write);
+async function connect(write = false, sessionCookie = cookie) {
+  const grant_ = await grant(true, write, sessionCookie);
   const response = await token({
     grant_type: "authorization_code",
     client_id: grant_.clientId,
@@ -190,7 +195,193 @@ function readSession(tokens: Tokens) {
   });
 }
 
+async function createMemberSession(projectIds: string[]) {
+  const [personalWorkspace] = await connection.db
+    .select({ id: workspace.id })
+    .from(workspace)
+    .limit(1);
+  if (!personalWorkspace) throw new Error("Expected workspace fixture");
+  const member = {
+    id: randomUUID(),
+    email: "extension-member@example.test",
+    password: "synthetic-extension-member-password",
+    name: "Extension Member",
+  };
+  const password = await (await auth.$context).password.hash(member.password);
+  await connection.db.transaction(async (tx) => {
+    await tx.insert(user).values({
+      id: member.id,
+      email: member.email,
+      name: member.name,
+      emailVerified: true,
+    });
+    await tx.insert(account).values({
+      id: randomUUID(),
+      issuer: "local:credential",
+      accountId: member.id,
+      providerId: "credential",
+      userId: member.id,
+      password,
+    });
+    await tx.insert(workspaceMembership).values({
+      workspaceId: personalWorkspace.id,
+      userId: member.id,
+      role: "member",
+    });
+    await tx.insert(projectMembership).values(
+      projectIds.map((projectId) => ({
+        workspaceId: personalWorkspace.id,
+        projectId,
+        userId: member.id,
+      })),
+    );
+  });
+  const signedIn = await app.request("/api/auth/sign-in/email", {
+    method: "POST",
+    headers: { Origin: base, "Content-Type": "application/json" },
+    body: JSON.stringify(member),
+  });
+  expect(signedIn.status).toBe(200);
+  const memberCookie = signedIn.headers.get("set-cookie")?.split(";", 1)[0];
+  if (!memberCookie) throw new Error("Expected member session cookie");
+  return { ...member, cookie: memberCookie };
+}
+
 describe("human Chrome OAuth", () => {
+  it("limits an invited installation to assigned projects and revokes it with membership", async () => {
+    const createProject = async (name: string, key: string) => {
+      const response = await app.request("/api/v1/projects", {
+        method: "POST",
+        headers: headers(),
+        body: JSON.stringify({ name, key, description: "Synthetic fixture" }),
+      });
+      expect(response.status).toBe(201);
+      return ((await response.json()) as { project: { id: string } }).project;
+    };
+    const assigned = await createProject("Assigned", "ASSIGNED");
+    const privateProject = await createProject("Owner private", "PRIVATE");
+    const privateEpicResponse = await app.request(
+      `/api/v1/projects/${privateProject.id}/epics`,
+      {
+        method: "POST",
+        headers: headers(),
+        body: JSON.stringify({ title: "Private Epic", description: "" }),
+      },
+    );
+    expect(privateEpicResponse.status).toBe(201);
+    const member = await createMemberSession([assigned.id]);
+    const connected = await connect(true, member.cookie);
+    const extensionHeaders = {
+      Authorization: `Bearer ${connected.tokens.access_token}`,
+      Origin: origin,
+      "Content-Type": "application/json",
+    };
+    const memberSession = await readSession(connected.tokens);
+    expect(memberSession.status).toBe(200);
+    expect(await memberSession.json()).toMatchObject({
+      name: member.name,
+      userId: member.id,
+      ownerId: member.id,
+      workspaceRole: "member",
+      canWrite: true,
+    });
+    const projects = await app.request("/api/extension/v1/projects", {
+      headers: extensionHeaders,
+    });
+    expect(await projects.json()).toEqual({
+      projects: [{ id: assigned.id, name: "Assigned" }],
+    });
+    expect(
+      (
+        await app.request(
+          `/api/extension/v1/projects/${privateProject.id}/epics`,
+          { headers: extensionHeaders },
+        )
+      ).status,
+    ).toBe(404);
+    expect(
+      (
+        await app.request("/api/extension/v1/projects", {
+          method: "POST",
+          headers: extensionHeaders,
+          body: JSON.stringify({
+            name: "Forbidden project",
+            idempotencyKey: randomUUID(),
+          }),
+        })
+      ).status,
+    ).toBe(403);
+
+    const epicResponse = await app.request(
+      `/api/extension/v1/projects/${assigned.id}/epics`,
+      {
+        method: "POST",
+        headers: extensionHeaders,
+        body: JSON.stringify({
+          title: "Member Epic",
+          idempotencyKey: randomUUID(),
+        }),
+      },
+    );
+    expect(epicResponse.status).toBe(201);
+    const epic = (await epicResponse.json()) as { epic: { id: string } };
+    const capture = await app.request("/api/extension/v1/captures", {
+      method: "POST",
+      headers: extensionHeaders,
+      body: JSON.stringify({
+        version: 1,
+        idempotencyKey: randomUUID(),
+        projectId: assigned.id,
+        epicId: epic.epic.id,
+        title: "Created by an invited member",
+        description: "Visible only inside the assigned project",
+        priority: "medium",
+        status: "backlog",
+        metadata: null,
+        image: null,
+      }),
+    });
+    expect(capture.status).toBe(201);
+    const created = (await capture.json()) as { issue: { id: string } };
+    const [createdEvent] = await connection.db
+      .select()
+      .from(activityEvent)
+      .where(eq(activityEvent.issueId, created.issue.id));
+    expect(createdEvent).toMatchObject({
+      actorId: member.id,
+      actorDisplayName: member.name,
+      source: "chrome_extension",
+    });
+
+    const memberInstallations = await app.request("/api/v1/extensions", {
+      headers: headers(member.cookie),
+    });
+    expect((await memberInstallations.json()).installations).toHaveLength(1);
+    const ownerInstallations = await app.request("/api/v1/extensions", {
+      headers: headers(),
+    });
+    expect((await ownerInstallations.json()).installations).toEqual([]);
+
+    expect(
+      (
+        await app.request(`/api/v1/members/${member.id}`, {
+          method: "DELETE",
+          headers: headers(),
+        })
+      ).status,
+    ).toBe(200);
+    expect((await readSession(connected.tokens)).status).toBe(401);
+    expect(
+      (
+        await token({
+          grant_type: "refresh_token",
+          client_id: connected.clientId,
+          refresh_token: connected.tokens.refresh_token,
+        })
+      ).status,
+    ).toBe(401);
+  });
+
   it("creates a web issue with private images atomically and replays without duplicates", async () => {
     const createdProject = await app.request("/api/v1/projects", {
       method: "POST",

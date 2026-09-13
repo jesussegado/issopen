@@ -118,6 +118,10 @@ export function Account({
               <p>
                 Conectado como <strong>{account.name}</strong>
               </p>
+              <p>
+                Rol:{" "}
+                {account.workspaceRole === "member" ? "Miembro" : "Propietario"}
+              </p>
               {!account.canWrite && (
                 <p className="notice">
                   Esta conexión sólo permite lectura. Desconecta y vuelve a

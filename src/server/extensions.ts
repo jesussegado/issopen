@@ -113,7 +113,7 @@ export async function extensionOAuthGuard(request: Request, db: Database) {
   return null;
 }
 
-async function revoke(db: Database, clientId: string, ownerId: string) {
+async function revoke(db: Database, clientId: string, userId: string) {
   await db.transaction(async (tx) => {
     const [client] = await tx
       .update(oauthClient)
@@ -121,7 +121,7 @@ async function revoke(db: Database, clientId: string, ownerId: string) {
       .where(
         and(
           eq(oauthClient.clientId, clientId),
-          eq(oauthClient.userId, ownerId),
+          eq(oauthClient.userId, userId),
           eq(oauthClient.referenceId, marker),
         ),
       )
@@ -138,7 +138,7 @@ async function revoke(db: Database, clientId: string, ownerId: string) {
   });
 }
 
-export function createExtensionOwnerRouter(db: Database, auth: IssopenAuth) {
+export function createExtensionAccountRouter(db: Database, auth: IssopenAuth) {
   const router = new Hono<{
     Variables: {
       ownerSession: OwnerSession;
@@ -176,19 +176,19 @@ export function createExtensionOwnerRouter(db: Database, auth: IssopenAuth) {
     if (!parsed.success)
       return c.json({ error: "Invalid extension link" }, 400);
     const input = parsed.data;
-    const ownerId = c.get("ownerSession").user.id;
+    const userId = c.get("ownerSession").user.id;
     const clientId = extensionClientId(input.installationId);
     const redirect = extensionRedirect(input.extensionId);
     await db.transaction(async (tx) => {
       await tx.execute(
-        sql`select pg_advisory_xact_lock(hashtext(${`extension-link:${ownerId}`}))`,
+        sql`select pg_advisory_xact_lock(hashtext(${`extension-link:${userId}`}))`,
       );
       const existing = await tx
         .select()
         .from(oauthClient)
         .where(
           and(
-            eq(oauthClient.userId, ownerId),
+            eq(oauthClient.userId, userId),
             eq(oauthClient.referenceId, marker),
           ),
         );
@@ -218,7 +218,7 @@ export function createExtensionOwnerRouter(db: Database, auth: IssopenAuth) {
         .values({
           id: randomUUID(),
           clientId,
-          userId: ownerId,
+          userId,
           referenceId: marker,
           name: `Issopen Chrome · ${input.name}`,
           redirectUris: [redirect],
@@ -244,7 +244,7 @@ export function createExtensionOwnerRouter(db: Database, auth: IssopenAuth) {
         .where(eq(oauthClient.clientId, clientId))
         .limit(1);
       if (
-        registered?.userId !== ownerId ||
+        registered?.userId !== userId ||
         activeClient(registered)?.extensionId !== input.extensionId
       )
         throw new DomainError("conflict", "Start a new extension connection.");
@@ -335,7 +335,7 @@ export function createExtensionRouter(
       if (!person) throw new Error("User unavailable");
       const access = await resolveHumanAccess(db, person);
       if (!access) return c.json({ error: "Workspace unavailable" }, 403);
-      c.set("ownerId", payload.sub);
+      c.set("userId", payload.sub);
       c.set("clientId", payload.client_id);
       c.set("expiresAt", metadata.expiresAt);
       c.set("workspaceId", access.workspaceId);
@@ -359,7 +359,7 @@ export function createExtensionRouter(
     const [person] = await db
       .select({ name: user.name })
       .from(user)
-      .where(eq(user.id, c.get("ownerId")))
+      .where(eq(user.id, c.get("userId")))
       .limit(1);
     return c.json({
       name: person?.name ?? "Issopen",
@@ -367,8 +367,12 @@ export function createExtensionRouter(
       apiVersion: 1,
       maxImages: 5,
       canWrite: c.get("canWrite"),
-      ownerId: c.get("ownerId"),
+      userId: c.get("userId"),
+      // Kept during the published-extension transition. Versions <= 0.5.5
+      // derive their draft boundary from ownerId.
+      ownerId: c.get("userId"),
       workspaceId: c.get("workspaceId"),
+      workspaceRole: c.get("workspaceRole"),
     });
   });
   router.get("/projects", async (c) =>
@@ -385,7 +389,7 @@ export function createExtensionRouter(
     }),
   );
   router.post("/disconnect", async (c) => {
-    await revoke(db, c.get("clientId"), c.get("ownerId"));
+    await revoke(db, c.get("clientId"), c.get("userId"));
     return c.json({ revoked: true });
   });
   router.route(

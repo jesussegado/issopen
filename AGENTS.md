@@ -70,6 +70,14 @@ haya conflicto, usa este orden:
   `65f2720`, GitOps `db1f864f` `Synced/Healthy`, digest `8f26ffd`; producción y
   restore aislado validados. Ticket Ready for Human Review v6, sin claim.
 
+- Chrome 0.6.0 (ticket 82) permite vincular instalaciones de miembros
+  invitados: sólo reciben proyectos asignados, no pueden crear proyectos y sus
+  acciones se atribuyen a su propia identidad. `/session` anuncia `userId` y
+  `workspaceRole`, manteniendo `ownerId` sólo para compatibilidad 0.5.x; los
+  borradores quedan separados por persona/workspace. Retirar la membresía
+  invalida access/refresh/cliente en la siguiente operación. Contrato y pruebas
+  en [entrega Chrome](docs/chrome-delivery.md).
+
 - Chrome 0.5.5 (ticket 62) elimina el estado engañoso de imágenes tras una
   creación confirmada: oculta los controles editables, libera las copias en
   memoria y confirma cuántas quedaron adjuntas. La eliminación previa al envío

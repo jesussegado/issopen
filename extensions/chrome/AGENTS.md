@@ -5,7 +5,7 @@ repositorio; no crear otro Git. Epic Chrome
 `ca26c29b-43ac-4ca0-b768-594d6779d6e7`; ticket 51 simplifica las imágenes
 por petición explícita del owner. El criterio personal 33 sigue independiente.
 
-## Qué hace ahora (0.5.5)
+## Qué hace ahora (0.6.0)
 
 OAuth humano → pegar/subir imágenes externas → proyecto/Epic y campos →
 Enviar ticket → enlace. No captura ni lee la página, no inspecciona DOM.
@@ -53,7 +53,8 @@ No reintroducir controles de captura por seguir documentación histórica 0.3/0.
   Respeta `locked`; reseleccionar proyecto conserva Epic. La carga asíncrona
   de Epics no borra el ID guardado ni aplica respuestas de otro proyecto.
 - `Account.tsx`: botón de usuario y diálogo nativo cerrado por defecto,
-  Escape y retorno del foco. No desmontar el compositor al alternarlo.
+  Escape y retorno del foco. Muestra Owner/Member y sólo los proyectos
+  autorizados. No desmontar el compositor al alternarlo.
 - `Information.tsx`: aviso introductorio cerrable; `InformationContent` se
   muestra también siempre en Cuenta → Ayuda e información, incluso sin sesión.
   El cierre escribe sólo el booleano local `issopen-information-dismissed-v1`,
@@ -64,6 +65,11 @@ No reintroducir controles de captura por seguir documentación histórica 0.3/0.
   en el compositor. Conservar errores operativos y límites junto a los campos.
 - `lib/account.ts`: PKCE/state/callback y operaciones serializadas;
   tokens en storage.local TRUSTED_CONTEXTS, nunca respuestas/logs/storage.sync.
+- `/session` usa `userId` y `workspaceRole`; `ownerId` permanece como alias de
+  transición para 0.5.x. El borrador usa `userId:workspaceId`, por lo que no se
+  cruza entre personas. Member no ve ni puede invocar Crear proyecto, aunque sí
+  puede crear Epics/tickets en proyectos asignados. El servidor vuelve a
+  comprobar membresía y cliente activo en cada petición y refresh.
 - `lib/draft.ts`: un borrador IndexedDB 24 h. Las imágenes que el usuario
   adjunta se incorporan explícitamente al borrador, sin confirmación separada.
   No guardar clipboard crudo, EXIF, imágenes no seleccionadas ni historial.

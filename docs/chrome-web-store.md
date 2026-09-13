@@ -27,7 +27,7 @@ o tokens.
 | Runtime | Deployment y PostgreSQL `Ready`; Argo CD `Synced/Healthy` | clúster `issopen`, revisión GitOps `26fa5c309892a1d9f495d2ecf4b9f7f097fe2584` |
 | Imagen activa | `epic-ticket-archive-af1e2f7` por digest `sha256:ecc2acf08ba8907e824153830b9811acc74911e865573f155ffd568ba3ad09b7` | Deployment observado |
 | Datos | PostgreSQL y adjuntos PNG privados en PVC separados y retenidos | manifiestos y PVC `Bound` |
-| Extensión base | MV3 0.5.5; panel lateral, OAuth PKCE por instalación, imágenes elegidas por el usuario y creación de tickets | manifest generado y Epic 1 |
+| Extensión base | MV3 0.6.0; panel lateral, OAuth PKCE por persona/instalación, acceso Owner/Member, imágenes elegidas por el usuario y creación de tickets | manifest generado, Epic 1 y ticket 82 |
 | Distribución actual | paquete local/desempaquetado; sin ficha Store aprobada | `extensions/chrome/.output/chrome-mv3` |
 | Repositorio | fuente independiente, rama `main`; Forgejo privado | `http://192.168.2.165:3000/jsegado/issopen` |
 

@@ -139,10 +139,11 @@ test("success link and final actions stack without collisions on narrow panels",
           return {
             ok: true,
             connected: true,
-            name: "Synthetic owner",
+            name: "Synthetic member",
             expiresAt: new Date(Date.now() + 86400000).toISOString(),
-            ownerId: "synthetic",
+            userId: "synthetic-member",
             workspaceId: "10000000-0000-4000-8000-000000000001",
+            workspaceRole: "member",
             canWrite: true,
             apiVersion: 1,
             projects: [
@@ -173,6 +174,15 @@ test("success link and final actions stack without collisions on narrow panels",
     });
     await page.goto(`chrome-extension://${extension.id}/sidepanel.html`);
     await expect(page.locator("#account-status")).toHaveText("Conectada");
+    await expect(
+      page.getByRole("button", { name: "Crear proyecto aquí" }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: "Crear Epic aquí" }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Tu cuenta" }).click();
+    await expect(page.getByText("Rol: Miembro", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Cerrar cuenta" }).click();
     await page
       .getByRole("combobox", { name: "Proyecto", exact: true })
       .fill("Demo");

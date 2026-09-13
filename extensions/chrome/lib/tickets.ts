@@ -96,7 +96,7 @@ export type TicketResponse = z.infer<typeof ticketResponseSchema>;
 export const ticketErrors: Record<z.infer<typeof ticketErrorSchema>, string> = {
   network:
     "Se perdió la conexión. Reintenta manualmente; se conservará la misma clave para evitar duplicados.",
-  auth: "Vuelve a conectar Issopen. Tu borrador permanece aquí; no se enviará automáticamente.",
+  auth: "La conexión ya no es válida. Abre Issopen con tu sesión de Google y vuelve a conectar; si tu invitación está pendiente, acéptala primero. Si el propietario retiró tu acceso, el borrador seguirá aquí pero no podrá enviarse hasta que recuperes acceso.",
   permission:
     "Reconecta Issopen y autoriza crear tickets. La conexión anterior sólo permitía lectura.",
   validation:

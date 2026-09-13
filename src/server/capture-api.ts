@@ -31,7 +31,7 @@ import {
 
 export type ExtensionBindings = {
   Variables: {
-    ownerId: string;
+    userId: string;
     clientId: string;
     expiresAt: string;
     workspaceId: string;
@@ -113,16 +113,20 @@ export async function boundedJson(
 async function context(
   db: Database,
   workspaceId: string,
-  ownerId: string,
+  userId: string,
   source: MutationContext["source"] = "chrome_extension",
 ): Promise<MutationContext> {
   const [person] = await db
     .select({ name: user.name })
     .from(user)
-    .where(eq(user.id, ownerId));
+    .where(eq(user.id, userId));
   return {
     workspaceId,
-    actor: { type: "human", id: ownerId, displayName: person?.name ?? "Owner" },
+    actor: {
+      type: "human",
+      id: userId,
+      displayName: person?.name ?? "Issopen user",
+    },
     source,
   };
 }
@@ -382,7 +386,7 @@ export function createCaptureRouter(
       throw new DomainError("forbidden", "Only an owner can create projects");
     }
     const input = projectInput.parse(await boundedJson(c.req.raw, 4096));
-    const ctx = await context(db, c.get("workspaceId"), c.get("ownerId"));
+    const ctx = await context(db, c.get("workspaceId"), c.get("userId"));
     return c.json(
       await once(
         db,
@@ -405,7 +409,7 @@ export function createCaptureRouter(
     const projectId = z.uuid().parse(c.req.param("id"));
     requireExtensionProject(c.get("projectIds"), projectId);
     const input = epicInput.parse(await boundedJson(c.req.raw, 4096));
-    const ctx = await context(db, c.get("workspaceId"), c.get("ownerId"));
+    const ctx = await context(db, c.get("workspaceId"), c.get("userId"));
     return c.json(
       await once(
         db,
@@ -427,7 +431,7 @@ export function createCaptureRouter(
   router.post("/captures", async (c) => {
     const input = captureSubmissionSchema.parse(await boundedJson(c.req.raw));
     requireExtensionProject(c.get("projectIds"), input.projectId);
-    const ctx = await context(db, c.get("workspaceId"), c.get("ownerId"));
+    const ctx = await context(db, c.get("workspaceId"), c.get("userId"));
     const images = input.images ?? (input.image ? [input.image] : []);
     return c.json(
       await createCapturedIssue(

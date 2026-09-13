@@ -73,10 +73,13 @@ export function Workspace({ account }: { account: AccountResponse | null }) {
   const [epicLoading, setEpicLoading] = useState(false);
   const gate = useRef(false);
   const connected = account?.ok && account.connected ? account : null;
+  const connectedUserId = connected?.userId ?? connected?.ownerId;
   const identity =
-    connected?.ownerId && connected.workspaceId
-      ? `${connected.ownerId}:${connected.workspaceId}`
+    connectedUserId && connected?.workspaceId
+      ? `${connectedUserId}:${connected.workspaceId}`
       : null;
+  // Older servers do not announce workspaceRole and only supported owners.
+  const canCreateProjects = connected?.workspaceRole !== "member";
   const mismatch = Boolean(owner && identity && owner !== identity);
   const locked = busy || Boolean(pending || inline || created) || mismatch;
   const writable = Boolean(
@@ -258,7 +261,15 @@ export function Workspace({ account }: { account: AccountResponse | null }) {
     }
   }
   async function createContainer(action: "project" | "epic") {
-    if (gate.current || !writable || pending || created || imageBusy) return;
+    if (
+      gate.current ||
+      !writable ||
+      pending ||
+      created ||
+      imageBusy ||
+      (action === "project" && !canCreateProjects)
+    )
+      return;
     const message =
       inline ??
       (action === "project"
@@ -367,7 +378,10 @@ export function Workspace({ account }: { account: AccountResponse | null }) {
                   className="create-shortcuts"
                   aria-label="Crear proyecto o Epic"
                 >
-                  {(["project", "epic"] as const).map((target) => (
+                  {(canCreateProjects
+                    ? (["project", "epic"] as const)
+                    : (["epic"] as const)
+                  ).map((target) => (
                     <button
                       key={target}
                       id={`create-${target}-toggle`}
@@ -393,28 +407,30 @@ export function Workspace({ account }: { account: AccountResponse | null }) {
                     </button>
                   ))}
                 </fieldset>
-                <section
-                  id="create-project-panel"
-                  className="create-inline-panel"
-                  aria-labelledby="create-project-toggle"
-                  hidden={createPanel !== "project"}
-                >
-                  <label>
-                    Nombre del nuevo proyecto
-                    <input
-                      maxLength={120}
-                      value={projectName}
-                      onChange={(e) => setProjectName(e.target.value)}
-                    />
-                  </label>
-                  <button
-                    type="button"
-                    disabled={!writable || !projectName.trim()}
-                    onClick={() => void createContainer("project")}
+                {canCreateProjects && (
+                  <section
+                    id="create-project-panel"
+                    className="create-inline-panel"
+                    aria-labelledby="create-project-toggle"
+                    hidden={createPanel !== "project"}
                   >
-                    Crear proyecto
-                  </button>
-                </section>
+                    <label>
+                      Nombre del nuevo proyecto
+                      <input
+                        maxLength={120}
+                        value={projectName}
+                        onChange={(e) => setProjectName(e.target.value)}
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      disabled={!writable || !projectName.trim()}
+                      onClick={() => void createContainer("project")}
+                    >
+                      Crear proyecto
+                    </button>
+                  </section>
+                )}
                 <section
                   id="create-epic-panel"
                   className="create-inline-panel"

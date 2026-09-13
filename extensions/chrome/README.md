@@ -1,4 +1,4 @@
-# Issopen para Chrome — piloto 0.5.5
+# Issopen para Chrome — piloto 0.6.0
 
 Crea tickets con imágenes de tu herramienta de recorte favorita.
 Ya no hace falta capturar la página ni concederle acceso a cada web.
@@ -8,6 +8,8 @@ Ya no hace falta capturar la página ni concederle acceso a cada web.
 1. Abre Issopen desde su icono en Chrome.
 2. En **Cuenta**, conecta con Issopen si aún no lo has hecho.
    OAuth se completa en la web; la extensión no pide tu contraseña.
+   Si eres un miembro invitado, acepta antes la invitación con la misma cuenta
+   de Google. Sólo aparecerán los proyectos que el propietario te haya asignado.
 3. Recorta o prepara la imagen con tu herramienta habitual y cópiala como imagen.
 4. Haz clic en el panel y pulsa **Ctrl+V** (⌘V en Mac), o **Pegar imagen**.
    El botón puede pedir permiso de lectura del portapapeles; si lo rechazas,
@@ -15,7 +17,8 @@ Ya no hace falta capturar la página ni concederle acceso a cada web.
 5. **Subir imágenes** permite seleccionar varios archivos. Repite para añadir
    más y usa **×** en cada miniatura para quitarla.
 6. Elige proyecto/Epic, título y descripción; pulsa **Enviar ticket**.
-   También puedes crear proyecto/Epic desde los botones del compositor.
+   El propietario también puede crear proyecto/Epic desde el compositor; un
+   miembro puede crear Epics dentro de sus proyectos asignados.
    Verás el enlace al ticket; no se abre automáticamente.
 
 Tras crear un ticket, **Abrir ticket en Issopen** aparece como una tarjeta
@@ -55,6 +58,8 @@ guardar la preferencia, se cierra en esa vista y se indica que podría reaparece
 
 Si falla la conexión después de enviar, reintenta manualmente: se conservan
 el mismo payload/UUID incluso tras recargar o reconectar, evitando duplicados.
+Si se retira tu membresía, la instalación y sus refresh tokens se invalidan en
+la siguiente petición. El borrador queda local y no se mezcla con otra cuenta.
 
 ## Instalación y actualización
 
