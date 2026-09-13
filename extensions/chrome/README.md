@@ -53,6 +53,11 @@ Consulta la política pública en
 imagen o el owner pueden eliminarla del almacenamiento activo desde el detalle
 del ticket; esto no retira copias descargadas ni backups anteriores.
 
+La ficha de Chrome Web Store, sus declaraciones y recursos gráficos están en
+[`store/LISTING.es.md`](store/LISTING.es.md). Ejecuta `pnpm store:assets` desde
+la raíz para reconstruir los PNG con datos sintéticos; no captures una sesión
+real para el listing.
+
 El aviso informativo inicial se cierra con **×** y recuerda tu elección en este
 perfil de Chrome, incluso al volver a abrir el panel. Su contenido permanece
 siempre en **Cuenta → Ayuda e información**, aunque no hayas iniciado sesión.

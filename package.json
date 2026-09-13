@@ -36,6 +36,7 @@
     "extension:lint": "biome check --files-ignore-unknown=true --indent-style=space extensions/chrome/package.json extensions/chrome/tsconfig.json extensions/chrome/wxt.config.ts extensions/chrome/vitest.config.ts extensions/chrome/playwright.config.ts extensions/chrome/entrypoints extensions/chrome/lib extensions/chrome/tests",
     "extension:validate": "pnpm extension:lint && pnpm extension:check && pnpm extension:test && pnpm extension:e2e && pnpm extension:reproducible && pnpm test:secrets",
     "extension:release": "tsx scripts/package-extension.ts",
+    "store:assets": "pnpm extension:build && tsx scripts/store-assets.ts",
     "captures:audit": "tsx scripts/capture-storage.ts"
   },
   "dependencies": {

@@ -29,6 +29,14 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+- Ticket 84 prepara la ficha Chrome 0.6.1 en
+  `extensions/chrome/store/LISTING.es.md`, páginas públicas `/chrome` y
+  `/support` y assets reproducibles mediante `pnpm store:assets`. Los PNG se
+  validan por dimensiones y SHA-256 en `store/assets/assets.json`. El dashboard
+  de `serviciosegado@gmail.com` sigue en la pantalla de registro: aceptar el
+  acuerdo y pagar 5 USD son un checkpoint humano; no afirmar que hay item hasta
+  observarlo tras ese paso.
+
 - Chrome 0.6.1 (ticket 83) publica `/privacy` sin login con inventario,
   finalidad, retención, Limited Use, contacto y derechos; el mismo texto se
   enlaza desde web, consentimiento y panel Chrome. Abrir/editar un borrador no

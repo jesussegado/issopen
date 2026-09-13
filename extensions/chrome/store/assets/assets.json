@@ -1,0 +1,33 @@
+{
+  "extensionVersion": "0.6.1",
+  "assets": [
+    {
+      "name": "store-icon-128.png",
+      "width": 128,
+      "height": 128,
+      "bytes": 8973,
+      "sha256": "91f7803802084325f42c887452adb4d7dce4b40bcc34bfe673a346dc6d77f74c"
+    },
+    {
+      "name": "promo-small-440x280.png",
+      "width": 440,
+      "height": 280,
+      "bytes": 72895,
+      "sha256": "3e38d957caac8abc3618fee80a4a9ce8f1677b5201ca54d01b7fa6254ffa1c97"
+    },
+    {
+      "name": "screenshot-composer-1280x800.png",
+      "width": 1280,
+      "height": 800,
+      "bytes": 53885,
+      "sha256": "82c362e0b95e9bb6700126952896e0e29f67ce9eb952669bddef5e59bd2110ff"
+    },
+    {
+      "name": "screenshot-account-1280x800.png",
+      "width": 1280,
+      "height": 800,
+      "bytes": 104334,
+      "sha256": "63002b7ba89b1655043e23e9346f5bd38b5c2119447428e89ef012d0d0216447"
+    }
+  ]
+}

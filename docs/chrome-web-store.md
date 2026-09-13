@@ -1,8 +1,8 @@
 # Chrome Web Store: contrato de publicación Unlisted
 
-Estado: contrato aprobado para el Epic 7; privacidad 0.6.1 implementada y
-pendiente de revisión humana; la extensión todavía no se ha enviado a revisión.
-Última comprobación: 2026-09-13.
+Estado: contrato, privacidad y fuentes de la ficha 0.6.1 preparados; la cuenta
+publisher aún requiere aceptación humana del acuerdo y el pago único de 5 USD,
+por lo que no existe item ni envío a revisión. Última comprobación: 2026-09-13.
 
 ## Objetivo y límites
 
@@ -25,12 +25,28 @@ o tokens.
 | Superficie | Estado observado | Fuente de evidencia |
 | --- | --- | --- |
 | App pública | `https://issopen.serviciosegado.com`, HTTPS y HSTS | smoke HTTP del 2026-09-13 |
-| Runtime | Deployment y PostgreSQL `Ready`; Argo CD `Synced/Healthy` | clúster `issopen`, revisión GitOps `26fa5c309892a1d9f495d2ecf4b9f7f097fe2584` |
-| Imagen activa | `epic-ticket-archive-af1e2f7` por digest `sha256:ecc2acf08ba8907e824153830b9811acc74911e865573f155ffd568ba3ad09b7` | Deployment observado |
+| Runtime | Deployment y PostgreSQL `Ready`; Argo CD `Synced/Healthy` | clúster `issopen`, revisión GitOps `f8e263aa78e7432ee341d26df3896ed235ca2452` |
+| Imagen activa | `privacy-controls-e318e5a` por digest `sha256:83ef72244a279c39457d023a29b46a3b36fc465480d408bf9cfd2d050c28986b` | Deployment observado |
 | Datos | PostgreSQL y adjuntos PNG privados en PVC separados y retenidos | manifiestos y PVC `Bound` |
-| Extensión base | MV3 0.6.0; panel lateral, OAuth PKCE por persona/instalación, acceso Owner/Member, imágenes elegidas por el usuario y creación de tickets | manifest generado, Epic 1 y ticket 82 |
+| Extensión base | MV3 0.6.1; panel lateral, OAuth PKCE por persona/instalación, acceso Owner/Member, imágenes elegidas por la persona, consentimiento y creación de tickets | manifest generado, tickets 82–83 |
 | Distribución actual | paquete local/desempaquetado; sin ficha Store aprobada | `extensions/chrome/.output/chrome-mv3` |
 | Repositorio | fuente independiente, rama `main`; Forgejo privado | `http://192.168.2.165:3000/jsegado/issopen` |
+
+## Borrador reproducible de la ficha
+
+La fuente exacta de textos, privacy practices, permisos, instrucciones privadas
+de revisión y checkpoint externo está en
+[`extensions/chrome/store/LISTING.es.md`](../extensions/chrome/store/LISTING.es.md).
+`pnpm store:assets` reconstruye icono 128×128, promo 440×280 y dos capturas
+1280×800 de la interfaz real con datos sintéticos; `assets.json` fija sus
+dimensiones, bytes y SHA-256. Las páginas públicas canónicas son `/chrome`,
+`/support` y `/privacy`, renderizadas sin consultar una sesión.
+
+El dashboard de `serviciosegado@gmail.com` se abrió el 13/09/2026 y confirmó
+que la cuenta no está registrada como publisher. Google exige aceptar el
+acuerdo y pagar la cuota única de 5 USD. No se marcaron términos ni se inició el
+pago: ambas son acciones humanas, y el resto del formulario permanece
+inaccesible hasta completarlas.
 
 La revisión de GitOps y el digest observados mandan sobre descriptores locales
 desactualizados. Antes de cada publicación se vuelve a consultar el clúster.

@@ -7,6 +7,11 @@ por petición explícita del owner. El criterio personal 33 sigue independiente.
 
 ## Qué hace ahora (0.6.1)
 
+La fuente de la ficha Unlisted vive en `store/LISTING.es.md` y los recursos
+versionados en `store/assets`. `pnpm store:assets` los reconstruye desde el
+icono aprobado y la UI real con datos sintéticos. No usar capturas de cuentas,
+proyectos o tickets reales en Chrome Web Store.
+
 OAuth humano → pegar/subir imágenes externas → proyecto/Epic y campos →
 Enviar ticket → enlace. No captura ni lee la página, no inspecciona DOM.
 El usuario recorta/redacta en su herramienta antes de adjuntar.

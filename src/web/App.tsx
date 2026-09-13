@@ -12,6 +12,10 @@ import {
   EpicFormRoute,
   EpicsRoute,
 } from "./routes/EpicRoutes.js";
+import {
+  ChromeExtensionRoute,
+  SupportRoute,
+} from "./routes/ExtensionPublicRoutes.js";
 import { ExtensionsRoute } from "./routes/ExtensionsRoute.js";
 import {
   InvitationCompleteRoute,
@@ -67,11 +71,14 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    if (!["/status", "/privacy"].includes(pathname)) void readSession();
+    if (!["/status", "/privacy", "/chrome", "/support"].includes(pathname))
+      void readSession();
   }, [pathname, readSession]);
 
   if (pathname === "/status") return <StatusRoute />;
   if (pathname === "/privacy") return <PrivacyRoute />;
+  if (pathname === "/chrome") return <ChromeExtensionRoute />;
+  if (pathname === "/support") return <SupportRoute />;
   if (screen.kind === "loading")
     return (
       <PublicShell>

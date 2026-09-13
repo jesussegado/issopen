@@ -38,6 +38,19 @@ afterEach(() => {
 });
 
 describe("owner web entry", () => {
+  it.each([
+    ["/chrome", "Issopen para Chrome"],
+    ["/support", "Ayuda para la extensión de Chrome"],
+  ])("publishes %s without reading a private session", (path, heading) => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    window.history.replaceState({}, "", path);
+    render(<App />);
+
+    expect(screen.getByRole("heading", { name: heading })).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("publishes the privacy inventory without reading a private session", async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);

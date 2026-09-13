@@ -17,6 +17,8 @@ export function PublicShell({ children }: { children: ReactNode }) {
         <section className="page-panel">{children}</section>
       </main>
       <footer className="public-footer">
+        <AppLink href="/chrome">Extensión Chrome</AppLink>
+        <AppLink href="/support">Soporte</AppLink>
         <AppLink href="/privacy">Privacidad y datos</AppLink>
         <a href="mailto:serviciosegado@gmail.com">Contacto</a>
       </footer>

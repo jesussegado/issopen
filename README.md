@@ -47,6 +47,11 @@ individual image from active storage. Manual idempotent retry avoids duplicates.
 See [delivery and operation](docs/chrome-delivery.md). Existing read-only
 connections must reconnect to consent to creation.
 
+Public reviewer and pilot pages are available at `/chrome`, `/support` and
+`/privacy` without a private session. The exact Unlisted store copy and
+reproducible graphic assets live in
+[`extensions/chrome/store/LISTING.es.md`](extensions/chrome/store/LISTING.es.md).
+
 Run `pnpm extension:build`, then load `extensions/chrome/.output/chrome-mv3`
 unpacked in `chrome://extensions`. See the
 [installation and test guide](extensions/chrome/README.md) and the

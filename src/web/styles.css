@@ -223,6 +223,31 @@ ol {
 .privacy-notice thead th {
   background: var(--color-subtle);
 }
+.public-product-page > section {
+  margin-top: 32px;
+}
+.public-product-lead {
+  max-width: 56ch;
+  font-size: 18px;
+  line-height: 1.6;
+}
+.public-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 32px;
+}
+.public-feature-grid section,
+.public-product-page > section {
+  padding: 20px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-subtle);
+}
+.public-feature-grid h2,
+.public-product-page > section h2 {
+  margin-top: 0;
+}
 .authenticated-layout {
   display: grid;
   min-height: calc(100vh - 64px);
@@ -1230,6 +1255,9 @@ progress {
 }
 
 @media (max-width: 767px), (pointer: coarse) {
+  .public-feature-grid {
+    grid-template-columns: 1fr;
+  }
   .app-header {
     min-height: 56px;
     padding: 0 16px;
