@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Epic 7 ticket 86 review account ready; private Google instructions saved; Store remains Draft
-last_updated: "2026-09-13T17:24:00Z"
+stopped_at: Epic 7 ticket 91 deployed and verified; 84/85/91 ready for human review; 86 awaits access clarification and Google review
+last_updated: "2026-09-13T20:02:02Z"
 last_activity: 2026-09-13
 progress:
   total_phases: 9
@@ -21,9 +21,27 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-30)
 
 **Core value:** Convertir una intención humana en trabajo estructurado y seguro que ChatGPT y agentes de código externos puedan entender, ejecutar y devolver a revisión dentro de un único flujo trazable.
-**Current focus:** Epic 7 Chrome Web Store review preparation. Read live Issopen tickets before resuming submission; review access is ready, Store remains Draft.
+**Current focus:** Epic 7 awaits Google review and the access clarification in
+86. Chrome 0.6.2 was submitted on 2026-09-13 at 19:24 UTC: Pending review,
+Unlisted, automatic publication disabled. Not approved or published. Reread
+live tickets and human answers before any access replacement or publication.
 
-Follow-up 2026-09-13: quick 260913-qn7 provisions the owner-approved local
+Follow-up 2026-09-13: quick 260913-u1g reconciles Store evidence and prepares
+pilot 87/operations 88 runbooks without pretending their real gates passed.
+84 v14, 85 v11 and 91 v7 are Ready for Human Review, claims null. User-closed
+78–83 are preserved. Ticket 91 corrects Member actions and actor attribution;
+source be31905, GitOps b0240335 Synced/Healthy, runtime digest 2439285,
+pod Ready/0 restarts, public readiness 200 and both PVC identities unchanged.
+98 unit/web, 66 integration, 10 web E2E (2 expected skips), Chrome unit/12 E2E,
+Compose and secret scan pass; submitted Chrome ZIP hash unchanged. Canonical
+homelab 197 tests and actual GitOps candidate 134 tests/render pass. Backup
+restored isolated: 97 tickets, 809 events, 13 image hashes and 19 receipts.
+Independent production Member smoke at 1440/360 px passed without ticket
+mutation or disturbing user Chrome. The 86 clarification is still unanswered:
+later Google-test choice conflicts with the existing isolated local reviewer;
+preserve access until a replacement is explicitly selected and tested.
+
+Earlier follow-up 2026-09-13 (before submission): quick 260913-qn7 provisions the owner-approved local
 Member in a fresh Google Review Demo project with synthetic data only. Source
 e05ff24; no runtime/GitOps change. Password login, exact allowlist, private-data
 404/admin 403, real packaged Chrome OAuth and synthetic image ticket passed.
@@ -267,6 +285,7 @@ Decisions are logged in PROJECT.md Key Decisions table. Current roadmap-level st
 
 | ID | Description | Date | Commits | Status | Directory |
 | --- | --- | --- | --- | --- | --- |
+| 260913-u1g | Epic 7 respuestas, evidencia Store y detalle Member 91 | 2026-09-13 | `e8be86a`, `be31905`; GitOps `b0240335` | Gates/restore/smoke PASS; 84/85/91 Ready for Human Review; 86/87/88 external gates pending | [260913-u1g](./quick/260913-u1g-continuar-epic-7-tras-respuestas-validar/) |
 | 260913-qn7 | Cuenta Member y proyecto aislado para revisión Google | 2026-09-13 | `e05ff24` | 160 tests PASS; OAuth/imagen y formulario privado Google verificados; Store Draft | [260913-qn7](./quick/260913-qn7-preparar-cuenta-member-y-proyecto-aislad/) |
 | 260910-f5d | Chrome: enlace de éxito y acciones finales apiladas | 2026-09-10 | `c76a591` | 220 tests PASS; 0.5.4 CSS live, 0.5.3 runtime/confirmation preserved; 56 Ready for Review | [260910-f5d](./quick/260910-f5d-mejorar-enlace-y-apilar-acciones-de-tick/) |
 | 260910-euw | Chrome: fusionar búsqueda y selección de Proyecto/Epic | 2026-09-10 | `b5795e6` | 219 tests PASS; 0.5.3 loaded, draft preserved; 54 Ready for Review | [260910-euw](./quick/260910-euw-unificar-busqueda-y-seleccion-de-proyect/) |
@@ -287,6 +306,11 @@ Decisions are logged in PROJECT.md Key Decisions table. Current roadmap-level st
 | 260908-kiy | Añadir fondo blanco al favicon y desplegar la corrección | 2026-09-08 | Fuente `5e2debd`, GitOps `4527b882` | Verified | [260908-kiy](./quick/260908-kiy-a-adir-fondo-blanco-al-favicon-de-issope/) |
 
 ### Blockers/Concerns
+
+- Epic 7: Google approval/manual publication, an unanswered access-replacement
+  clarification in 86, and real Store pilot/update gates in 87/88 remain.
+  Do not revoke the active review Member or alter submitted test instructions
+  before a controlled replacement works. Unpacked smoke is not Store acceptance.
 
 - Phase 1 uses an operator-only singleton bootstrap and recovery that revokes
   sessions; no anonymous owner-creation route is allowed.
@@ -310,5 +334,5 @@ Items acknowledged and carried forward from previous milestone close:
 ## Session Continuity
 
 Last session: 2026-09-13
-Stopped at: Google review Member and synthetic project ready; private Store instructions saved. Ticket 86 remains In Progress, not submitted. Runtime remains chrome-listing-40cc4af by digest; operator tooling source e05ff24. Follow-up UI issue 91 is Backlog.
-Resume file: ./quick/260913-qn7-preparar-cuenta-member-y-proyecto-aislad/260913-qn7-SUMMARY.md (derived evidence; reread live tickets/answers)
+Stopped at: Member detail 91 deployed (be31905/b0240335), verified and Ready for Human Review. 84/85 verified; 78–83 user-closed. 86 submitted Pending review/Unlisted/manual publication, access clarification unanswered; 87/88 prepared but pending real Store gates. No claims held.
+Resume file: ./quick/260913-u1g-continuar-epic-7-tras-respuestas-validar/260913-u1g-SUMMARY.md (derived evidence; reread live tickets/answers)

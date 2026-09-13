@@ -35,6 +35,10 @@ haya conflicto, usa este orden:
   y actividad usan `You` únicamente cuando el ID del actor coincide con quien
   consulta, y muestran el nombre histórico de otras personas como texto seguro.
   No cambia permisos del servidor, datos, esquema ni el ZIP Chrome 0.6.2.
+  Fuente `be31905`, GitOps `b0240335` Synced/Healthy, imagen por digest
+  `2439285`; backup restaurado aislado y smoke Member productivo a 1440/360 px
+  correctos. Owner cubierto por regresiones. Ticket Ready for Human Review,
+  claim liberado. Evidencia en quick `260913-u1g`.
 
 - Ticket 86 dispone de un proyecto **Google Review Demo** con un Member local
   exclusivo, sin acceso a proyectos reales. Alta/revocación administrativa en
@@ -44,7 +48,7 @@ haya conflicto, usa este orden:
   campo privado de Google; nunca copiarla a tickets/Git. Se verificaron login,
   denegaciones y OAuth Chrome con creación de ticket/imagen en producción.
   No caduca automáticamente: retirar el acceso al terminar la revisión.
-  No se modificaron signup, OAuth general, esquema ni imagen desplegada.
+  Esa alta administrativa no modificó signup, OAuth general, esquema ni imagen.
 
 - Ticket 84 prepara la ficha Chrome 0.6.2 en
   `extensions/chrome/store/LISTING.es.md`, páginas públicas `/chrome` y
