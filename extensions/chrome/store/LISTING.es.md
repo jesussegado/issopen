@@ -96,8 +96,9 @@ dashboard explicar:
 
 El acceso enviado usa un Member local aislado, sin Google ni 2FA del revisor.
 Seguir [el procedimiento de revisión](../../../docs/chrome-review-access.md),
-incluida su retirada explícita al terminar. La respuesta posterior de 86 pide
-Google de pruebas: aclarar y verificar cualquier sustituto antes del relevo.
+incluida su retirada explícita al terminar. Aclaración de 86 respondida el
+13/09/2026 a las 20:21 UTC: mantener este acceso durante la revisión actual.
+No sustituirlo por Google ni revocarlo mientras el revisor lo necesite.
 
 ## Checkpoint externo
 

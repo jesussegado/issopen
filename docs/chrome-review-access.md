@@ -107,11 +107,23 @@ Google reference: [private test instructions](https://developer.chrome.com/docs/
 - 94 unit/web tests, 66 integration tests, lint, typecheck, build and secret
   scan passed. No runtime or GitOps changes required for operator provisioning.
 
-## Later decision requiring clarification
+## Resolved follow-up decision — 2026-09-13
 
 At 19:35 UTC the human answer in ticket 86 selected a dedicated Google test
-identity instead of this local account. A blocking follow-up question records
-the conflict with the already-submitted access. Do not silently ignore that
-answer, impersonate a human response, revoke the working reviewer or edit the
-private Google credentials before the replacement is agreed and verified.
-No Google test identity has been created by this procedure.
+identity instead of this local account. The explicit clarification was answered
+at 20:21:42 UTC: **keep the current review access**. Question
+`bc1536c9-4c81-4f84-8b7c-f0803036e26c` v2 selects option
+`f1eeab0f-4cc9-4466-8244-36ce60a4c832`. Both questions are answered; no pending
+question blocks ticket 86. Keep both answers and their audit history intact.
+
+The working local Member, project allowlist and private Google instructions
+remain unchanged for this submission. No Google test identity was created or
+requested from the publisher account. Google sign-in for normal invited users
+is unchanged and the Google pilot remains a separate gate in ticket 87.
+
+The publisher's Store dashboard was rechecked at 20:23 UTC: the exact item is
+still **Pending review**. Existing reviewer login and its one-project access
+were rechecked in an isolated session; foreign reads/admin denied, desktop and
+mobile detail/image correct. Only that smoke session was signed out. No tickets,
+reviewer credentials, grants or existing browser sessions were modified.
+Approval/manual publication and real Store pilot/update remain external gates.

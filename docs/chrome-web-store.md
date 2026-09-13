@@ -1,6 +1,6 @@
 # Chrome Web Store: contrato de publicación Unlisted
 
-Estado observado el 2026-09-13 a las 19:24 UTC: **Pendiente de revisión**.
+Estado reconsultado el 2026-09-13 a las 20:23 UTC: **Pendiente de revisión**.
 Issopen 0.6.2 está enviado, con visibilidad **Sin mostrar (Unlisted)** y
 publicación automática desactivada. No hay versión aprobada/publicada todavía.
 
@@ -54,9 +54,12 @@ La declaración guardada es no operador, según su decisión explícita sobre el
 uso actual no profesional. Si ese uso cambia debe revisarla personalmente.
 La ficha y las instrucciones privadas del Member aislado se guardaron y se
 comprobó su persistencia. El posterior envío fue autorizado con «enviala».
-La nueva respuesta del ticket 86 elige Google de pruebas: hay una aclaración
-bloqueante para decidir el relevo; no retirar el acceso ya enviado mientras
-se resuelve. Véase [acceso de revisión](chrome-review-access.md).
+La aclaración del ticket 86 quedó respondida el 13/09 a las 20:21 UTC:
+mantener el acceso Member local durante esta revisión. Conservamos la elección
+anterior de Google de pruebas como historial, pero esta respuesta específica
+resuelve qué acceso usa el envío actual. No quedan preguntas pendientes en 86;
+falta el resultado de Google y la publicación manual, no otra decisión de
+credenciales. Véase [acceso de revisión](chrome-review-access.md).
 
 La revisión de GitOps y el digest observados mandan sobre descriptores locales
 desactualizados. Antes de cada publicación se vuelve a consultar el clúster.
