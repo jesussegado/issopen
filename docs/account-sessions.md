@@ -47,8 +47,9 @@ Component tests cover confirmation/cancel, retries, status and focus; isolated
 desktop/mobile Chromium checks use two synthetic browser sessions. Never close
 the user's real browser or Google Store review account to test this feature.
 
-No migration, environment variable or extension artifact change. Source-only
-implementation until the GitOps/runtime evidence is recorded in quick 260913-x6a.
+No migration, environment variable or extension artifact change. Deployed in
+source328a386/GitOps0ac6550d; runtime, restore and production smoke evidence
+is recorded in quick260913-x6a (14 September 2026, Europe/Madrid).
 Rollback to the preceding app image removes the UI/API but does not resurrect
 revoked sessions; users sign in normally. No DB restore is required for that rollback.
 

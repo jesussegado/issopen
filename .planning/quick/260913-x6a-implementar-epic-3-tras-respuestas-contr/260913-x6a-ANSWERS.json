@@ -1,0 +1,223 @@
+{
+  "capturedAt": "2026-09-13T21:54:57Z",
+  "note": "Derived snapshot only; reread live answers before mutating plans.",
+  "decisions": [
+    {
+      "issue": 94,
+      "issueId": "1067fb51-4d24-416c-ac99-f6b2de6774b2",
+      "issueVersion": 1,
+      "questions": [
+        {
+          "id": "6784e928-bac7-4061-a4e8-3bdbbec8fc8a",
+          "version": 2,
+          "prompt": "Para esta ampliación del Epic 3, ¿qué roles humanos necesitamos además de la base que ya funciona?",
+          "answer": "Owner y Member"
+        },
+        {
+          "id": "3b2cc988-5128-41bf-b3b2-58202d2e4a12",
+          "version": 2,
+          "prompt": "¿Una persona debe poder participar en varios workspaces independientes en este corte?",
+          "answer": "Varios workspaces"
+        }
+      ]
+    },
+    {
+      "issue": 95,
+      "issueId": "63e3c11d-ad33-4037-9771-71fe63863b11",
+      "issueVersion": 1,
+      "questions": [
+        {
+          "id": "d01ac8ae-d843-4f36-8beb-41e5c0533700",
+          "version": 2,
+          "prompt": "¿El rol de una persona será el mismo en todos sus proyectos o necesitas permisos diferentes por proyecto?",
+          "answer": "Rol por proyecto"
+        }
+      ]
+    },
+    {
+      "issue": 96,
+      "issueId": "56cabba1-3173-4944-a8c6-c95753eb3500",
+      "issueVersion": 1,
+      "questions": [
+        {
+          "id": "ef5bfc1b-1864-4f4f-a849-b0fd88af101d",
+          "version": 2,
+          "prompt": "Si quitamos a un miembro su último proyecto, ¿qué debe ocurrir con su acceso?",
+          "answer": "Miembro sin proyectos"
+        },
+        {
+          "id": "eed0ab06-5a65-400f-b130-ae185307043c",
+          "version": 2,
+          "prompt": "¿Necesitas suspender y reactivar temporalmente a un miembro, además de retirarlo?",
+          "answer": "Retirar y reinvitar"
+        }
+      ]
+    },
+    {
+      "issue": 97,
+      "issueId": "3bf49049-f117-484b-a4af-eabdfee7c8c4",
+      "issueVersion": 1,
+      "questions": [
+        {
+          "id": "70a9af53-be94-49f4-a60b-f6a2e0cc950b",
+          "version": 2,
+          "prompt": "¿Cómo quieres entregar las invitaciones a partir de este Epic?",
+          "answer": "Correo y enlace manual"
+        },
+        {
+          "id": "0a113b65-fcb6-4a2c-be22-8da94ed306f3",
+          "version": 2,
+          "prompt": "¿Quieres que Issopen recuerde automáticamente las invitaciones pendientes?",
+          "answer": "Sólo a petición del administrador"
+        }
+      ]
+    },
+    {
+      "issue": 98,
+      "issueId": "2f081d4e-1607-48ad-82ea-25f8b4a5beb3",
+      "issueVersion": 1,
+      "questions": [
+        {
+          "id": "27d6d802-cd20-4413-9a72-198f53652391",
+          "version": 2,
+          "prompt": "Después de aceptar una invitación, ¿dónde debe aterrizar la persona?",
+          "answer": "Proyecto directo o selector"
+        }
+      ]
+    },
+    {
+      "issue": 99,
+      "issueId": "1a14f758-eb72-4229-9f65-9adaf0305e79",
+      "issueVersion": 1,
+      "questions": [
+        {
+          "id": "c426e3e3-b1c6-47e5-aff3-36119a4bce72",
+          "version": 2,
+          "prompt": "¿Qué datos del perfil quieres poder editar desde Issopen?",
+          "answer": "Nombre y avatar"
+        },
+        {
+          "id": "db1bab72-79f7-443a-beea-5a4627e50355",
+          "version": 2,
+          "prompt": "¿Qué información de otros colaboradores debe ver un Member dentro de un proyecto compartido?",
+          "answer": "Nombre y rol, sin email"
+        }
+      ]
+    },
+    {
+      "issue": 100,
+      "issueId": "2e7fcfe9-5c87-43ea-a150-ff44937ace83",
+      "issueVersion": 1,
+      "questions": [
+        {
+          "id": "f106344d-ca05-4840-8a8e-70f7b1959336",
+          "version": 2,
+          "prompt": "Desde Tu cuenta, ¿el cierre de sesiones web y la desconexión de extensiones deben ser acciones separadas?",
+          "answer": "Controles separados"
+        }
+      ]
+    },
+    {
+      "issue": 101,
+      "issueId": "6a6bd35e-a9d6-4d88-b527-bfcc491b8b91",
+      "issueVersion": 1,
+      "questions": [
+        {
+          "id": "e6f38a8d-3eec-491b-a28c-54da127f7caa",
+          "version": 2,
+          "prompt": "¿Cada ticket tendrá un responsable humano o podrá tener varios?",
+          "answer": "Una persona o sin asignar"
+        },
+        {
+          "id": "2f1ea0fd-8af0-43a6-a2d0-6208f7f322a0",
+          "version": 2,
+          "prompt": "¿Quién puede asignar o reasignar responsables de un ticket?",
+          "answer": "Colaboradores con edición"
+        }
+      ]
+    },
+    {
+      "issue": 102,
+      "issueId": "2d0bdfbf-6e16-420c-bffb-09ec78f5fea5",
+      "issueVersion": 1,
+      "questions": [
+        {
+          "id": "528bb042-7b22-4419-82e0-d1ef90209b6a",
+          "version": 2,
+          "prompt": "¿Quieres poder dirigir una pregunta a una persona concreta?",
+          "answer": "Destinatario opcional"
+        },
+        {
+          "id": "2c608917-d88b-4510-b7b9-097b6934a8c4",
+          "version": 2,
+          "prompt": "¿Quién debe poder validar y cerrar un ticket en un proyecto compartido?",
+          "answer": "Colaboradores con edición"
+        }
+      ]
+    },
+    {
+      "issue": 103,
+      "issueId": "ea956a9a-8e7f-4cc1-85d2-320436bdbf65",
+      "issueVersion": 1,
+      "questions": [
+        {
+          "id": "ece87880-cf7f-4a11-a9e0-cf59a6236de9",
+          "version": 2,
+          "prompt": "¿Dónde quieres recibir los avisos de asignaciones, menciones y preguntas?",
+          "answer": "Dentro de Issopen"
+        },
+        {
+          "id": "0d287f5f-9149-4d1f-827b-aae3b933ccad",
+          "version": 2,
+          "prompt": "¿Qué actividad debe generar avisos por defecto?",
+          "answer": "Sólo lo dirigido a mí"
+        }
+      ]
+    },
+    {
+      "issue": 104,
+      "issueId": "865601e9-0ff4-4cf5-a46b-ba9fe572cd5c",
+      "issueVersion": 1,
+      "questions": [
+        {
+          "id": "e2d8ff2f-54ef-42e4-a010-772b493a635f",
+          "version": 2,
+          "prompt": "Si otra persona modifica un ticket mientras tú estás escribiendo, ¿cómo prefieres recibir el cambio?",
+          "answer": "Actualizar salvo si estoy editando"
+        }
+      ]
+    },
+    {
+      "issue": 105,
+      "issueId": "5a349a29-b6d4-43c4-a4de-eb8327f21a58",
+      "issueVersion": 1,
+      "questions": [
+        {
+          "id": "3a20c4e2-e24c-445a-80ff-3eb712667071",
+          "version": 2,
+          "prompt": "¿Necesitas transferir la propiedad del workspace desde la web en este corte?",
+          "answer": "Transferencia web protegida"
+        }
+      ]
+    },
+    {
+      "issue": 106,
+      "issueId": "2429e1b5-f2dc-4a5a-b39f-c3789f196ef7",
+      "issueVersion": 1,
+      "questions": [
+        {
+          "id": "463c5fd6-b01b-4a3a-a3d1-f68f862d0f47",
+          "version": 2,
+          "prompt": "¿Quién debe poder consultar el historial de accesos?",
+          "answer": "Sólo administración"
+        }
+      ]
+    },
+    {
+      "issue": 107,
+      "issueId": "ff185eaf-7904-4bb3-9d28-fcc799f5ab8e",
+      "issueVersion": 1,
+      "questions": []
+    }
+  ]
+}

@@ -4,8 +4,14 @@ Estado: **implementación autorizada tras respuestas**. Fuente canónica:
 [Epic 3 en Issopen](https://issopen.serviciosegado.com/epics/c3b6a630-824e-473a-add9-ac41bf63e38c).
 Plan inicial: 14 tickets (94–107), 20 preguntas. El 2026-09-13 el propietario
 respondió las 20 (v2) y pidió implementar. Se añade 108 para la base multiworkspace
-seleccionada. Este archivo es un índice derivado, no una copia editable de
+seleccionada y109 para el menú móvil que tapaba el board, descubierto al validar.
+Este archivo es un índice derivado, no una copia editable de
 respuestas. Leer siempre los tickets/versiones actuales.
+
+Primer bloque entregado el14/09/2026:94 contrato,100 sesiones propias,
+104 detalle en vivo y109 navegación móvil. Fuente328a386/GitOps0ac6550d,
+producción verificada y tickets Ready for Human Review sin claims. Doce tickets
+siguen en Backlog; siguiente108→95. No se declara terminado el Epic.
 
 ## Contrato tras respuestas — ticket 94
 
@@ -78,11 +84,12 @@ Evidencias de fuente inspeccionadas:
 - src/server/http/invitations.ts: lista, crear/reenviar/revocar y retirar miembro;
   falta una operación para editar proyectos de un miembro ya incorporado.
 - src/web/routes/AccountRoute.tsx: datos de perfil de sólo lectura y vinculación
-  Google; no hay inventario de sesiones web en esta pantalla.
+  Google; 100 añade ahora [sesiones propias](account-sessions.md).
 - src/server/db/schema.ts: human_owner_id y claimed_by_agent_id no representan
   una asignación humana de trabajo; no hay modelo de assignee/notificación.
-- El board SSE del ticket 63 y los guards de detalle existentes se reutilizan;
-  el trabajo nuevo incluye reconciliar cambios remotos sin pisar borradores.
+- El board SSE del ticket63 se reutiliza en104, junto con nuevos guards para
+  respuestas/revisión y [reconciliación del detalle](detail-live.md) sin pisar
+  borradores; permisos/membresías futuras aún deben integrarse en107.
 
 El encargo inicial de planificación no autorizaba cambios de runtime; el nuevo
 encargo sí pide implementación. Las pruebas no autorizan invitar personas reales,
@@ -95,19 +102,21 @@ política de saltar revisión del ticket 68 (Epic 5).
 | Ticket | Preguntas | Dependencias de este Epic |
 | --- | ---: | --- |
 | [94-Cerrar el alcance de usuarios, roles y workspaces](https://issopen.serviciosegado.com/issues/1067fb51-4d24-416c-ac99-f6b2de6774b2) | 2 | — |
-| [95-Aplicar la matriz de permisos a todas las superficies](https://issopen.serviciosegado.com/issues/63e3c11d-ad33-4037-9771-71fe63863b11) | 1 | 94 |
+| [95-Aplicar la matriz de permisos a todas las superficies](https://issopen.serviciosegado.com/issues/63e3c11d-ad33-4037-9771-71fe63863b11) | 1 | 94, 108 |
 | [96-Gestionar acceso de miembros ya incorporados](https://issopen.serviciosegado.com/issues/56cabba1-3173-4944-a8c6-c95753eb3500) | 2 | 94, 95 |
 | [97-Completar la entrega y operación de invitaciones](https://issopen.serviciosegado.com/issues/3bf49049-f117-484b-a4af-eabdfee7c8c4) | 2 | 94, 95 |
 | [98-Pulir el login y onboarding de personas invitadas](https://issopen.serviciosegado.com/issues/2f081d4e-1607-48ad-82ea-25f8b4a5beb3) | 1 | 94, 95 |
 | [99-Añadir perfil editable y directorio mínimo de colaboradores](https://issopen.serviciosegado.com/issues/1a14f758-eb72-4229-9f65-9adaf0305e79) | 2 | 94, 95 |
-| [100-Gestionar sesiones y dispositivos de la propia cuenta](https://issopen.serviciosegado.com/issues/2e7fcfe9-5c87-43ea-a150-ff44937ace83) | 1 | 94, 95 |
+| [100-Gestionar sesiones y dispositivos de la propia cuenta](https://issopen.serviciosegado.com/issues/2e7fcfe9-5c87-43ea-a150-ff44937ace83) | 1 | 94; repetir matriz 95/108 en107 |
 | [101-Asignar responsables humanos a los tickets](https://issopen.serviciosegado.com/issues/6a6bd35e-a9d6-4d88-b527-bfcc491b8b91) | 2 | 94, 95, 96, 99 |
 | [102-Dirigir preguntas y revisiones a personas concretas](https://issopen.serviciosegado.com/issues/2d0bdfbf-6e16-420c-bffb-09ec78f5fea5) | 2 | 94, 95, 99, 101 |
 | [103-Añadir menciones y avisos de colaboración](https://issopen.serviciosegado.com/issues/ea956a9a-8e7f-4cc1-85d2-320436bdbf65) | 2 | 94, 95, 99, 101, 102 |
-| [104-Sincronizar el detalle sin perder cambios de otros usuarios](https://issopen.serviciosegado.com/issues/865601e9-0ff4-4cf5-a46b-ba9fe572cd5c) | 1 | 94, 95 |
+| [104-Sincronizar el detalle sin perder cambios de otros usuarios](https://issopen.serviciosegado.com/issues/865601e9-0ff4-4cf5-a46b-ba9fe572cd5c) | 1 | 94; repetir matriz 95/108 en107 |
 | [105-Proteger la propiedad y recuperar acceso administrativo](https://issopen.serviciosegado.com/issues/5a349a29-b6d4-43c4-a4de-eb8327f21a58) | 1 | 94, 95, 96, 100 |
 | [106-Mostrar auditoría de accesos y cambios de permisos](https://issopen.serviciosegado.com/issues/2429e1b5-f2dc-4a5a-b39f-c3789f196ef7) | 1 | 94, 95, 96, 100 |
 | [107-Validar colaboración, aislamiento y entrega del Epic](https://issopen.serviciosegado.com/issues/ff185eaf-7904-4bb3-9d28-fcc799f5ab8e) | 0 | 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106 |
+| [108-Implementar membresías y contexto multiworkspace](https://issopen.serviciosegado.com/issues/bb4f8210-0a43-4dd7-ba26-bbd459c9e186) | 0 | 94; base previa a95/dependientes |
+| [109-Cerrar navegación móvil al cambiar de página](https://issopen.serviciosegado.com/issues/c77b06a1-c37d-4084-a317-57a887b878d0) | 0 | Hallazgo del gate 100/104 |
 
 Responder primero 94 (roles/tenancy) y 95 (permisos). El resto se agrupa por
 problema: gestión de accesos, invitación, onboarding, cuenta, sesiones,

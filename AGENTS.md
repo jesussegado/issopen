@@ -36,6 +36,10 @@ versión en respuestas/revisiones. Los streams revalidan sesión/acceso en cada
 tick. Contratos en [sesiones](docs/account-sessions.md) y
 [detalle en vivo](docs/detail-live.md). No confundir esta entrega con la
 migración multiworkspace 108 ni los permisos por proyecto 95, aún pendientes.
+Fuente `328a386` y GitOps `0ac6550d` verificados en producción el14/09/2026:
+Synced/Healthy, digest `aa622315`, pod Ready/0 reinicios, backup/restore y
+smoke Member a1440/360. 109 cierra el menú móvil al navegar. 94/100/104/109
+están en revisión humana sin claims; seguir con108→95 y repetir integración107.
 
 - Epic 3 entra en implementación por petición explícita tras responder sus
   20 preguntas (v2, 2026-09-13). Contrato 94: Owner/Member por workspace,
