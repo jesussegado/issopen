@@ -346,13 +346,15 @@ preserves the transparent header logo and touch icon. See its
 
 Three Secrets exist outside Git in namespace `issopen`:
 
-- `issopen-env` supplies `BETTER_AUTH_SECRET`;
+- `issopen-env` supplies `BETTER_AUTH_SECRET` and, when Google login is
+  enabled, `GOOGLE_CLIENT_ID` plus `GOOGLE_CLIENT_SECRET`;
 - `issopen-postgres-env` supplies `POSTGRES_PASSWORD` to both processes;
 - `registry-serviciosegado` supplies the private registry pull credential.
 
 The recoverable local source for the first two is the ignored, mode-`0600`
 file `.local/secrets/issopen-production.env` at the monorepo root. Create it
-without printing either value, then provision only missing Secrets:
+without printing values, then provision the missing infrastructure Secrets and
+reconcile `issopen-env` when the Google pair is present:
 
 ```bash
 umask 077
@@ -362,15 +364,20 @@ mkdir -p "$(dirname "$secret_file")"
 {
   printf 'POSTGRES_PASSWORD=%s\n' "$(openssl rand -hex 32)"
   printf 'BETTER_AUTH_SECRET=%s\n' "$(openssl rand -hex 32)"
+  printf 'GOOGLE_CLIENT_ID=\n'
+  printf 'GOOGLE_CLIENT_SECRET=\n'
 } >"$secret_file"
 chmod 600 "$secret_file"
 KUBECONFIG=../../.local/secrets/kubeconfig-home.yaml \
   scripts/provision-production-secrets.sh
 ```
 
-The provisioner refuses a missing or permissive source, never prints values
-and never overwrites an existing Secret. Preserve that file in the operator's
-approved secret backup before rotating or rebuilding the namespace.
+The provisioner refuses a missing or permissive source and never prints values.
+It leaves an existing `issopen-env` unchanged when Google is omitted; when the
+Google pair is present it reconciles that Secret so credentials can be enabled
+or rotated. PostgreSQL and registry Secrets remain create-only. Preserve the
+source file in the operator's approved secret backup before rotating or
+rebuilding the namespace.
 
 Read-only production checks from the monorepo root are:
 
@@ -421,6 +428,8 @@ make validate
 | --- | --- | --- |
 | `POSTGRES_PASSWORD` | yes | Local PostgreSQL credential; generated into ignored `.env` |
 | `BETTER_AUTH_SECRET` | yes | Session signing secret, at least 32 characters |
+| `GOOGLE_CLIENT_ID` | pair | Google OIDC web client ID; set with `GOOGLE_CLIENT_SECRET` |
+| `GOOGLE_CLIENT_SECRET` | pair | Server-only Google OIDC secret; never expose to web/extension |
 | `POSTGRES_USER` | no | Local database user; default `issopen` |
 | `POSTGRES_DB` | no | Local database name; default `issopen` |
 | `ISSOPEN_PORT` | no | Loopback host port; default `8080` |
@@ -435,6 +444,8 @@ make validate
 
 Never commit `.env`, the ignored production Secret source, owner credentials,
 cookies, tokens, connection strings or command output containing them.
+Google setup, exact callbacks, verification and rollback are documented in
+[Google OpenID Connect](docs/google-oauth.md).
 
 ## Local rollback and reset
 

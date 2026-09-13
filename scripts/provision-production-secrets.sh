@@ -26,6 +26,10 @@ set +a
 [[ ${#POSTGRES_PASSWORD} -ge 32 ]] || fail "POSTGRES_PASSWORD is too short"
 [[ -n "${BETTER_AUTH_SECRET:-}" ]] || fail "BETTER_AUTH_SECRET is missing"
 [[ ${#BETTER_AUTH_SECRET} -ge 32 ]] || fail "BETTER_AUTH_SECRET is too short"
+if { [[ -n "${GOOGLE_CLIENT_ID:-}" ]] && [[ -z "${GOOGLE_CLIENT_SECRET:-}" ]]; } || \
+  { [[ -z "${GOOGLE_CLIENT_ID:-}" ]] && [[ -n "${GOOGLE_CLIENT_SECRET:-}" ]]; }; then
+  fail "GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must be set together"
+fi
 
 "$KUBECTL_BIN" get namespace "$NAMESPACE" >/dev/null
 
@@ -44,7 +48,35 @@ create_literal_secret_if_missing() {
   printf 'Created Secret %s.\n' "$name"
 }
 
-create_literal_secret_if_missing issopen-env BETTER_AUTH_SECRET "$BETTER_AUTH_SECRET"
+reconcile_issopen_env() {
+  local manifest
+  local -a arguments=(
+    create secret generic issopen-env
+    "--from-literal=BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}"
+  )
+
+  if [[ -n "${GOOGLE_CLIENT_ID:-}" ]]; then
+    arguments+=(
+      "--from-literal=GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}"
+      "--from-literal=GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}"
+    )
+  elif "$KUBECTL_BIN" -n "$NAMESPACE" get secret issopen-env >/dev/null 2>&1; then
+    printf 'Secret issopen-env already exists and Google OAuth is not configured; left unchanged.\n'
+    return
+  fi
+
+  manifest="$(mktemp)"
+  chmod 600 "$manifest"
+  trap "rm -f -- '$manifest'" EXIT
+  "$KUBECTL_BIN" -n "$NAMESPACE" "${arguments[@]}" \
+    --dry-run=client -o yaml >"$manifest"
+  "$KUBECTL_BIN" apply -f "$manifest" >/dev/null
+  rm -f -- "$manifest"
+  trap - EXIT
+  printf 'Reconciled Secret issopen-env without printing values.\n'
+}
+
+reconcile_issopen_env
 create_literal_secret_if_missing issopen-postgres-env POSTGRES_PASSWORD "$POSTGRES_PASSWORD"
 
 if "$KUBECTL_BIN" -n "$NAMESPACE" get secret registry-serviciosegado >/dev/null 2>&1; then

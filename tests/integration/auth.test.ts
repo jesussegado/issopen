@@ -27,24 +27,29 @@ let container: StartedPostgreSqlContainer;
 let connection: DatabaseConnection;
 let auth: IssopenAuth;
 
-function testConfig(databaseUrl: string) {
+function testConfig(
+  databaseUrl: string,
+  environment: Record<string, string> = {},
+) {
   return loadConfig({
     NODE_ENV: "test",
     PORT: "8080",
     DATABASE_URL: databaseUrl,
     ISSOPEN_BASE_URL: baseUrl,
     BETTER_AUTH_SECRET: "synthetic-better-auth-secret-for-tests",
+    ...environment,
   });
 }
 
-function createTestApp() {
-  const config = testConfig(container.getConnectionUri());
+function createTestApp(environment: Record<string, string> = {}) {
+  const config = testConfig(container.getConnectionUri(), environment);
   auth = createAuth(connection.db, config);
   return createApp({
     logger: pino({ level: "silent" }),
     db: connection.db,
     auth,
     trustedOrigins: config.trustedOrigins,
+    googleAuthEnabled: Boolean(config.googleOAuth),
   });
 }
 
@@ -86,6 +91,66 @@ afterAll(async () => {
 });
 
 describe("private owner authentication", () => {
+  it("advertises only configured Google OAuth and starts a bounded OIDC flow", async () => {
+    const clientId = "synthetic-google-client-id.apps.googleusercontent.com";
+    const clientSecret = "synthetic-google-client-secret";
+    const app = createTestApp({
+      GOOGLE_CLIENT_ID: clientId,
+      GOOGLE_CLIENT_SECRET: clientSecret,
+    });
+
+    const providers = await app.request("/api/public/auth-providers");
+    expect(providers.status).toBe(200);
+    expect(await providers.json()).toEqual({ google: true });
+
+    const started = await app.request("/api/auth/sign-in/social", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Origin: baseUrl },
+      body: JSON.stringify({
+        provider: "google",
+        callbackURL: "/",
+        errorCallbackURL: "/sign-in",
+      }),
+    });
+    expect(started.status).toBe(200);
+    const raw = await started.text();
+    expect(raw).not.toContain(clientSecret);
+    const payload = JSON.parse(raw) as { url: string };
+    const authorization = new URL(payload.url);
+    expect(authorization.origin).toBe("https://accounts.google.com");
+    expect(authorization.searchParams.get("client_id")).toBe(clientId);
+    expect(authorization.searchParams.get("redirect_uri")).toBe(
+      `${baseUrl}/api/auth/callback/google`,
+    );
+    expect(authorization.searchParams.get("response_type")).toBe("code");
+    expect(authorization.searchParams.get("state")).toBeTruthy();
+    expect(authorization.searchParams.get("nonce")).toBeTruthy();
+    expect(authorization.searchParams.get("scope")?.split(" ")).toEqual(
+      expect.arrayContaining(["openid", "email", "profile"]),
+    );
+  });
+
+  it("does not advertise Google when server credentials are absent", async () => {
+    const app = createTestApp();
+    const response = await app.request("/api/public/auth-providers");
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ google: false });
+  });
+
+  it("rejects a forged Google callback without issuing a session", async () => {
+    const app = createTestApp({
+      GOOGLE_CLIENT_ID: "synthetic-google-client-id.apps.googleusercontent.com",
+      GOOGLE_CLIENT_SECRET: "synthetic-google-client-secret",
+    });
+    const response = await app.request(
+      "/api/auth/callback/google?code=forged&state=forged",
+    );
+    expect(response.status).not.toBe(200);
+    expect(response.headers.get("set-cookie") ?? "").not.toContain(
+      "issopen.session_token",
+    );
+  });
+
   it("allows exactly one concurrent owner bootstrap and refuses another owner", async () => {
     createTestApp();
     const attempts = await Promise.all([

@@ -49,4 +49,37 @@ describe("authentication configuration", () => {
     expect(config.secureCookies).toBe(true);
     expect(config.trustedOrigins).toEqual(["https://issopen.example.test"]);
   });
+
+  it("enables Google only when both server credentials are configured", () => {
+    const configured = loadConfig({
+      ...validEnvironment,
+      GOOGLE_CLIENT_ID: "synthetic-google-client-id",
+      GOOGLE_CLIENT_SECRET: "synthetic-google-client-secret",
+    });
+    expect(configured.googleOAuth).toEqual({
+      clientId: "synthetic-google-client-id",
+      clientSecret: "synthetic-google-client-secret",
+    });
+
+    expect(() =>
+      loadConfig({
+        ...validEnvironment,
+        GOOGLE_CLIENT_ID: "synthetic-google-client-id",
+      }),
+    ).toThrow(/GOOGLE_CLIENT_SECRET/);
+  });
+
+  it("never includes a Google client secret in configuration errors", () => {
+    const secret = "synthetic-google-secret-that-must-not-leak";
+    try {
+      loadConfig({
+        ...validEnvironment,
+        DATABASE_URL: "invalid",
+        GOOGLE_CLIENT_ID: "synthetic-google-client-id",
+        GOOGLE_CLIENT_SECRET: secret,
+      });
+    } catch (error) {
+      expect(String(error)).not.toContain(secret);
+    }
+  });
 });

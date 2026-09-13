@@ -14,16 +14,43 @@ const postgresUrlSchema = z
     { message: "must be a PostgreSQL URL" },
   );
 
-const environmentSchema = z.object({
-  NODE_ENV: z
-    .enum(["development", "test", "production"])
-    .default("development"),
-  PORT: z.coerce.number().int().min(1).max(65_535).default(8080),
-  DATABASE_URL: postgresUrlSchema,
-  ISSOPEN_BASE_URL: z.string().url(),
-  BETTER_AUTH_SECRET: z.string().min(32, "must contain at least 32 characters"),
-  ISSOPEN_TRUSTED_ORIGINS: z.string().optional(),
-});
+const optionalCredentialSchema = z.preprocess(
+  (value) => (value === "" ? undefined : value),
+  z.string().trim().min(1).optional(),
+);
+
+const environmentSchema = z
+  .object({
+    NODE_ENV: z
+      .enum(["development", "test", "production"])
+      .default("development"),
+    PORT: z.coerce.number().int().min(1).max(65_535).default(8080),
+    DATABASE_URL: postgresUrlSchema,
+    ISSOPEN_BASE_URL: z.string().url(),
+    BETTER_AUTH_SECRET: z
+      .string()
+      .min(32, "must contain at least 32 characters"),
+    ISSOPEN_TRUSTED_ORIGINS: z.string().optional(),
+    GOOGLE_CLIENT_ID: optionalCredentialSchema,
+    GOOGLE_CLIENT_SECRET: optionalCredentialSchema,
+  })
+  .superRefine((environment, context) => {
+    if (
+      Boolean(environment.GOOGLE_CLIENT_ID) ===
+      Boolean(environment.GOOGLE_CLIENT_SECRET)
+    ) {
+      return;
+    }
+    context.addIssue({
+      code: "custom",
+      path: [
+        environment.GOOGLE_CLIENT_ID
+          ? "GOOGLE_CLIENT_SECRET"
+          : "GOOGLE_CLIENT_ID",
+      ],
+      message: "must be set together with the other Google OAuth credential",
+    });
+  });
 
 export type AppConfig = {
   nodeEnv: "development" | "test" | "production";
@@ -33,6 +60,7 @@ export type AppConfig = {
   authSecret: string;
   trustedOrigins: string[];
   secureCookies: boolean;
+  googleOAuth: { clientId: string; clientSecret: string } | null;
 };
 
 export class ConfigError extends Error {
@@ -85,5 +113,12 @@ export function loadConfig(
     authSecret: parsed.data.BETTER_AUTH_SECRET,
     trustedOrigins,
     secureCookies: baseUrl.protocol === "https:",
+    googleOAuth:
+      parsed.data.GOOGLE_CLIENT_ID && parsed.data.GOOGLE_CLIENT_SECRET
+        ? {
+            clientId: parsed.data.GOOGLE_CLIENT_ID,
+            clientSecret: parsed.data.GOOGLE_CLIENT_SECRET,
+          }
+        : null,
   };
 }

@@ -35,6 +35,7 @@ type AppDependencies = {
   trustedOrigins: string[];
   webRoot?: string;
   captureStorage?: CaptureStorage | undefined;
+  googleAuthEnabled?: boolean;
 };
 
 const workspaceInputSchema = z.object({
@@ -68,6 +69,7 @@ export function createApp({
   trustedOrigins,
   webRoot = "./dist/web",
   captureStorage,
+  googleAuthEnabled = false,
 }: AppDependencies) {
   const app = new Hono<AppBindings>();
   const oauthApi = auth.api as typeof auth.api & {
@@ -88,6 +90,10 @@ export function createApp({
       return context.json({ status: "starting" }, 503);
     }
   });
+
+  app.get("/api/public/auth-providers", (context) =>
+    context.json({ google: googleAuthEnabled }),
+  );
 
   app.on(["GET", "POST"], "/api/auth/sign-up/*", (context) =>
     context.json({ error: "Not found" }, 404),

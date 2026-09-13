@@ -33,6 +33,45 @@ afterEach(() => {
 });
 
 describe("owner web entry", () => {
+  it("discovers Google sign-in without exposing configuration", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const path = String(input);
+      if (path === "/api/v1/session")
+        return json({ error: "Authentication required" }, 401);
+      if (path === "/api/public/auth-providers") return json({ google: true });
+      throw new Error(`Unexpected request: ${path}`);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<App />);
+
+    expect(
+      await screen.findByRole("button", { name: "Continue with Google" }),
+    ).toBeEnabled();
+    expect(
+      screen.getByText("Use the Google account from your Issopen invitation."),
+    ).toBeInTheDocument();
+  });
+
+  it("explains a cancelled Google sign-in and keeps password access", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        if (String(input) === "/api/v1/session")
+          return json({ error: "Authentication required" }, 401);
+        if (String(input) === "/api/public/auth-providers")
+          return json({ google: true });
+        throw new Error(`Unexpected request: ${String(input)}`);
+      }),
+    );
+    window.history.replaceState({}, "", "/sign-in?error=access_denied");
+    render(<App />);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Google sign-in was cancelled",
+    );
+    expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled();
+  });
+
   it("renders the private sign-in and clears only the password after invalid credentials", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const path = String(input);

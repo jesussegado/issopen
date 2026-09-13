@@ -38,6 +38,10 @@ const secretPatterns = [
     name: "literal Better Auth secret",
     value: /BETTER_AUTH_SECRET\s*=\s*[A-Za-z0-9_-]{32,}/g,
   },
+  {
+    name: "literal Google OAuth client secret",
+    value: /GOCSPX-[A-Za-z0-9_-]{20,}/g,
+  },
 ];
 
 async function filesUnder(path: string): Promise<string[]> {

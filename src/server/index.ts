@@ -38,6 +38,7 @@ async function main() {
     auth,
     trustedOrigins: config.trustedOrigins,
     captureStorage,
+    googleAuthEnabled: Boolean(config.googleOAuth),
   });
   const server = serve({
     fetch: app.fetch,

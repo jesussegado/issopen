@@ -59,8 +59,66 @@ export function SignInRoute({
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [googleAvailable, setGoogleAvailable] = useState(false);
+  const [googleSubmitting, setGoogleSubmitting] = useState(false);
   const passwordRef = useRef<HTMLInputElement>(null);
   const online = useOnlineStatus();
+
+  useEffect(() => {
+    fetch("/api/public/auth-providers", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Provider discovery failed");
+        const body = (await response.json()) as { google?: boolean };
+        setGoogleAvailable(body.google === true);
+      })
+      .catch(() => setGoogleAvailable(false));
+  }, []);
+
+  useEffect(() => {
+    const oauthError = new URLSearchParams(window.location.search).get("error");
+    if (!oauthError) return;
+    setError(
+      oauthError === "access_denied"
+        ? "Google sign-in was cancelled. You can try again or use your Issopen password."
+        : "Google couldn't complete sign-in. Use an invited account or try your Issopen password.",
+    );
+  }, []);
+
+  async function signInWithGoogle() {
+    setGoogleSubmitting(true);
+    setError(null);
+    try {
+      const returnTo = returnPath();
+      const errorCallbackURL = `/sign-in?returnTo=${encodeURIComponent(returnTo)}`;
+      const response = await fetch("/api/auth/sign-in/social", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          provider: "google",
+          callbackURL: returnTo,
+          errorCallbackURL,
+        }),
+      });
+      const body = (await response.json().catch(() => null)) as {
+        url?: string;
+      } | null;
+      if (!response.ok || !body?.url) throw new Error("Google sign-in failed");
+      const target = new URL(body.url);
+      if (
+        target.protocol !== "https:" ||
+        target.hostname !== "accounts.google.com"
+      ) {
+        throw new Error("Unexpected Google authorization URL");
+      }
+      window.location.assign(target.href);
+    } catch {
+      setError(
+        "Google couldn't start sign-in. Check your connection or use your Issopen password.",
+      );
+      setGoogleSubmitting(false);
+    }
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -102,6 +160,21 @@ export function SignInRoute({
         </StatusBanner>
       ) : null}
       <form className="form-stack" onSubmit={submit}>
+        {googleAvailable ? (
+          <>
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={googleSubmitting || submitting || !online}
+              onClick={() => void signInWithGoogle()}
+            >
+              {googleSubmitting ? "Opening Google…" : "Continue with Google"}
+            </Button>
+            <p className="helper-copy">
+              Use the Google account from your Issopen invitation.
+            </p>
+          </>
+        ) : null}
         <Field label="Email" htmlFor="email" required>
           <TextInput
             id="email"
