@@ -3,6 +3,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { CaptureEvidence } from "../components/CaptureEvidence.js";
@@ -22,6 +23,7 @@ import {
 } from "../components/ui.js";
 import { ApiError, apiRequest, unavailable } from "../lib/api.js";
 import { useOnlineStatus } from "../lib/online.js";
+import { subscribeToProjectChanges } from "../lib/project-live.js";
 import type {
   Activity,
   CodeLink,
@@ -95,6 +97,48 @@ function newestFirst<T extends { id: string; createdAt: string }>(items: T[]) {
   );
 }
 
+type DetailSnapshot = {
+  issue: Issue;
+  epic: Epic | null;
+  codeLinks: CodeLink[];
+  comments: IssueComment[];
+  questions: IssueQuestion[];
+  questionSummary: QuestionSummary;
+  activity: Activity[];
+  project: Project;
+};
+
+async function readDetailSnapshot(
+  issueId: string,
+  signal?: AbortSignal,
+): Promise<DetailSnapshot> {
+  const options = { cache: "no-store" as const, ...(signal ? { signal } : {}) };
+  const [detail, activity] = await Promise.all([
+    apiRequest<Omit<DetailSnapshot, "activity" | "project">>(
+      `/api/v1/issues/${issueId}`,
+      options,
+    ),
+    apiRequest<{ activity: Activity[] }>(
+      `/api/v1/issues/${issueId}/activity`,
+      options,
+    ),
+  ]);
+  const { project } = await apiRequest<{ project: Project }>(
+    `/api/v1/projects/${detail.issue.projectId}`,
+    options,
+  );
+  return {
+    issue: detail.issue,
+    epic: detail.epic ?? null,
+    codeLinks: detail.codeLinks ?? [],
+    comments: detail.comments ?? [],
+    questions: detail.questions ?? [],
+    questionSummary: detail.questionSummary,
+    activity: activity.activity,
+    project,
+  };
+}
+
 export function IssueDetailRoute({
   issueId,
   session,
@@ -132,6 +176,52 @@ export function IssueDetailRoute({
   const [requestingChanges, setRequestingChanges] = useState(false);
   const [reason, setReason] = useState("");
   const [announcement, setAnnouncement] = useState("");
+  const [answerDirty, setAnswerDirty] = useState(false);
+  const [pendingSnapshot, setPendingSnapshot] = useState<DetailSnapshot | null>(
+    null,
+  );
+  const [liveError, setLiveError] = useState(false);
+  const [comparing, setComparing] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const mutationEpoch = useRef(0);
+  const preservedAnswerId = useRef<string | null>(null);
+  const scope = `${session.user.id}:${session.workspace?.id}:${issueId}`;
+  const scopeRef = useRef(scope);
+  scopeRef.current = scope;
+  const state = useRef({
+    dirty: false,
+    submitting: false,
+    questionId: "",
+    signature: "",
+    issueVersion: 0,
+    questions: [] as IssueQuestion[],
+    commentIds: [] as string[],
+    linkIds: [] as string[],
+  });
+  state.current = {
+    dirty:
+      answerDirty ||
+      commentBody !== "" ||
+      linkUrl !== "" ||
+      reason !== "" ||
+      requestingChanges,
+    submitting: submitting !== null,
+    questionId: questions[questionIndex]?.id ?? "",
+    signature: JSON.stringify({
+      issue,
+      epic,
+      codeLinks: links,
+      comments,
+      questions,
+      questionSummary,
+      activity,
+      project,
+    }),
+    issueVersion: issue?.version ?? 0,
+    questions,
+    commentIds: comments.map((item) => item.id),
+    linkIds: links.map((item) => item.id),
+  };
   const online = useOnlineStatus();
   const newestActivityFirst = useMemo(() => newestFirst(activity), [activity]);
   const newestCommentsFirst = useMemo(() => newestFirst(comments), [comments]);
@@ -143,49 +233,163 @@ export function IssueDetailRoute({
     setActivity(response.activity);
   }, [issueId]);
 
+  const applySnapshot = useCallback((snapshot: DetailSnapshot) => {
+    const selected = snapshot.questions.findIndex(
+      (q) => q.id === state.current.questionId,
+    );
+    setQuestionIndex(selected >= 0 ? selected : 0);
+    setIssue(snapshot.issue);
+    setEpic(snapshot.epic);
+    setLinks(snapshot.codeLinks);
+    setComments(snapshot.comments);
+    setQuestions(snapshot.questions);
+    setQuestionSummary(snapshot.questionSummary);
+    setActivity(snapshot.activity);
+    setProject(snapshot.project);
+    setPendingSnapshot(null);
+    setComparing(false);
+    setLiveError(false);
+  }, []);
+
+  const clearAccess = useCallback(() => {
+    setMissing(true);
+    setIssue(null);
+    setQuestions([]);
+    setComments([]);
+    setLinks([]);
+    setActivity([]);
+    setPendingSnapshot(null);
+    setCommentBody("");
+    setAnswerOtherText("");
+    setAnswerOptionId("");
+    setLinkUrl("");
+    setReason("");
+  }, []);
+
   useEffect(() => {
-    async function load() {
-      try {
-        const [detail, activityResponse] = await Promise.all([
-          apiRequest<{
-            issue: Issue;
-            codeLinks: CodeLink[];
-            questions: IssueQuestion[];
-            comments: IssueComment[];
-            questionSummary: QuestionSummary;
-            epic: Epic | null;
-          }>(`/api/v1/issues/${issueId}`),
-          apiRequest<{ activity: Activity[] }>(
-            `/api/v1/issues/${issueId}/activity`,
-          ),
-        ]);
-        const projectResponse = await apiRequest<{ project: Project }>(
-          `/api/v1/projects/${detail.issue.projectId}`,
-        );
-        setIssue(detail.issue);
-        setEpic(detail.epic ?? null);
-        setLinks(detail.codeLinks);
-        setQuestions(detail.questions);
-        setComments(detail.comments);
-        setQuestionSummary(detail.questionSummary);
-        setActivity(activityResponse.activity);
-        setProject(projectResponse.project);
-      } catch (caught) {
-        if (unavailable(caught)) setMissing(true);
+    const controller = new AbortController();
+    setLoading(true);
+    setMissing(false);
+    setCommentBody("");
+    setLinkUrl("");
+    setReason("");
+    setRequestingChanges(false);
+    setAnswerDirty(false);
+    setPendingSnapshot(null);
+    void readDetailSnapshot(issueId, controller.signal)
+      .then((snapshot) => {
+        if (!controller.signal.aborted && scopeRef.current === scope)
+          applySnapshot(snapshot);
+      })
+      .catch((caught) => {
+        if (controller.signal.aborted || scopeRef.current !== scope) return;
+        if (unavailable(caught)) clearAccess();
         else
           setError(
             "We couldn't load this issue. Check your connection and try again.",
           );
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+    return () => controller.abort();
+  }, [issueId, scope, applySnapshot, clearAccess]);
+
+  const refreshLiveRef = useRef<() => void>(() => {});
+  useEffect(() => {
+    if (submitting === null && !loading) refreshLiveRef.current();
+  }, [submitting, loading]);
+  useEffect(() => {
+    if (!issue?.projectId || missing || loading) return;
+    let stopped = false;
+    let inFlight = false;
+    const controller = new AbortController();
+    const refresh = async () => {
+      if (stopped || inFlight || state.current.submitting) return;
+      inFlight = true;
+      const epoch = mutationEpoch.current;
+      setRefreshing(true);
+      try {
+        const next = await readDetailSnapshot(issueId, controller.signal);
+        if (
+          stopped ||
+          scopeRef.current !== scope ||
+          epoch !== mutationEpoch.current ||
+          state.current.submitting
+        )
+          return;
+        setLiveError(false);
+        // A late/mixed read must not roll back an already confirmed mutation.
+        const current = state.current;
+        if (
+          next.issue.version < current.issueVersion ||
+          current.commentIds.some(
+            (id) => !next.comments.some((item) => item.id === id),
+          ) ||
+          current.linkIds.some(
+            (id) => !next.codeLinks.some((item) => item.id === id),
+          ) ||
+          current.questions.some((q) => {
+            const incoming = next.questions.find((item) => item.id === q.id);
+            return (
+              incoming &&
+              (incoming.version < q.version ||
+                (incoming.version === q.version &&
+                  (incoming.answerOptionId !== q.answerOptionId ||
+                    incoming.answerOtherText !== q.answerOtherText)))
+            );
+          })
+        )
+          return;
+        if (JSON.stringify(next) === state.current.signature) {
+          setPendingSnapshot(null);
+          return;
+        }
+        if (state.current.dirty || document.querySelector("dialog[open]"))
+          setPendingSnapshot(next);
+        else applySnapshot(next);
+      } catch (caught) {
+        if (stopped || scopeRef.current !== scope) return;
+        if (unavailable(caught)) clearAccess();
+        else setLiveError(true);
       } finally {
-        setLoading(false);
+        inFlight = false;
+        if (!stopped) setRefreshing(false);
       }
-    }
-    void load();
-  }, [issueId]);
+    };
+    refreshLiveRef.current = () => void refresh();
+    const unsubscribe = subscribeToProjectChanges(
+      issue.projectId,
+      () => void refresh(),
+      () => {
+        clearAccess();
+        void apiRequest("/api/v1/session").catch(() => {});
+      },
+    );
+    return () => {
+      stopped = true;
+      controller.abort();
+      unsubscribe();
+      refreshLiveRef.current = () => {};
+    };
+  }, [
+    issue?.projectId,
+    issueId,
+    scope,
+    missing,
+    loading,
+    applySnapshot,
+    clearAccess,
+  ]);
 
   const currentQuestion = questions[questionIndex] ?? null;
   useEffect(() => {
     if (!currentQuestion) return;
+    if (preservedAnswerId.current === currentQuestion.id) {
+      preservedAnswerId.current = null;
+      return;
+    }
+    setAnswerDirty(false);
     if (currentQuestion.answerOptionId) {
       setAnswerKind("option");
       setAnswerOptionId(currentQuestion.answerOptionId);
@@ -204,6 +408,7 @@ export function IssueDetailRoute({
 
   async function updateStatus(status: IssueStatus) {
     if (!issue || issue.status === status) return;
+    mutationEpoch.current += 1;
     setSubmitting("status");
     setError(null);
     setNotice(null);
@@ -236,6 +441,7 @@ export function IssueDetailRoute({
           : "We couldn't save your changes. Check your connection and try again.",
       );
     } finally {
+      mutationEpoch.current += 1;
       setSubmitting(null);
     }
   }
@@ -252,6 +458,7 @@ export function IssueDetailRoute({
       return;
     }
 
+    mutationEpoch.current += 1;
     setSubmitting("question");
     setQuestionError(null);
     setNotice(null);
@@ -263,8 +470,16 @@ export function IssueDetailRoute({
         method: "PATCH",
         body: JSON.stringify(
           answerKind === "option"
-            ? { kind: "option", optionId: answerOptionId }
-            : { kind: "other", text: answerOtherText },
+            ? {
+                kind: "option",
+                optionId: answerOptionId,
+                expectedVersion: currentQuestion.version,
+              }
+            : {
+                kind: "other",
+                text: answerOtherText,
+                expectedVersion: currentQuestion.version,
+              },
         ),
       });
       const updatedQuestions = questions.map((question) =>
@@ -297,11 +512,14 @@ export function IssueDetailRoute({
       await refreshActivity();
     } catch (caught) {
       setQuestionError(
-        caught instanceof ApiError && caught.fields[0]?.message
-          ? caught.fields[0].message
-          : "We couldn't save this answer. Check your connection and try again.",
+        caught instanceof ApiError && caught.status === 409
+          ? caught.message
+          : caught instanceof ApiError && caught.fields[0]?.message
+            ? caught.fields[0].message
+            : "We couldn't save this answer. Check your connection and try again.",
       );
     } finally {
+      mutationEpoch.current += 1;
       setSubmitting(null);
     }
   }
@@ -309,6 +527,7 @@ export function IssueDetailRoute({
   async function addLink(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!issue) return;
+    mutationEpoch.current += 1;
     setSubmitting("link");
     setError(null);
     setNotice(null);
@@ -332,6 +551,7 @@ export function IssueDetailRoute({
           : "We couldn't save your changes. Check your connection and try again.",
       );
     } finally {
+      mutationEpoch.current += 1;
       setSubmitting(null);
     }
   }
@@ -339,6 +559,7 @@ export function IssueDetailRoute({
   async function addComment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!issue || !commentBody.trim()) return;
+    mutationEpoch.current += 1;
     setSubmitting("comment");
     setError(null);
     setNotice(null);
@@ -364,12 +585,14 @@ export function IssueDetailRoute({
           : "We couldn't add this comment. Check your connection and try again.",
       );
     } finally {
+      mutationEpoch.current += 1;
       setSubmitting(null);
     }
   }
 
   async function review(outcome: "accept" | "request") {
     if (!issue) return;
+    mutationEpoch.current += 1;
     setSubmitting(outcome);
     setError(null);
     setNotice(null);
@@ -378,7 +601,14 @@ export function IssueDetailRoute({
         `/api/v1/issues/${issue.id}/review/${outcome === "accept" ? "accept" : "request-changes"}`,
         {
           method: "POST",
-          body: JSON.stringify(outcome === "accept" ? {} : { reason }),
+          body: JSON.stringify({
+            ...(outcome === "request" ? { reason } : {}),
+            expectedVersion: issue.version,
+            questionVersions: questions.map(({ id, version }) => ({
+              id,
+              version,
+            })),
+          }),
         },
       );
       setIssue(response.issue);
@@ -391,16 +621,20 @@ export function IssueDetailRoute({
       await refreshActivity();
     } catch (caught) {
       setError(
-        caught instanceof ApiError && caught.fields[0]?.message
-          ? caught.fields[0].message
-          : "We couldn't save your changes. Check your connection and try again.",
+        caught instanceof ApiError && caught.status === 409
+          ? caught.message
+          : caught instanceof ApiError && caught.fields[0]?.message
+            ? caught.fields[0].message
+            : "We couldn't save your changes. Check your connection and try again.",
       );
     } finally {
+      mutationEpoch.current += 1;
       setSubmitting(null);
     }
   }
 
-  if (loading) return <Skeleton label="Loading issue…" />;
+  if (loading || (issue && issue.id !== issueId))
+    return <Skeleton label="Loading issue…" />;
   if (missing || !issue || !project) return <UnavailableRoute />;
   return (
     <div className="detail-column">
@@ -455,6 +689,96 @@ export function IssueDetailRoute({
       </div>
       {notice ? <StatusBanner>{notice}</StatusBanner> : null}
       {!online ? <OfflineBanner /> : null}
+      {pendingSnapshot ? (
+        <section
+          className="detail-panel form-stack"
+          aria-label="Remote changes"
+        >
+          <StatusBanner>
+            New changes are available. Your unsaved drafts have been kept.
+          </StatusBanner>
+          <Button
+            variant="secondary"
+            disabled={submitting !== null}
+            onClick={() => setComparing((value) => !value)}
+          >
+            {comparing ? "Hide comparison" : "Compare latest changes"}
+          </Button>
+          {comparing ? (
+            <div className="form-stack">
+              <h2>Latest saved version</h2>
+              <p>
+                {issueLabel(pendingSnapshot.issue)} ·{" "}
+                {statusLabels[pendingSnapshot.issue.status]}
+              </p>
+              <p className="description">
+                {pendingSnapshot.issue.description || "No description"}
+              </p>
+              <p>
+                {pendingSnapshot.comments.length} comments ·{" "}
+                {pendingSnapshot.questionSummary.answered} of{" "}
+                {pendingSnapshot.questionSummary.total} questions answered
+              </p>
+              {currentQuestion ? (
+                <p className="description">
+                  Saved answer: {(() => {
+                    const q = pendingSnapshot.questions.find(
+                      (item) => item.id === currentQuestion.id,
+                    );
+                    return q
+                      ? (q.answerOtherText ??
+                          q.options.find(
+                            (option) => option.id === q.answerOptionId,
+                          )?.label ??
+                          "Not answered")
+                      : "Question no longer available";
+                  })()}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+          {answerDirty &&
+          currentQuestion &&
+          !pendingSnapshot.questions.some(
+            (q) => q.id === currentQuestion.id,
+          ) ? (
+            <StatusBanner error>
+              This question is no longer available. Copy your draft before
+              reloading this page.
+            </StatusBanner>
+          ) : (
+            <Button
+              disabled={submitting !== null || !comparing}
+              onClick={() => {
+                preservedAnswerId.current = answerDirty
+                  ? (currentQuestion?.id ?? null)
+                  : null;
+                applySnapshot(pendingSnapshot);
+                setError(null);
+                setQuestionError(null);
+                setAnnouncement(
+                  "Latest changes loaded. Drafts preserved; review them before saving.",
+                );
+              }}
+            >
+              Load latest changes and keep my drafts
+            </Button>
+          )}
+        </section>
+      ) : null}
+      {liveError ? (
+        <StatusBanner error>
+          Live updates are temporarily unavailable. Your drafts are safe;
+          refresh to check for changes.
+        </StatusBanner>
+      ) : null}
+      <Button
+        variant="secondary"
+        disabled={refreshing || submitting !== null || !online}
+        onClick={() => refreshLiveRef.current()}
+      >
+        {refreshing ? "Checking for changes…" : "Check for updates"}
+      </Button>
       {error ? (
         <StatusBanner error focus>
           {error}
@@ -486,7 +810,7 @@ export function IssueDetailRoute({
               <Select
                 id="issue-status"
                 value={issue.status}
-                disabled={!online || submitting === "status"}
+                disabled={!online || submitting !== null}
                 aria-describedby={
                   questionSummary.unansweredBlocking > 0 &&
                   issue.status !== "ready_for_review"
@@ -584,7 +908,7 @@ export function IssueDetailRoute({
                 </div>
                 <fieldset
                   className="question-fieldset"
-                  disabled={submitting === "question"}
+                  disabled={submitting !== null}
                 >
                   <legend>{currentQuestion.prompt}</legend>
                   <div className="recommendation">
@@ -602,6 +926,7 @@ export function IssueDetailRoute({
                           answerOptionId === option.id
                         }
                         onChange={() => {
+                          setAnswerDirty(true);
                           setAnswerKind("option");
                           setAnswerOptionId(option.id);
                         }}
@@ -625,7 +950,10 @@ export function IssueDetailRoute({
                       name={`answer-${currentQuestion.id}`}
                       value="other"
                       checked={answerKind === "other"}
-                      onChange={() => setAnswerKind("other")}
+                      onChange={() => {
+                        setAnswerDirty(true);
+                        setAnswerKind("other");
+                      }}
                     />
                     <span>
                       <strong>Other</strong>
@@ -638,9 +966,10 @@ export function IssueDetailRoute({
                         required
                         maxLength={5000}
                         value={answerOtherText}
-                        onChange={(event) =>
-                          setAnswerOtherText(event.currentTarget.value)
-                        }
+                        onChange={(event) => {
+                          setAnswerDirty(true);
+                          setAnswerOtherText(event.currentTarget.value);
+                        }}
                       />
                     </Field>
                   ) : null}
@@ -653,7 +982,7 @@ export function IssueDetailRoute({
                 <div className="inline-actions">
                   <Button
                     type="submit"
-                    disabled={!online || submitting === "question"}
+                    disabled={!online || submitting !== null}
                   >
                     {submitting === "question"
                       ? "Saving…"
@@ -703,6 +1032,7 @@ export function IssueDetailRoute({
               <Field label="Add comment" htmlFor="comment-body" required>
                 <TextArea
                   id="comment-body"
+                  disabled={submitting !== null}
                   required
                   maxLength={20000}
                   value={commentBody}
@@ -711,10 +1041,7 @@ export function IssueDetailRoute({
                   }
                 />
               </Field>
-              <Button
-                type="submit"
-                disabled={!online || submitting === "comment"}
-              >
+              <Button type="submit" disabled={!online || submitting !== null}>
                 {submitting === "comment" ? "Adding…" : "Add comment"}
               </Button>
             </form>
@@ -777,6 +1104,7 @@ export function IssueDetailRoute({
               <Field label="Link type" htmlFor="link-type">
                 <Select
                   id="link-type"
+                  disabled={submitting !== null}
                   value={linkType}
                   onChange={(event) =>
                     setLinkType(event.currentTarget.value as CodeLinkType)
@@ -792,6 +1120,7 @@ export function IssueDetailRoute({
               <Field label="URL" htmlFor="link-url" required>
                 <TextInput
                   id="link-url"
+                  disabled={submitting !== null}
                   className="mono"
                   type="url"
                   required
@@ -800,7 +1129,7 @@ export function IssueDetailRoute({
                   onChange={(event) => setLinkUrl(event.currentTarget.value)}
                 />
               </Field>
-              <Button type="submit" disabled={!online || submitting === "link"}>
+              <Button type="submit" disabled={!online || submitting !== null}>
                 {submitting === "link" ? "Adding…" : "Add code link"}
               </Button>
             </form>
@@ -844,6 +1173,7 @@ export function IssueDetailRoute({
                   <Field label="Reason" htmlFor="review-reason" required>
                     <TextArea
                       id="review-reason"
+                      disabled={submitting !== null}
                       required
                       maxLength={1000}
                       value={reason}
@@ -853,7 +1183,7 @@ export function IssueDetailRoute({
                   <div className="inline-actions">
                     <Button
                       type="submit"
-                      disabled={!online || submitting === "request"}
+                      disabled={!online || submitting !== null}
                     >
                       {submitting === "request"
                         ? "Requesting…"
@@ -862,6 +1192,7 @@ export function IssueDetailRoute({
                     <Button
                       type="button"
                       variant="ghost"
+                      disabled={submitting !== null}
                       onClick={() => {
                         setRequestingChanges(false);
                         setReason("");

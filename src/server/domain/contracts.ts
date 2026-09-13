@@ -208,18 +208,32 @@ export const createIssueQuestionSchema = z
   });
 
 export const answerIssueQuestionSchema = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("option"), optionId: z.uuid() }).strict(),
+  z
+    .object({
+      kind: z.literal("option"),
+      optionId: z.uuid(),
+      expectedVersion: z.number().int().positive().optional(),
+    })
+    .strict(),
   z
     .object({
       kind: z.literal("other"),
       text: z.string().trim().min(1).max(5_000),
+      expectedVersion: z.number().int().positive().optional(),
     })
     .strict(),
 ]);
 
-export const requestChangesSchema = z
-  .object({ reason: z.string().trim().min(1).max(1_000) })
+export const reviewIssueSchema = z
+  .object({
+    expectedVersion: z.number().int().positive().optional(),
+    questionVersions: questionVersionsSchema.optional(),
+  })
   .strict();
+export type ReviewIssueInput = z.infer<typeof reviewIssueSchema>;
+export const requestChangesSchema = reviewIssueSchema.extend({
+  reason: z.string().trim().min(1).max(1_000),
+});
 
 export type MutationContext = z.infer<typeof mutationContextSchema>;
 export type CreateProjectInput = z.input<typeof createProjectSchema>;

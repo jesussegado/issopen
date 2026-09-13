@@ -12,6 +12,7 @@ import {
 import { ApiError, apiRequest, unavailable } from "../lib/api.js";
 import { navigate, useLocation } from "../lib/navigation.js";
 import { useOnlineStatus } from "../lib/online.js";
+import { subscribeToProjectChanges } from "../lib/project-live.js";
 import type { Epic, Issue, IssueStatus, Project } from "../types.js";
 import {
   epicLabel,
@@ -172,12 +173,11 @@ export function BoardRoute({
         if (
           !mounted.current ||
           requestRoute !== activeBoardRoute.current ||
-          request < lastAppliedBoardRequest.current ||
-          !initial
+          request < lastAppliedBoardRequest.current
         )
           return;
         if (unavailable(caught)) setMissing(true);
-        else
+        else if (initial)
           setError(
             "We couldn't load this board. Check your connection and try again.",
           );
@@ -199,26 +199,14 @@ export function BoardRoute({
   }, []);
 
   useEffect(() => {
-    const refreshVisibleBoard = () => {
-      if (document.visibilityState === "visible") void refreshBoard();
-    };
-    const stream =
-      typeof EventSource === "undefined"
-        ? null
-        : new EventSource(`/api/v1/projects/${projectId}/board/events`);
-    stream?.addEventListener("board", refreshVisibleBoard);
-    window.addEventListener("focus", refreshVisibleBoard);
-    window.addEventListener("online", refreshVisibleBoard);
-    document.addEventListener("visibilitychange", refreshVisibleBoard);
-    const reconciliation = window.setInterval(refreshVisibleBoard, 30_000);
-    return () => {
-      stream?.removeEventListener("board", refreshVisibleBoard);
-      stream?.close();
-      window.removeEventListener("focus", refreshVisibleBoard);
-      window.removeEventListener("online", refreshVisibleBoard);
-      document.removeEventListener("visibilitychange", refreshVisibleBoard);
-      window.clearInterval(reconciliation);
-    };
+    return subscribeToProjectChanges(
+      projectId,
+      () => void refreshBoard(),
+      () => {
+        setMissing(true);
+        void refreshBoard(true);
+      },
+    );
   }, [projectId, refreshBoard]);
 
   useEffect(() => {

@@ -29,6 +29,14 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+Epic 3, incrementos 100/104: cuenta con listado/revocación confirmada de
+sesiones web propias, separado de instalaciones Chrome; detalle con
+reconciliación SSE, comparación explícita conservando borradores y guards de
+versión en respuestas/revisiones. Los streams revalidan sesión/acceso en cada
+tick. Contratos en [sesiones](docs/account-sessions.md) y
+[detalle en vivo](docs/detail-live.md). No confundir esta entrega con la
+migración multiworkspace 108 ni los permisos por proyecto 95, aún pendientes.
+
 - Epic 3 entra en implementación por petición explícita tras responder sus
   20 preguntas (v2, 2026-09-13). Contrato 94: Owner/Member por workspace,
   varios workspaces y permisos de lectura/edición por proyecto (95), sin signup

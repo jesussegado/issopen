@@ -713,6 +713,164 @@ describe("protected tracker REST API", () => {
     await reader.cancel();
   });
 
+  it.each(["membership", "session"])(
+    "closes an open stream after %s access is revoked",
+    async (kind) => {
+      const p = await createProjectFixture();
+      const memberCookie = await createMemberSession([p.id]);
+      const response = await requestWithCookie(
+        memberCookie,
+        `/api/v1/projects/${p.id}/board/events`,
+      );
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error("SSE body missing");
+      const decoder = new TextDecoder();
+      expect(decoder.decode((await reader.read()).value)).toContain(
+        "event: board",
+      );
+      if (kind === "membership")
+        await connection.db
+          .delete(projectMembership)
+          .where(eq(projectMembership.projectId, p.id));
+      else
+        await auth.api.signOut({
+          headers: new Headers({ Cookie: memberCookie, Origin: baseUrl }),
+        });
+      await createIssueFixture(p.id);
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      try {
+        const next = await Promise.race([
+          reader.read(),
+          new Promise<never>((_, reject) => {
+            timer = setTimeout(
+              () => reject(new Error("Revoked stream did not close")),
+              4000,
+            );
+          }),
+        ]);
+        const event = decoder.decode(next.value);
+        expect(event).toContain("event: access-lost");
+        expect(event).not.toContain("event: board");
+        expect((await reader.read()).done).toBe(true);
+        expect(
+          (
+            await requestWithCookie(
+              memberCookie,
+              `/api/v1/projects/${p.id}/board`,
+            )
+          ).status,
+        ).toBe(kind === "membership" ? 404 : 401);
+      } finally {
+        clearTimeout(timer);
+        await reader.cancel();
+      }
+    },
+  );
+
+  it("rejects stale answer and review decisions without recording partial activity", async () => {
+    const p = await createProjectFixture();
+    const memberCookie = await createMemberSession([p.id]);
+    const i = await createIssueFixture(p.id, "ready_for_review");
+    const created = await authenticatedRequest(
+      `/api/v1/issues/${i.id}/questions`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          prompt: "Release destination?",
+          recommendation: "Review the choice",
+          options: [{ label: "First" }, { label: "Second" }],
+          recommendedOptionIndex: 0,
+          blocking: false,
+        }),
+      },
+    );
+    const q = (
+      await body<{ question: { id: string; version: number } }>(created)
+    ).question;
+    const answer = {
+      kind: "other",
+      text: "Human confirmed",
+      expectedVersion: q.version,
+    };
+    const answerPath = `/api/v1/issues/${i.id}/questions/${q.id}/answer`;
+    expect(
+      (
+        await requestWithCookie(memberCookie, answerPath, {
+          method: "PATCH",
+          body: JSON.stringify(answer),
+        })
+      ).status,
+    ).toBe(200);
+    const before = await connection.db
+      .select({ value: count() })
+      .from(activityEvent);
+    expect(
+      (
+        await authenticatedRequest(answerPath, {
+          method: "PATCH",
+          body: JSON.stringify({ ...answer, text: "Stale overwrite" }),
+        })
+      ).status,
+    ).toBe(409);
+    const detail = await body<{
+      issue: { version: number };
+      questions: Array<{
+        id: string;
+        version: number;
+        answerOtherText: string;
+      }>;
+    }>(await authenticatedRequest(`/api/v1/issues/${i.id}`));
+    expect(detail.questions[0]?.answerOtherText).toBe("Human confirmed");
+    const guard = {
+      expectedVersion: detail.issue.version,
+      questionVersions: [{ id: q.id, version: q.version }],
+    };
+    expect(
+      (
+        await requestWithCookie(
+          memberCookie,
+          `/api/v1/issues/${i.id}/review/accept`,
+          {
+            method: "POST",
+            body: JSON.stringify(guard),
+          },
+        )
+      ).status,
+    ).toBe(409);
+    expect(
+      (
+        await authenticatedRequest(
+          `/api/v1/issues/${i.id}/review/request-changes`,
+          {
+            method: "POST",
+            body: JSON.stringify({
+              ...guard,
+              expectedVersion: detail.issue.version + 1,
+              reason: "Stale review",
+            }),
+          },
+        )
+      ).status,
+    ).toBe(409);
+    expect(
+      await connection.db.select({ value: count() }).from(activityEvent),
+    ).toEqual(before);
+    expect(
+      (
+        await authenticatedRequest(`/api/v1/issues/${i.id}/review/accept`, {
+          method: "POST",
+          body: JSON.stringify({
+            expectedVersion: detail.issue.version,
+            questionVersions: detail.questions.map(({ id, version }) => ({
+              id,
+              version,
+            })),
+          }),
+        })
+      ).status,
+    ).toBe(200);
+  });
+
   it("only allows authenticated same-origin owner deletion and keeps repeated DELETE safe", async () => {
     const p = await createProjectFixture();
     const e = await createEpicFixture(p.id);

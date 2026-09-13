@@ -2,7 +2,7 @@ import { and, count, eq, max } from "drizzle-orm";
 import { type Context, Hono } from "hono";
 import { streamSSE } from "hono/streaming";
 import { z } from "zod";
-import type { OwnerSession } from "../auth.js";
+import type { IssopenAuth, OwnerSession } from "../auth.js";
 import type { Database } from "../db/client.js";
 import { activityEvent, issueStatusValues } from "../db/schema.js";
 import {
@@ -18,17 +18,20 @@ import {
   epicArchiveFilterSchema,
   type MutationContext,
   requestChangesSchema,
+  reviewIssueSchema,
   TrackerService,
   updateEpicSchema,
   updateIssueSchema,
   updateProjectSchema,
 } from "../domain/index.js";
 import {
+  canAccessProject,
   type HumanAccess,
   humanMutationContext,
   requireHumanAccess,
   requireProjectAccess,
   requireWorkspaceOwner,
+  resolveHumanAccess,
 } from "../human-access.js";
 
 type TrackerBindings = {
@@ -40,10 +43,10 @@ type TrackerBindings = {
 
 type TrackerRouterDependencies = {
   db: Database;
+  auth: IssopenAuth;
 };
 
 const identifierSchema = z.uuid();
-const emptyBodySchema = z.object({}).strict();
 const createEpicBodySchema = createEpicSchema.omit({ projectId: true });
 const createIssueBodySchema = createIssueSchema.omit({ projectId: true });
 const epicFilterSchema = z.union([z.uuid(), z.literal("unassigned")]);
@@ -162,7 +165,7 @@ function humanContext(
   return { ...humanMutationContext(access), access };
 }
 
-export function createTrackerRouter({ db }: TrackerRouterDependencies) {
+export function createTrackerRouter({ db, auth }: TrackerRouterDependencies) {
   const router = new Hono<TrackerBindings>();
   const tracker = new TrackerService(db);
 
@@ -385,6 +388,24 @@ export function createTrackerRouter({ db }: TrackerRouterDependencies) {
       let cursor = context.req.header("Last-Event-ID") ?? "";
       let quietTicks = 0;
       while (!stream.aborted) {
+        // An open connection is not a durable authorization grant.
+        const session = await auth.api
+          .getSession({
+            headers: context.req.raw.headers,
+            query: { disableCookieCache: true, disableRefresh: true },
+          })
+          .catch(() => null);
+        const access = session
+          ? await resolveHumanAccess(db, session.user)
+          : null;
+        if (
+          !access ||
+          access.workspaceId !== mutationContext.workspaceId ||
+          !canAccessProject(access, projectId)
+        ) {
+          await stream.writeSSE({ event: "access-lost", data: "unavailable" });
+          break;
+        }
         const current = await projectActivityCursor(
           db,
           mutationContext.workspaceId,
@@ -550,9 +571,9 @@ export function createTrackerRouter({ db }: TrackerRouterDependencies) {
       issueId,
     );
     requireProjectAccess(mutationContext.access, foundIssue.projectId);
-    await parseBody(context, emptyBodySchema);
+    const input = await parseBody(context, reviewIssueSchema);
     return context.json({
-      issue: await tracker.acceptResult(mutationContext, issueId),
+      issue: await tracker.acceptResult(mutationContext, issueId, input),
     });
   });
 

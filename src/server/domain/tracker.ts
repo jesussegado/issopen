@@ -44,7 +44,9 @@ import {
   type EpicArchiveFilter,
   type MutationContext,
   mutationContextSchema,
+  type ReviewIssueInput,
   requestChangesSchema,
+  reviewIssueSchema,
   type UpdateEpicInput,
   type UpdateIssueInput,
   type UpdateProjectInput,
@@ -1111,6 +1113,16 @@ export class TrackerService {
       if (!current) throw new DomainError("not_found", "Question not found");
 
       if (
+        answer.expectedVersion !== undefined &&
+        current.version !== answer.expectedVersion
+      ) {
+        throw new DomainError(
+          "conflict",
+          "This answer changed. Compare the latest response before saving your draft.",
+        );
+      }
+
+      if (
         answer.kind === "option" &&
         !current.options.some((option) => option.id === answer.optionId)
       ) {
@@ -1600,21 +1612,31 @@ export class TrackerService {
     });
   }
 
-  async acceptResult(contextInput: MutationContext, issueId: string) {
+  async acceptResult(
+    contextInput: MutationContext,
+    issueId: string,
+    input: ReviewIssueInput = {},
+  ) {
     const context = parseInput(mutationContextSchema, contextInput);
     requireHuman(context);
-    return this.review(context, issueId, "accepted");
+    return this.review(
+      context,
+      issueId,
+      "accepted",
+      undefined,
+      parseInput(reviewIssueSchema, input),
+    );
   }
 
   async requestChanges(
     contextInput: MutationContext,
     issueId: string,
-    input: { reason: string },
+    input: { reason: string } & ReviewIssueInput,
   ) {
     const context = parseInput(mutationContextSchema, contextInput);
     requireHuman(context);
-    const { reason } = parseInput(requestChangesSchema, input);
-    return this.review(context, issueId, "changes_requested", reason);
+    const { reason, ...guard } = parseInput(requestChangesSchema, input);
+    return this.review(context, issueId, "changes_requested", reason, guard);
   }
 
   async listActivity(workspaceId: string, issueId: string) {
@@ -1678,6 +1700,7 @@ export class TrackerService {
     issueId: string,
     outcome: "accepted" | "changes_requested",
     reason?: string,
+    guard: ReviewIssueInput = {},
   ) {
     return this.transaction(async (tx) => {
       const [current] = await tx
@@ -1698,6 +1721,39 @@ export class TrackerService {
           "conflict",
           "Only work ready for review can receive a review decision",
         );
+      }
+
+      if (
+        guard.expectedVersion !== undefined &&
+        current.version !== guard.expectedVersion
+      ) {
+        throw new DomainError(
+          "conflict",
+          "This ticket changed. Compare the latest version before reviewing.",
+        );
+      }
+      if (guard.questionVersions !== undefined) {
+        const actual = await tx
+          .select({ id: issueQuestion.id, version: issueQuestion.version })
+          .from(issueQuestion)
+          .where(
+            and(
+              eq(issueQuestion.workspaceId, context.workspaceId),
+              eq(issueQuestion.issueId, issueId),
+            ),
+          );
+        const expected = new Map(
+          guard.questionVersions.map((item) => [item.id, item.version]),
+        );
+        if (
+          actual.length !== expected.size ||
+          actual.some((item) => expected.get(item.id) !== item.version)
+        ) {
+          throw new DomainError(
+            "conflict",
+            "This ticket's questions changed. Compare the latest decisions before reviewing.",
+          );
+        }
       }
 
       const status = outcome === "accepted" ? "done" : "in_progress";

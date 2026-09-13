@@ -1208,6 +1208,7 @@ describe("tracker web routes", () => {
             expect(submitted).toEqual({
               kind: "option",
               optionId: firstQuestion.options[0]?.id,
+              expectedVersion: 1,
             });
             return json({
               question: {
@@ -1227,6 +1228,7 @@ describe("tracker web routes", () => {
           expect(submitted).toEqual({
             kind: "other",
             text: "Use a progressive web app.",
+            expectedVersion: 2,
           });
           return json({
             question: {
