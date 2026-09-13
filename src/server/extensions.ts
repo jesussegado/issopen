@@ -14,9 +14,13 @@ import {
   oauthRefreshToken,
   oauthResource,
   user,
-  workspace,
 } from "./db/schema.js";
 import { DomainError, TrackerService } from "./domain/index.js";
+import {
+  type HumanAccess,
+  requireHumanAccess,
+  resolveHumanAccess,
+} from "./human-access.js";
 
 export const extensionScopes = [
   "extension:read",
@@ -44,6 +48,9 @@ export function extensionResource(base: string) {
 export function extensionClientId(id: string) {
   return `${marker}-${id}`;
 }
+export function isExtensionClientId(id: string | null) {
+  return Boolean(id?.startsWith(`${marker}-`));
+}
 export function extensionRedirect(extensionId: string) {
   return `https://${extensionId}.chromiumapp.org/oauth`;
 }
@@ -58,15 +65,8 @@ function activeClient(client: typeof oauthClient.$inferSelect | undefined) {
     : null;
 }
 
-// Restrict only our first-party installation clients, never the existing MCP clients.
-export async function extensionOAuthGuard(request: Request, db: Database) {
+export async function oauthClientIdFromRequest(request: Request) {
   const url = new URL(request.url);
-  if (
-    !["/api/auth/oauth2/token", "/api/auth/oauth2/authorize"].includes(
-      url.pathname,
-    )
-  )
-    return null;
   const input: unknown =
     request.method === "GET"
       ? Object.fromEntries(url.searchParams)
@@ -76,9 +76,30 @@ export async function extensionOAuthGuard(request: Request, db: Database) {
             .json()
             .catch(() => null)
         : Object.fromEntries(new URLSearchParams(await request.clone().text()));
-  const id = z.object({ client_id: z.string() }).safeParse(input)
-    .data?.client_id;
-  if (!id?.startsWith(`${marker}-`)) return null;
+  const parsed = z
+    .object({
+      client_id: z.string().optional(),
+      oauth_query: z.string().optional(),
+    })
+    .safeParse(input);
+  if (!parsed.success) return null;
+  if (parsed.data.client_id) return parsed.data.client_id;
+  return parsed.data.oauth_query
+    ? new URLSearchParams(parsed.data.oauth_query).get("client_id")
+    : null;
+}
+
+// Restrict only our first-party installation clients, never the existing MCP clients.
+export async function extensionOAuthGuard(request: Request, db: Database) {
+  const url = new URL(request.url);
+  if (
+    !["/api/auth/oauth2/token", "/api/auth/oauth2/authorize"].includes(
+      url.pathname,
+    )
+  )
+    return null;
+  const id = await oauthClientIdFromRequest(request);
+  if (!id || !isExtensionClientId(id)) return null;
   const [client] = await db
     .select()
     .from(oauthClient)
@@ -118,9 +139,15 @@ async function revoke(db: Database, clientId: string, ownerId: string) {
 }
 
 export function createExtensionOwnerRouter(db: Database, auth: IssopenAuth) {
-  const router = new Hono<{ Variables: { ownerSession: OwnerSession } }>();
+  const router = new Hono<{
+    Variables: {
+      ownerSession: OwnerSession;
+      humanAccess: HumanAccess | null;
+    };
+  }>();
   const resource = extensionResource(String(auth.options.baseURL));
   router.get("/extensions", async (c) => {
+    requireHumanAccess(c.get("humanAccess"));
     const rows = await db
       .select()
       .from(oauthClient)
@@ -142,6 +169,7 @@ export function createExtensionOwnerRouter(db: Database, auth: IssopenAuth) {
     });
   });
   router.post("/extensions/link", async (c) => {
+    requireHumanAccess(c.get("humanAccess"));
     const parsed = extensionLinkSchema.safeParse(
       await c.req.json().catch(() => null),
     );
@@ -248,6 +276,7 @@ export function createExtensionOwnerRouter(db: Database, auth: IssopenAuth) {
     return c.json({ authorizeUrl: authorize.toString() });
   });
   router.post("/extensions/:id/revoke", async (c) => {
+    requireHumanAccess(c.get("humanAccess"));
     await revoke(db, c.req.param("id"), c.get("ownerSession").user.id);
     return c.json({ revoked: true });
   });
@@ -298,16 +327,20 @@ export function createExtensionRouter(
       const origin = c.req.header("Origin");
       if (origin && origin !== `chrome-extension://${metadata.extensionId}`)
         return c.json({ error: "Origin is not trusted" }, 403);
-      const [space] = await db
-        .select({ id: workspace.id })
-        .from(workspace)
-        .where(eq(workspace.ownerId, payload.sub))
+      const [person] = await db
+        .select({ id: user.id, name: user.name, email: user.email })
+        .from(user)
+        .where(eq(user.id, payload.sub))
         .limit(1);
-      if (!space) return c.json({ error: "Workspace unavailable" }, 403);
+      if (!person) throw new Error("User unavailable");
+      const access = await resolveHumanAccess(db, person);
+      if (!access) return c.json({ error: "Workspace unavailable" }, 403);
       c.set("ownerId", payload.sub);
       c.set("clientId", payload.client_id);
       c.set("expiresAt", metadata.expiresAt);
-      c.set("workspaceId", space.id);
+      c.set("workspaceId", access.workspaceId);
+      c.set("workspaceRole", access.role);
+      c.set("projectIds", access.projectIds);
       c.set(
         "canWrite",
         payload.scope.split(" ").includes("extension:write") &&
@@ -342,7 +375,13 @@ export function createExtensionRouter(
     c.json({
       projects: (
         await new TrackerService(db).listProjects(c.get("workspaceId"))
-      ).map((p) => ({ id: p.id, name: p.name })),
+      )
+        .filter(
+          (project) =>
+            c.get("projectIds") === null ||
+            c.get("projectIds")?.includes(project.id),
+        )
+        .map((project) => ({ id: project.id, name: project.name })),
     }),
   );
   router.post("/disconnect", async (c) => {

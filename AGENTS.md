@@ -181,10 +181,11 @@ haya conflicto, usa este orden:
   y la web responsive del tracker, más identidades agenticas y Remote MCP.
 - La inicialización GSD está completa y el propietario aprobó un roadmap de
   nueve fases con los 89 requisitos v1 asignados exactamente una vez.
-- La posición actual es la fase 1, `Private Single-Owner Dogfooding MVP`; todos
-  los gates locales están implementados y el operador autorizó el endpoint
-  productivo `https://issopen.serviciosegado.com` para la aceptación real de
-  ChatGPT Work.
+- La fase 1 nació como `Private Single-Owner Dogfooding MVP`, pero el Epic 7
+  evoluciona esa base al piloto externo Owner/Member. `src/server/human-access.ts`
+  es la política humana central: Owner administra y Member sólo trabaja en los
+  proyectos asignados. La matriz, migración y rollback están en
+  [docs/workspace-memberships.md](docs/workspace-memberships.md).
 - El primer MVP aceptable termina en la propia fase 1: Docker Compose simple,
   web responsive, tablero tipo Trello, Remote MCP para ChatGPT, identidad
   separada para Codex y revisión humana de una mejora real de Issopen.
@@ -324,7 +325,8 @@ migraciones SQL viven en `drizzle/`; `scripts/owner.ts` es la única vía de
 bootstrap y recovery. El plan `01-02` añade `src/server/domain/` como única
 fuente de mutaciones transaccionales de proyectos, issues, claims, enlaces de
 código, revisión y actividad append-only; `src/server/http/` expone esas mismas
-operaciones a la sesión owner con aislamiento por workspace. MCP y agentes
+operaciones a sesiones humanas con aislamiento por workspace/proyecto y
+denegación por defecto; las operaciones administrativas son Owner-only. MCP y agentes
 llegan en planes posteriores y deben reutilizar esos servicios, no duplicar
 reglas de dominio ni aceptar actor, origen, fecha o diff desde el cliente.
 
@@ -472,7 +474,9 @@ candidato ni iniciar 44. No reabrir ni retomar automáticamente las pruebas de 4
 - No captures contraseñas, valores de formularios sensibles, almacenamiento
   del navegador, cabeceras de autorización ni el DOM completo.
 - Todo contexto DOM debe sanearse y limitarse antes de salir del navegador.
-- La autorización se comprueba en servidor y debe aislar workspaces.
+- La autorización se comprueba en servidor y debe aislar workspaces y proyectos.
+  Toda nueva ruta humana reutiliza `HumanAccess`: no se infieren permisos desde
+  enlaces ocultos ni desde el rol mostrado por la SPA.
 - Los PAT se generan con 256 bits, se muestran una sola vez y se almacenan con
   Argon2id, fingerprint seguro, scopes, expiración, último uso y revocación.
 - Los permisos persistidos de una identidad sólo pueden reducirse. La siguiente

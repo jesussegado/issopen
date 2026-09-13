@@ -197,7 +197,7 @@ describe("tracker web routes", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
     const user = userEvent.setup();
-    render(<BoardRoute projectId={project.id} />);
+    render(<BoardRoute projectId={project.id} canManageProject />);
 
     expect(
       await screen.findByRole("heading", { name: "Private tracker" }),
@@ -294,7 +294,9 @@ describe("tracker web routes", () => {
       }),
     );
     const user = userEvent.setup();
-    const rendered = render(<BoardRoute projectId={project.id} />);
+    const rendered = render(
+      <BoardRoute projectId={project.id} canManageProject />,
+    );
 
     await screen.findByRole("link", { name: `1-${issue.title}` });
     expect(FakeEventSource.current?.url).toBe(
@@ -347,7 +349,7 @@ describe("tracker web routes", () => {
       }),
     );
     const user = userEvent.setup();
-    render(<BoardRoute projectId={project.id} />);
+    render(<BoardRoute projectId={project.id} canManageProject />);
 
     const title = await screen.findByRole("link", {
       name: `1-${issue.title}`,
@@ -407,7 +409,7 @@ describe("tracker web routes", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
     const user = userEvent.setup();
-    render(<BoardRoute projectId={project.id} />);
+    render(<BoardRoute projectId={project.id} canManageProject />);
 
     await screen.findByRole("heading", { name: project.name });
     expect(
@@ -482,7 +484,7 @@ describe("tracker web routes", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
     const user = userEvent.setup();
-    render(<BoardRoute projectId={project.id} />);
+    render(<BoardRoute projectId={project.id} canManageProject />);
 
     await screen.findByRole("heading", { name: project.name });
     const epicOverview = screen.getByRole("region", { name: "Epics" });
@@ -540,7 +542,7 @@ describe("tracker web routes", () => {
       }),
     );
 
-    render(<BoardRoute projectId={project.id} />);
+    render(<BoardRoute projectId={project.id} canManageProject />);
 
     const epicOverview = await screen.findByRole("region", { name: "Epics" });
     expect(
@@ -800,7 +802,7 @@ describe("tracker web routes", () => {
       }),
     );
     const user = userEvent.setup();
-    render(<BoardRoute projectId={project.id} />);
+    render(<BoardRoute projectId={project.id} canManageProject />);
 
     expect(await screen.findByText("⚠ 1 unanswered")).toBeInTheDocument();
     expect(screen.getByText(`2-${clear.title}`)).toBeInTheDocument();

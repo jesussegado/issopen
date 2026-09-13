@@ -346,6 +346,36 @@ export const workspace = pgTable(
   (table) => [index("workspace_owner_id_idx").on(table.ownerId)],
 );
 
+export const workspaceRoleValues = ["owner", "member"] as const;
+export const workspaceRole = pgEnum("workspace_role", workspaceRoleValues);
+
+export const workspaceMembership = pgTable(
+  "workspace_membership",
+  {
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => workspace.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    role: workspaceRole("role").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.workspaceId, table.userId] }),
+    uniqueIndex("workspace_membership_user_uidx").on(table.userId),
+    index("workspace_membership_workspace_role_idx").on(
+      table.workspaceId,
+      table.role,
+    ),
+  ],
+);
+
 export const issueStatusValues = [
   "backlog",
   "ready",
@@ -539,6 +569,73 @@ export const project = pgTable(
     check("project_next_issue_number_check", sql`${table.nextIssueNumber} > 0`),
     check("project_next_epic_number_check", sql`${table.nextEpicNumber} > 0`),
     check("project_version_check", sql`${table.version} > 0`),
+  ],
+);
+
+export const projectMembership = pgTable(
+  "project_membership",
+  {
+    workspaceId: text("workspace_id").notNull(),
+    projectId: text("project_id").notNull(),
+    userId: text("user_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.projectId, table.userId] }),
+    foreignKey({
+      columns: [table.workspaceId, table.userId],
+      foreignColumns: [
+        workspaceMembership.workspaceId,
+        workspaceMembership.userId,
+      ],
+      name: "project_membership_workspace_member_fk",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.projectId, table.workspaceId],
+      foreignColumns: [project.id, project.workspaceId],
+      name: "project_membership_project_workspace_fk",
+    }).onDelete("cascade"),
+    index("project_membership_workspace_user_idx").on(
+      table.workspaceId,
+      table.userId,
+    ),
+  ],
+);
+
+export const membershipEvent = pgTable(
+  "membership_event",
+  {
+    id: text("id").primaryKey(),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => workspace.id, { onDelete: "restrict" }),
+    subjectUserId: text("subject_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    actorUserId: text("actor_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    projectId: text("project_id").references(() => project.id, {
+      onDelete: "restrict",
+    }),
+    type: varchar("type", { length: 64 }).notNull(),
+    previousRole: workspaceRole("previous_role"),
+    nextRole: workspaceRole("next_role"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("membership_event_workspace_created_idx").on(
+      table.workspaceId,
+      table.createdAt,
+    ),
+    index("membership_event_subject_created_idx").on(
+      table.subjectUserId,
+      table.createdAt,
+    ),
   ],
 );
 
@@ -825,6 +922,8 @@ export const activityEvent = pgTable(
 export const userRelations = relations(user, ({ many, one }) => ({
   accounts: many(account),
   sessions: many(session),
+  memberships: many(workspaceMembership),
+  projectMemberships: many(projectMembership),
   ownedInstance: one(instanceOwner),
   workspace: one(workspace),
 }));
@@ -841,9 +940,26 @@ export const ownerRelations = relations(instanceOwner, ({ one }) => ({
   user: one(user, { fields: [instanceOwner.userId], references: [user.id] }),
 }));
 
-export const workspaceRelations = relations(workspace, ({ one }) => ({
+export const workspaceRelations = relations(workspace, ({ many, one }) => ({
   owner: one(user, { fields: [workspace.ownerId], references: [user.id] }),
+  memberships: many(workspaceMembership),
+  membershipEvents: many(membershipEvent),
 }));
+
+export const workspaceMembershipRelations = relations(
+  workspaceMembership,
+  ({ many, one }) => ({
+    workspace: one(workspace, {
+      fields: [workspaceMembership.workspaceId],
+      references: [workspace.id],
+    }),
+    user: one(user, {
+      fields: [workspaceMembership.userId],
+      references: [user.id],
+    }),
+    projects: many(projectMembership),
+  }),
+);
 
 export const agentIdentityRelations = relations(
   agentIdentity,
@@ -895,7 +1011,36 @@ export const projectRelations = relations(project, ({ many, one }) => ({
   epics: many(epic),
   issues: many(issue),
   activity: many(activityEvent),
+  memberships: many(projectMembership),
 }));
+
+export const projectMembershipRelations = relations(
+  projectMembership,
+  ({ one }) => ({
+    project: one(project, {
+      fields: [projectMembership.projectId],
+      references: [project.id],
+    }),
+    workspaceMembership: one(workspaceMembership, {
+      fields: [projectMembership.workspaceId, projectMembership.userId],
+      references: [workspaceMembership.workspaceId, workspaceMembership.userId],
+    }),
+  }),
+);
+
+export const membershipEventRelations = relations(
+  membershipEvent,
+  ({ one }) => ({
+    workspace: one(workspace, {
+      fields: [membershipEvent.workspaceId],
+      references: [workspace.id],
+    }),
+    project: one(project, {
+      fields: [membershipEvent.projectId],
+      references: [project.id],
+    }),
+  }),
+);
 
 export const epicRelations = relations(epic, ({ many, one }) => ({
   workspace: one(workspace, {

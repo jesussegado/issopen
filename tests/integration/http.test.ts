@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import {
   PostgreSqlContainer,
   type StartedPostgreSqlContainer,
@@ -15,13 +16,16 @@ import {
 } from "../../src/server/db/client.js";
 import { migrateDatabase } from "../../src/server/db/migrate.js";
 import {
+  account,
   activityEvent,
   issue,
   issueComment,
   issueQuestion,
   project,
+  projectMembership,
   user,
   workspace,
+  workspaceMembership,
 } from "../../src/server/db/schema.js";
 import {
   AgentService,
@@ -64,12 +68,78 @@ async function authenticatedRequest(path: string, init: RequestInit = {}) {
   return app.request(path, { ...init, headers });
 }
 
-async function createProjectFixture() {
+async function requestWithCookie(
+  sessionCookie: string,
+  path: string,
+  init: RequestInit = {},
+) {
+  const headers = new Headers(init.headers);
+  headers.set("Cookie", sessionCookie);
+  headers.set("Origin", baseUrl);
+  if (init.body !== undefined) headers.set("Content-Type", "application/json");
+  return app.request(path, { ...init, headers });
+}
+
+async function createMemberSession(projectIds: string[], suffix = "member") {
+  const [personalWorkspace] = await connection.db
+    .select({ id: workspace.id })
+    .from(workspace)
+    .limit(1);
+  if (!personalWorkspace) throw new Error("Expected workspace fixture");
+  const member = {
+    id: randomUUID(),
+    email: `${suffix}-http@example.test`,
+    password: "synthetic-http-member-password-1",
+    name: `HTTP ${suffix}`,
+  };
+  const password = await (await auth.$context).password.hash(member.password);
+  await connection.db.transaction(async (tx) => {
+    await tx.insert(user).values({
+      id: member.id,
+      email: member.email,
+      name: member.name,
+      emailVerified: true,
+    });
+    await tx.insert(account).values({
+      id: randomUUID(),
+      issuer: "local:credential",
+      accountId: member.id,
+      providerId: "credential",
+      userId: member.id,
+      password,
+    });
+    await tx.insert(workspaceMembership).values({
+      workspaceId: personalWorkspace.id,
+      userId: member.id,
+      role: "member",
+    });
+    if (projectIds.length > 0) {
+      await tx.insert(projectMembership).values(
+        projectIds.map((projectId) => ({
+          workspaceId: personalWorkspace.id,
+          projectId,
+          userId: member.id,
+        })),
+      );
+    }
+  });
+  const signedIn = await app.request("/api/auth/sign-in/email", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Origin: baseUrl },
+    body: JSON.stringify(member),
+  });
+  expect(signedIn.status).toBe(200);
+  const memberCookie = signedIn.headers.get("set-cookie")?.split(";", 1)[0];
+  if (!memberCookie) throw new Error("Expected member session cookie");
+  return memberCookie;
+}
+
+async function createProjectFixture(name = "Issopen", key = "iss") {
   const response = await authenticatedRequest("/api/v1/projects", {
     method: "POST",
     body: JSON.stringify({
-      name: "Issopen",
-      key: "iss",
+      name,
+      key,
       description: "Private dogfood tracker",
       repositoryUrl: "https://unreachable.invalid/issopen.git",
       defaultBranch: "main",
@@ -197,6 +267,90 @@ afterAll(async () => {
 });
 
 describe("protected tracker REST API", () => {
+  it("limits members to assigned projects and keeps owner-only APIs protected", async () => {
+    const allowedProject = await createProjectFixture("Allowed", "ALLOW");
+    const privateProject = await createProjectFixture("Private", "PRIV");
+    const privateIssue = await createIssueFixture(privateProject.id);
+    await createMemberSession([privateProject.id], "other-member");
+    const memberCookie = await createMemberSession([allowedProject.id]);
+    const memberRequest = (path: string, init?: RequestInit) =>
+      requestWithCookie(memberCookie, path, init);
+
+    const session = await memberRequest("/api/v1/session");
+    expect(session.status).toBe(200);
+    expect(await session.json()).toMatchObject({
+      workspace: { role: "member" },
+    });
+
+    const projects = await memberRequest("/api/v1/projects");
+    expect(projects.status).toBe(200);
+    expect(
+      (await body<{ projects: Array<{ id: string }> }>(projects)).projects.map(
+        (item) => item.id,
+      ),
+    ).toEqual([allowedProject.id]);
+    expect(
+      (await memberRequest(`/api/v1/projects/${allowedProject.id}`)).status,
+    ).toBe(200);
+
+    const memberIssue = await memberRequest(
+      `/api/v1/projects/${allowedProject.id}/issues`,
+      {
+        method: "POST",
+        body: JSON.stringify({ title: "Member can work here" }),
+      },
+    );
+    expect(memberIssue.status).toBe(201);
+
+    for (const path of [
+      `/api/v1/projects/${privateProject.id}`,
+      `/api/v1/projects/${privateProject.id}/board`,
+      `/api/v1/issues/${privateIssue.id}`,
+      `/api/v1/issues/${privateIssue.id}/activity`,
+      `/api/v1/issues/${privateIssue.id}/evidence`,
+    ]) {
+      const response = await memberRequest(path);
+      expect(response.status, path).toBe(404);
+      expect(await response.json()).toMatchObject({
+        error: expect.any(String),
+      });
+    }
+
+    expect(
+      (
+        await memberRequest("/api/v1/projects", {
+          method: "POST",
+          body: JSON.stringify({ name: "Forbidden", key: "NOPE" }),
+        })
+      ).status,
+    ).toBe(403);
+    expect(
+      (
+        await memberRequest("/api/v1/workspace", {
+          method: "PATCH",
+          body: JSON.stringify({ name: "Forbidden" }),
+        })
+      ).status,
+    ).toBe(403);
+    expect((await memberRequest("/api/v1/agents")).status).toBe(403);
+    expect((await memberRequest("/api/v1/mcp/config")).status).toBe(403);
+    expect(
+      (
+        await memberRequest(`/api/v1/issues/${privateIssue.id}`, {
+          method: "DELETE",
+          body: JSON.stringify({
+            expectedVersion: privateIssue.version,
+            questionVersions: [],
+          }),
+        })
+      ).status,
+    ).toBe(403);
+    expect(
+      (await memberRequest("/api/auth/oauth2/authorize?client_id=agent-client"))
+        .status,
+    ).toBe(403);
+  });
+
   it("streams project-scoped board invalidations without ticket content", async () => {
     const p = await createProjectFixture();
     const response = await authenticatedRequest(

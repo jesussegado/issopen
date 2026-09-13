@@ -153,8 +153,14 @@ function AuthenticatedApp({
         We couldn't load your projects. Check your connection and try again.
       </StatusBanner>
     );
-  else if (pathname === "/") route = <HomeRoute projects={projects} />;
-  else if (pathname === "/workspace")
+  else if (pathname === "/")
+    route = (
+      <HomeRoute
+        projects={projects}
+        canCreateProject={session.workspace.role === "owner"}
+      />
+    );
+  else if (pathname === "/workspace" && session.workspace.role === "owner")
     route = (
       <WorkspaceSettingsRoute
         session={session}
@@ -163,10 +169,12 @@ function AuthenticatedApp({
         }
       />
     );
-  else if (pathname === "/projects/new")
+  else if (pathname === "/projects/new" && session.workspace.role === "owner")
     route = <ProjectFormRoute onProjectsChanged={refreshProjects} />;
-  else if (pathname === "/agents") route = <AgentsRoute projects={projects} />;
-  else if (pathname === "/connect") route = <ConnectRoute />;
+  else if (pathname === "/agents" && session.workspace.role === "owner")
+    route = <AgentsRoute projects={projects} />;
+  else if (pathname === "/connect" && session.workspace.role === "owner")
+    route = <ConnectRoute />;
   else if (pathname === "/extensions") route = <ExtensionsRoute />;
   else if (pathname === "/extensions/link") route = <ExtensionsRoute linking />;
   else if (pathname === "/consent")
@@ -176,7 +184,7 @@ function AuthenticatedApp({
         workspaceName={session.workspace.name}
       />
     );
-  else if (projectSettingsMatch?.[1])
+  else if (projectSettingsMatch?.[1] && session.workspace.role === "owner")
     route = (
       <ProjectFormRoute
         projectId={projectSettingsMatch[1]}
@@ -193,7 +201,12 @@ function AuthenticatedApp({
   else if (issueEditMatch?.[1])
     route = <IssueFormRoute issueId={issueEditMatch[1]} />;
   else if (projectMatch?.[1])
-    route = <BoardRoute projectId={projectMatch[1]} />;
+    route = (
+      <BoardRoute
+        projectId={projectMatch[1]}
+        canManageProject={session.workspace.role === "owner"}
+      />
+    );
   else if (issueDetailMatch?.[1])
     route = <IssueDetailRoute issueId={issueDetailMatch[1]} />;
   else route = <UnavailableRoute />;

@@ -64,9 +64,11 @@ function MobileNavigation({ children }: { children: ReactNode }) {
 function Navigation({
   projects,
   pathname,
+  role,
 }: {
   projects: Project[];
   pathname: string;
+  role: "owner" | "member";
 }) {
   const link = (href: string, label: string) => (
     <AppLink
@@ -81,10 +83,10 @@ function Navigation({
     <nav aria-label="Workspace">
       <p className="nav-heading">Projects</p>
       {projects.map((project) => link(`/projects/${project.id}`, project.name))}
-      {link("/projects/new", "Create project")}
+      {role === "owner" ? link("/projects/new", "Create project") : null}
       <div className="nav-divider" />
-      {link("/agents", "Agents")}
-      {link("/connect", "Connect ChatGPT")}
+      {role === "owner" ? link("/agents", "Agents") : null}
+      {role === "owner" ? link("/connect", "Connect ChatGPT") : null}
       {link("/extensions", "Extensiones Chrome")}
     </nav>
   );
@@ -110,7 +112,13 @@ export function AuthenticatedShell({
     onSignedOut();
   }
 
-  const navigation = <Navigation projects={projects} pathname={pathname} />;
+  const navigation = (
+    <Navigation
+      projects={projects}
+      pathname={pathname}
+      role={session.workspace.role}
+    />
+  );
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main-content">
@@ -119,11 +127,19 @@ export function AuthenticatedShell({
       <header className="app-header authenticated-header">
         <Brand />
         <span className="workspace-name">{session.workspace.name}</span>
+        <span className="metadata">
+          {session.workspace.role === "owner" ? "Owner" : "Member"}
+        </span>
         <MobileNavigation>{navigation}</MobileNavigation>
         <details className="owner-menu">
           <summary>{session.user.name}</summary>
           <div className="owner-menu-panel">
-            <AppLink href="/workspace">Workspace settings</AppLink>
+            <span className="metadata">
+              Role: {session.workspace.role === "owner" ? "Owner" : "Member"}
+            </span>
+            {session.workspace.role === "owner" ? (
+              <AppLink href="/workspace">Workspace settings</AppLink>
+            ) : null}
             <Button
               type="button"
               variant="ghost"

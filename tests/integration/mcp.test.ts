@@ -29,6 +29,7 @@ import {
   oauthResource,
   user,
   workspace,
+  workspaceMembership,
 } from "../../src/server/db/schema.js";
 import {
   AgentService,
@@ -206,6 +207,11 @@ beforeEach(async () => {
     id: workspaceId,
     ownerId,
     name: "MCP workspace",
+  });
+  await connection.db.insert(workspaceMembership).values({
+    workspaceId,
+    userId: ownerId,
+    role: "owner",
   });
   tracker = new TrackerService(connection.db);
   const project = await tracker.createProject(mutationContext(), {

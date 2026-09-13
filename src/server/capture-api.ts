@@ -16,18 +16,18 @@ import {
   normalizePng,
 } from "./capture-storage.js";
 import type { Database } from "./db/client.js";
-import {
-  captureEvidence,
-  extensionReceipt,
-  issue,
-  user,
-  workspace,
-} from "./db/schema.js";
+import { captureEvidence, extensionReceipt, issue, user } from "./db/schema.js";
 import {
   DomainError,
   type MutationContext,
   TrackerService,
 } from "./domain/index.js";
+import {
+  type HumanAccess,
+  requireHumanAccess,
+  requireProjectAccess,
+  requireWorkspaceOwner,
+} from "./human-access.js";
 
 export type ExtensionBindings = {
   Variables: {
@@ -36,6 +36,8 @@ export type ExtensionBindings = {
     expiresAt: string;
     workspaceId: string;
     canWrite: boolean;
+    workspaceRole: "owner" | "member";
+    projectIds: string[] | null;
   };
 };
 const projectInput = z
@@ -337,6 +339,14 @@ export function createCaptureRouter(
 ) {
   const router = new Hono<ExtensionBindings>();
   let active = 0;
+  const requireExtensionProject = (
+    projectIds: string[] | null,
+    projectId: string,
+  ) => {
+    if (projectIds !== null && !projectIds.includes(projectId)) {
+      throw new DomainError("not_found", "Project not found");
+    }
+  };
   router.onError(errorResult);
   router.use("*", async (c, next) => {
     if (c.req.method === "POST" && !c.get("canWrite"))
@@ -358,6 +368,7 @@ export function createCaptureRouter(
   });
   router.get("/projects/:id/epics", async (c) => {
     const id = z.uuid().parse(c.req.param("id"));
+    requireExtensionProject(c.get("projectIds"), id);
     const tracker = new TrackerService(db);
     await tracker.getProject(c.get("workspaceId"), id);
     return c.json({
@@ -367,6 +378,9 @@ export function createCaptureRouter(
     });
   });
   router.post("/projects", async (c) => {
+    if (c.get("workspaceRole") !== "owner") {
+      throw new DomainError("forbidden", "Only an owner can create projects");
+    }
     const input = projectInput.parse(await boundedJson(c.req.raw, 4096));
     const ctx = await context(db, c.get("workspaceId"), c.get("ownerId"));
     return c.json(
@@ -389,6 +403,7 @@ export function createCaptureRouter(
   });
   router.post("/projects/:id/epics", async (c) => {
     const projectId = z.uuid().parse(c.req.param("id"));
+    requireExtensionProject(c.get("projectIds"), projectId);
     const input = epicInput.parse(await boundedJson(c.req.raw, 4096));
     const ctx = await context(db, c.get("workspaceId"), c.get("ownerId"));
     return c.json(
@@ -411,6 +426,7 @@ export function createCaptureRouter(
   });
   router.post("/captures", async (c) => {
     const input = captureSubmissionSchema.parse(await boundedJson(c.req.raw));
+    requireExtensionProject(c.get("projectIds"), input.projectId);
     const ctx = await context(db, c.get("workspaceId"), c.get("ownerId"));
     const images = input.images ?? (input.image ? [input.image] : []);
     return c.json(
@@ -431,17 +447,18 @@ export function createCaptureRouter(
 }
 
 export function createEvidenceRouter(db: Database, storage?: CaptureStorage) {
-  const router = new Hono<{ Variables: { ownerSession: OwnerSession } }>();
+  const router = new Hono<{
+    Variables: {
+      ownerSession: OwnerSession;
+      humanAccess: HumanAccess | null;
+    };
+  }>();
   router.onError(errorResult);
   router.post("/captures", async (c) => {
     const input = webCaptureInput.parse(await boundedJson(c.req.raw));
-    const owner = c.get("ownerSession").user;
-    const [space] = await db
-      .select({ id: workspace.id })
-      .from(workspace)
-      .where(eq(workspace.ownerId, owner.id));
-    if (!space) throw new DomainError("not_found", "Workspace not found");
-    const ctx = await context(db, space.id, owner.id, "rest");
+    const access = requireHumanAccess(c.get("humanAccess"));
+    requireProjectAccess(access, input.projectId);
+    const ctx = await context(db, access.workspaceId, access.user.id, "rest");
     return c.json(
       await createCapturedIssue(
         db,
@@ -456,25 +473,26 @@ export function createEvidenceRouter(db: Database, storage?: CaptureStorage) {
     );
   });
   router.get("/extensions/storage", async (c) => {
+    requireWorkspaceOwner(requireHumanAccess(c.get("humanAccess")));
     if (!storage) throw new CaptureError("storage", 503);
     c.header("Cache-Control", "private, no-store");
     return c.json(await storage.usage());
   });
   router.get("/issues/:id/evidence", async (c) => {
     const issueId = z.uuid().parse(c.req.param("id"));
-    const [space] = await db
-      .select()
-      .from(workspace)
-      .where(eq(workspace.ownerId, c.get("ownerSession").user.id));
-    if (!space) return c.json({ error: "Not found" }, 404);
-    await new TrackerService(db).getIssue(space.id, issueId);
+    const access = requireHumanAccess(c.get("humanAccess"));
+    const foundIssue = await new TrackerService(db).getIssue(
+      access.workspaceId,
+      issueId,
+    );
+    requireProjectAccess(access, foundIssue.projectId);
     const rows = await db
       .select()
       .from(captureEvidence)
       .where(
         and(
           eq(captureEvidence.issueId, issueId),
-          eq(captureEvidence.workspaceId, space.id),
+          eq(captureEvidence.workspaceId, access.workspaceId),
         ),
       )
       .orderBy(
@@ -499,10 +517,10 @@ export function createEvidenceRouter(db: Database, storage?: CaptureStorage) {
   });
   router.get("/evidence/:id/image", async (c) => {
     const id = z.uuid().parse(c.req.param("id"));
+    const access = requireHumanAccess(c.get("humanAccess"));
     const [row] = await db
-      .select({ evidence: captureEvidence })
+      .select({ evidence: captureEvidence, projectId: issue.projectId })
       .from(captureEvidence)
-      .innerJoin(workspace, eq(workspace.id, captureEvidence.workspaceId))
       .innerJoin(
         issue,
         and(
@@ -514,14 +532,18 @@ export function createEvidenceRouter(db: Database, storage?: CaptureStorage) {
         and(
           eq(captureEvidence.id, id),
           isNull(issue.deletedAt),
-          eq(workspace.ownerId, c.get("ownerSession").user.id),
+          eq(captureEvidence.workspaceId, access.workspaceId),
         ),
       );
     const data = row?.evidence;
-    if (!data?.fileKey || !data.sha256)
+    const projectId = row?.projectId;
+    if (!projectId || !data?.fileKey || !data.sha256)
       return c.json({ error: "Not found" }, 404);
+    const fileKey = data.fileKey;
+    const sha256 = data.sha256;
+    requireProjectAccess(access, projectId);
     if (!storage) throw new CaptureError("storage", 503);
-    const png = await storage.read(data.fileKey, data.sha256, data.bytes);
+    const png = await storage.read(fileKey, sha256, data.bytes);
     return new Response(new Uint8Array(png), {
       headers: {
         "Content-Type": "image/png",

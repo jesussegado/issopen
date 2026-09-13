@@ -51,7 +51,13 @@ function nullable(value: string) {
   return trimmed === "" ? null : trimmed;
 }
 
-export function HomeRoute({ projects }: { projects: Project[] }) {
+export function HomeRoute({
+  projects,
+  canCreateProject,
+}: {
+  projects: Project[];
+  canCreateProject: boolean;
+}) {
   useEffect(() => {
     if (projects[0]) navigate(`/projects/${projects[0].id}`, true);
   }, [projects]);
@@ -60,12 +66,22 @@ export function HomeRoute({ projects }: { projects: Project[] }) {
     <div className="reading-column">
       <PageHeading>No projects yet</PageHeading>
       <EmptyState
-        heading="Create your first project"
-        body="Create a project to start a private backlog."
+        heading={
+          canCreateProject
+            ? "Create your first project"
+            : "No projects assigned"
+        }
+        body={
+          canCreateProject
+            ? "Create a project to start a private backlog."
+            : "Ask the workspace owner to grant access to a project."
+        }
         action={
-          <AppLink className="button button-primary" href="/projects/new">
-            Create project
-          </AppLink>
+          canCreateProject ? (
+            <AppLink className="button button-primary" href="/projects/new">
+              Create project
+            </AppLink>
+          ) : undefined
         }
       />
     </div>

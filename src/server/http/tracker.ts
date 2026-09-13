@@ -4,7 +4,7 @@ import { streamSSE } from "hono/streaming";
 import { z } from "zod";
 import type { OwnerSession } from "../auth.js";
 import type { Database } from "../db/client.js";
-import { activityEvent, issueStatusValues, workspace } from "../db/schema.js";
+import { activityEvent, issueStatusValues } from "../db/schema.js";
 import {
   addCodeLinkSchema,
   addIssueCommentSchema,
@@ -23,10 +23,18 @@ import {
   updateIssueSchema,
   updateProjectSchema,
 } from "../domain/index.js";
+import {
+  type HumanAccess,
+  humanMutationContext,
+  requireHumanAccess,
+  requireProjectAccess,
+  requireWorkspaceOwner,
+} from "../human-access.js";
 
 type TrackerBindings = {
   Variables: {
     ownerSession: OwnerSession;
+    humanAccess: HumanAccess | null;
   };
 };
 
@@ -147,28 +155,11 @@ export function domainErrorResponse(context: Context, error: DomainError) {
   }
 }
 
-async function ownerContext(
-  db: Database,
-  ownerSession: OwnerSession,
-): Promise<MutationContext> {
-  const [personalWorkspace] = await db
-    .select({ id: workspace.id })
-    .from(workspace)
-    .where(eq(workspace.ownerId, ownerSession.user.id))
-    .limit(1);
-  if (!personalWorkspace) {
-    throw new DomainError("not_found", "Workspace not found");
-  }
-
-  return {
-    workspaceId: personalWorkspace.id,
-    actor: {
-      type: "human",
-      id: ownerSession.user.id,
-      displayName: ownerSession.user.name,
-    },
-    source: "rest",
-  };
+function humanContext(
+  accessInput: HumanAccess | null,
+): MutationContext & { access: HumanAccess } {
+  const access = requireHumanAccess(accessInput);
+  return { ...humanMutationContext(access), access };
 }
 
 export function createTrackerRouter({ db }: TrackerRouterDependencies) {
@@ -187,32 +178,41 @@ export function createTrackerRouter({ db }: TrackerRouterDependencies) {
   });
 
   router.get("/projects", async (context) => {
-    const mutationContext = await ownerContext(db, context.get("ownerSession"));
+    const mutationContext = humanContext(context.get("humanAccess"));
+    const projects = await tracker.listProjects(mutationContext.workspaceId);
     return context.json({
-      projects: await tracker.listProjects(mutationContext.workspaceId),
+      projects:
+        mutationContext.access.projectIds === null
+          ? projects
+          : projects.filter((item) =>
+              mutationContext.access.projectIds?.includes(item.id),
+            ),
     });
   });
 
   router.post("/projects", async (context) => {
-    const mutationContext = await ownerContext(db, context.get("ownerSession"));
+    const mutationContext = humanContext(context.get("humanAccess"));
+    requireWorkspaceOwner(mutationContext.access);
     const input = await parseBody(context, createProjectSchema);
     const created = await tracker.createProject(mutationContext, input);
     return context.json({ project: created }, 201);
   });
 
   router.get("/projects/:projectId", async (context) => {
-    const mutationContext = await ownerContext(db, context.get("ownerSession"));
+    const mutationContext = humanContext(context.get("humanAccess"));
     const projectId = parseIdentifier(
       context.req.param("projectId"),
       "projectId",
     );
+    requireProjectAccess(mutationContext.access, projectId);
     return context.json({
       project: await tracker.getProject(mutationContext.workspaceId, projectId),
     });
   });
 
   router.patch("/projects/:projectId", async (context) => {
-    const mutationContext = await ownerContext(db, context.get("ownerSession"));
+    const mutationContext = humanContext(context.get("humanAccess"));
+    requireWorkspaceOwner(mutationContext.access);
     const projectId = parseIdentifier(
       context.req.param("projectId"),
       "projectId",
@@ -224,11 +224,12 @@ export function createTrackerRouter({ db }: TrackerRouterDependencies) {
   });
 
   router.get("/projects/:projectId/epics", async (context) => {
-    const mutationContext = await ownerContext(db, context.get("ownerSession"));
+    const mutationContext = humanContext(context.get("humanAccess"));
     const projectId = parseIdentifier(
       context.req.param("projectId"),
       "projectId",
     );
+    requireProjectAccess(mutationContext.access, projectId);
     await tracker.getProject(mutationContext.workspaceId, projectId);
     const archiveFilter = parseEpicArchiveFilter(context.req.query("archived"));
     return context.json({
@@ -241,11 +242,12 @@ export function createTrackerRouter({ db }: TrackerRouterDependencies) {
   });
 
   router.post("/projects/:projectId/epics", async (context) => {
-    const mutationContext = await ownerContext(db, context.get("ownerSession"));
+    const mutationContext = humanContext(context.get("humanAccess"));
     const projectId = parseIdentifier(
       context.req.param("projectId"),
       "projectId",
     );
+    requireProjectAccess(mutationContext.access, projectId);
     const input = await parseBody(context, createEpicBodySchema);
     const created = await tracker.createEpic(mutationContext, {
       projectId,
@@ -255,16 +257,26 @@ export function createTrackerRouter({ db }: TrackerRouterDependencies) {
   });
 
   router.get("/epics/:epicId", async (context) => {
-    const mutationContext = await ownerContext(db, context.get("ownerSession"));
+    const mutationContext = humanContext(context.get("humanAccess"));
     const epicId = parseIdentifier(context.req.param("epicId"), "epicId");
+    const foundEpic = await tracker.getEpic(
+      mutationContext.workspaceId,
+      epicId,
+    );
+    requireProjectAccess(mutationContext.access, foundEpic.projectId);
     return context.json(
       await tracker.getEpicDetail(mutationContext.workspaceId, epicId),
     );
   });
 
   router.patch("/epics/:epicId", async (context) => {
-    const mutationContext = await ownerContext(db, context.get("ownerSession"));
+    const mutationContext = humanContext(context.get("humanAccess"));
     const epicId = parseIdentifier(context.req.param("epicId"), "epicId");
+    const foundEpic = await tracker.getEpic(
+      mutationContext.workspaceId,
+      epicId,
+    );
+    requireProjectAccess(mutationContext.access, foundEpic.projectId);
     const input = await parseBody(context, updateEpicSchema);
     return context.json({
       epic: await tracker.updateEpic(mutationContext, epicId, input),
@@ -272,11 +284,12 @@ export function createTrackerRouter({ db }: TrackerRouterDependencies) {
   });
 
   router.get("/projects/:projectId/issues", async (context) => {
-    const mutationContext = await ownerContext(db, context.get("ownerSession"));
+    const mutationContext = humanContext(context.get("humanAccess"));
     const projectId = parseIdentifier(
       context.req.param("projectId"),
       "projectId",
     );
+    requireProjectAccess(mutationContext.access, projectId);
     await tracker.getProject(mutationContext.workspaceId, projectId);
     const epicFilter = parseOptionalEpicFilter(context.req.query("epicId"));
     return context.json({
@@ -289,11 +302,12 @@ export function createTrackerRouter({ db }: TrackerRouterDependencies) {
   });
 
   router.post("/projects/:projectId/issues", async (context) => {
-    const mutationContext = await ownerContext(db, context.get("ownerSession"));
+    const mutationContext = humanContext(context.get("humanAccess"));
     const projectId = parseIdentifier(
       context.req.param("projectId"),
       "projectId",
     );
+    requireProjectAccess(mutationContext.access, projectId);
     const input = await parseBody(context, createIssueBodySchema);
     const created = await tracker.createIssue(mutationContext, {
       projectId,
@@ -303,11 +317,12 @@ export function createTrackerRouter({ db }: TrackerRouterDependencies) {
   });
 
   router.get("/projects/:projectId/board", async (context) => {
-    const mutationContext = await ownerContext(db, context.get("ownerSession"));
+    const mutationContext = humanContext(context.get("humanAccess"));
     const projectId = parseIdentifier(
       context.req.param("projectId"),
       "projectId",
     );
+    requireProjectAccess(mutationContext.access, projectId);
     const foundProject = await tracker.getProject(
       mutationContext.workspaceId,
       projectId,
@@ -356,11 +371,12 @@ export function createTrackerRouter({ db }: TrackerRouterDependencies) {
   });
 
   router.get("/projects/:projectId/board/events", async (context) => {
-    const mutationContext = await ownerContext(db, context.get("ownerSession"));
+    const mutationContext = humanContext(context.get("humanAccess"));
     const projectId = parseIdentifier(
       context.req.param("projectId"),
       "projectId",
     );
+    requireProjectAccess(mutationContext.access, projectId);
     await tracker.getProject(mutationContext.workspaceId, projectId);
     context.header("Cache-Control", "no-cache, no-transform");
     context.header("X-Accel-Buffering", "no");
@@ -393,15 +409,21 @@ export function createTrackerRouter({ db }: TrackerRouterDependencies) {
   });
 
   router.get("/issues/:issueId", async (context) => {
-    const mutationContext = await ownerContext(db, context.get("ownerSession"));
+    const mutationContext = humanContext(context.get("humanAccess"));
     const issueId = parseIdentifier(context.req.param("issueId"), "issueId");
+    const foundIssue = await tracker.getIssue(
+      mutationContext.workspaceId,
+      issueId,
+    );
+    requireProjectAccess(mutationContext.access, foundIssue.projectId);
     return context.json(
       await tracker.getIssueDetail(mutationContext.workspaceId, issueId),
     );
   });
 
   router.delete("/issues/:issueId", async (context) => {
-    const mutationContext = await ownerContext(db, context.get("ownerSession"));
+    const mutationContext = humanContext(context.get("humanAccess"));
+    requireWorkspaceOwner(mutationContext.access);
     const issueId = parseIdentifier(context.req.param("issueId"), "issueId");
     const input = await parseBody(context, deleteIssueSchema);
     return context.json(
@@ -410,8 +432,13 @@ export function createTrackerRouter({ db }: TrackerRouterDependencies) {
   });
 
   router.patch("/issues/:issueId", async (context) => {
-    const mutationContext = await ownerContext(db, context.get("ownerSession"));
+    const mutationContext = humanContext(context.get("humanAccess"));
     const issueId = parseIdentifier(context.req.param("issueId"), "issueId");
+    const foundIssue = await tracker.getIssue(
+      mutationContext.workspaceId,
+      issueId,
+    );
+    requireProjectAccess(mutationContext.access, foundIssue.projectId);
     const input = await parseBody(context, updateIssueSchema);
     return context.json({
       issue: await tracker.updateIssue(mutationContext, issueId, input),
@@ -419,8 +446,13 @@ export function createTrackerRouter({ db }: TrackerRouterDependencies) {
   });
 
   router.get("/issues/:issueId/activity", async (context) => {
-    const mutationContext = await ownerContext(db, context.get("ownerSession"));
+    const mutationContext = humanContext(context.get("humanAccess"));
     const issueId = parseIdentifier(context.req.param("issueId"), "issueId");
+    const foundIssue = await tracker.getIssue(
+      mutationContext.workspaceId,
+      issueId,
+    );
+    requireProjectAccess(mutationContext.access, foundIssue.projectId);
     return context.json({
       activity: await tracker.listActivity(
         mutationContext.workspaceId,
@@ -430,8 +462,13 @@ export function createTrackerRouter({ db }: TrackerRouterDependencies) {
   });
 
   router.post("/issues/:issueId/questions", async (context) => {
-    const mutationContext = await ownerContext(db, context.get("ownerSession"));
+    const mutationContext = humanContext(context.get("humanAccess"));
     const issueId = parseIdentifier(context.req.param("issueId"), "issueId");
+    const foundIssue = await tracker.getIssue(
+      mutationContext.workspaceId,
+      issueId,
+    );
+    requireProjectAccess(mutationContext.access, foundIssue.projectId);
     const input = await parseBody(context, createIssueQuestionSchema);
     const question = await tracker.createIssueQuestion(
       mutationContext,
@@ -442,8 +479,13 @@ export function createTrackerRouter({ db }: TrackerRouterDependencies) {
   });
 
   router.post("/issues/:issueId/comments", async (context) => {
-    const mutationContext = await ownerContext(db, context.get("ownerSession"));
+    const mutationContext = humanContext(context.get("humanAccess"));
     const issueId = parseIdentifier(context.req.param("issueId"), "issueId");
+    const foundIssue = await tracker.getIssue(
+      mutationContext.workspaceId,
+      issueId,
+    );
+    requireProjectAccess(mutationContext.access, foundIssue.projectId);
     const input = await parseBody(context, addIssueCommentSchema);
     const comment = await tracker.addIssueComment(
       mutationContext,
@@ -456,11 +498,13 @@ export function createTrackerRouter({ db }: TrackerRouterDependencies) {
   router.patch(
     "/issues/:issueId/questions/:questionId/answer",
     async (context) => {
-      const mutationContext = await ownerContext(
-        db,
-        context.get("ownerSession"),
-      );
+      const mutationContext = humanContext(context.get("humanAccess"));
       const issueId = parseIdentifier(context.req.param("issueId"), "issueId");
+      const foundIssue = await tracker.getIssue(
+        mutationContext.workspaceId,
+        issueId,
+      );
+      requireProjectAccess(mutationContext.access, foundIssue.projectId);
       const questionId = parseIdentifier(
         context.req.param("questionId"),
         "questionId",
@@ -484,8 +528,13 @@ export function createTrackerRouter({ db }: TrackerRouterDependencies) {
   );
 
   router.post("/issues/:issueId/code-links", async (context) => {
-    const mutationContext = await ownerContext(db, context.get("ownerSession"));
+    const mutationContext = humanContext(context.get("humanAccess"));
     const issueId = parseIdentifier(context.req.param("issueId"), "issueId");
+    const foundIssue = await tracker.getIssue(
+      mutationContext.workspaceId,
+      issueId,
+    );
+    requireProjectAccess(mutationContext.access, foundIssue.projectId);
     const input = await parseBody(context, addCodeLinkSchema);
     return context.json(
       await tracker.addCodeLink(mutationContext, issueId, input),
@@ -494,8 +543,13 @@ export function createTrackerRouter({ db }: TrackerRouterDependencies) {
   });
 
   router.post("/issues/:issueId/review/accept", async (context) => {
-    const mutationContext = await ownerContext(db, context.get("ownerSession"));
+    const mutationContext = humanContext(context.get("humanAccess"));
     const issueId = parseIdentifier(context.req.param("issueId"), "issueId");
+    const foundIssue = await tracker.getIssue(
+      mutationContext.workspaceId,
+      issueId,
+    );
+    requireProjectAccess(mutationContext.access, foundIssue.projectId);
     await parseBody(context, emptyBodySchema);
     return context.json({
       issue: await tracker.acceptResult(mutationContext, issueId),
@@ -503,8 +557,13 @@ export function createTrackerRouter({ db }: TrackerRouterDependencies) {
   });
 
   router.post("/issues/:issueId/review/request-changes", async (context) => {
-    const mutationContext = await ownerContext(db, context.get("ownerSession"));
+    const mutationContext = humanContext(context.get("humanAccess"));
     const issueId = parseIdentifier(context.req.param("issueId"), "issueId");
+    const foundIssue = await tracker.getIssue(
+      mutationContext.workspaceId,
+      issueId,
+    );
+    requireProjectAccess(mutationContext.access, foundIssue.projectId);
     const input = await parseBody(context, requestChangesSchema);
     return context.json({
       issue: await tracker.requestChanges(mutationContext, issueId, input),

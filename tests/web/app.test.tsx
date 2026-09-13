@@ -13,7 +13,12 @@ import { App } from "../../src/web/App.js";
 
 const ownerSession = {
   user: { id: "owner-1", name: "Owner", email: "owner@example.test" },
-  workspace: { id: "workspace-1", name: "My workspace", version: 1 },
+  workspace: {
+    id: "workspace-1",
+    name: "My workspace",
+    version: 1,
+    role: "owner" as const,
+  },
 };
 
 function json(body: unknown, status = 200) {
@@ -166,6 +171,47 @@ describe("owner web entry", () => {
         "Plain reference data only. Issopen does not access or clone the repository.",
       ),
     ).toBeInTheDocument();
+  });
+
+  it("shows a member role without owner-only navigation or project creation", async () => {
+    const memberSession = {
+      ...ownerSession,
+      user: {
+        id: "member-1",
+        name: "Member",
+        email: "member@example.test",
+      },
+      workspace: { ...ownerSession.workspace, role: "member" as const },
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const path = String(input);
+        if (path === "/api/v1/session") return json(memberSession);
+        if (path === "/api/v1/projects") return json({ projects: [] });
+        throw new Error(`Unexpected request: ${path}`);
+      }),
+    );
+    window.history.replaceState({}, "", "/");
+    render(<App />);
+
+    expect(
+      await screen.findByRole("heading", { name: "No projects yet" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("No projects assigned")).toBeInTheDocument();
+    expect(screen.getAllByText("Member").length).toBeGreaterThan(0);
+    expect(
+      screen.queryByRole("link", { name: "Create project" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "Agents" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "Connect ChatGPT" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getAllByRole("link", { name: "Extensiones Chrome" }).length,
+    ).toBeGreaterThan(0);
   });
 
   it("keeps protected content out of an anonymous response", async () => {

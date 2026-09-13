@@ -8,23 +8,37 @@ import type { IssopenAuth, OwnerSession } from "./auth.js";
 import { createEvidenceRouter } from "./capture-api.js";
 import type { CaptureStorage } from "./capture-storage.js";
 import type { Database } from "./db/client.js";
-import { workspace } from "./db/schema.js";
+import {
+  instanceOwner,
+  membershipEvent,
+  workspace,
+  workspaceMembership,
+} from "./db/schema.js";
 import { DomainError } from "./domain/index.js";
 import {
   createExtensionOwnerRouter,
   createExtensionRouter,
   extensionOAuthGuard,
+  isExtensionClientId,
+  oauthClientIdFromRequest,
 } from "./extensions.js";
 import {
   createAgentRouter,
   createTrackerRouter,
   domainErrorResponse,
 } from "./http/index.js";
+import {
+  type HumanAccess,
+  requireHumanAccess,
+  requireWorkspaceOwner,
+  resolveHumanAccess,
+} from "./human-access.js";
 import { createIssopenMcpHandler } from "./mcp/index.js";
 
 type AppBindings = {
   Variables: {
     ownerSession: OwnerSession;
+    humanAccess: HumanAccess | null;
   };
 };
 
@@ -98,13 +112,34 @@ export function createApp({
   app.on(["GET", "POST"], "/api/auth/sign-up/*", (context) =>
     context.json({ error: "Not found" }, 404),
   );
-  app.on(
-    ["GET", "POST"],
-    "/api/auth/*",
-    async (context) =>
-      (await extensionOAuthGuard(context.req.raw, db)) ??
-      auth.handler(context.req.raw),
-  );
+  app.on(["GET", "POST"], "/api/auth/*", async (context) => {
+    const extensionResponse = await extensionOAuthGuard(context.req.raw, db);
+    if (extensionResponse) return extensionResponse;
+
+    const pathname = new URL(context.req.url).pathname;
+    if (
+      ["/api/auth/oauth2/authorize", "/api/auth/oauth2/consent"].includes(
+        pathname,
+      )
+    ) {
+      const clientId = await oauthClientIdFromRequest(context.req.raw);
+      if (clientId && !isExtensionClientId(clientId)) {
+        const session = await auth.api
+          .getSession({ headers: context.req.raw.headers })
+          .catch(() => null);
+        if (session) {
+          const access = await resolveHumanAccess(db, session.user);
+          if (access?.role !== "owner") {
+            return context.json(
+              { error: "Only a workspace owner can connect an MCP client" },
+              403,
+            );
+          }
+        }
+      }
+    }
+    return auth.handler(context.req.raw);
+  });
   app.route(
     "/api/extension/v1",
     createExtensionRouter(db, auth, captureStorage),
@@ -138,20 +173,13 @@ export function createApp({
     }
 
     context.set("ownerSession", ownerSession);
+    context.set("humanAccess", await resolveHumanAccess(db, ownerSession.user));
     await next();
   });
 
   app.get("/api/v1/session", async (context) => {
     const ownerSession = context.get("ownerSession");
-    const [personalWorkspace] = await db
-      .select({
-        id: workspace.id,
-        name: workspace.name,
-        version: workspace.version,
-      })
-      .from(workspace)
-      .where(eq(workspace.ownerId, ownerSession.user.id))
-      .limit(1);
+    const access = context.get("humanAccess");
 
     return context.json({
       user: {
@@ -159,13 +187,21 @@ export function createApp({
         name: ownerSession.user.name,
         email: ownerSession.user.email,
       },
-      workspace: personalWorkspace ?? null,
+      workspace: access
+        ? {
+            id: access.workspaceId,
+            name: access.workspaceName,
+            version: access.workspaceVersion,
+            role: access.role,
+          }
+        : null,
     });
   });
 
-  app.get("/api/v1/mcp/config", (context) =>
-    context.json({ resource, connected: false }),
-  );
+  app.get("/api/v1/mcp/config", (context) => {
+    requireWorkspaceOwner(requireHumanAccess(context.get("humanAccess")));
+    return context.json({ resource, connected: false });
+  });
 
   app.post("/api/v1/workspace", async (context) => {
     const input = await context.req.json().catch(() => null);
@@ -175,21 +211,55 @@ export function createApp({
     }
 
     const ownerSession = context.get("ownerSession");
+    if (context.get("humanAccess")) {
+      return context.json(
+        { error: "A workspace membership already exists" },
+        409,
+      );
+    }
+    const [owner] = await db
+      .select({ userId: instanceOwner.userId })
+      .from(instanceOwner)
+      .where(eq(instanceOwner.userId, ownerSession.user.id))
+      .limit(1);
+    if (!owner) {
+      return context.json({ error: "A workspace invitation is required" }, 403);
+    }
     try {
-      const [createdWorkspace] = await db
-        .insert(workspace)
-        .values({
-          id: randomUUID(),
-          ownerId: ownerSession.user.id,
-          name: parsed.data.name,
-        })
-        .returning({
-          id: workspace.id,
-          name: workspace.name,
-          version: workspace.version,
+      const createdWorkspace = await db.transaction(async (tx) => {
+        const [created] = await tx
+          .insert(workspace)
+          .values({
+            id: randomUUID(),
+            ownerId: ownerSession.user.id,
+            name: parsed.data.name,
+          })
+          .returning({
+            id: workspace.id,
+            name: workspace.name,
+            version: workspace.version,
+          });
+        if (!created) throw new Error("Workspace insert returned no row");
+        await tx.insert(workspaceMembership).values({
+          workspaceId: created.id,
+          userId: ownerSession.user.id,
+          role: "owner",
         });
+        await tx.insert(membershipEvent).values({
+          id: randomUUID(),
+          workspaceId: created.id,
+          subjectUserId: ownerSession.user.id,
+          actorUserId: ownerSession.user.id,
+          type: "membership.owner_created",
+          nextRole: "owner",
+        });
+        return created;
+      });
 
-      return context.json({ workspace: createdWorkspace }, 201);
+      return context.json(
+        { workspace: { ...createdWorkspace, role: "owner" as const } },
+        201,
+      );
     } catch (error) {
       if (isUniqueViolation(error)) {
         return context.json(
@@ -208,7 +278,11 @@ export function createApp({
       return context.json(validationError(parsed.error.issues), 400);
     }
 
-    const ownerSession = context.get("ownerSession");
+    const access = context.get("humanAccess");
+    if (!access) {
+      return context.json({ error: "Workspace not found" }, 404);
+    }
+    requireWorkspaceOwner(access);
     const [updatedWorkspace] = await db
       .update(workspace)
       .set({
@@ -216,7 +290,7 @@ export function createApp({
         version: sql`${workspace.version} + 1`,
         updatedAt: new Date(),
       })
-      .where(eq(workspace.ownerId, ownerSession.user.id))
+      .where(eq(workspace.id, access.workspaceId))
       .returning({
         id: workspace.id,
         name: workspace.name,
@@ -226,7 +300,9 @@ export function createApp({
     if (!updatedWorkspace) {
       return context.json({ error: "Workspace not found" }, 404);
     }
-    return context.json({ workspace: updatedWorkspace });
+    return context.json({
+      workspace: { ...updatedWorkspace, role: access.role },
+    });
   });
 
   app.route("/api/v1", createTrackerRouter({ db }));

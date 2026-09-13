@@ -11,7 +11,7 @@ The local Phase 1 implementation includes:
 
 - one Node.js 24/Hono process serving the React SPA, private REST API, Better
   Auth authorization server and stateless Remote MCP endpoint;
-- one private owner, one personal workspace, projects, five-state issues,
+- one private workspace with Owner/Member authorization, projects, five-state issues,
   attributed append-only activity, code-result links and human review;
 - lightweight project Epics that group related tickets, expose derived progress
   and status counts, and filter the board without changing issue workflow;

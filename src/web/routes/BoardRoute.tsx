@@ -95,7 +95,13 @@ function EpicOverview({ epics }: { epics: Epic[] }) {
   );
 }
 
-export function BoardRoute({ projectId }: { projectId: string }) {
+export function BoardRoute({
+  projectId,
+  canManageProject,
+}: {
+  projectId: string;
+  canManageProject: boolean;
+}) {
   const location = useLocation();
   const epicParameter = new URLSearchParams(location.split("?")[1] ?? "").get(
     "epic",
@@ -318,12 +324,14 @@ export function BoardRoute({ projectId }: { projectId: string }) {
           </div>
         </div>
         <div className="page-actions">
-          <AppLink
-            className="button button-secondary"
-            href={`/projects/${project.id}/settings`}
-          >
-            Project settings
-          </AppLink>
+          {canManageProject ? (
+            <AppLink
+              className="button button-secondary"
+              href={`/projects/${project.id}/settings`}
+            >
+              Project settings
+            </AppLink>
+          ) : null}
           <AppLink
             className="button button-secondary"
             href={`/projects/${project.id}/epics`}

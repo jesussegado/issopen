@@ -15,7 +15,12 @@ export type CodeLinkType = (typeof codeLinkTypes)[number];
 
 export type Session = {
   user: { id: string; name: string; email: string };
-  workspace: { id: string; name: string; version: number } | null;
+  workspace: {
+    id: string;
+    name: string;
+    version: number;
+    role: "owner" | "member";
+  } | null;
 };
 
 export type Project = {
