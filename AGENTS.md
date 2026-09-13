@@ -29,6 +29,15 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+- Epic 3 está planificado en Issopen con 14 tickets (94–107) y 20 preguntas
+  de decisión; todavía no hay implementación de ese corte. Empezar por roles/
+  workspaces (94) y ámbito de permisos (95), sin dar recomendaciones por
+  aceptadas. Reutiliza el baseline del Epic 7, no lo duplica ni altera su
+  acceso de revisión. Índice y dependencias en
+  [plan de colaboración](docs/epic-3-collaboration-plan.md), quick `260913-vul`.
+  El encargo actual sólo autoriza planificar: sin nuevos usuarios, correos,
+  permisos, migraciones ni despliegues. Leer respuestas vivas antes del código.
+
 - Ticket 91 deriva el botón de borrado del rol Owner y workspace de la sesión.
   Member conserva edición, comentarios, preguntas y revisión permitidos por
   la API. El detalle sólo muestra `Owner: You` al propietario real; comentarios
