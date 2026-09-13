@@ -1,8 +1,15 @@
 # Release candidate 0.6.2
 
-Estado: fuente preparada para generar el primer candidato Unlisted. El ZIP,
-su SHA-256 y la procedencia exacta se crean desde un commit limpio con
-`pnpm extension:release`; los artefactos quedan fuera de Git.
+Estado: candidato aceptado por el validador de paquete y enviado a revisión
+el 2026-09-13, no aprobado/publicado todavía. Artefactos fuera de Git:
+
+- ZIP: `issopen-chrome-0.6.2-d4a0ae8be185.zip` (8 archivos).
+- Fuente: `d4a0ae8be185fec921602fbc12a0fe723b01ff56`.
+- SHA-256: `0e9c636c51407797e95697fa5cb1a8d679448d13775c7887161079f2e2fb177b`.
+- Item: `eohpecaogeelnicbpeedjdganacfknok`, Unlisted/publicación diferida.
+
+El JSON contiguo conserva procedencia y audit. No regenerar desde HEAD y
+presentarlo como el ZIP enviado: sólo coinciden si los bytes/hash coinciden.
 
 ## Inventario auditado
 

@@ -9,7 +9,7 @@ pago en el repositorio.
 - Nombre: `Issopen`
 - Resumen: `Pega o sube imágenes y crea tickets en tus proyectos y Epics de Issopen.`
 - Idioma principal: `Español`
-- Categoría: `Productividad`
+- Categoría: `Productividad > Trabajo y planificación`
 - Visibilidad: `Unlisted`
 - Regiones: `Todas las regiones`
 - Homepage: `https://issopen.serviciosegado.com/chrome`
@@ -69,9 +69,11 @@ Tipos de datos que deben declararse:
   la cuenta autenticada.
 - Información de autenticación: tokens revocables de esta instalación; nunca
   contraseña de Google o Issopen.
-- Contenido generado por el usuario: proyecto/Epic elegidos, campos del ticket
-  e imágenes pegadas o subidas explícitamente.
-- No marcar historial, actividad de navegación, contenido de sitios, datos de
+- Contenido del sitio web: categoría del dashboard usada para los campos del
+  ticket e imágenes aportados explícitamente; no hay una categoría independiente
+  de contenido generado por el usuario en el formulario observado. Esta
+  declaración no significa que la extensión lea páginas.
+- No marcar historial, actividad de navegación, datos de
   formularios, comunicaciones personales, ubicación, salud o finanzas: esta
   versión no los obtiene.
 
@@ -86,18 +88,20 @@ dashboard explicar:
 
 1. instalar y abrir Issopen desde el icono de la barra;
 2. pulsar **Conectar con Issopen**;
-3. autenticarse en la web con la identidad invitada proporcionada al revisor;
+3. autenticarse en la web con la identidad de revisión proporcionada;
 4. autorizar la instalación y volver al panel;
 5. seleccionar el proyecto de revisión, pegar/subir una imagen de prueba y
    pulsar **Enviar ticket**;
 6. abrir el ticket creado y, al terminar, desconectar la instalación.
 
-Crear la identidad/invitación justo antes del envío, comunicarla sólo mediante
-el campo privado de Google y revocarla cuando termine la revisión.
+El acceso enviado usa un Member local aislado, sin Google ni 2FA del revisor.
+Seguir [el procedimiento de revisión](../../../docs/chrome-review-access.md),
+incluida su retirada explícita al terminar. La respuesta posterior de 86 pide
+Google de pruebas: aclarar y verificar cualquier sustituto antes del relevo.
 
 ## Checkpoint externo
 
-El 13/09/2026 el dashboard mostró que `serviciosegado@gmail.com` todavía no es
-publisher: requiere aceptar el acuerdo y pagar la cuota única de 5 USD. Esa
-aceptación legal y el pago son acciones humanas. Hasta completarlas no se puede
-crear el item ni rellenar/guardar la ficha en Google.
+Registro/pago completados por el propietario y correo verificado. Item
+`eohpecaogeelnicbpeedjdganacfknok`, 0.6.2, enviado el 13/09/2026: Pendiente de
+revisión, Sin mostrar y publicación diferida. No volver a subir el mismo ZIP
+ni afirmar que la aceptación del paquete equivale a aprobación de políticas.

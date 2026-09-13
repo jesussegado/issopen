@@ -1,8 +1,15 @@
 # Chrome Web Store: contrato de publicación Unlisted
 
-Estado: contrato, privacidad y fuentes de la ficha 0.6.2 preparados; la cuenta
-publisher aún requiere aceptación humana del acuerdo y el pago único de 5 USD,
-por lo que no existe item ni envío a revisión. Última comprobación: 2026-09-13.
+Estado observado el 2026-09-13 a las 19:24 UTC: **Pendiente de revisión**.
+Issopen 0.6.2 está enviado, con visibilidad **Sin mostrar (Unlisted)** y
+publicación automática desactivada. No hay versión aprobada/publicada todavía.
+
+- Publisher: `0c6be6e6-1d57-48de-acb3-66166bda94a3`.
+- Item: `eohpecaogeelnicbpeedjdganacfknok`.
+- Fuente del ZIP: `d4a0ae8be185fec921602fbc12a0fe723b01ff56`.
+- SHA-256: `0e9c636c51407797e95697fa5cb1a8d679448d13775c7887161079f2e2fb177b`.
+- [Estado en el dashboard](https://chrome.google.com/webstore/devconsole/0c6be6e6-1d57-48de-acb3-66166bda94a3/eohpecaogeelnicbpeedjdganacfknok/edit/status).
+- [Operación del canal](chrome-store-operations.md) y [piloto](chrome-store-pilot.md).
 
 ## Objetivo y límites
 
@@ -42,11 +49,14 @@ de revisión y checkpoint externo está en
 dimensiones, bytes y SHA-256. Las páginas públicas canónicas son `/chrome`,
 `/support` y `/privacy`, renderizadas sin consultar una sesión.
 
-El dashboard de `serviciosegado@gmail.com` se abrió el 13/09/2026 y confirmó
-que la cuenta no está registrada como publisher. Google exige aceptar el
-acuerdo y pagar la cuota única de 5 USD. No se marcaron términos ni se inició el
-pago: ambas son acciones humanas, y el resto del formulario permanece
-inaccesible hasta completarlas.
+El propietario completó registro y pago; el correo de contacto está verificado.
+La declaración guardada es no operador, según su decisión explícita sobre el
+uso actual no profesional. Si ese uso cambia debe revisarla personalmente.
+La ficha y las instrucciones privadas del Member aislado se guardaron y se
+comprobó su persistencia. El posterior envío fue autorizado con «enviala».
+La nueva respuesta del ticket 86 elige Google de pruebas: hay una aclaración
+bloqueante para decidir el relevo; no retirar el acceso ya enviado mientras
+se resuelve. Véase [acceso de revisión](chrome-review-access.md).
 
 La revisión de GitOps y el digest observados mandan sobre descriptores locales
 desactualizados. Antes de cada publicación se vuelve a consultar el clúster.

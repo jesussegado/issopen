@@ -47,7 +47,12 @@ haya conflicto, usa este orden:
   `eohpecaogeelnicbpeedjdganacfknok`, versión 0.6.2, ficha Unlisted guardada,
   contacto verificado y declaración de no operador indicada por el dueño.
   Las instrucciones privadas de prueba están guardadas. Estado observado:
-  borrador, todavía sin enviar a revisión ni publicar.
+  enviado el 2026-09-13 a las 19:24 UTC, Pendiente de revisión, Unlisted y
+  publicación automática desactivada. No aprobado/publicado todavía.
+  La respuesta posterior de 86 pide Google de pruebas: aclaración bloqueante
+  antes de sustituir el Member local ya enviado. No retirar acceso durante review.
+  [Operación Store](docs/chrome-store-operations.md) y
+  [piloto pendiente](docs/chrome-store-pilot.md) delimitan los gates de 87/88.
 
 - Chrome 0.6.2 conserva el control de datos de ticket 83 y elimina de la fuente
   y del paquete los entrypoints históricos de captura/DOM. Publica `/privacy`

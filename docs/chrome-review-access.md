@@ -101,7 +101,17 @@ Google reference: [private test instructions](https://developer.chrome.com/docs/
 - Test installations were disconnected/revoked; old test sessions revoked and
   the last session signed out. Reviewer membership/password remain active.
 - Google item `eohpecaogeelnicbpeedjdganacfknok` > Test instructions displays
-  the saved-on-13-September confirmation after reload. Still Draft: this task
-  did not submit for review or publish the extension.
+  the saved-on-13-September confirmation after reload. Subsequently submitted
+  with explicit owner authorization at 19:24 UTC: Pending review, Unlisted,
+  automatic publication disabled. Not approved/published yet.
 - 94 unit/web tests, 66 integration tests, lint, typecheck, build and secret
   scan passed. No runtime or GitOps changes required for operator provisioning.
+
+## Later decision requiring clarification
+
+At 19:35 UTC the human answer in ticket 86 selected a dedicated Google test
+identity instead of this local account. A blocking follow-up question records
+the conflict with the already-submitted access. Do not silently ignore that
+answer, impersonate a human response, revoke the working reviewer or edit the
+private Google credentials before the replacement is agreed and verified.
+No Google test identity has been created by this procedure.
