@@ -248,6 +248,69 @@ async function createMemberSession(projectIds: string[]) {
 }
 
 describe("human Chrome OAuth", () => {
+  it("lets a Member manage only their web sessions without disconnecting Chrome", async () => {
+    const created = await app.request("/api/v1/projects", {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ name: "Session fixture", key: "SESSIONS" }),
+    });
+    const assigned = ((await created.json()) as { project: { id: string } })
+      .project;
+    const member = await createMemberSession([assigned.id]);
+    const connected = await connect(true, member.cookie);
+    const ownerSession = await auth.api.getSession({
+      headers: new Headers({ Cookie: cookie }),
+    });
+    if (!ownerSession) throw new Error("Owner session missing");
+    const response = await app.request("/api/v1/account/sessions", {
+      headers: headers(member.cookie),
+    });
+    expect(response.status).toBe(200);
+    const list = (await response.json()) as {
+      sessions: Array<{ id: string; current: boolean }>;
+    };
+    expect(list.sessions).toHaveLength(1);
+    expect(list.sessions[0]?.current).toBe(true);
+    expect(list.sessions[0]?.id).not.toBe(ownerSession.session.id);
+    expect(
+      (
+        await app.request(
+          `/api/v1/account/sessions/${ownerSession.session.id}/revoke`,
+          { method: "POST", headers: headers(member.cookie) },
+        )
+      ).status,
+    ).toBe(404);
+    const id = list.sessions[0]?.id;
+    expect(
+      (
+        await app.request(`/api/v1/account/sessions/${id}/revoke`, {
+          method: "POST",
+          headers: headers(member.cookie),
+        })
+      ).status,
+    ).toBe(200);
+    expect(
+      (
+        await app.request("/api/v1/session", {
+          headers: headers(member.cookie),
+        })
+      ).status,
+    ).toBe(401);
+    expect(
+      (await app.request("/api/v1/session", { headers: headers() })).status,
+    ).toBe(200);
+    expect((await readSession(connected.tokens)).status).toBe(200);
+    expect(
+      (
+        await token({
+          grant_type: "refresh_token",
+          client_id: connected.clientId,
+          refresh_token: connected.tokens.refresh_token,
+        })
+      ).status,
+    ).toBe(200);
+  });
+
   it("limits an invited installation to assigned projects and revokes it with membership", async () => {
     const createProject = async (name: string, key: string) => {
       const response = await app.request("/api/v1/projects", {

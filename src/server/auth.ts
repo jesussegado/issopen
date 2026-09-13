@@ -60,6 +60,8 @@ export function createAuth(db: Database, config: AppConfig) {
       },
     },
     disabledPaths: ["/sign-up/email"],
+    // Revocation must affect the next request, including on other browsers.
+    session: { cookieCache: { enabled: false } },
     plugins: [
       jwt(),
       invitationAuthPlugin(db),

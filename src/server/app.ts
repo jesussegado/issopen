@@ -22,6 +22,7 @@ import {
   isExtensionClientId,
   oauthClientIdFromRequest,
 } from "./extensions.js";
+import { createAccountRouter } from "./http/account.js";
 import {
   createAgentRouter,
   createInvitationRouter,
@@ -318,6 +319,7 @@ export function createApp({
   });
 
   app.route("/api/v1", createTrackerRouter({ db }));
+  app.route("/api/v1", createAccountRouter(db, auth));
   app.route("/api/v1", createAgentRouter({ db }));
   app.route(
     "/api/v1",

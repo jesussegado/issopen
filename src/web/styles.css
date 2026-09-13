@@ -1371,3 +1371,23 @@ progress {
       transform 120ms;
   }
 }
+.account-session-list {
+  display: grid;
+  gap: 1rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.account-session-card {
+  display: grid;
+  gap: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  min-width: 0;
+}
+
+.account-session-card .section-heading {
+  flex-wrap: wrap;
+}

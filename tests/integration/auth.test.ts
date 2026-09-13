@@ -2,7 +2,7 @@ import {
   PostgreSqlContainer,
   type StartedPostgreSqlContainer,
 } from "@testcontainers/postgresql";
-import { count, eq } from "drizzle-orm";
+import { and, count, eq, ne } from "drizzle-orm";
 import pino from "pino";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { bootstrapOwner, recoverOwner } from "../../scripts/owner.js";
@@ -103,6 +103,167 @@ afterAll(async () => {
 });
 
 describe("private owner authentication", () => {
+  it("lists only own active web sessions with safe metadata and revokes one immediately", async () => {
+    const app = createTestApp();
+    await bootstrapOwner(connection.db, auth, ownerInput);
+    const first = await signIn(app);
+    const second = await signIn(app);
+    const current = await auth.api.getSession({
+      headers: new Headers({ Cookie: first.cookie }),
+    });
+    if (!current) throw new Error("Fixture session missing");
+    await connection.db.insert(user).values({
+      id: "foreign-session-user",
+      name: "Foreign",
+      email: "foreign-session@example.test",
+    });
+    await connection.db.insert(session).values([
+      {
+        id: "foreign-session-id",
+        userId: "foreign-session-user",
+        token: "synthetic-foreign-bearer",
+        expiresAt: new Date(Date.now() + 600_000),
+      },
+      {
+        id: "expired-session-id",
+        userId: current.user.id,
+        token: "synthetic-expired-bearer",
+        expiresAt: new Date(Date.now() - 600_000),
+      },
+    ]);
+    await connection.db
+      .update(session)
+      .set({
+        userAgent: "private-value <script> Chrome/152 Linux",
+        ipAddress: "192.0.2.123",
+      })
+      .where(eq(session.userId, current.user.id));
+    const request = (
+      path: string,
+      method = "GET",
+      origin: string | null = baseUrl,
+    ) =>
+      app.request(path, {
+        method,
+        headers: {
+          Cookie: first.cookie,
+          ...(origin ? { Origin: origin } : {}),
+        },
+      });
+    expect((await app.request("/api/v1/account/sessions")).status).toBe(401);
+    const response = await request("/api/v1/account/sessions");
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    const body = (await response.json()) as {
+      sessions: Array<{ id: string; current: boolean; device: string }>;
+      hasMore: boolean;
+    };
+    expect(body.sessions).toHaveLength(2);
+    expect(body.sessions[0]?.current).toBe(true);
+    expect(body.sessions[0]?.id).toBe(current.session.id);
+    expect(body.sessions[0]?.device).toBe("Chrome · Linux");
+    const encoded = JSON.stringify(body);
+    for (const secret of [
+      "token",
+      "ipAddress",
+      "userAgent",
+      "192.0.2.123",
+      "private-value",
+      "foreign-session-id",
+      "expired-session-id",
+      current.session.token,
+    ])
+      expect(encoded).not.toContain(secret);
+    const other = body.sessions.find((entry) => !entry.current);
+    if (!other) throw new Error("Fixture second session missing");
+    const revokePath = `/api/v1/account/sessions/${other.id}/revoke`;
+    expect((await request(revokePath, "POST", null)).status).toBe(403);
+    expect(
+      (await request(revokePath, "POST", "https://foreign.example.test"))
+        .status,
+    ).toBe(403);
+    expect(
+      (
+        await request(
+          "/api/v1/account/sessions/foreign-session-id/revoke",
+          "POST",
+        )
+      ).status,
+    ).toBe(404);
+    expect((await request(revokePath, "POST")).status).toBe(200);
+    expect(
+      (
+        await app.request("/api/v1/session", {
+          headers: { Cookie: second.cookie },
+        })
+      ).status,
+    ).toBe(401);
+    expect((await request("/api/v1/session")).status).toBe(200);
+    expect((await request(revokePath, "POST")).status).toBe(404);
+    expect(
+      await connection.db
+        .select()
+        .from(session)
+        .where(eq(session.id, "foreign-session-id")),
+    ).toHaveLength(1);
+  });
+
+  it("closes other web sessions without changing credentials, then signs out the current browser", async () => {
+    const app = createTestApp();
+    await bootstrapOwner(connection.db, auth, ownerInput);
+    const first = await signIn(app);
+    const second = await signIn(app);
+    const current = await auth.api.getSession({
+      headers: new Headers({ Cookie: first.cookie }),
+    });
+    if (!current) throw new Error("Fixture session missing");
+    const accounts = await connection.db.select().from(account);
+    const response = await app.request(
+      "/api/v1/account/sessions/revoke-others",
+      { method: "POST", headers: { Cookie: first.cookie, Origin: baseUrl } },
+    );
+    expect(response.status).toBe(200);
+    expect(
+      await connection.db
+        .select()
+        .from(session)
+        .where(
+          and(
+            eq(session.userId, current.user.id),
+            ne(session.id, current.session.id),
+          ),
+        ),
+    ).toHaveLength(0);
+    expect(
+      (
+        await app.request("/api/v1/session", {
+          headers: { Cookie: second.cookie },
+        })
+      ).status,
+    ).toBe(401);
+    expect(
+      (
+        await app.request("/api/v1/session", {
+          headers: { Cookie: first.cookie },
+        })
+      ).status,
+    ).toBe(200);
+    expect(await connection.db.select().from(account)).toEqual(accounts);
+    const signOut = await app.request(
+      `/api/v1/account/sessions/${current.session.id}/revoke`,
+      { method: "POST", headers: { Cookie: first.cookie, Origin: baseUrl } },
+    );
+    expect(signOut.status).toBe(200);
+    expect(await signOut.json()).toEqual({ revoked: true, current: true });
+    expect(signOut.headers.get("set-cookie")).toContain("Max-Age=0");
+    expect(
+      (
+        await app.request("/api/v1/session", {
+          headers: { Cookie: first.cookie },
+        })
+      ).status,
+    ).toBe(401);
+  });
+
   it("provisions an isolated review Member without opening signup and revokes its credential", async () => {
     const app = createTestApp();
     await bootstrapOwner(connection.db, auth, ownerInput);

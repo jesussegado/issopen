@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { AccountSessions } from "../components/AccountSessions.js";
 import { Badge, Button, PageHeading, StatusBanner } from "../components/ui.js";
 import type { Session } from "../types.js";
 
@@ -121,6 +122,7 @@ export function AccountRoute({ session }: { session: Session }) {
         </p>
         <a href="/privacy">Open privacy and data controls</a>
       </section>
+      <AccountSessions />
       <section className="detail-panel form-stack">
         <div className="section-heading">
           <h2>Google verification</h2>
