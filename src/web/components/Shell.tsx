@@ -140,7 +140,11 @@ export function AuthenticatedShell({
         <span className="metadata">
           {session.workspace.role === "owner" ? "Owner" : "Member"}
         </span>
-        <MobileNavigation>{navigation}</MobileNavigation>
+        <MobileNavigation
+          key={`${session.user.id}:${session.workspace.id}:${pathname}`}
+        >
+          {navigation}
+        </MobileNavigation>
         <details className="owner-menu">
           <summary>{session.user.name}</summary>
           <div className="owner-menu-panel">
