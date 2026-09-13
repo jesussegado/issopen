@@ -29,13 +29,25 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+- Ticket 86 dispone de un proyecto **Google Review Demo** con un Member local
+  exclusivo, sin acceso a proyectos reales. Alta/revocación administrativa en
+  `scripts/store-reviewer.ts`, autorización explícita del propietario el
+  2026-09-13, procedimiento en [acceso de revisión](docs/chrome-review-access.md).
+  Credencial en `.local/secrets/chrome-review.json` ignorado, modo 0600, y en el
+  campo privado de Google; nunca copiarla a tickets/Git. Se verificaron login,
+  denegaciones y OAuth Chrome con creación de ticket/imagen en producción.
+  No caduca automáticamente: retirar el acceso al terminar la revisión.
+  No se modificaron signup, OAuth general, esquema ni imagen desplegada.
+
 - Ticket 84 prepara la ficha Chrome 0.6.2 en
   `extensions/chrome/store/LISTING.es.md`, páginas públicas `/chrome` y
   `/support` y assets reproducibles mediante `pnpm store:assets`. Los PNG se
   validan por dimensiones y SHA-256 en `store/assets/assets.json`. El dashboard
-  de `serviciosegado@gmail.com` sigue en la pantalla de registro: aceptar el
-  acuerdo y pagar 5 USD son un checkpoint humano; no afirmar que hay item hasta
-  observarlo tras ese paso.
+  de `serviciosegado@gmail.com` ya tiene el item
+  `eohpecaogeelnicbpeedjdganacfknok`, versión 0.6.2, ficha Unlisted guardada,
+  contacto verificado y declaración de no operador indicada por el dueño.
+  Las instrucciones privadas de prueba están guardadas. Estado observado:
+  borrador, todavía sin enviar a revisión ni publicar.
 
 - Chrome 0.6.2 conserva el control de datos de ticket 83 y elimina de la fuente
   y del paquete los entrypoints históricos de captura/DOM. Publica `/privacy`

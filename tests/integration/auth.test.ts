@@ -6,6 +6,10 @@ import { count, eq } from "drizzle-orm";
 import pino from "pino";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { bootstrapOwner, recoverOwner } from "../../scripts/owner.js";
+import {
+  provisionReviewDemo,
+  revokeReviewDemo,
+} from "../../scripts/store-reviewer.js";
 import { createApp } from "../../src/server/app.js";
 import { createAuth, type IssopenAuth } from "../../src/server/auth.js";
 import { loadConfig } from "../../src/server/config.js";
@@ -14,7 +18,15 @@ import {
   type DatabaseConnection,
 } from "../../src/server/db/client.js";
 import { migrateDatabase } from "../../src/server/db/migrate.js";
-import { instanceOwner, session, user } from "../../src/server/db/schema.js";
+import {
+  account,
+  instanceOwner,
+  membershipEvent,
+  project,
+  session,
+  user,
+  workspace,
+} from "../../src/server/db/schema.js";
 
 const baseUrl = "http://localhost:8080";
 const ownerInput = {
@@ -91,6 +103,193 @@ afterAll(async () => {
 });
 
 describe("private owner authentication", () => {
+  it("provisions an isolated review Member without opening signup and revokes its credential", async () => {
+    const app = createTestApp();
+    await bootstrapOwner(connection.db, auth, ownerInput);
+    const signedIn = await signIn(app);
+    await app.request("/api/v1/workspace", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Origin: baseUrl,
+        Cookie: signedIn.cookie,
+      },
+      body: JSON.stringify({ name: "Private workspace" }),
+    });
+    const [ws] = await connection.db.select().from(workspace);
+    if (!ws) throw new Error("Fixture workspace missing");
+    const privateResponse = await app.request("/api/v1/projects", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Origin: baseUrl,
+        Cookie: signedIn.cookie,
+      },
+      body: JSON.stringify({ name: "Private", key: "PRIVATE" }),
+    });
+    const privateData = (await privateResponse.json()) as {
+      project: { id: string };
+    };
+    const input = {
+      workspaceId: ws.id,
+      ownerUserId: ws.ownerId,
+      userId: "07f153c0-5796-4515-ac3a-d8a9900b0f2d",
+      email: "review@example.test",
+      password: "synthetic-review-password-not-real",
+    };
+    const result = await provisionReviewDemo(connection.db, auth, input);
+    expect(result.created).toBe(true);
+    expect(await provisionReviewDemo(connection.db, auth, input)).toEqual({
+      ...result,
+      created: false,
+    });
+    const [credential] = await connection.db
+      .select()
+      .from(account)
+      .where(eq(account.userId, input.userId));
+    expect(credential?.password).not.toBe(input.password);
+    expect(credential?.providerId).toBe("credential");
+    const [reviewUser] = await connection.db
+      .select()
+      .from(user)
+      .where(eq(user.id, input.userId));
+    expect(reviewUser?.emailVerified).toBe(false);
+    const events = await connection.db
+      .select()
+      .from(membershipEvent)
+      .where(eq(membershipEvent.subjectUserId, input.userId));
+    expect(events).toHaveLength(2);
+    expect(JSON.stringify(events)).not.toContain(input.password);
+    const login = await app.request("/api/auth/sign-in/email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Origin: baseUrl },
+      body: JSON.stringify({ email: input.email, password: input.password }),
+    });
+    expect(login.status).toBe(200);
+    const reviewCookie =
+      login.headers.get("set-cookie")?.split(";", 1)[0] ?? "";
+    const request = (path: string, init?: RequestInit) =>
+      app.request(path, {
+        ...init,
+        headers: {
+          Cookie: reviewCookie,
+          Origin: baseUrl,
+          "Content-Type": "application/json",
+        },
+      });
+    const list = (await (await request("/api/v1/projects")).json()) as {
+      projects: Array<{ id: string }>;
+    };
+    expect(list.projects.map((p) => p.id)).toEqual([result.projectId]);
+    expect(
+      (await request(`/api/v1/projects/${privateData.project.id}`)).status,
+    ).toBe(404);
+    expect((await request("/api/v1/members")).status).toBe(403);
+    expect((await request("/api/v1/agents")).status).toBe(403);
+    expect(
+      (
+        await request("/api/v1/projects", {
+          method: "POST",
+          body: JSON.stringify({ name: "Denied", key: "DENIED" }),
+        })
+      ).status,
+    ).toBe(403);
+    expect(
+      (
+        await request(`/api/v1/projects/${result.projectId}/issues`, {
+          method: "POST",
+          body: JSON.stringify({ title: "Reviewer can create tickets" }),
+        })
+      ).status,
+    ).toBe(201);
+    expect(
+      (
+        await request("/api/auth/sign-up/email", {
+          method: "POST",
+          body: JSON.stringify({
+            email: "stranger@example.test",
+            password: input.password,
+            name: "Stranger",
+          }),
+        })
+      ).status,
+    ).not.toBe(200);
+    await revokeReviewDemo(connection.db, input);
+    expect((await request("/api/v1/projects")).status).toBe(401);
+    expect(
+      (
+        await app.request("/api/auth/sign-in/email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Origin: baseUrl },
+          body: JSON.stringify({
+            email: input.email,
+            password: input.password,
+          }),
+        })
+      ).status,
+    ).toBe(401);
+    await expect(
+      provisionReviewDemo(connection.db, auth, input),
+    ).rejects.toThrow("cannot be adopted");
+    await expect(revokeReviewDemo(connection.db, input)).resolves.toMatchObject(
+      { revoked: true },
+    );
+  });
+
+  it("refuses review collisions and wrong ownership without partial records", async () => {
+    const app = createTestApp();
+    await bootstrapOwner(connection.db, auth, ownerInput);
+    const signedIn = await signIn(app);
+    await app.request("/api/v1/workspace", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Origin: baseUrl,
+        Cookie: signedIn.cookie,
+      },
+      body: JSON.stringify({ name: "Private workspace" }),
+    });
+    const [ws] = await connection.db.select().from(workspace);
+    if (!ws) throw new Error("Fixture workspace missing");
+    const input = {
+      workspaceId: ws.id,
+      ownerUserId: ws.ownerId,
+      userId: "07f153c0-5796-4515-ac3a-d8a9900b0f2d",
+      email: "review@example.test",
+      password: "synthetic-review-password-not-real",
+    };
+    await expect(
+      provisionReviewDemo(connection.db, auth, {
+        ...input,
+        ownerUserId: input.userId,
+      }),
+    ).rejects.toThrow("exact workspace owner");
+    await expect(
+      provisionReviewDemo(connection.db, auth, {
+        ...input,
+        email: ownerInput.email,
+      }),
+    ).rejects.toThrow("cannot be adopted");
+    await connection.db.insert(project).values({
+      id: "99c56d71-58c3-4979-a1a7-c601e3b790b7",
+      workspaceId: ws.id,
+      name: "Reserved",
+      key: "CWSREVIEW",
+    });
+    await expect(
+      provisionReviewDemo(connection.db, auth, input),
+    ).rejects.toThrow();
+    expect(
+      await connection.db.select().from(user).where(eq(user.id, input.userId)),
+    ).toHaveLength(0);
+    expect(
+      await connection.db
+        .select()
+        .from(account)
+        .where(eq(account.userId, input.userId)),
+    ).toHaveLength(0);
+  });
+
   it("advertises only configured Google OAuth and starts a bounded OIDC flow", async () => {
     const clientId = "synthetic-google-client-id.apps.googleusercontent.com";
     const clientSecret = "synthetic-google-client-secret";
