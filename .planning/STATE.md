@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Epic 7 ticket 91 deployed and verified; 84/85/91 ready for human review; 86 awaits access clarification and Google review
-last_updated: "2026-09-13T20:02:02Z"
+stopped_at: Epic 7 ticket 86 access confirmed; zero unanswered blockers; Store still Pending review; real pilot/update gates await Google
+last_updated: "2026-09-13T20:26:42Z"
 last_activity: 2026-09-13
 progress:
   total_phases: 9
@@ -21,10 +21,20 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-30)
 
 **Core value:** Convertir una intención humana en trabajo estructurado y seguro que ChatGPT y agentes de código externos puedan entender, ejecutar y devolver a revisión dentro de un único flujo trazable.
-**Current focus:** Epic 7 awaits Google review and the access clarification in
-86. Chrome 0.6.2 was submitted on 2026-09-13 at 19:24 UTC: Pending review,
-Unlisted, automatic publication disabled. Not approved or published. Reread
-live tickets and human answers before any access replacement or publication.
+**Current focus:** Epic 7 awaits Google review. Chrome 0.6.2 was submitted on
+2026-09-13 at 19:24 UTC: Pending review, Unlisted, automatic publication
+disabled. Dashboard rechecked at 20:23 UTC: still Pending review. Not approved
+or published. Reread live tickets and dashboard before any publication.
+
+Follow-up 2026-09-13, quick 260913-v4j: 86 clarification answered at 20:21:42
+UTC — keep current isolated local reviewer during this review. Both questions
+v2 answered, no unanswered blocker. Preserve credentials, project allowlist
+and private test instructions; future invited Google pilot remains in 87.
+Existing reviewer login/read-only desktop/mobile smoke passed, foreign reads
+and admin still denied; only test session signed out. Runtime b0240335 remains
+Synced/Healthy, Ready/0 restarts and readiness 200. Documentation c0199fd,
+Epic v5/comment updated; no deployment, new account or claim. 87/88 still need
+the real Store/pilot/update gates, not additional review-access clarification.
 
 Follow-up 2026-09-13: quick 260913-u1g reconciles Store evidence and prepares
 pilot 87/operations 88 runbooks without pretending their real gates passed.
@@ -37,9 +47,9 @@ Compose and secret scan pass; submitted Chrome ZIP hash unchanged. Canonical
 homelab 197 tests and actual GitOps candidate 134 tests/render pass. Backup
 restored isolated: 97 tickets, 809 events, 13 image hashes and 19 receipts.
 Independent production Member smoke at 1440/360 px passed without ticket
-mutation or disturbing user Chrome. The 86 clarification is still unanswered:
-later Google-test choice conflicts with the existing isolated local reviewer;
-preserve access until a replacement is explicitly selected and tested.
+mutation or disturbing user Chrome. At that checkpoint the 86 clarification
+was unanswered; the later explicit keep-access answer is recorded above in
+quick 260913-v4j. Preserve both the decision history and current reviewer.
 
 Earlier follow-up 2026-09-13 (before submission): quick 260913-qn7 provisions the owner-approved local
 Member in a fresh Google Review Demo project with synthetic data only. Source
@@ -285,6 +295,7 @@ Decisions are logged in PROJECT.md Key Decisions table. Current roadmap-level st
 
 | ID | Description | Date | Commits | Status | Directory |
 | --- | --- | --- | --- | --- | --- |
+| 260913-v4j | Confirmar acceso de revisión y comprobar Store tras respuesta 86 | 2026-09-13 | `c0199fd` | 2/2 respuestas; reviewer smoke PASS; Store Pending review, sin deploy | [260913-v4j](./quick/260913-v4j-confirmar-acceso-de-review-del-ticket-86/) |
 | 260913-u1g | Epic 7 respuestas, evidencia Store y detalle Member 91 | 2026-09-13 | `e8be86a`, `be31905`; GitOps `b0240335` | Gates/restore/smoke PASS; 84/85/91 Ready for Human Review; 86/87/88 external gates pending | [260913-u1g](./quick/260913-u1g-continuar-epic-7-tras-respuestas-validar/) |
 | 260913-qn7 | Cuenta Member y proyecto aislado para revisión Google | 2026-09-13 | `e05ff24` | 160 tests PASS; OAuth/imagen y formulario privado Google verificados; Store Draft | [260913-qn7](./quick/260913-qn7-preparar-cuenta-member-y-proyecto-aislad/) |
 | 260910-f5d | Chrome: enlace de éxito y acciones finales apiladas | 2026-09-10 | `c76a591` | 220 tests PASS; 0.5.4 CSS live, 0.5.3 runtime/confirmation preserved; 56 Ready for Review | [260910-f5d](./quick/260910-f5d-mejorar-enlace-y-apilar-acciones-de-tick/) |
@@ -307,10 +318,10 @@ Decisions are logged in PROJECT.md Key Decisions table. Current roadmap-level st
 
 ### Blockers/Concerns
 
-- Epic 7: Google approval/manual publication, an unanswered access-replacement
-  clarification in 86, and real Store pilot/update gates in 87/88 remain.
-  Do not revoke the active review Member or alter submitted test instructions
-  before a controlled replacement works. Unpacked smoke is not Store acceptance.
+- Epic 7: Google approval/manual publication and real Store pilot/update gates
+  in 87/88 remain. Access clarification 86 is resolved: keep the current local
+  Member and private instructions during review. Unpacked smoke is not Store
+  acceptance. No unanswered question remains in 86 as of 20:26 UTC.
 
 - Phase 1 uses an operator-only singleton bootstrap and recovery that revokes
   sessions; no anonymous owner-creation route is allowed.
@@ -334,5 +345,5 @@ Items acknowledged and carried forward from previous milestone close:
 ## Session Continuity
 
 Last session: 2026-09-13
-Stopped at: Member detail 91 deployed (be31905/b0240335), verified and Ready for Human Review. 84/85 verified; 78–83 user-closed. 86 submitted Pending review/Unlisted/manual publication, access clarification unanswered; 87/88 prepared but pending real Store gates. No claims held.
-Resume file: ./quick/260913-u1g-continuar-epic-7-tras-respuestas-validar/260913-u1g-SUMMARY.md (derived evidence; reread live tickets/answers)
+Stopped at: Ticket 86 access confirmed, 2/2 answers, reviewer working. Store still Pending review; publication/pilot/update external gates remain. Runtime 91 still healthy, no new deploy. 84/85/91 Ready for Human Review; 78–83 user-closed. No claims held.
+Resume file: ./quick/260913-v4j-confirmar-acceso-de-review-del-ticket-86/260913-v4j-SUMMARY.md (derived evidence; reread live tickets/answers and Store dashboard)
