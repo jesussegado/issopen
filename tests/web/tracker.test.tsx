@@ -18,6 +18,7 @@ import {
 } from "../../src/web/routes/EpicRoutes.js";
 import { IssueDetailRoute } from "../../src/web/routes/IssueDetailRoute.js";
 import { IssueFormRoute } from "../../src/web/routes/TrackerForms.js";
+import type { Session } from "../../src/web/types.js";
 import { issueStatuses } from "../../src/web/types.js";
 import { syntheticPng } from "../fixtures/png.js";
 
@@ -56,6 +57,16 @@ const issue = {
   createdAt: "2026-08-31T12:00:00.000Z",
   updatedAt: "2026-08-31T12:00:00.000Z",
 };
+
+const ownerSession = {
+  user: { id: "owner-1", name: "Owner", email: "owner@example.test" },
+  workspace: {
+    id: project.workspaceId,
+    name: "Workspace",
+    version: 1,
+    role: "owner",
+  },
+} satisfies Session;
 
 const epic = {
   id: "55555555-5555-4555-8555-555555555555",
@@ -98,6 +109,112 @@ afterEach(() => {
 });
 
 describe("tracker web routes", () => {
+  it.each([
+    { viewer: ownerSession, canDelete: true, ownerLabel: "Owner: You" },
+    {
+      viewer: {
+        ...ownerSession,
+        user: { id: "member-1", name: "Member", email: "member@example.test" },
+        workspace: { ...ownerSession.workspace, role: "member" as const },
+      },
+      canDelete: false,
+      ownerLabel: "Owner: Workspace owner",
+    },
+    {
+      viewer: { ...ownerSession, workspace: null },
+      canDelete: false,
+      ownerLabel: "Owner: You",
+    },
+    {
+      viewer: {
+        ...ownerSession,
+        workspace: { ...ownerSession.workspace, id: "other-workspace" },
+      },
+      canDelete: false,
+      ownerLabel: "Owner: You",
+    },
+  ])(
+    "derives delete access and human attribution from the current session ($canDelete)",
+    async ({ viewer, canDelete, ownerLabel }) => {
+      const authors = [
+        { id: "owner-1", name: "Owner" },
+        { id: "member-1", name: "Member" },
+        { id: "third-human", name: "<img src=x onerror=alert(1)>" },
+      ];
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async (input: RequestInfo | URL) => {
+          const path = String(input);
+          if (path === `/api/v1/issues/${issue.id}`)
+            return json({
+              issue: { ...issue, status: "ready_for_review" },
+              epic: null,
+              codeLinks: [],
+              questions: [],
+              questionSummary: { total: 0, answered: 0, unansweredBlocking: 0 },
+              comments: authors.map((author, index) => ({
+                id: `comment-${index}`,
+                issueId: issue.id,
+                workspaceId: project.workspaceId,
+                body: `Note ${index}`,
+                authorType: "human",
+                authorId: author.id,
+                authorDisplayName: author.name,
+                source: "rest",
+                createdAt: issue.createdAt,
+              })),
+            });
+          if (path.endsWith("/activity"))
+            return json({
+              activity: authors.map((author, index) => ({
+                id: `event-${index}`,
+                issueId: issue.id,
+                type: "issue.updated",
+                summary: `Update ${index}`,
+                actorType: "human",
+                actorId: author.id,
+                actorDisplayName: author.name,
+                source: "rest",
+                createdAt: issue.createdAt,
+                changes: {},
+              })),
+            });
+          if (path.endsWith("/evidence")) return json({ evidence: [] });
+          if (path === `/api/v1/projects/${project.id}`)
+            return json({ project });
+          throw new Error(`Unexpected request ${path}`);
+        }),
+      );
+      render(<IssueDetailRoute issueId={issue.id} session={viewer} />);
+      expect(await screen.findByText(ownerLabel)).toBeVisible();
+      expect(
+        Boolean(screen.queryByRole("button", { name: "Delete ticket" })),
+      ).toBe(canDelete);
+      // Members retain project work; only Owner-only deletion is hidden.
+      expect(screen.getByRole("link", { name: "Edit issue" })).toBeVisible();
+      expect(screen.getByRole("button", { name: "Add comment" })).toBeVisible();
+      expect(
+        screen.getByRole("button", { name: "Accept result" }),
+      ).toBeVisible();
+      for (const label of ["Comments", "Activity"]) {
+        const section = screen.getByRole(
+          label === "Activity" ? "complementary" : "region",
+          { name: label },
+        );
+        expect(within(section).getAllByText("You")).toHaveLength(1);
+        expect(
+          within(section).getByText(
+            viewer.user.id === "owner-1" ? "Member" : "Owner",
+          ),
+        ).toBeVisible();
+        expect(
+          within(section).getByText("<img src=x onerror=alert(1)>"),
+        ).toBeVisible();
+        expect(section.querySelector("img")).toBeNull();
+      }
+    },
+  );
+
   it("permanently deletes an owned image only after explicit confirmation", async () => {
     const evidenceId = "66666666-6666-4666-8666-666666666666";
     const imageUrl = `/api/v1/evidence/${evidenceId}/image`;
@@ -970,7 +1087,7 @@ describe("tracker web routes", () => {
     );
     window.history.replaceState({}, "", `/issues/${issue.id}`);
     const user = userEvent.setup();
-    render(<IssueDetailRoute issueId={issue.id} />);
+    render(<IssueDetailRoute issueId={issue.id} session={ownerSession} />);
 
     expect(
       await screen.findByRole("heading", { name: `1-${issue.title}` }),
@@ -1131,7 +1248,7 @@ describe("tracker web routes", () => {
     );
     window.history.replaceState({}, "", `/issues/${issue.id}`);
     const user = userEvent.setup();
-    render(<IssueDetailRoute issueId={issue.id} />);
+    render(<IssueDetailRoute issueId={issue.id} session={ownerSession} />);
 
     expect(
       await screen.findByText("Questions are blocking this ticket", {

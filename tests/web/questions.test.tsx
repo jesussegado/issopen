@@ -4,9 +4,18 @@ import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { IssueDetailRoute } from "../../src/web/routes/IssueDetailRoute.js";
-import type { IssueQuestion } from "../../src/web/types.js";
+import type { IssueQuestion, Session } from "../../src/web/types.js";
 
 const timestamp = "2026-09-07T20:00:00.000Z";
+const session: Session = {
+  user: { id: "owner-1", name: "Owner", email: "owner@example.test" },
+  workspace: {
+    id: "workspace-1",
+    name: "Workspace",
+    version: 1,
+    role: "owner",
+  },
+};
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -107,7 +116,7 @@ describe("automatic question navigation", () => {
     async ({ kind, order }) => {
       const { save } = mockQuestions();
       const user = userEvent.setup();
-      render(<IssueDetailRoute issueId="issue-1" />);
+      render(<IssueDetailRoute issueId="issue-1" session={session} />);
       expect(await screen.findByText("Decision 1")).toBeInTheDocument();
       for (let index = 0; index < (order[0] ?? 0); index += 1) {
         await user.click(screen.getByRole("button", { name: "Next" }));
@@ -158,7 +167,7 @@ describe("automatic question navigation", () => {
         }),
     );
     const user = userEvent.setup();
-    render(<IssueDetailRoute issueId="issue-1" />);
+    render(<IssueDetailRoute issueId="issue-1" session={session} />);
     expect(await screen.findByText("Decision 1")).toBeInTheDocument();
     await user.click(screen.getByRole("radio", { name: /Web/ }));
     await user.click(screen.getByRole("button", { name: "Save answer" }));

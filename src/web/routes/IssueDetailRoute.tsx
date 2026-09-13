@@ -33,6 +33,7 @@ import type {
   IssueStatus,
   Project,
   QuestionSummary,
+  Session,
 } from "../types.js";
 import {
   codeLinkLabels,
@@ -58,15 +59,21 @@ function formatTimestamp(value: string) {
   }).format(new Date(value));
 }
 
-function actorLabel(activity: Activity) {
-  if (activity.actorType === "human") return "You";
+function actorLabel(activity: Activity, viewerId: string) {
+  if (activity.actorType === "human")
+    return activity.actorId === viewerId
+      ? "You"
+      : activity.actorDisplayName || "Workspace member";
   if (activity.actorType === "agent")
     return `Agent · ${activity.actorDisplayName}`;
   return "System";
 }
 
-function commentAuthorLabel(comment: IssueComment) {
-  if (comment.authorType === "human") return "You";
+function commentAuthorLabel(comment: IssueComment, viewerId: string) {
+  if (comment.authorType === "human")
+    return comment.authorId === viewerId
+      ? "You"
+      : comment.authorDisplayName || "Workspace member";
   if (comment.authorType === "agent")
     return `Agent · ${comment.authorDisplayName}`;
   return "System";
@@ -88,7 +95,13 @@ function newestFirst<T extends { id: string; createdAt: string }>(items: T[]) {
   );
 }
 
-export function IssueDetailRoute({ issueId }: { issueId: string }) {
+export function IssueDetailRoute({
+  issueId,
+  session,
+}: {
+  issueId: string;
+  session: Session;
+}) {
   const [issue, setIssue] = useState<Issue | null>(null);
   const [epic, setEpic] = useState<Epic | null>(null);
   const [links, setLinks] = useState<CodeLink[]>([]);
@@ -341,7 +354,7 @@ export function IssueDetailRoute({ issueId }: { issueId: string }) {
       setCommentBody("");
       setNotice("Comment added");
       setAnnouncement(
-        `Comment added to ${issueReference(issue)} by ${commentAuthorLabel(response.comment)}`,
+        `Comment added to ${issueReference(issue)} by ${commentAuthorLabel(response.comment, session.user.id)}`,
       );
       await refreshActivity();
     } catch (caught) {
@@ -398,7 +411,12 @@ export function IssueDetailRoute({ issueId }: { issueId: string }) {
           </div>
           <PageHeading>{issueLabel(issue)}</PageHeading>
           <div className="issue-metadata">
-            <span>Owner: You</span>
+            <span>
+              Owner:{" "}
+              {issue.humanOwnerId === session.user.id
+                ? "You"
+                : "Workspace owner"}
+            </span>
             {epic ? (
               <>
                 <AppLink
@@ -424,12 +442,15 @@ export function IssueDetailRoute({ issueId }: { issueId: string }) {
           >
             Edit issue
           </AppLink>
-          <DeleteIssueButton
-            key={issue.id}
-            issue={issue}
-            questions={questions}
-            disabled={submitting !== null}
-          />
+          {session.workspace?.role === "owner" &&
+          session.workspace.id === issue.workspaceId ? (
+            <DeleteIssueButton
+              key={issue.id}
+              issue={issue}
+              questions={questions}
+              disabled={submitting !== null}
+            />
+          ) : null}
         </div>
       </div>
       {notice ? <StatusBanner>{notice}</StatusBanner> : null}
@@ -661,7 +682,9 @@ export function IssueDetailRoute({ issueId }: { issueId: string }) {
                     key={comment.id}
                   >
                     <div className="activity-identity">
-                      <Badge>{commentAuthorLabel(comment)}</Badge>
+                      <Badge>
+                        {commentAuthorLabel(comment, session.user.id)}
+                      </Badge>
                       <Badge>{comment.authorType}</Badge>
                       <Badge>{sourceLabels[comment.source]}</Badge>
                     </div>
@@ -862,7 +885,7 @@ export function IssueDetailRoute({ issueId }: { issueId: string }) {
                 <li className="activity-item" key={item.id}>
                   <p>{issueActivitySummary(item.summary, issue)}</p>
                   <div className="activity-identity">
-                    <Badge>{actorLabel(item)}</Badge>
+                    <Badge>{actorLabel(item, session.user.id)}</Badge>
                     <Badge>{item.actorType}</Badge>
                     <Badge>{sourceLabels[item.source]}</Badge>
                   </div>

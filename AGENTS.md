@@ -29,6 +29,13 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+- Ticket 91 deriva el botón de borrado del rol Owner y workspace de la sesión.
+  Member conserva edición, comentarios, preguntas y revisión permitidos por
+  la API. El detalle sólo muestra `Owner: You` al propietario real; comentarios
+  y actividad usan `You` únicamente cuando el ID del actor coincide con quien
+  consulta, y muestran el nombre histórico de otras personas como texto seguro.
+  No cambia permisos del servidor, datos, esquema ni el ZIP Chrome 0.6.2.
+
 - Ticket 86 dispone de un proyecto **Google Review Demo** con un Member local
   exclusivo, sin acceso a proyectos reales. Alta/revocación administrativa en
   `scripts/store-reviewer.ts`, autorización explícita del propietario el

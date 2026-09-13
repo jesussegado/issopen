@@ -271,7 +271,9 @@ function AuthenticatedApp({
       />
     );
   else if (issueDetailMatch?.[1])
-    route = <IssueDetailRoute issueId={issueDetailMatch[1]} />;
+    route = (
+      <IssueDetailRoute issueId={issueDetailMatch[1]} session={session} />
+    );
   else route = <UnavailableRoute />;
 
   return (
