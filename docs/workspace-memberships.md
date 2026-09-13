@@ -1,5 +1,11 @@
 # Workspace memberships and authorization
 
+Runtime baseline below is mono-workspace. Epic 3's approved next contract is
+Owner/Member per workspace plus project read/edit permissions and multiple
+memberships; see [collaboration plan](epic-3-collaboration-plan.md). Ticket 108
+must implement and validate tenancy before enabling it. Do not confuse the
+approved design with deployed capabilities or widen existing grants.
+
 Issopen's external-user pilot has two human roles. A person can belong to one
 workspace at a time; this keeps session routing unambiguous until workspace
 switching is deliberately designed.

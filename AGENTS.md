@@ -29,14 +29,16 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
-- Epic 3 está planificado en Issopen con 14 tickets (94–107) y 20 preguntas
-  de decisión; todavía no hay implementación de ese corte. Empezar por roles/
-  workspaces (94) y ámbito de permisos (95), sin dar recomendaciones por
-  aceptadas. Reutiliza el baseline del Epic 7, no lo duplica ni altera su
-  acceso de revisión. Índice y dependencias en
-  [plan de colaboración](docs/epic-3-collaboration-plan.md), quick `260913-vul`.
-  El encargo actual sólo autoriza planificar: sin nuevos usuarios, correos,
-  permisos, migraciones ni despliegues. Leer respuestas vivas antes del código.
+- Epic 3 entra en implementación por petición explícita tras responder sus
+  20 preguntas (v2, 2026-09-13). Contrato 94: Owner/Member por workspace,
+  varios workspaces y permisos de lectura/edición por proyecto (95), sin signup
+  público. 108 implementa la base multiworkspace antes de sus dependientes.
+  Sesiones propias globales (100) y detalle autorizado (104) admiten entregas
+  independientes; repetir su integración al introducir tenancy/roles nuevos.
+  No se han cambiado accesos reales ni el revisor Store. El índice distingue
+  decisiones aprobadas de código entregado en el
+  [plan de colaboración](docs/epic-3-collaboration-plan.md), quick `260913-x6a`.
+  Releer respuestas/versiones; no retomar las recomendaciones descartadas.
 
 - Ticket 91 deriva el botón de borrado del rol Owner y workspace de la sesión.
   Member conserva edición, comentarios, preguntas y revisión permitidos por

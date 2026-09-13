@@ -1,11 +1,65 @@
 # Epic 3 — usuarios, roles, colaboración e invitaciones
 
-Estado: **planificación, sin implementación**. Fuente canónica:
+Estado: **implementación autorizada tras respuestas**. Fuente canónica:
 [Epic 3 en Issopen](https://issopen.serviciosegado.com/epics/c3b6a630-824e-473a-add9-ac41bf63e38c).
-Inventario del 2026-09-13: 14 tickets (94–107), 20 preguntas bloqueantes sin
-responder, 13 tickets con preguntas y uno de validación sin decisiones propias.
-Todos en Backlog; sin claims. Este archivo es un índice derivado, no una copia
-editable de respuestas. Leer siempre los tickets/versiones actuales.
+Plan inicial: 14 tickets (94–107), 20 preguntas. El 2026-09-13 el propietario
+respondió las 20 (v2) y pidió implementar. Se añade 108 para la base multiworkspace
+seleccionada. Este archivo es un índice derivado, no una copia editable de
+respuestas. Leer siempre los tickets/versiones actuales.
+
+## Contrato tras respuestas — ticket 94
+
+| Área | Elección humana / alcance |
+| --- | --- |
+| Roles | Owner/Member por workspace; sin Admin ni Viewer de workspace |
+| Tenancy | Varios workspaces; membresía explícita y selección autorizada |
+| Proyectos | Permiso por proyecto: edición o sólo lectura; sin acceso por defecto |
+| Miembros | Cero proyectos permitido; retirar/reinvitar, sin suspensión |
+| Invitaciones | Correo + enlace manual; recordatorios sólo por acción del Owner |
+| Onboarding | Único proyecto directo; selector si hay varios; espera si no hay ninguno |
+| Perfil/directorio | Nombre y avatar; nombre/rol sin email de compañeros |
+| Sesiones | Controles separados para web e instalaciones Chrome, sin cierre conjunto |
+| Asignación | Una persona o ninguna; colaboradores con edición pueden reasignar |
+| Preguntas/revisión | Destinatario opcional; colaboradores con edición validan/cierran |
+| Avisos | Bandeja Issopen, sólo actividad dirigida; sin correo de actividad ni seguimiento |
+| Concurrencia | Actualizar detalle limpio; conservar/avisar/comparar si hay borrador |
+| Propiedad | Transferencia web protegida con reautenticación y doble confirmación |
+| Auditoría | Sólo administración (Owner en los roles elegidos) |
+
+Los roles del workspace y los permisos del proyecto son capas distintas: la
+elección de lectura por proyecto en 95 no crea un Viewer global contrario a 94.
+Owner administra su workspace y todos sus proyectos; Member tiene proyectos
+asignados con permiso lectura/edición. Sólo lectura no crea, comenta, responde,
+asigna ni revisa tickets; sí lee el contenido permitido. Cuenta/sesiones propias
+no dependen del permiso de edición del proyecto. MCP conserva identidad, scopes
+y allowlist propios; Chrome es humano y aplica la intersección con sus grants.
+
+### Base multiworkspace (108), todavía no implementada
+
+- Sustituir unicidad global de membresía por workspace/persona; conservar las
+  filas existentes. La migración no añade miembros, proyectos ni privilegios.
+- Identidad y sesión web son globales; cada petición/pestaña fija el workspace.
+  Selector sólo de memberships propias, destino inválido se deniega sin fallback.
+  Una sola membresía conserva navegación actual. Advertir antes de salir de un
+  borrador; cambio en otra pestaña no puede redirigir silenciosamente escrituras.
+- Unirse a otro workspace requiere invitación verificada. La misma identidad
+  puede aceptar sin borrar su primera membresía. No abrir registro ni creación
+  pública de workspaces; bootstrap/operación siguen siendo administrativos.
+- Chrome fija un workspace por instalación/consentimiento; OAuth/MCP existentes
+  no cambian de destino ni ganan proyectos al usar el selector web.
+- Retirar una membresía sólo revoca acceso/grants de ese workspace. Cerrar una
+  sesión propia sí afecta al navegador para todos los workspaces de esa persona.
+- Adaptar bootstrap/recovery para rechazar ambigüedad. No dar por seguro el
+  rollback al binario mono-workspace tras crear membresías múltiples: priorizar
+  corrección hacia delante y backup/restore validado antes del despliegue.
+
+Primero contrato 94 → 108 tenancy → 95 permisos → gestión/invitaciones y resto
+dependiente. 100 puede entregar sesiones globales propias y 104 reconciliación
+del detalle ya autorizado sin esperar nuevas tablas: su política está fijada
+arriba. Su matriz se repetirá con multiworkspace/permisos en 107; no declarar
+95/108 terminados por estas entregas. Todos los tickets siguen necesarios;
+las ramas descartadas de opciones no se implementan. La configuración de correo
+real se resolverá en 97 sin enviar invitaciones ni solicitar secretos por ticket.
 
 ## Base comprobada y límites
 
@@ -30,8 +84,9 @@ Evidencias de fuente inspeccionadas:
 - El board SSE del ticket 63 y los guards de detalle existentes se reutilizan;
   el trabajo nuevo incluye reconciliar cambios remotos sin pisar borradores.
 
-No se autoriza implementar, migrar, invitar personas, enviar correo, cambiar
-Google/DNS/permisos ni desplegar con esta planificación. El revisor de Store
+El encargo inicial de planificación no autorizaba cambios de runtime; el nuevo
+encargo sí pide implementación. Las pruebas no autorizan invitar personas reales,
+enviar correos ni cambiar sus permisos o la configuración Google/DNS. El revisor de Store
 conserva el acceso acordado. No se rehace el bucle agentico del Epic 6 ni la
 política de saltar revisión del ticket 68 (Epic 5).
 
@@ -74,9 +129,10 @@ privacidad del directorio, sesiones, cardinalidad/permisos de asignación,
 destinatarios y revisión, canales/eventos de avisos, conflictos, transferencia
 de propiedad y visibilidad de auditoría.
 
-Recomendaciones no son decisiones: Owner/Member y un workspace son el punto de
-partida. Viewer/Admin, multiworkspace, avatar, email de actividad, seguimiento,
-suspensión y transferencia requieren respuesta afirmativa. Si dos respuestas
+Histórico del plan previo a responder: Owner/Member y un workspace eran el punto de
+partida recomendado. El contrato superior registra las elecciones explícitas y
+sustituye esas recomendaciones para multiworkspace, avatar y transferencia.
+Viewer/Admin, email de actividad, seguimiento y suspensión quedan fuera. Si dos respuestas
 se contradicen, añadir una aclaración al ticket afectado antes de implementar;
 no resolverlo concediendo permisos. Si se mantiene un workspace, multiworkspace
 queda fuera; si se pide, concretar migración/contexto de sesión antes del código.
