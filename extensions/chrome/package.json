@@ -1,11 +1,11 @@
 {
   "name": "@issopen/chrome",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "wxt -b chrome",
-    "build": "wxt build -b chrome",
+    "build": "tsx ../../scripts/extension-icons.ts && wxt build -b chrome",
     "check": "wxt prepare && tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "pnpm build && playwright test"

@@ -5,7 +5,7 @@ repositorio; no crear otro Git. Epic Chrome
 `ca26c29b-43ac-4ca0-b768-594d6779d6e7`; ticket 51 simplifica las imágenes
 por petición explícita del owner. El criterio personal 33 sigue independiente.
 
-## Qué hace ahora (0.6.1)
+## Qué hace ahora (0.6.2)
 
 La fuente de la ficha Unlisted vive en `store/LISTING.es.md` y los recursos
 versionados en `store/assets`. `pnpm store:assets` los reconstruye desde el
@@ -81,9 +81,12 @@ No reintroducir controles de captura por seguir documentación histórica 0.3/0.
   No guardar clipboard crudo, EXIF, imágenes no seleccionadas ni historial.
 - `lib/tickets.ts`: rutas/contratos de API cerrados. Contrato compartido en
   `../../src/shared/capture-contract.ts`, sin imports de servidor.
-- Los helpers/content entrypoints y Capture.tsx históricos se conservan sin
-  ruta de ejecución desde UI/worker, sin permisos de inyección. Sus unit tests
-  siguen útiles como regresión de contratos antiguos, no prueban la nueva UI.
+- El código y los entrypoints históricos de captura/DOM ya no forman parte de
+  la fuente ni del paquete. No reintroducirlos: las imágenes sólo entran por
+  pegado o selección explícita de archivos.
+- Los iconos de manifest/toolbar se generan de forma determinista en tamaños
+  16, 48 y 128 desde la marca aprobada. El icono Store de 128 conserva su
+  padding específico y no sustituye automáticamente al icono de toolbar.
 
 ## Fronteras y compatibilidad
 
@@ -111,7 +114,10 @@ datos locales 0.5 a 0.4.3. La web antigua puede no entender metadata upload.
 Desde raíz: `pnpm extension:build`, `extension:check`, `extension:lint`,
 `extension:test`, `extension:e2e`, `extension:reproducible`.
 `pnpm validate` integra API/DB/web y extensión; `extension:release` exige Git
-limpio y todos los gates antes de crear ZIP/SHA/procedencia.
+limpio y todos los gates antes de crear ZIP/SHA/procedencia. El audit del
+paquete aplica una allowlist de archivos, manifest/hosts/permisos exactos,
+dimensiones de iconos y ausencia de código remoto/sourcemaps. Dos builds fijan
+el mismo SHA-256 de árbol y ZIP.
 
 E2E: acción nativa sin acceso a página, imágenes PNG/JPEG/WebP, Ctrl+V real,
 texto nativo, quitar/restaurar, rechazo de lotes, UI a 320/400 px, OAuth real,

@@ -33,14 +33,14 @@ master and an Ingress for `issopen.serviciosegado.com`. Issopen stores backlog
 and result references; it has no Git credentials or capability to edit a
 repository, run CI, merge or deploy code.
 
-## Chrome extension (pilot 0.6.1)
+## Chrome extension (pilot 0.6.2)
 
 The `extensions/chrome` workspace contains an installable MV3 side panel built
-with WXT, React and TypeScript. It checks the active page locally after an
-explicit toolbar action and links the human account through OAuth PKCE, with
-individual revocation in `/extensions`. Version 0.6.1 accepts only images pasted
-or selected explicitly, supports invited Members, keeps one reviewed 24-hour
-draft and sends data only after **Enviar ticket**. The public
+with WXT, React and TypeScript. Its toolbar action opens the panel without
+reading the active page and links the human account through OAuth PKCE, with
+individual revocation in `/extensions`. Version 0.6.2 accepts only images
+pasted or selected explicitly, supports invited Members, keeps one reviewed
+24-hour draft and sends data only after **Enviar ticket**. The public
 [privacy policy and data contract](docs/privacy.md) explains retention,
 revocation and deletion; an uploader or owner can permanently remove an
 individual image from active storage. Manual idempotent retry avoids duplicates.

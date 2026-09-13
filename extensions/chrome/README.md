@@ -1,4 +1,4 @@
-# Issopen para Chrome — piloto 0.6.1
+# Issopen para Chrome — piloto 0.6.2
 
 Crea tickets con imágenes de tu herramienta de recorte favorita.
 Ya no hace falta capturar la página ni concederle acceso a cada web.
@@ -56,7 +56,8 @@ del ticket; esto no retira copias descargadas ni backups anteriores.
 La ficha de Chrome Web Store, sus declaraciones y recursos gráficos están en
 [`store/LISTING.es.md`](store/LISTING.es.md). Ejecuta `pnpm store:assets` desde
 la raíz para reconstruir los PNG con datos sintéticos; no captures una sesión
-real para el listing.
+real para el listing. El inventario de permisos y la matriz servidor/extensión
+del candidato están en [`store/RELEASE-CANDIDATE.md`](store/RELEASE-CANDIDATE.md).
 
 El aviso informativo inicial se cierra con **×** y recuerda tu elección en este
 perfil de Chrome, incluso al volver a abrir el panel. Su contenido permanece
@@ -111,7 +112,8 @@ pnpm extension:release
 ```
 
 Desarrollo usa `.output/chrome-mv3-dev`; no distribuirlo. Producción sin
-sourcemaps. ZIP determinista, SHA-256 y JSON con commit/API en
+sourcemaps ni entrypoints históricos de captura. ZIP determinista, SHA-256 y
+JSON con commit/API/audit en
 `.output/releases`, ignorados en Git. Desde ese directorio:
 `sha256sum -c <archivo>.sha256`. Extraer y validar primero en carpeta temporal,
 después actualizar la misma ruta cargada, conservando artefacto anterior.
@@ -137,4 +139,6 @@ El criterio personal del ticket 33 sigue requiriendo al owner.
 No activeTab, scripting, all_urls, cookies, captura ni inspección de DOM.
 No hay lecturas periódicas, uploads automáticos ni telemetría.
 La CSP limita red a Issopen y decodificación a imágenes locales data/blob.
-La marca aprobada se conserva sin generar nuevos assets.
+Los iconos de toolbar/manifest se derivan de forma determinista de la marca
+aprobada en tamaños PNG exactos 16/48/128; la ficha usa su variante 128 con
+padding propio.

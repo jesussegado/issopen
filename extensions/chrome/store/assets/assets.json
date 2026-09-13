@@ -1,5 +1,5 @@
 {
-  "extensionVersion": "0.6.1",
+  "extensionVersion": "0.6.2",
   "assets": [
     {
       "name": "store-icon-128.png",
@@ -19,15 +19,15 @@
       "name": "screenshot-composer-1280x800.png",
       "width": 1280,
       "height": 800,
-      "bytes": 53885,
-      "sha256": "82c362e0b95e9bb6700126952896e0e29f67ce9eb952669bddef5e59bd2110ff"
+      "bytes": 54407,
+      "sha256": "cba25ce68aca12e57c49cbbba309d36ecb9ccbf31e92cbef9ce29829d6f82f41"
     },
     {
       "name": "screenshot-account-1280x800.png",
       "width": 1280,
       "height": 800,
-      "bytes": 104334,
-      "sha256": "63002b7ba89b1655043e23e9346f5bd38b5c2119447428e89ef012d0d0216447"
+      "bytes": 104828,
+      "sha256": "b052b0b400f883f858aaf926cf158dab304f1336a4f271ca5774d70753dddfae"
     }
   ]
 }

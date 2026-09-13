@@ -1,6 +1,6 @@
 # Ficha Chrome Web Store — Issopen
 
-Estado: fuentes del borrador 0.6.1. Copiar estos valores al dashboard sólo
+Estado: fuentes del borrador 0.6.2. Copiar estos valores al dashboard sólo
 desde la cuenta `serviciosegado@gmail.com`. No guardar credenciales ni datos de
 pago en el repositorio.
 

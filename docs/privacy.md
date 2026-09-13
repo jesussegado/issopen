@@ -60,7 +60,7 @@ seguridad u obligación legal.
 - La política pública, Privacy practices de Chrome y ficha Store deben declarar
   las mismas categorías y la misma finalidad única.
 - El dashboard no debe marcar browsing activity, website content, historial o
-  datos financieros/sanitarios: la versión 0.6.1 no los obtiene.
+  datos financieros/sanitarios: la versión 0.6.2 no los obtiene.
 - Declarar autenticación, información personal (nombre/email), contenido
   generado por el usuario e imágenes aportadas explícitamente.
 - Justificar `sidePanel`, `identity`, `storage`, host único y
@@ -76,4 +76,3 @@ Fuentes oficiales revisadas el 2026-09-13:
 - https://developer.chrome.com/docs/webstore/program-policies/disclosure-requirements
 - https://developer.chrome.com/docs/webstore/program-policies/data-handling
 - https://developer.chrome.com/docs/webstore/program-policies/user-data-faq
-

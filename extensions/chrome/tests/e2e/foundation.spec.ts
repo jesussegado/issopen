@@ -1,9 +1,9 @@
-import { createHash } from "node:crypto";
 import { readdir, readFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { resolve } from "node:path";
 import { chromium, expect, test } from "@playwright/test";
+import { imageDimensions } from "../../../../src/shared/image-validation";
 
 const output = resolve(".output/chrome-mv3");
 const fixture = createServer((_request, response) => {
@@ -55,18 +55,23 @@ test("production manifest limits network access to Issopen and explicit page ges
   expect(manifest.host_permissions).toEqual([
     "https://issopen.serviciosegado.com/*",
   ]);
+  const icons = {
+    16: "icons/icon-16.png",
+    48: "icons/icon-48.png",
+    128: "icons/icon-128.png",
+  };
+  expect(manifest.icons).toEqual(icons);
+  expect(manifest.action.default_icon).toEqual(icons);
   expect(manifest.side_panel.default_path).toBe("sidepanel.html");
   const files = await readdir(output, { recursive: true });
   expect(files.some((file) => file.endsWith(".map"))).toBe(false);
-  const hash = (data: Buffer) =>
-    createHash("sha256").update(data).digest("hex");
-  expect(hash(await readFile(resolve(output, "icon.png")))).toBe(
-    hash(
-      await readFile(
-        "../../src/web/public/assets/branding/issopen-favicon-v2-white.png",
+  expect(files.some((file) => file.includes("content-scripts"))).toBe(false);
+  for (const size of [16, 48, 128])
+    expect(
+      imageDimensions(
+        await readFile(resolve(output, `icons/icon-${size}.png`)),
       ),
-    ),
-  );
+    ).toEqual({ width: size, height: size, type: "image/png" });
 });
 
 // biome-ignore lint/correctness/noEmptyPattern: Playwright requires a destructured fixture parameter.
@@ -108,6 +113,10 @@ test("real toolbar action opens images without granting access to the page", asy
     // Opening an extension document alone must NOT grant activeTab.
     const preview = await context.newPage();
     await preview.goto(`chrome-extension://${extension.id}/sidepanel.html`);
+    await expect(preview.locator(".panel-brand img")).toHaveJSProperty(
+      "naturalWidth",
+      48,
+    );
     await expect(
       preview.getByRole("heading", { name: /Imágenes del ticket/ }),
     ).toBeVisible();

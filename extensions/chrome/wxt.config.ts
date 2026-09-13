@@ -33,14 +33,25 @@ export default defineConfig({
     permissions: ["sidePanel", "identity", "storage"],
     optional_permissions: ["clipboardRead"],
     host_permissions: [`${instance.origin}/*`],
-    action: { default_title: "Abrir Issopen" },
+    action: {
+      default_title: "Abrir Issopen",
+      default_icon: {
+        16: "icons/icon-16.png",
+        48: "icons/icon-48.png",
+        128: "icons/icon-128.png",
+      },
+    },
     commands: {
       _execute_action: {
         suggested_key: { default: "Alt+Shift+I" },
         description: "Abrir Issopen para esta pestaña",
       },
     },
-    icons: { 16: "icon.png", 48: "icon.png", 128: "icon.png" },
+    icons: {
+      16: "icons/icon-16.png",
+      48: "icons/icon-48.png",
+      128: "icons/icon-128.png",
+    },
     content_security_policy: {
       extension_pages:
         mode === "production"
@@ -51,16 +62,13 @@ export default defineConfig({
   vite: ({ mode }) => ({ build: { sourcemap: mode === "development" } }),
   hooks: {
     "build:publicAssets"(_wxt, files) {
-      // Copy the approved asset byte-for-byte; don't duplicate/reinvent branding.
-      files.push({
-        absoluteSrc: fileURLToPath(
-          new URL(
-            "../../src/web/public/assets/branding/issopen-favicon-v2-white.png",
-            import.meta.url,
+      for (const size of [16, 48, 128])
+        files.push({
+          absoluteSrc: fileURLToPath(
+            new URL(`./assets/icon-${size}.png`, import.meta.url),
           ),
-        ),
-        relativeDest: "icon.png",
-      });
+          relativeDest: `icons/icon-${size}.png`,
+        });
     },
   },
 });

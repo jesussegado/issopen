@@ -27,12 +27,11 @@ vi.mock("wxt/browser", () => ({
 }));
 
 import background from "../../entrypoints/background";
-import type { InspectResponse } from "../../lib/protocol";
 
 type Listener = (
   message: unknown,
   sender: unknown,
-  respond: (result: InspectResponse) => void,
+  respond: (result: unknown) => void,
 ) => boolean;
 const sender = { id: "abc", url: "chrome-extension://abc/sidepanel.html" };
 const request = { version: 1, type: "inspect-active-tab" };

@@ -1,6 +1,6 @@
 # Chrome Web Store: contrato de publicación Unlisted
 
-Estado: contrato, privacidad y fuentes de la ficha 0.6.1 preparados; la cuenta
+Estado: contrato, privacidad y fuentes de la ficha 0.6.2 preparados; la cuenta
 publisher aún requiere aceptación humana del acuerdo y el pago único de 5 USD,
 por lo que no existe item ni envío a revisión. Última comprobación: 2026-09-13.
 
@@ -25,10 +25,10 @@ o tokens.
 | Superficie | Estado observado | Fuente de evidencia |
 | --- | --- | --- |
 | App pública | `https://issopen.serviciosegado.com`, HTTPS y HSTS | smoke HTTP del 2026-09-13 |
-| Runtime | Deployment y PostgreSQL `Ready`; Argo CD `Synced/Healthy` | clúster `issopen`, revisión GitOps `f8e263aa78e7432ee341d26df3896ed235ca2452` |
-| Imagen activa | `privacy-controls-e318e5a` por digest `sha256:83ef72244a279c39457d023a29b46a3b36fc465480d408bf9cfd2d050c28986b` | Deployment observado |
+| Runtime | Deployment y PostgreSQL `Ready`; Argo CD `Synced/Healthy` | clúster `issopen`, revisión GitOps `c79be9e026800642aa687ccd980043b9021222bd` |
+| Imagen activa | `chrome-listing-40cc4af` por digest `sha256:d85312e46ce4bc871becd1e6c7343c2f8363b1c574efde760f4459a40f6276a1` | Deployment observado |
 | Datos | PostgreSQL y adjuntos PNG privados en PVC separados y retenidos | manifiestos y PVC `Bound` |
-| Extensión base | MV3 0.6.1; panel lateral, OAuth PKCE por persona/instalación, acceso Owner/Member, imágenes elegidas por la persona, consentimiento y creación de tickets | manifest generado, tickets 82–83 |
+| Extensión base | MV3 0.6.2; panel lateral, OAuth PKCE por persona/instalación, acceso Owner/Member, imágenes elegidas por la persona, consentimiento y creación de tickets | manifest y paquete auditados, tickets 82–85 |
 | Distribución actual | paquete local/desempaquetado; sin ficha Store aprobada | `extensions/chrome/.output/chrome-mv3` |
 | Repositorio | fuente independiente, rama `main`; Forgejo privado | `http://192.168.2.165:3000/jsegado/issopen` |
 
@@ -134,6 +134,10 @@ la evidencia del resultado real y no afirmar éxito por adelantado.
   `identity` para OAuth, `storage` para conexión/borrador y `clipboardRead`
   opcional para una acción explícita. El único host es el origen HTTPS de
   Issopen.
+- La allowlist del paquete excluye los entrypoints históricos de captura/DOM,
+  sourcemaps y archivos auxiliares; manifest y toolbar usan PNG exactos de 16,
+  48 y 128 px. La matriz completa vive en
+  [`extensions/chrome/store/RELEASE-CANDIDATE.md`](../extensions/chrome/store/RELEASE-CANDIDATE.md).
 
 ## Rollback y parada segura
 

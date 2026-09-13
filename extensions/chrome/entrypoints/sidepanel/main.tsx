@@ -13,7 +13,7 @@ function App() {
     <main>
       <header className="panel-header">
         <div className="panel-brand">
-          <img src="/icon.png" width="44" height="44" alt="" />
+          <img src="/icons/icon-48.png" width="44" height="44" alt="" />
           <div className="panel-brand-copy">
             <strong>Issopen</strong>
             <p>Imágenes y tickets, sin complicaciones</p>

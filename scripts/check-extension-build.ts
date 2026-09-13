@@ -1,51 +1,53 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { readdir, readFile } from "node:fs/promises";
-import { join, relative } from "node:path";
+import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  auditExtensionPackage,
+  deterministicZip,
+  sha256,
+} from "./extension-package.js";
 
 const repo = fileURLToPath(new URL("..", import.meta.url));
 const output = fileURLToPath(
   new URL("../extensions/chrome/.output/chrome-mv3/", import.meta.url),
 );
 
-async function buildSnapshot(): Promise<Record<string, string>> {
+async function buildSnapshot() {
   execFileSync("pnpm", ["extension:build"], {
     cwd: repo,
     env: { ...process.env, DEBUG: "" },
     stdio: "pipe",
     timeout: 120_000,
   });
-  const entries = await readdir(output, {
-    recursive: true,
-    withFileTypes: true,
-  });
-  const paths = entries
-    .filter((entry) => entry.isFile())
-    .map((entry) => {
-      return relative(output, join(entry.parentPath, entry.name));
-    })
-    .sort();
+  const { entries, audit } = await auditExtensionPackage(resolve(output));
   const hashes: Record<string, string> = {};
-  for (const path of paths)
-    hashes[path] = createHash("sha256")
-      .update(await readFile(join(output, path)))
-      .digest("hex");
-  return hashes;
+  for (const entry of entries)
+    hashes[entry.path] = createHash("sha256").update(entry.bytes).digest("hex");
+  return {
+    hashes,
+    zipSha256: sha256(deterministicZip(entries)),
+    audit,
+  };
 }
 
 const first = await buildSnapshot();
 const second = await buildSnapshot();
 assert.deepEqual(
-  second,
-  first,
+  second.hashes,
+  first.hashes,
   "Extension production builds are not byte-identical",
 );
-assert(Object.keys(second).length > 3, "Missing extension artifacts");
+assert.equal(
+  second.zipSha256,
+  first.zipSha256,
+  "Extension ZIPs from the same source are not byte-identical",
+);
+assert(Object.keys(second.hashes).length > 3, "Missing extension artifacts");
 const digest = createHash("sha256")
-  .update(JSON.stringify(second))
+  .update(JSON.stringify(second.hashes))
   .digest("hex");
 process.stdout.write(
-  `${JSON.stringify({ reproducible: true, files: Object.keys(second).length, treeSha256: digest }, null, 2)}\n`,
+  `${JSON.stringify({ reproducible: true, files: Object.keys(second.hashes).length, treeSha256: digest, zipSha256: second.zipSha256, audit: second.audit }, null, 2)}\n`,
 );
