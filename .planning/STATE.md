@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Epic 5 ticket 64 deployed and Ready for Human Review; checking for newer tickets
-last_updated: "2026-09-10T12:39:38Z"
-last_activity: 2026-09-10
+stopped_at: Epic 7 ticket 86 review account ready; private Google instructions saved; Store remains Draft
+last_updated: "2026-09-13T17:24:00Z"
+last_activity: 2026-09-13
 progress:
   total_phases: 9
   completed_phases: 0
@@ -21,7 +21,18 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-30)
 
 **Core value:** Convertir una intención humana en trabajo estructurado y seguro que ChatGPT y agentes de código externos puedan entender, ejecutar y devolver a revisión dentro de un único flujo trazable.
-**Current focus:** Epic 5 frontend/usability ticket 64 is delivered and newer owner tickets are being checked; Chrome ticket 33 acceptance remains untouched.
+**Current focus:** Epic 7 Chrome Web Store review preparation. Read live Issopen tickets before resuming submission; review access is ready, Store remains Draft.
+
+Follow-up 2026-09-13: quick 260913-qn7 provisions the owner-approved local
+Member in a fresh Google Review Demo project with synthetic data only. Source
+e05ff24; no runtime/GitOps change. Password login, exact allowlist, private-data
+404/admin 403, real packaged Chrome OAuth and synthetic image ticket passed.
+94 unit/web and 66 integration tests plus lint/types/build/secret scan pass.
+Private Store instructions saved and reload-verified; no submission/publication.
+Keep reviewer active through review then explicitly revoke per
+docs/chrome-review-access.md. Ticket 91 records a Member-only UI presentation
+defect; server authorization is enforced. Credentials only in ignored 0600
+operator storage and Google's private form. GSD artifacts contain no secrets.
 
 Follow-up 2026-09-10: ticket 64 gives the `+` and `Create ticket in Epic` label
 an explicit 8 px gap while retaining its accessible name and destination.
@@ -256,6 +267,7 @@ Decisions are logged in PROJECT.md Key Decisions table. Current roadmap-level st
 
 | ID | Description | Date | Commits | Status | Directory |
 | --- | --- | --- | --- | --- | --- |
+| 260913-qn7 | Cuenta Member y proyecto aislado para revisión Google | 2026-09-13 | `e05ff24` | 160 tests PASS; OAuth/imagen y formulario privado Google verificados; Store Draft | [260913-qn7](./quick/260913-qn7-preparar-cuenta-member-y-proyecto-aislad/) |
 | 260910-f5d | Chrome: enlace de éxito y acciones finales apiladas | 2026-09-10 | `c76a591` | 220 tests PASS; 0.5.4 CSS live, 0.5.3 runtime/confirmation preserved; 56 Ready for Review | [260910-f5d](./quick/260910-f5d-mejorar-enlace-y-apilar-acciones-de-tick/) |
 | 260910-euw | Chrome: fusionar búsqueda y selección de Proyecto/Epic | 2026-09-10 | `b5795e6` | 219 tests PASS; 0.5.3 loaded, draft preserved; 54 Ready for Review | [260910-euw](./quick/260910-euw-unificar-busqueda-y-seleccion-de-proyect/) |
 | 260910-ehq | Chrome: selectores accesibles dentro del panel | 2026-09-10 | `fb11c41` | 218 tests PASS; 0.5.2 loaded, draft preserved; 53 Ready for Review | [260910-ehq](./quick/260910-ehq-corregir-selectores-chrome-desplazados-f/) |
@@ -297,6 +309,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-09-10
-Stopped at: Chrome new result styles applied live, runtime remains 0.5.3 to preserve an open confirmation with one image. 0.5.4 artifact ready for safe reload later. Backend remains 22b7e89 via GitOps 4eb5b1ec. Ticket 56 Ready for Review v6, claim null. Ticket 33 owner acceptance untouched.
-Resume file: ./quick/260910-f5d-mejorar-enlace-y-apilar-acciones-de-tick/SUMMARY.md (derived evidence; reread live tickets/answers)
+Last session: 2026-09-13
+Stopped at: Google review Member and synthetic project ready; private Store instructions saved. Ticket 86 remains In Progress, not submitted. Runtime remains chrome-listing-40cc4af by digest; operator tooling source e05ff24. Follow-up UI issue 91 is Backlog.
+Resume file: ./quick/260913-qn7-preparar-cuenta-member-y-proyecto-aislad/260913-qn7-SUMMARY.md (derived evidence; reread live tickets/answers)
