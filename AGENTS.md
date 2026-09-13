@@ -29,6 +29,14 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+- Epic 7 tiene contrato de publicación Unlisted en
+  [Chrome Web Store](docs/chrome-web-store.md). El ticket 78 inventaría el
+  runtime observado, separa sesión web, Google OIDC, OAuth de extensión y MCP,
+  asigna evidencias a 79–88 y fija checkpoints/rollback. La cuenta operadora
+  acordada es `serviciosegado@gmail.com`; sólo se documenta su ownership, nunca
+  credenciales. Unlisted no es control de acceso: el piloto sigue siendo por
+  invitación. Hasta que 86 sea aprobado no afirmar que existe una versión Store.
+
 - Ticket 66 añade archivado reversible de Epics. Sus tickets heredan el
   archivado sin cambiar de estado: desaparecen del board, de la colección REST
   activa y de `list_issues`, pero conservan acceso directo, datos y actividad;
