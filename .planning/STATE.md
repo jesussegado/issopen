@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Epic 7 ticket 86 access confirmed; zero unanswered blockers; Store still Pending review; real pilot/update gates await Google
-last_updated: "2026-09-13T20:26:42Z"
+stopped_at: Epic 3 planned with 14 Backlog tickets and 20 questions; answer 94 then 95; no implementation authorized
+last_updated: "2026-09-13T21:09:44Z"
 last_activity: 2026-09-13
 progress:
   total_phases: 9
@@ -21,7 +21,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-30)
 
 **Core value:** Convertir una intención humana en trabajo estructurado y seguro que ChatGPT y agentes de código externos puedan entender, ejecutar y devolver a revisión dentro de un único flujo trazable.
-**Current focus:** Epic 7 awaits Google review. Chrome 0.6.2 was submitted on
+**Current focus:** Epic 3 collaboration planning delivered (quick 260913-vul).
+Tickets 94–107 and 20 questions are live in Issopen; answer 94 roles/workspaces
+then 95 permission scope. All initially Backlog, no claims or human answers
+written by the agent. Source index `eb4b4e1` documents dependencies, acceptance,
+verification and the existing Epic 7 baseline. Recommendations are not accepted
+decisions. No implementation, deployment, invitation or access changes authorized.
+Reread live answers before the next work. See docs/epic-3-collaboration-plan.md.
+
+Independent Epic 7 follow-up: Chrome 0.6.2 was submitted on
 2026-09-13 at 19:24 UTC: Pending review, Unlisted, automatic publication
 disabled. Dashboard rechecked at 20:23 UTC: still Pending review. Not approved
 or published. Reread live tickets and dashboard before any publication.
@@ -168,8 +176,8 @@ retained for rollback. No server/GitOps change. Parallel creation buttons
 
 Phase: 1 (Private Single-Owner Dogfooding MVP) — EXECUTING
 Plan: 5 of 5
-Status: Executing approved Chrome Epic incrementally
-Last activity: 2026-09-09 - Source e5da82f, Chrome 0.4 ZIP, GitOps db767e30 Synced Healthy (docs followup fac0669d). 182 tests PASS + Compose runtime; homelab 197 PASS. Google Chrome 152 production OAuth and all four capture modes verified in technical tickets 45–48 (Done); private images and opaque masks checked. Full production backup restored isolated without network; server and extension rollback verified. MCP reread: 19–32 Ready for Review, 33 In Progress v5 with one acceptance warning, all claims null, 17 original answers unchanged. Remote Forgejo CI run not observed. 43 Done v22; 44 Backlog v5 untouched.
+Status: Epic 3 planning delivered; awaiting human decisions and implementation request
+Last activity: 2026-09-13 - Quick 260913-vul, source eb4b4e1: 14 tickets (94–107), 20 blocking questions and Epic map verified through MCP. Documentation/diff/secret checks passed; no new runtime tests or deployment. Existing roadmap phase progress unchanged.
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -295,6 +303,7 @@ Decisions are logged in PROJECT.md Key Decisions table. Current roadmap-level st
 
 | ID | Description | Date | Commits | Status | Directory |
 | --- | --- | --- | --- | --- | --- |
+| 260913-vul | Planificar Epic 3 usuarios, roles y colaboración | 2026-09-13 | `eb4b4e1` | 14 tickets / 20 preguntas verificadas; sólo planificación, sin deploy | [260913-vul](./quick/260913-vul-planificar-epic-3-usuarios-roles-colabor/) |
 | 260913-v4j | Confirmar acceso de revisión y comprobar Store tras respuesta 86 | 2026-09-13 | `c0199fd` | 2/2 respuestas; reviewer smoke PASS; Store Pending review, sin deploy | [260913-v4j](./quick/260913-v4j-confirmar-acceso-de-review-del-ticket-86/) |
 | 260913-u1g | Epic 7 respuestas, evidencia Store y detalle Member 91 | 2026-09-13 | `e8be86a`, `be31905`; GitOps `b0240335` | Gates/restore/smoke PASS; 84/85/91 Ready for Human Review; 86/87/88 external gates pending | [260913-u1g](./quick/260913-u1g-continuar-epic-7-tras-respuestas-validar/) |
 | 260913-qn7 | Cuenta Member y proyecto aislado para revisión Google | 2026-09-13 | `e05ff24` | 160 tests PASS; OAuth/imagen y formulario privado Google verificados; Store Draft | [260913-qn7](./quick/260913-qn7-preparar-cuenta-member-y-proyecto-aislad/) |
@@ -317,6 +326,10 @@ Decisions are logged in PROJECT.md Key Decisions table. Current roadmap-level st
 | 260908-kiy | Añadir fondo blanco al favicon y desplegar la corrección | 2026-09-08 | Fuente `5e2debd`, GitOps `4527b882` | Verified | [260908-kiy](./quick/260908-kiy-a-adir-fondo-blanco-al-favicon-de-issope/) |
 
 ### Blockers/Concerns
+
+- Epic 3: 20 product questions created in 94–106, initially unanswered. Start
+  with 94/95; optional scopes stay undecided. Ticket 107 depends on the approved
+  outcomes. Planning is complete, implementation has not been requested.
 
 - Epic 7: Google approval/manual publication and real Store pilot/update gates
   in 87/88 remain. Access clarification 86 is resolved: keep the current local
@@ -345,5 +358,5 @@ Items acknowledged and carried forward from previous milestone close:
 ## Session Continuity
 
 Last session: 2026-09-13
-Stopped at: Ticket 86 access confirmed, 2/2 answers, reviewer working. Store still Pending review; publication/pilot/update external gates remain. Runtime 91 still healthy, no new deploy. 84/85/91 Ready for Human Review; 78–83 user-closed. No claims held.
-Resume file: ./quick/260913-v4j-confirmar-acceso-de-review-del-ticket-86/260913-v4j-SUMMARY.md (derived evidence; reread live tickets/answers and Store dashboard)
+Stopped at: Epic 3 planned with tickets 94–107 and 20 native questions. Answer 94 then 95. All created in Backlog, no claims held, no implementation or deployment. Prior Epic 7 evidence remains historical; this turn did not check or change Store/runtime.
+Resume file: ./quick/260913-vul-planificar-epic-3-usuarios-roles-colabor/260913-vul-SUMMARY.md (derived planning evidence; reread live Epic and answers)
