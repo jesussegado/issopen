@@ -114,6 +114,14 @@ export function AccountRoute({ session }: { session: Session }) {
         </dl>
       </section>
       <section className="detail-panel form-stack">
+        <h2>Data and privacy</h2>
+        <p>
+          Review what Issopen stores, how long it is retained and how to revoke
+          Chrome installations or request access and deletion.
+        </p>
+        <a href="/privacy">Open privacy and data controls</a>
+      </section>
+      <section className="detail-panel form-stack">
         <div className="section-heading">
           <h2>Google verification</h2>
           {googleLinked ? <Badge>Linked</Badge> : null}

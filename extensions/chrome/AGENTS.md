@@ -5,7 +5,7 @@ repositorio; no crear otro Git. Epic Chrome
 `ca26c29b-43ac-4ca0-b768-594d6779d6e7`; ticket 51 simplifica las imágenes
 por petición explícita del owner. El criterio personal 33 sigue independiente.
 
-## Qué hace ahora (0.6.0)
+## Qué hace ahora (0.6.1)
 
 OAuth humano → pegar/subir imágenes externas → proyecto/Epic y campos →
 Enviar ticket → enlace. No captura ni lee la página, no inspecciona DOM.
@@ -61,8 +61,9 @@ No reintroducir controles de captura por seguir documentación histórica 0.3/0.
   sincroniza vistas del mismo perfil y devuelve el foco a Cuenta. No leer ni
   modificar claves de OAuth/IndexedDB; fallo de preferencia no bloquea trabajo.
   No auto-cerrar con temporizador ni solicitar permiso de notificaciones.
-  Las notas genéricas de borrador/privacidad viven aquí, sin repetir tarjetas
-  en el compositor. Conservar errores operativos y límites junto a los campos.
+  La ayuda enlaza la política pública `/privacy`; junto a Enviar ticket hay un
+  disclosure corto y contextual que aclara qué se transmite con ese gesto.
+  Conservar errores operativos y límites junto a los campos.
 - `lib/account.ts`: PKCE/state/callback y operaciones serializadas;
   tokens en storage.local TRUSTED_CONTEXTS, nunca respuestas/logs/storage.sync.
 - `/session` usa `userId` y `workspaceRole`; `ownerId` permanece como alias de
@@ -85,7 +86,9 @@ No reintroducir controles de captura por seguir documentación histórica 0.3/0.
 API v1 acepta `image` legacy O `images` (máximo 5), nunca ambos. No añadir
 defaults ni transformar un envío pendiente antiguo: cambiaría su hash de recibo.
 Backend normaliza, limita el agregado y crea ticket/evidencias/recibo atómicos.
-Adjuntos privados; detalle web enumera imágenes. No hay migración DB nueva.
+Adjuntos privados; detalle web enumera imágenes. El uploader o el owner pueden
+borrar una imagen individual desde la web; no añadir ese permiso al token
+Chrome. No hay migración DB nueva.
 [API, cuota, backup y rollback](../../docs/chrome-delivery.md).
 
 El token necesita extension:write humano, no credenciales de agente.

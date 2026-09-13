@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { browser } from "wxt/browser";
+import { instanceUrl } from "../../lib/instance";
 import "./information.css";
 
 // A UI preference only: never read or rewrite account/draft storage here.
@@ -20,6 +21,13 @@ export function InformationContent() {
         Los campos y las imágenes que añadas se guardan como un único borrador
         local durante 24 horas desde el último cambio. No leemos la página ni tu
         portapapeles automáticamente.
+      </p>
+      <p>
+        Consulta qué datos se conservan y cómo borrarlos en la{" "}
+        <a href={`${instanceUrl}/privacy`} target="_blank" rel="noreferrer">
+          política de privacidad y datos
+        </a>
+        .
       </p>
     </div>
   );

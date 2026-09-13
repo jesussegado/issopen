@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { constants } from "node:fs";
-import { mkdir, open, readdir, statfs } from "node:fs/promises";
+import { mkdir, open, readdir, statfs, unlink } from "node:fs/promises";
 import { isAbsolute, join } from "node:path";
 import { promisify } from "node:util";
 import { crc32, deflate, inflate } from "node:zlib";
@@ -234,6 +234,30 @@ export class CaptureStorage {
       return data;
     } catch {
       throw new CaptureError("storage", 503);
+    }
+  }
+
+  async remove(key: string) {
+    try {
+      await unlink(this.path(key));
+    } catch (error) {
+      if (
+        !error ||
+        typeof error !== "object" ||
+        !("code" in error) ||
+        error.code !== "ENOENT"
+      ) {
+        throw new CaptureError("storage", 503);
+      }
+    }
+    const directory = await open(
+      this.directory,
+      constants.O_RDONLY | constants.O_DIRECTORY | constants.O_NOFOLLOW,
+    );
+    try {
+      await directory.sync();
+    } finally {
+      await directory.close();
     }
   }
 }

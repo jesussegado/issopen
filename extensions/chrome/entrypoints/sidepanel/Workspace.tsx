@@ -16,6 +16,7 @@ import {
   type ReviewedEvidence,
   saveDraft,
 } from "../../lib/draft";
+import { instanceUrl } from "../../lib/instance";
 import {
   type TicketRequest,
   ticketErrors,
@@ -652,6 +653,19 @@ export function Workspace({ account }: { account: AccountResponse | null }) {
                     para reintentar sin duplicados.
                   </p>
                 )}
+                <p className="submission-disclosure">
+                  Sólo al pulsar «Enviar ticket» se transmitirán por HTTPS los
+                  campos y {images.length === 1 ? "la imagen" : "las imágenes"}
+                  {images.length ? " seleccionadas" : " que hayas añadido"}.{" "}
+                  <a
+                    href={`${instanceUrl}/privacy`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Privacidad y datos
+                  </a>
+                  .
+                </p>
                 {inline ? (
                   <button
                     type="button"

@@ -48,6 +48,11 @@
 .capture-evidence dd {
   margin-left: 0;
 }
+.capture-evidence article + article {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--color-border);
+}
 
 :root {
   color: var(--color-text);
@@ -181,6 +186,42 @@ ol {
 }
 .centered-page > .page-panel {
   border-top: 4px solid var(--color-brand-mint);
+}
+.public-footer {
+  display: flex;
+  min-height: 56px;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 12px 24px;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+.privacy-notice section {
+  margin-top: 32px;
+}
+.privacy-notice :where(li + li) {
+  margin-top: 8px;
+}
+.privacy-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.privacy-notice table {
+  width: 100%;
+  min-width: 620px;
+  border-collapse: collapse;
+}
+.privacy-notice th,
+.privacy-notice td {
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  vertical-align: top;
+  text-align: left;
+  line-height: 1.5;
+}
+.privacy-notice thead th {
+  background: var(--color-subtle);
 }
 .authenticated-layout {
   display: grid;

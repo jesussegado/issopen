@@ -1,7 +1,8 @@
 # Chrome Web Store: contrato de publicación Unlisted
 
-Estado: contrato aprobado para el Epic 7; la extensión todavía no se ha
-enviado a revisión.  Última comprobación: 2026-09-13.
+Estado: contrato aprobado para el Epic 7; privacidad 0.6.1 implementada y
+pendiente de revisión humana; la extensión todavía no se ha enviado a revisión.
+Última comprobación: 2026-09-13.
 
 ## Objetivo y límites
 
@@ -57,10 +58,12 @@ solicita únicamente tras pulsar **Pegar imagen**.
 
 Las imágenes y campos permanecen en un borrador local durante un máximo de 24
 horas desde el último cambio. Sólo se transmiten por HTTPS cuando la persona
-pulsa **Enviar ticket**. Issopen conserva la evidencia privada según la política
-que cierra el ticket 83; la UI debe explicar acceso, retención y eliminación
-antes del envío. Las credenciales quedan excluidas de logs, tickets, artefactos
-y capturas de prueba.
+pulsa **Enviar ticket**. Issopen conserva la evidencia privada según la
+[política operativa](privacy.md), publicada sin login en
+`https://issopen.serviciosegado.com/privacy`. El uploader o el owner pueden
+eliminar una imagen del almacenamiento activo desde el ticket; la UI advierte
+que no alcanza descargas o backups anteriores. Las credenciales quedan
+excluidas de logs, tickets, artefactos y capturas de prueba.
 
 ## Matriz de requisitos y evidencias
 
@@ -71,7 +74,7 @@ y capturas de prueba.
 | Owner/Member y denegación por defecto | migración, matriz de endpoints y pruebas negativas | 80-AUTH-02 | ninguna |
 | Invitación de un solo uso y vinculación segura | tests de caducidad/replay/colisión y actividad atribuida | 81-AUTH-03 | owner para emitir/invitar |
 | Extensión usable por Member | E2E OAuth por instalación y proyectos permitidos | 82-EXT-PUB-01 | usuario piloto |
-| Privacidad y consentimiento | URL pública, disclosure en producto, retención y controles de revocación/borrado | 83-PRIV-01 | owner revisa el texto |
+| Privacidad y consentimiento | `/privacy`, disclosure web/Chrome, retención, revocación y borrado individual de imagen | 83-PRIV-01 | owner revisa el texto antes del upload |
 | Publisher y ficha Store | cuenta registrada, descripción, iconos/capturas, soporte e instrucciones de prueba | 84-STORE-01 | Google/owner |
 | Permisos mínimos y ZIP reproducible | manifest auditado, gate verde, ZIP y SHA-256 ligados a commit | 85-STORE-02 | ninguna |
 | Revisión y publicación Unlisted | item ID estable, resultado de revisión y enlace de instalación | 86-STORE-03 | Chrome review + owner |

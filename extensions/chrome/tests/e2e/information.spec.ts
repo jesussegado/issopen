@@ -34,6 +34,9 @@ test("dismissal persists without losing draft and help stays in Account", async 
     const notice = page.locator(".info-notice");
     await expect(notice).toBeVisible();
     const text = await notice.locator(".information-content").innerText();
+    await expect(
+      notice.getByRole("link", { name: "política de privacidad y datos" }),
+    ).toHaveAttribute("href", "https://issopen.serviciosegado.com/privacy");
     for (const width of [320, 400]) {
       await page.setViewportSize({ width, height: 800 });
       const box = await page
@@ -136,6 +139,9 @@ test("dismissal persists without losing draft and help stays in Account", async 
       const help = page.getByRole("region", { name: "Ayuda e información" });
       await expect(help).toBeVisible();
       expect(await help.locator(".information-content").innerText()).toBe(text);
+      await expect(
+        help.getByRole("link", { name: "política de privacidad y datos" }),
+      ).toHaveAttribute("href", "https://issopen.serviciosegado.com/privacy");
       expect(
         await page
           .getByRole("dialog")

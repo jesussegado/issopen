@@ -1,4 +1,4 @@
-# Issopen para Chrome — piloto 0.6.0
+# Issopen para Chrome — piloto 0.6.1
 
 Crea tickets con imágenes de tu herramienta de recorte favorita.
 Ya no hace falta capturar la página ni concederle acceso a cada web.
@@ -48,6 +48,10 @@ cambio. No se lee tu página ni el portapapeles automáticamente. Las imágenes
 se suben **sólo al enviar el ticket**. Revisa/oculta datos sensibles antes de
 adjuntarlas: ya no hay editor de recorte/redacción dentro de Issopen.
 Cuenta se abre como diálogo, sin perder lo escrito ni las imágenes.
+Consulta la política pública en
+`https://issopen.serviciosegado.com/privacy`. Tras enviar, quien subió una
+imagen o el owner pueden eliminarla del almacenamiento activo desde el detalle
+del ticket; esto no retira copias descargadas ni backups anteriores.
 
 El aviso informativo inicial se cierra con **×** y recuerda tu elección en este
 perfil de Chrome, incluso al volver a abrir el panel. Su contenido permanece

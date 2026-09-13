@@ -6,6 +6,7 @@ import {
   structuralSelector,
 } from "../../shared/capture-contract.js";
 import { apiRequest } from "../lib/api.js";
+import { Button, StatusBanner } from "./ui.js";
 
 const schema = z.object({
   evidence: z.array(
@@ -19,6 +20,7 @@ const schema = z.object({
         .string()
         .regex(/^\/api\/v1\/evidence\/[a-f0-9-]+\/image$/)
         .nullable(),
+      canDelete: z.boolean(),
     }),
   ),
 });
@@ -27,6 +29,9 @@ export function CaptureEvidence({ issueId }: { issueId: string }) {
   const [error, setError] = useState(false);
   const [reload, setReload] = useState(0);
   const [copied, setCopied] = useState("");
+  const [deleting, setDeleting] = useState("");
+  const [actionError, setActionError] = useState("");
+  const [notice, setNotice] = useState("");
   // biome-ignore lint/correctness/useExhaustiveDependencies: explicit user retry reloads the same issue.
   useEffect(() => {
     let alive = true;
@@ -44,13 +49,37 @@ export function CaptureEvidence({ issueId }: { issueId: string }) {
       alive = false;
     };
   }, [issueId, reload]);
-  if (!rows.length && !error) return null;
+  async function deleteImage(id: string, index: number) {
+    if (
+      !window.confirm(
+        "This permanently removes the image from active Issopen storage. It cannot remove copies already downloaded or older operator backups. Delete it?",
+      )
+    )
+      return;
+    setDeleting(id);
+    setActionError("");
+    try {
+      await apiRequest(`/api/v1/evidence/${id}`, { method: "DELETE" });
+      setRows((current) => current.filter((row) => row.id !== id));
+      setNotice(`Image ${index + 1} permanently deleted from active storage.`);
+    } catch {
+      setActionError(
+        "The image could not be deleted. Reload the ticket and try again.",
+      );
+    } finally {
+      setDeleting("");
+    }
+  }
+  if (!rows.length && !error)
+    return notice ? <StatusBanner>{notice}</StatusBanner> : null;
   return (
     <section
       className="detail-panel capture-evidence"
       aria-label="Ticket images and evidence"
     >
       <h2>Images and evidence ({rows.length})</h2>
+      {notice && <StatusBanner>{notice}</StatusBanner>}
+      {actionError && <StatusBanner error>{actionError}</StatusBanner>}
       {error && (
         <p role="alert">
           Evidence could not be loaded.{" "}
@@ -79,6 +108,16 @@ export function CaptureEvidence({ issueId }: { issueId: string }) {
                 </a>
               </p>
             </>
+          )}
+          {row.canDelete && (
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={Boolean(deleting)}
+              onClick={() => void deleteImage(row.id, index)}
+            >
+              {deleting === row.id ? "Deleting image…" : "Delete image"}
+            </Button>
           )}
           {row.metadata && row.metadata.mode !== "upload" && (
             <dl>

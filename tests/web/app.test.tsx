@@ -38,6 +38,23 @@ afterEach(() => {
 });
 
 describe("owner web entry", () => {
+  it("publishes the privacy inventory without reading a private session", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    window.history.replaceState({}, "", "/privacy");
+    render(<App />);
+
+    expect(
+      screen.getByRole("heading", { name: "Privacidad y datos de Issopen" }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText(/Limited Use/)).toHaveLength(2);
+    expect(
+      screen.getByRole("link", { name: "serviciosegado@gmail.com" }),
+    ).toHaveAttribute("href", "mailto:serviciosegado@gmail.com");
+    expect(screen.getByText(/máximo de 24 horas/)).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("discovers Google sign-in without exposing configuration", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const path = String(input);

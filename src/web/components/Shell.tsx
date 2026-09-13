@@ -16,6 +16,10 @@ export function PublicShell({ children }: { children: ReactNode }) {
       <main id="main-content" className="centered-page">
         <section className="page-panel">{children}</section>
       </main>
+      <footer className="public-footer">
+        <AppLink href="/privacy">Privacidad y datos</AppLink>
+        <a href="mailto:serviciosegado@gmail.com">Contacto</a>
+      </footer>
     </div>
   );
 }
@@ -90,6 +94,7 @@ function Navigation({
       {role === "owner" ? link("/members", "Members") : null}
       {role === "owner" ? link("/connect", "Connect ChatGPT") : null}
       {link("/extensions", "Extensiones Chrome")}
+      {link("/privacy", "Privacy and data")}
     </nav>
   );
 }

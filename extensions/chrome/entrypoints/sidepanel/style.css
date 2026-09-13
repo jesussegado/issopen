@@ -267,6 +267,11 @@ footer {
   color: #46635b;
   font-size: 12px;
 }
+.submission-disclosure {
+  color: #46635b;
+  margin: 8px 0 12px;
+  font-size: 12px;
+}
 select,
 input[type="number"] {
   width: 100%;

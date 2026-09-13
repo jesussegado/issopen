@@ -20,6 +20,7 @@ import {
 } from "./routes/InvitationRoutes.js";
 import { IssueDetailRoute } from "./routes/IssueDetailRoute.js";
 import { MembersRoute } from "./routes/MembersRoute.js";
+import { PrivacyRoute } from "./routes/PrivacyRoute.js";
 import {
   SignInRoute,
   StatusRoute,
@@ -66,10 +67,11 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    if (pathname !== "/status") void readSession();
+    if (!["/status", "/privacy"].includes(pathname)) void readSession();
   }, [pathname, readSession]);
 
   if (pathname === "/status") return <StatusRoute />;
+  if (pathname === "/privacy") return <PrivacyRoute />;
   if (screen.kind === "loading")
     return (
       <PublicShell>

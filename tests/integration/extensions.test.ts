@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
-import { copyFile, mkdtemp, utimes } from "node:fs/promises";
+import { access, copyFile, mkdtemp, utimes } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -440,6 +440,60 @@ describe("human Chrome OAuth", () => {
       { mode: "upload", attachmentIndex: 0 },
       { mode: "upload", attachmentIndex: 1 },
     ]);
+    const storedEvidence = await connection.db.select().from(captureEvidence);
+    const firstEvidence = storedEvidence.find(
+      (row) => row.id === evidence.evidence[0].id,
+    );
+    if (!firstEvidence?.fileKey) throw new Error("Expected stored image");
+    const member = await createMemberSession([projectId]);
+    const memberEvidence = await (
+      await app.request(`/api/v1/issues/${first.issue.id}/evidence`, {
+        headers: headers(member.cookie),
+      })
+    ).json();
+    expect(
+      memberEvidence.evidence.map(
+        (row: { canDelete: boolean }) => row.canDelete,
+      ),
+    ).toEqual([false, false]);
+    expect(
+      (
+        await app.request(`/api/v1/evidence/${firstEvidence.id}`, {
+          method: "DELETE",
+          headers: headers(member.cookie),
+        })
+      ).status,
+    ).toBe(403);
+    expect(
+      (
+        await app.request(`/api/v1/evidence/${firstEvidence.id}`, {
+          method: "DELETE",
+          headers: headers(),
+        })
+      ).status,
+    ).toBe(200);
+    expect(await connection.db.select().from(captureEvidence)).toHaveLength(1);
+    await expect(access(storage.path(firstEvidence.fileKey))).rejects.toThrow();
+    expect(
+      (
+        await app.request(evidence.evidence[0].imageUrl, {
+          headers: headers(),
+        })
+      ).status,
+    ).toBe(404);
+    const deletionEvents = await connection.db
+      .select()
+      .from(activityEvent)
+      .where(eq(activityEvent.issueId, first.issue.id));
+    expect(deletionEvents).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          type: "capture.evidence_deleted",
+          actorDisplayName: owner.name,
+          source: "rest",
+        }),
+      ]),
+    );
     expect((await post({ ...body, title: "Changed" })).status).toBe(409);
     expect(
       (

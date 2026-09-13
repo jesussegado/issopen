@@ -9,6 +9,7 @@ import {
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { CaptureEvidence } from "../../src/web/components/CaptureEvidence.js";
 import { BoardRoute } from "../../src/web/routes/BoardRoute.js";
 import {
   EpicDetailRoute,
@@ -97,6 +98,64 @@ afterEach(() => {
 });
 
 describe("tracker web routes", () => {
+  it("permanently deletes an owned image only after explicit confirmation", async () => {
+    const evidenceId = "66666666-6666-4666-8666-666666666666";
+    const imageUrl = `/api/v1/evidence/${evidenceId}/image`;
+    const fetchMock = vi.fn(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const path = String(input);
+        if (path === `/api/v1/issues/${issue.id}/evidence`)
+          return json({
+            evidence: [
+              {
+                id: evidenceId,
+                metadata: { mode: "upload", attachmentIndex: 0 },
+                bytes: 1024,
+                sha256: "a".repeat(64),
+                createdAt: issue.createdAt,
+                imageUrl,
+                canDelete: true,
+              },
+            ],
+          });
+        if (
+          path === `/api/v1/evidence/${evidenceId}` &&
+          init?.method === "DELETE"
+        )
+          return json({ deleted: true, evidenceId, issueId: issue.id });
+        throw new Error(`Unexpected request ${path}`);
+      },
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    const user = userEvent.setup();
+    render(<CaptureEvidence issueId={issue.id} />);
+
+    expect(
+      await screen.findByRole("img", {
+        name: "Attachment 1 for this issue",
+      }),
+    ).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Delete image" }));
+
+    expect(window.confirm).toHaveBeenCalledWith(
+      expect.stringContaining("permanently removes"),
+    );
+    expect(
+      await screen.findByText(
+        "Image 1 permanently deleted from active storage.",
+      ),
+    ).toBeVisible();
+    expect(fetchMock).toHaveBeenCalledWith(
+      `/api/v1/evidence/${evidenceId}`,
+      expect.objectContaining({
+        method: "DELETE",
+        credentials: "same-origin",
+      }),
+    );
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+  });
+
   it.each(["issue", "epic"] as const)(
     "preserves a %s draft on 409 and compares before adopting a fresh base",
     async (kind) => {

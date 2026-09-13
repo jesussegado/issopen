@@ -29,6 +29,16 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+- Chrome 0.6.1 (ticket 83) publica `/privacy` sin login con inventario,
+  finalidad, retención, Limited Use, contacto y derechos; el mismo texto se
+  enlaza desde web, consentimiento y panel Chrome. Abrir/editar un borrador no
+  transmite nada; el disclosure junto a Enviar ticket describe el gesto. El
+  uploader o el owner pueden borrar una imagen individual mediante DELETE web:
+  se elimina fila y PNG activo, se registra `capture.evidence_deleted` y se
+  advierte que descargas/backups previos quedan fuera. Contrato y revisión RGPD
+  básica en [privacidad](docs/privacy.md). No confundir con borrar un ticket,
+  que sigue siendo lógico.
+
 - Epic 7 tiene contrato de publicación Unlisted en
   [Chrome Web Store](docs/chrome-web-store.md). El ticket 78 inventaría el
   runtime observado, separa sesión web, Google OIDC, OAuth de extensión y MCP,

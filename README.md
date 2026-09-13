@@ -25,23 +25,27 @@ The local Phase 1 implementation includes:
 - PostgreSQL 18 persistence and privacy-safe `/health/live` and
   `/health/ready` responses.
 
-S3, SMTP, social login and multiple human users are not part of this runtime.
+S3 and SMTP are not part of this runtime. Google OIDC, invited human members
+and project-scoped authorization are active; the owner password remains a
+reversible recovery path.
 The same image is deployed through Argo CD with PostgreSQL on the always-on K3s
 master and an Ingress for `issopen.serviciosegado.com`. Issopen stores backlog
 and result references; it has no Git credentials or capability to edit a
 repository, run CI, merge or deploy code.
 
-## Chrome extension (pilot 0.4)
+## Chrome extension (pilot 0.6.1)
 
 The `extensions/chrome` workspace contains an installable MV3 side panel built
 with WXT, React and TypeScript. It checks the active page locally after an
 explicit toolbar action and links the human account through OAuth PKCE, with
-individual revocation in `/extensions`. Version 0.4 adds bounded viewport,
-full-page, crop and element screenshots, sanitized structural DOM, irreversible
-redaction, inline project/Epic creation and ticket submission with private PNG
-evidence. One reviewed 24-hour draft survives reload/reconnection, and manual
-idempotent retry avoids duplicates. See [delivery and operation](docs/chrome-delivery.md).
-Existing read-only connections must reconnect to consent to creation.
+individual revocation in `/extensions`. Version 0.6.1 accepts only images pasted
+or selected explicitly, supports invited Members, keeps one reviewed 24-hour
+draft and sends data only after **Enviar ticket**. The public
+[privacy policy and data contract](docs/privacy.md) explains retention,
+revocation and deletion; an uploader or owner can permanently remove an
+individual image from active storage. Manual idempotent retry avoids duplicates.
+See [delivery and operation](docs/chrome-delivery.md). Existing read-only
+connections must reconnect to consent to creation.
 
 Run `pnpm extension:build`, then load `extensions/chrome/.output/chrome-mv3`
 unpacked in `chrome://extensions`. See the

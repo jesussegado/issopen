@@ -83,6 +83,10 @@ export function ExtensionsRoute({ linking = false }: { linking?: boolean }) {
         {linking ? "Vincular Chrome con Issopen" : "Extensiones conectadas"}
       </PageHeading>
       {error && <StatusBanner error>{error}</StatusBanner>}
+      <p className="helper-copy">
+        Cada conexión pertenece a una persona y navegador. Consulta la{" "}
+        <a href="/privacy">política de privacidad y retención</a>.
+      </p>
       {linking && (
         <form
           className="detail-panel"

@@ -25,6 +25,14 @@ se pueden retirar de otros equipos. Replays de captura y respuestas MCP con
 issue borrada dan not_found, conservando recibos; no se reejecuta el efecto.
 La retención MCP sigue siendo 24 h, la de recibos Chrome no caduca.
 
+El borrado individual de una imagen es distinto: `DELETE
+/api/v1/evidence/:id` está disponible sólo en la web para quien subió la imagen
+o para el owner. Tras confirmación explícita, elimina la fila de evidencia y el
+PNG del PVC activo, hace que imagen/descarga devuelvan 404 y registra
+`capture.evidence_deleted`. No borra el resto del ticket, copias descargadas ni
+backups anteriores. La política pública canónica está en `/privacy` y su
+contrato técnico en [privacidad](privacy.md).
+
 ## Retención y recuperación
 
 Es borrado lógico, no borrado irreversible de información personal. Se conservan

@@ -152,6 +152,13 @@ export function ConsentRoute({
             <li key={scope}>{scopeLabels[scope]}</li>
           ))}
         </ul>
+        <p className="helper-copy">
+          Issopen sólo usará estos datos para las capacidades mostradas. Abre la{" "}
+          <a href="/privacy" target="_blank" rel="noreferrer">
+            política de privacidad y datos
+          </a>{" "}
+          antes de decidir.
+        </p>
       </section>
       <div className="page-actions">
         <Button

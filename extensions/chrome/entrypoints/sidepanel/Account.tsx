@@ -176,7 +176,11 @@ export function Account({
         </p>
         <p className="account-privacy">
           Tu contraseña se introduce sólo en la web de Issopen. La extensión no
-          usa credenciales de agentes.
+          usa credenciales de agentes. Consulta la{" "}
+          <a href={`${instanceUrl}/privacy`} target="_blank" rel="noreferrer">
+            política de privacidad y datos
+          </a>
+          .
         </p>
         <section
           className="account-information"

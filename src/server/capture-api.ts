@@ -16,7 +16,13 @@ import {
   normalizePng,
 } from "./capture-storage.js";
 import type { Database } from "./db/client.js";
-import { captureEvidence, extensionReceipt, issue, user } from "./db/schema.js";
+import {
+  activityEvent,
+  captureEvidence,
+  extensionReceipt,
+  issue,
+  user,
+} from "./db/schema.js";
 import {
   DomainError,
   type MutationContext,
@@ -507,7 +513,16 @@ export function createEvidenceRouter(db: Database, storage?: CaptureStorage) {
     c.header("Cache-Control", "private, no-store");
     return c.json({
       evidence: rows.map(
-        ({ id, metadata, mime, bytes, sha256, createdAt, fileKey }) => ({
+        ({
+          id,
+          ownerId,
+          metadata,
+          mime,
+          bytes,
+          sha256,
+          createdAt,
+          fileKey,
+        }) => ({
           id,
           metadata,
           mime,
@@ -515,8 +530,81 @@ export function createEvidenceRouter(db: Database, storage?: CaptureStorage) {
           sha256,
           createdAt,
           imageUrl: fileKey ? `/api/v1/evidence/${id}/image` : null,
+          canDelete: access.role === "owner" || ownerId === access.user.id,
         }),
       ),
+    });
+  });
+  router.delete("/evidence/:id", async (c) => {
+    const id = z.uuid().parse(c.req.param("id"));
+    const access = requireHumanAccess(c.get("humanAccess"));
+    const deleted = await db.transaction(async (tx) => {
+      await tx.execute(
+        sql`select pg_advisory_xact_lock(hashtextextended('chrome-attachment-storage', 0))`,
+      );
+      const [row] = await tx
+        .select({
+          evidence: captureEvidence,
+          projectId: issue.projectId,
+          issueKey: issue.key,
+        })
+        .from(captureEvidence)
+        .innerJoin(
+          issue,
+          and(
+            eq(issue.id, captureEvidence.issueId),
+            eq(issue.workspaceId, captureEvidence.workspaceId),
+          ),
+        )
+        .where(
+          and(
+            eq(captureEvidence.id, id),
+            eq(captureEvidence.workspaceId, access.workspaceId),
+            isNull(issue.deletedAt),
+          ),
+        )
+        .limit(1)
+        .for("update");
+      if (!row) throw new DomainError("not_found", "Evidence not found");
+      requireProjectAccess(access, row.projectId);
+      if (access.role !== "owner" && row.evidence.ownerId !== access.user.id) {
+        throw new DomainError(
+          "forbidden",
+          "Only the image owner or workspace owner can delete it",
+        );
+      }
+      await tx
+        .delete(captureEvidence)
+        .where(
+          and(
+            eq(captureEvidence.id, id),
+            eq(captureEvidence.workspaceId, access.workspaceId),
+          ),
+        );
+      await tx.insert(activityEvent).values({
+        id: randomUUID(),
+        workspaceId: access.workspaceId,
+        projectId: row.projectId,
+        issueId: row.evidence.issueId,
+        type: "capture.evidence_deleted",
+        actorType: "human",
+        actorId: access.user.id,
+        actorDisplayName: access.user.name,
+        source: "rest",
+        summary: `Deleted one image from ${row.issueKey}`,
+        changes: { evidenceId: id, bytes: row.evidence.bytes },
+      });
+      return row.evidence;
+    });
+    if (deleted.fileKey) {
+      if (!storage) throw new CaptureError("storage", 503);
+      await storage.remove(deleted.fileKey);
+    }
+    c.header("Cache-Control", "private, no-store");
+    return c.json({
+      deleted: true,
+      evidenceId: id,
+      issueId: deleted.issueId,
     });
   });
   router.get("/evidence/:id/image", async (c) => {
