@@ -110,6 +110,7 @@ export function AuthenticatedShell({
   async function signOut() {
     await apiRequest<Record<string, never>>("/api/auth/sign-out", {
       method: "POST",
+      body: JSON.stringify({}),
     });
     onSignedOut();
   }

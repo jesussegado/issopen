@@ -217,6 +217,35 @@ describe("owner web entry", () => {
     ).toBeGreaterThan(0);
   });
 
+  it("signs out with the JSON request required by Better Auth", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const path = String(input);
+      if (path === "/api/v1/session") return json(ownerSession);
+      if (path === "/api/v1/projects") return json({ projects: [] });
+      if (path === "/api/auth/sign-out") return json({});
+      throw new Error(`Unexpected request: ${path}`);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    window.history.replaceState({}, "", "/");
+    const user = userEvent.setup();
+    render(<App />);
+
+    await screen.findByRole("heading", { name: "No projects yet" });
+    await user.click(screen.getByText("Owner", { selector: "summary" }));
+    await user.click(screen.getByRole("button", { name: "Sign out" }));
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/auth/sign-out",
+        expect.objectContaining({
+          method: "POST",
+          body: "{}",
+          headers: { "Content-Type": "application/json" },
+        }),
+      ),
+    );
+  });
+
   it("lets the owner create project-scoped invitations and manage members", async () => {
     vi.stubGlobal(
       "fetch",
