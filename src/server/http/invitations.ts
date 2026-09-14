@@ -8,7 +8,12 @@ import {
   requireHumanAccess,
   requireWorkspaceOwner,
 } from "../human-access.js";
-import { createInvitationSchema, InvitationService } from "../invitations.js";
+import {
+  createInvitationSchema,
+  InvitationService,
+  memberVersionSchema,
+  updateMemberSchema,
+} from "../invitations.js";
 
 type InvitationBindings = {
   Variables: {
@@ -102,9 +107,31 @@ export function createInvitationRouter({
   });
 
   router.delete("/members/:userId", async (context) => {
+    const actor = owner(context.get("humanAccess"));
     const userId = identifier(context.req.param("userId"), "userId");
+    const input = memberVersionSchema.safeParse(
+      await context.req.json().catch(() => null),
+    );
+    if (!input.success)
+      throw new DomainError(
+        "invalid",
+        "Reload members before removing access: a current version is required.",
+      );
     return context.json(
-      await invitations.removeMember(owner(context.get("humanAccess")), userId),
+      await invitations.removeMember(actor, userId, input.data.expectedVersion),
+    );
+  });
+
+  router.patch("/members/:userId", async (context) => {
+    const actor = owner(context.get("humanAccess"));
+    const userId = identifier(context.req.param("userId"), "userId");
+    const input = updateMemberSchema.safeParse(
+      await context.req.json().catch(() => null),
+    );
+    if (!input.success)
+      throw new DomainError("invalid", "Invalid member permissions or version");
+    return context.json(
+      await invitations.updateMember(actor, userId, input.data),
     );
   });
 

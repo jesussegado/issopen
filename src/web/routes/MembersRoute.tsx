@@ -1,4 +1,5 @@
 import { type FormEvent, useCallback, useEffect, useState } from "react";
+import { MemberAccessEditor } from "../components/MemberAccessEditor.js";
 import {
   Badge,
   Button,
@@ -48,6 +49,8 @@ export function MembersRoute({ projects }: { projects: Project[] }) {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [editing, setEditing] = useState<WorkspaceMember | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -165,6 +168,7 @@ export function MembersRoute({ projects }: { projects: Project[] }) {
     try {
       await apiRequest(`/api/v1/members/${member.userId}`, {
         method: "DELETE",
+        body: JSON.stringify({ expectedVersion: member.version }),
       });
       setNotice(`${member.email} no longer has workspace access.`);
       await load();
@@ -331,40 +335,101 @@ export function MembersRoute({ projects }: { projects: Project[] }) {
             )}
           </section>
 
-          <section className="detail-panel" aria-labelledby="workspace-members">
+          <section
+            className="detail-panel form-stack"
+            aria-labelledby="workspace-members"
+          >
             <div className="section-heading">
               <h2 id="workspace-members">Members</h2>
               <Badge>{data.members.length}</Badge>
+              <Button
+                variant="secondary"
+                disabled={Boolean(busy) || Boolean(editing)}
+                onClick={() => void load()}
+              >
+                Refresh members
+              </Button>
             </div>
+            <Field label="Search members" htmlFor="member-search">
+              <TextInput
+                id="member-search"
+                value={search}
+                onChange={(event) => setSearch(event.currentTarget.value)}
+              />
+            </Field>
+            {editing ? (
+              <MemberAccessEditor
+                key={editing.userId}
+                member={editing}
+                projects={projects}
+                onReloaded={(latest) =>
+                  setData((previous) =>
+                    previous
+                      ? {
+                          ...previous,
+                          members: previous.members.map((entry) =>
+                            entry.userId === latest.userId ? latest : entry,
+                          ),
+                        }
+                      : previous,
+                  )
+                }
+                onCancel={() => setEditing(null)}
+                onSaved={async () => {
+                  setEditing(null);
+                  setNotice("Member permissions updated.");
+                  await load();
+                }}
+              />
+            ) : null}
             <ul className="access-list">
-              {data.members.map((member) => (
-                <li key={member.userId} className="access-list-item">
-                  <div>
-                    <strong>{member.name}</strong>
-                    <p>{member.email}</p>
-                    <p className="metadata">
-                      {member.role === "owner"
-                        ? "Owner · all projects"
-                        : `Member · ${(member.projectIds ?? [])
-                            .map(
-                              (id) =>
-                                projectNames.get(id) ?? "Unavailable project",
-                            )
-                            .join(", ")}`}
-                    </p>
-                  </div>
-                  {member.role === "member" ? (
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      disabled={busy === member.userId}
-                      onClick={() => void removeMember(member)}
-                    >
-                      Remove access
-                    </Button>
-                  ) : null}
-                </li>
-              ))}
+              {data.members
+                .filter((member) =>
+                  `${member.name} ${member.email}`
+                    .toLocaleLowerCase()
+                    .includes(search.trim().toLocaleLowerCase()),
+                )
+                .map((member) => (
+                  <li key={member.userId} className="access-list-item">
+                    <div>
+                      <strong>{member.name}</strong>
+                      <p>{member.email}</p>
+                      <p className="metadata">
+                        {member.role === "owner"
+                          ? "Owner · all projects"
+                          : `Member · ${
+                              (member.projectGrants ?? [])
+                                .map(
+                                  ({ projectId, permission }) =>
+                                    `${projectNames.get(projectId) ?? "Unavailable project"} (${permission === "read" ? "read only" : "edit"})`,
+                                )
+                                .join(", ") ||
+                              "No projects assigned · waiting for access"
+                            }`}
+                      </p>
+                    </div>
+                    {member.role === "member" ? (
+                      <div className="access-actions">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          disabled={Boolean(busy) || Boolean(editing)}
+                          onClick={() => setEditing(member)}
+                        >
+                          Edit access for {member.name}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          disabled={Boolean(busy) || Boolean(editing)}
+                          onClick={() => void removeMember(member)}
+                        >
+                          Remove access
+                        </Button>
+                      </div>
+                    ) : null}
+                  </li>
+                ))}
             </ul>
           </section>
         </>

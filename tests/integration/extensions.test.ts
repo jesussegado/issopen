@@ -300,10 +300,29 @@ describe("human Chrome OAuth", () => {
     });
     expect(captured.status).toBe(201);
     const ticket = (await captured.json()).issue;
-    await connection.db
-      .update(projectMembership)
-      .set({ permission: "read" })
-      .where(eq(projectMembership.projectId, readable));
+    const changeGrants = async (
+      grants: { projectId: string; permission: "read" | "edit" }[],
+    ) => {
+      const members = await (
+        await app.request("/api/v1/members", { headers: headers() })
+      ).json();
+      const current = members.members.find(
+        (entry: { userId: string }) => entry.userId === member.id,
+      );
+      expect(
+        (
+          await app.request(`/api/v1/members/${member.id}`, {
+            method: "PATCH",
+            headers: headers(),
+            body: JSON.stringify({ expectedVersion: current.version, grants }),
+          })
+        ).status,
+      ).toBe(200);
+    };
+    await changeGrants([
+      { projectId: readable, permission: "read" },
+      { projectId: writable, permission: "edit" },
+    ]);
     const destinations = await app.request("/api/extension/v1/projects", {
       headers: tokenHeaders,
     });
@@ -351,10 +370,19 @@ describe("human Chrome OAuth", () => {
         })
       ).status,
     ).toBe(200);
-    await connection.db
-      .update(projectMembership)
-      .set({ permission: "read" })
-      .where(eq(projectMembership.userId, member.id));
+    await changeGrants([
+      { projectId: readable, permission: "read" },
+      { projectId: writable, permission: "read" },
+    ]);
+    const refreshed = await token({
+      grant_type: "refresh_token",
+      client_id: connected.clientId,
+      refresh_token: connected.tokens.refresh_token,
+    });
+    expect(refreshed.status).toBe(200);
+    expect(
+      await (await readSession(await refreshed.json())).json(),
+    ).toMatchObject({ canWrite: false });
     expect(await (await readSession(connected.tokens)).json()).toMatchObject({
       canWrite: false,
       workspaceId: space.id,
@@ -627,6 +655,14 @@ describe("human Chrome OAuth", () => {
         await app.request(`/api/v1/members/${member.id}`, {
           method: "DELETE",
           headers: headers(),
+          body: JSON.stringify({
+            expectedVersion: (
+              await connection.db
+                .select()
+                .from(workspaceMembership)
+                .where(eq(workspaceMembership.userId, member.id))
+            )[0]?.version,
+          }),
         })
       ).status,
     ).toBe(200);

@@ -360,6 +360,8 @@ export const workspaceMembership = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     role: workspaceRole("role").notNull(),
+    // Opaque compare-and-swap token also changes after removal/reinvitation.
+    version: text("version").default(sql`gen_random_uuid()::text`).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -685,6 +687,8 @@ export const membershipEvent = pgTable(
     type: varchar("type", { length: 64 }).notNull(),
     previousRole: workspaceRole("previous_role"),
     nextRole: workspaceRole("next_role"),
+    previousPermission: projectPermission("previous_permission"),
+    nextPermission: projectPermission("next_permission"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),

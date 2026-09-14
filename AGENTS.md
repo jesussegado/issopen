@@ -29,6 +29,12 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+96 añade gestión de miembros aceptados (fuente en validación): búsqueda, grants
+none/read/edit, confirmación y conflictos conservando borradores; Owner protegido.
+0021 usa versión UUID opaca para evitar sobrescrituras incluso tras reinvitación;
+auditoría por delta. [Contrato y recuperación](docs/member-access.md).
+Sin suspensión, borrado de persona/contenido ni cambios de acceso reales.
+
 95 añade permiso read/edit por project_membership, política central REST/Chrome,
 capacidades de UI y revalidación SSE. La migración0020_project_permissions
 conserva el acceso anterior como edit; sin Viewer/Admin ni

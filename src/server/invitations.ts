@@ -39,6 +39,29 @@ export const createInvitationSchema = z
   })
   .strict();
 
+export const memberVersionSchema = z
+  .object({ expectedVersion: z.uuid() })
+  .strict();
+export const updateMemberSchema = memberVersionSchema.extend({
+  grants: z
+    .array(
+      z
+        .object({ projectId: z.uuid(), permission: z.enum(["read", "edit"]) })
+        .strict(),
+    )
+    .max(100),
+});
+
+async function lockOwner(db: Database, actor: InvitationActor) {
+  const [row] = await db
+    .select({ ownerId: workspace.ownerId })
+    .from(workspace)
+    .where(eq(workspace.id, actor.workspaceId))
+    .for("update");
+  if (!row || row.ownerId !== actor.userId)
+    throw new DomainError("forbidden", "Workspace owner required");
+}
+
 export type InvitationActor = {
   workspaceId: string;
   userId: string;
@@ -136,6 +159,13 @@ export class InvitationService {
   }
 
   async list(actor: InvitationActor) {
+    return this.db.transaction(
+      (tx) => new InvitationService(tx).listSnapshot(actor),
+      { isolationLevel: "repeatable read", accessMode: "read only" },
+    );
+  }
+
+  private async listSnapshot(actor: InvitationActor) {
     const [invitations, members] = await Promise.all([
       this.db
         .select()
@@ -146,6 +176,7 @@ export class InvitationService {
         .select({
           userId: workspaceMembership.userId,
           role: workspaceMembership.role,
+          version: workspaceMembership.version,
           name: user.name,
           email: user.email,
           createdAt: workspaceMembership.createdAt,
@@ -164,6 +195,7 @@ export class InvitationService {
         .select({
           userId: projectMembership.userId,
           projectId: projectMembership.projectId,
+          permission: projectMembership.permission,
         })
         .from(projectMembership)
         .where(eq(projectMembership.workspaceId, actor.workspaceId))
@@ -184,6 +216,15 @@ export class InvitationService {
       ),
       members: members.map((row) => ({
         ...row,
+        projectGrants:
+          row.role === "owner"
+            ? null
+            : memberProjects
+                .filter((grant) => grant.userId === row.userId)
+                .map(({ projectId, permission }) => ({
+                  projectId,
+                  permission,
+                })),
         projectIds:
           row.role === "owner"
             ? null
@@ -370,11 +411,19 @@ export class InvitationService {
     });
   }
 
-  async removeMember(actor: InvitationActor, userId: string) {
-    const now = new Date();
+  async updateMember(
+    actor: InvitationActor,
+    userId: string,
+    raw: z.infer<typeof updateMemberSchema>,
+  ) {
+    const input = updateMemberSchema.parse(raw);
+    const projectIds = input.grants.map((grant) => grant.projectId);
+    if (new Set(projectIds).size !== projectIds.length)
+      throw new DomainError("invalid", "Project assignments must be unique");
     return this.db.transaction(async (tx) => {
+      await lockOwner(tx, actor);
       const [member] = await tx
-        .select({ role: workspaceMembership.role })
+        .select()
         .from(workspaceMembership)
         .where(
           and(
@@ -382,7 +431,123 @@ export class InvitationService {
             eq(workspaceMembership.userId, userId),
           ),
         )
-        .limit(1);
+        .for("update");
+      if (!member) throw new DomainError("not_found", "Member not found");
+      if (member.role === "owner")
+        throw new DomainError(
+          "forbidden",
+          "The owner always has access to all projects",
+        );
+      if (member.version !== input.expectedVersion)
+        throw new DomainError(
+          "conflict",
+          "Member access changed. Reload and review the current permissions before saving.",
+        );
+      const projects = projectIds.length
+        ? await tx
+            .select({ id: project.id })
+            .from(project)
+            .where(
+              and(
+                eq(project.workspaceId, actor.workspaceId),
+                inArray(project.id, projectIds),
+              ),
+            )
+        : [];
+      if (projects.length !== projectIds.length)
+        throw new DomainError("not_found", "Project not found");
+      const previous = await tx
+        .select()
+        .from(projectMembership)
+        .where(
+          and(
+            eq(projectMembership.workspaceId, actor.workspaceId),
+            eq(projectMembership.userId, userId),
+          ),
+        );
+      const before = new Map(
+        previous.map((grant) => [grant.projectId, grant.permission]),
+      );
+      const after = new Map(
+        input.grants.map((grant) => [grant.projectId, grant.permission]),
+      );
+      const deltas = [...new Set([...before.keys(), ...after.keys()])].filter(
+        (projectId) => before.get(projectId) !== after.get(projectId),
+      );
+      if (!deltas.length)
+        return { updated: false, userId, version: member.version };
+      for (const projectId of deltas) {
+        const permission = after.get(projectId);
+        const target = and(
+          eq(projectMembership.workspaceId, actor.workspaceId),
+          eq(projectMembership.userId, userId),
+          eq(projectMembership.projectId, projectId),
+        );
+        if (!permission) await tx.delete(projectMembership).where(target);
+        else if (before.has(projectId))
+          await tx.update(projectMembership).set({ permission }).where(target);
+        else
+          await tx.insert(projectMembership).values({
+            workspaceId: actor.workspaceId,
+            userId,
+            projectId,
+            permission,
+          });
+      }
+      await tx.insert(membershipEvent).values(
+        deltas.map((projectId) => ({
+          id: randomUUID(),
+          workspaceId: actor.workspaceId,
+          subjectUserId: userId,
+          actorUserId: actor.userId,
+          projectId,
+          type: !after.has(projectId)
+            ? "project.access_revoked"
+            : !before.has(projectId)
+              ? "project.access_granted"
+              : "project.permission_changed",
+          previousPermission: before.get(projectId) ?? null,
+          nextPermission: after.get(projectId) ?? null,
+        })),
+      );
+      const version = randomUUID();
+      await tx
+        .update(workspaceMembership)
+        .set({ version, updatedAt: new Date() })
+        .where(
+          and(
+            eq(workspaceMembership.workspaceId, actor.workspaceId),
+            eq(workspaceMembership.userId, userId),
+          ),
+        );
+      return { updated: true, userId, version };
+    });
+  }
+
+  // HTTP always supplies expectedVersion. Trusted recovery tooling can omit it
+  // only after its own explicit operator confirmation; owner is still rechecked.
+  async removeMember(
+    actor: InvitationActor,
+    userId: string,
+    expectedVersion?: string,
+  ) {
+    const now = new Date();
+    return this.db.transaction(async (tx) => {
+      await lockOwner(tx, actor);
+      const [member] = await tx
+        .select({
+          role: workspaceMembership.role,
+          version: workspaceMembership.version,
+        })
+        .from(workspaceMembership)
+        .where(
+          and(
+            eq(workspaceMembership.workspaceId, actor.workspaceId),
+            eq(workspaceMembership.userId, userId),
+          ),
+        )
+        .limit(1)
+        .for("update");
       if (!member) throw new DomainError("not_found", "Member not found");
       if (member.role === "owner") {
         throw new DomainError(
@@ -390,6 +555,32 @@ export class InvitationService {
           "The workspace owner cannot be removed",
         );
       }
+      if (expectedVersion !== undefined && member.version !== expectedVersion)
+        throw new DomainError(
+          "conflict",
+          "Member access changed. Reload and review before removing access.",
+        );
+      const grants = await tx
+        .select()
+        .from(projectMembership)
+        .where(
+          and(
+            eq(projectMembership.workspaceId, actor.workspaceId),
+            eq(projectMembership.userId, userId),
+          ),
+        );
+      if (grants.length)
+        await tx.insert(membershipEvent).values(
+          grants.map((grant) => ({
+            id: randomUUID(),
+            workspaceId: actor.workspaceId,
+            subjectUserId: userId,
+            actorUserId: actor.userId,
+            projectId: grant.projectId,
+            type: "project.access_revoked",
+            previousPermission: grant.permission,
+          })),
+        );
       await tx.insert(membershipEvent).values({
         id: randomUUID(),
         workspaceId: actor.workspaceId,
@@ -707,6 +898,7 @@ async function acceptInvitation(
         projectId,
         type: "project.access_granted",
         nextRole: "member" as const,
+        nextPermission: "edit" as const,
       })),
     ]);
     await tx.insert(workspaceInvitationEvent).values({

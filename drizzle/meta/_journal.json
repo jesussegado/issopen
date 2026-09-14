@@ -148,6 +148,13 @@
       "when": 1789388946176,
       "tag": "0020_project_permissions",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1789390600834,
+      "tag": "0021_member_access_version",
+      "breakpoints": true
     }
   ]
 }

@@ -54,6 +54,8 @@ export type WorkspaceMember = {
   name: string;
   email: string;
   role: "owner" | "member";
+  version: string;
+  projectGrants: { projectId: string; permission: "read" | "edit" }[] | null;
   projectIds: string[] | null;
   createdAt: string;
 };

@@ -42,10 +42,7 @@ it("preserves pre-migration memberships and pins existing Chrome clients before 
       { id: wa, name: "A", ownerId: a },
       { id: wb, name: "B", ownerId: b },
     ]);
-    await connection.db.insert(workspaceMembership).values([
-      { workspaceId: wa, userId: a, role: "owner" },
-      { workspaceId: wb, userId: b, role: "owner" },
-    ]);
+    await connection.client`insert into workspace_membership (workspace_id, user_id, role) values (${wa}, ${a}, 'owner'), (${wb}, ${b}, 'owner')`;
     const clientId = `issopen-chrome-${randomUUID()}`;
     const metadata = {
       extensionId: "abcdefghijklmnopabcdefghijklmnop",
@@ -64,16 +61,15 @@ it("preserves pre-migration memberships and pins existing Chrome clients before 
         "https://abcdefghijklmnopabcdefghijklmnop.chromiumapp.org/oauth",
       ],
     });
-    const before = await connection.db.select().from(workspaceMembership);
+    const before =
+      await connection.client`select workspace_id, user_id, role, created_at, updated_at from workspace_membership order by workspace_id, user_id`;
     await expect(
-      connection.db
-        .insert(workspaceMembership)
-        .values({ workspaceId: wb, userId: a, role: "member" }),
+      connection.client`insert into workspace_membership (workspace_id, user_id, role) values (${wb}, ${a}, 'member')`,
     ).rejects.toThrow();
     await migrateDatabase(container.getConnectionUri());
-    expect(await connection.db.select().from(workspaceMembership)).toEqual(
-      before,
-    );
+    expect(
+      await connection.client`select workspace_id, user_id, role, created_at, updated_at from workspace_membership order by workspace_id, user_id`,
+    ).toEqual(before);
     expect((await connection.db.select().from(oauthClient))[0]).toMatchObject({
       clientId,
       userId: a,

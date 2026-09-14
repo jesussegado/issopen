@@ -21,6 +21,7 @@ import {
   issue,
   issueComment,
   issueQuestion,
+  membershipEvent,
   project,
   projectMembership,
   user,
@@ -269,6 +270,251 @@ afterAll(async () => {
 });
 
 describe("protected tracker REST API", () => {
+  it("edits accepted member grants atomically, rejects conflicts and preserves history and zero-project membership", async () => {
+    const a = await createProjectFixture("Project A", "PRA");
+    const b = await createProjectFixture("Project B", "PRB");
+    const memberCookie = await createMemberSession([a.id]);
+    const otherCookie = await createMemberSession([b.id], "unchanged");
+    const session = await (
+      await requestWithCookie(memberCookie, "/api/v1/session")
+    ).json();
+    const userId = session.user.id;
+    const ticket = await createIssueFixture(a.id);
+    expect(
+      (
+        await requestWithCookie(
+          memberCookie,
+          `/api/v1/issues/${ticket.id}/comments`,
+          {
+            method: "POST",
+            body: JSON.stringify({ body: "Historical attribution" }),
+          },
+        )
+      ).status,
+    ).toBe(201);
+    const members = async () =>
+      (await (await authenticatedRequest("/api/v1/members")).json())
+        .members as Array<{
+        userId: string;
+        version: string;
+        projectGrants: { projectId: string; permission: string }[];
+      }>;
+    const current = async () => {
+      const row = (await members()).find((m) => m.userId === userId);
+      if (!row) throw Error("Member missing");
+      return row;
+    };
+    const patch = (
+      expectedVersion: string,
+      grants: { projectId: string; permission: string }[],
+    ) =>
+      authenticatedRequest(`/api/v1/members/${userId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ expectedVersion, grants }),
+      });
+    const first = await current();
+    expect(first.projectGrants).toEqual([
+      { projectId: a.id, permission: "edit" },
+    ]);
+    for (const input of [
+      { grants: [] },
+      {
+        expectedVersion: first.version,
+        grants: [{ projectId: a.id, permission: "admin" }],
+      },
+      { expectedVersion: first.version, grants: [], role: "owner" },
+    ])
+      expect(
+        (
+          await authenticatedRequest(`/api/v1/members/${userId}`, {
+            method: "PATCH",
+            body: JSON.stringify(input),
+          })
+        ).status,
+      ).toBe(400);
+    expect(
+      (
+        await patch(first.version, [
+          { projectId: a.id, permission: "read" },
+          { projectId: a.id, permission: "edit" },
+        ])
+      ).status,
+    ).toBe(400);
+    expect(
+      (
+        await requestWithCookie(memberCookie, `/api/v1/members/${userId}`, {
+          method: "PATCH",
+          body: JSON.stringify({ expectedVersion: first.version, grants: [] }),
+        })
+      ).status,
+    ).toBe(403);
+    const owner =
+      (await members()).find(
+        (entry) => entry.userId === session.workspace.ownerId,
+      ) ?? (await members()).find((entry) => entry.projectGrants === null);
+    if (!owner) throw Error("Owner missing");
+    expect(
+      (
+        await authenticatedRequest(`/api/v1/members/${owner.userId}`, {
+          method: "PATCH",
+          body: JSON.stringify({ expectedVersion: owner.version, grants: [] }),
+        })
+      ).status,
+    ).toBe(403);
+    const foreignOwner = randomUUID(),
+      foreignSpace = randomUUID(),
+      foreignProject = randomUUID();
+    await connection.db.insert(user).values({
+      id: foreignOwner,
+      name: "Foreign",
+      email: `${foreignOwner}@example.test`,
+    });
+    await connection.db
+      .insert(workspace)
+      .values({ id: foreignSpace, ownerId: foreignOwner, name: "Foreign" });
+    await connection.db.insert(project).values({
+      id: foreignProject,
+      workspaceId: foreignSpace,
+      name: "Foreign",
+      key: "FOREIGN",
+    });
+    expect(
+      (
+        await patch(first.version, [
+          { projectId: foreignProject, permission: "edit" },
+        ])
+      ).status,
+    ).toBe(404);
+    expect((await current()).version).toBe(first.version);
+    const changed = await patch(first.version, [
+      { projectId: a.id, permission: "read" },
+      { projectId: b.id, permission: "edit" },
+    ]);
+    expect(changed.status).toBe(200);
+    const second = await current();
+    expect(second.version).not.toBe(first.version);
+    expect(
+      (await requestWithCookie(memberCookie, `/api/v1/projects/${a.id}`))
+        .status,
+    ).toBe(200);
+    expect(
+      (
+        await requestWithCookie(
+          memberCookie,
+          `/api/v1/projects/${b.id}/issues`,
+          {
+            method: "POST",
+            body: JSON.stringify({ title: "New access works" }),
+          },
+        )
+      ).status,
+    ).toBe(201);
+    expect(
+      (
+        await requestWithCookie(
+          memberCookie,
+          `/api/v1/issues/${ticket.id}/comments`,
+          { method: "POST", body: JSON.stringify({ body: "Denied" }) },
+        )
+      ).status,
+    ).toBe(403);
+    expect((await patch(first.version, [])).status).toBe(409);
+    expect(
+      (
+        await authenticatedRequest(`/api/v1/members/${userId}`, {
+          method: "DELETE",
+          body: JSON.stringify({ expectedVersion: first.version }),
+        })
+      ).status,
+    ).toBe(409);
+    const thirdProject = await createProjectFixture("Not implicit", "NEW");
+    expect(
+      (
+        await requestWithCookie(
+          memberCookie,
+          `/api/v1/projects/${thirdProject.id}`,
+        )
+      ).status,
+    ).toBe(404);
+    const events = await connection.db
+      .select()
+      .from(membershipEvent)
+      .where(eq(membershipEvent.subjectUserId, userId));
+    expect(events).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          projectId: a.id,
+          type: "project.permission_changed",
+          previousPermission: "edit",
+          nextPermission: "read",
+        }),
+        expect.objectContaining({
+          projectId: b.id,
+          type: "project.access_granted",
+          previousPermission: null,
+          nextPermission: "edit",
+        }),
+      ]),
+    );
+    expect(events).toHaveLength(2);
+    const raced = await Promise.all([
+      patch(second.version, []),
+      patch(second.version, [{ projectId: a.id, permission: "edit" }]),
+    ]);
+    expect(raced.map((response) => response.status).sort()).toEqual([200, 409]);
+    const afterRace = await current();
+    expect((await patch(afterRace.version, [])).status).toBe(200);
+    expect((await current()).projectGrants).toEqual([]);
+    expect(
+      await (await requestWithCookie(memberCookie, "/api/v1/projects")).json(),
+    ).toEqual({ projects: [] });
+    expect(
+      (await requestWithCookie(memberCookie, "/api/v1/account/sessions"))
+        .status,
+    ).toBe(200);
+    expect(
+      (await requestWithCookie(otherCookie, `/api/v1/projects/${b.id}`)).status,
+    ).toBe(200);
+    const finalVersion = (await current()).version;
+    expect(
+      (
+        await authenticatedRequest(`/api/v1/members/${userId}`, {
+          method: "DELETE",
+          body: JSON.stringify({ expectedVersion: finalVersion }),
+        })
+      ).status,
+    ).toBe(200);
+    const history = await (
+      await authenticatedRequest(`/api/v1/issues/${ticket.id}`)
+    ).json();
+    expect(history.comments).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          body: "Historical attribution",
+          authorId: userId,
+        }),
+      ]),
+    );
+    expect(
+      await connection.db.select().from(user).where(eq(user.id, userId)),
+    ).toHaveLength(1);
+    // Simulate a legitimately reaccepted membership: a stale pre-removal UI
+    // must never remove/change this new grant, even for the same person.
+    await connection.db
+      .insert(workspaceMembership)
+      .values({ workspaceId: session.workspace.id, userId, role: "member" });
+    expect((await current()).version).not.toBe(finalVersion);
+    expect((await patch(finalVersion, [])).status).toBe(409);
+    expect(
+      (
+        await authenticatedRequest(`/api/v1/members/${userId}`, {
+          method: "DELETE",
+          body: JSON.stringify({ expectedVersion: finalVersion }),
+        })
+      ).status,
+    ).toBe(409);
+  });
+
   it("enforces read/edit per project on every ticket mutation and refreshes live capabilities", async () => {
     const writable = await createProjectFixture("Writable", "WRITE");
     const readable = await createProjectFixture("Readable", "READ");
@@ -534,6 +780,7 @@ describe("protected tracker REST API", () => {
       members: Array<{
         userId: string;
         role: string;
+        version: string;
         projectIds: string[] | null;
       }>;
     }>(members);
@@ -548,7 +795,14 @@ describe("protected tracker REST API", () => {
 
     const removed = await authenticatedRequest(
       `/api/v1/members/${claimed.claimedByUserId}`,
-      { method: "DELETE" },
+      {
+        method: "DELETE",
+        body: JSON.stringify({
+          expectedVersion: memberList.members.find(
+            (member) => member.userId === claimed.claimedByUserId,
+          )?.version,
+        }),
+      },
     );
     expect(removed.status).toBe(200);
     const remainingSession = await requestWithCookie(
@@ -848,11 +1102,26 @@ describe("protected tracker REST API", () => {
       expect(decoder.decode((await reader.read()).value)).toContain(
         "event: board",
       );
-      if (kind === "membership")
-        await connection.db
-          .delete(projectMembership)
-          .where(eq(projectMembership.projectId, p.id));
-      else
+      if (kind === "membership") {
+        const members = await (
+          await authenticatedRequest("/api/v1/members")
+        ).json();
+        const member = members.members.find(
+          (entry: { projectIds: string[] | null }) =>
+            entry.projectIds?.includes(p.id),
+        );
+        expect(
+          (
+            await authenticatedRequest(`/api/v1/members/${member.userId}`, {
+              method: "PATCH",
+              body: JSON.stringify({
+                expectedVersion: member.version,
+                grants: [],
+              }),
+            })
+          ).status,
+        ).toBe(200);
+      } else
         await auth.api.signOut({
           headers: new Headers({ Cookie: memberCookie, Origin: baseUrl }),
         });
