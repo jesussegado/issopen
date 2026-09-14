@@ -31,6 +31,10 @@ haya conflicto, usa este orden:
 
 98 mejora invitaciones/login: recuperación explícita, cabeceras privadas, returnTo
 interno estricto y destino un proyecto/selector/espera. [Contrato](docs/invited-onboarding.md).
+Desplegado19f3a81/GitOpsbebfda10/digest5bcce1f6: Synced/Healthy, readiness200,
+smoke1440/360PASS, backups restaurados y gates150unit/web81integration22webE2E
++2skips/Chrome16+13/ComposePASS.98 queda con warning de aceptación externa,
+claim liberado;99 perfil/directorio en progreso quick260914-lkx.
 No cambia signup, permisos, esquema, proveedor o revisor. La pregunta1abf3039 pide
 cuenta piloto para aceptación Google real; los tests aislados no sustituyen esa prueba.
 Seguir tareas independientes mientras la aceptación externa esté pendiente.
