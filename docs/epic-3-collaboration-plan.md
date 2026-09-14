@@ -40,7 +40,11 @@ asigna ni revisa tickets; sí lee el contenido permitido. Cuenta/sesiones propia
 no dependen del permiso de edición del proyecto. MCP conserva identidad, scopes
 y allowlist propios; Chrome es humano y aplica la intersección con sus grants.
 
-### Base multiworkspace (108), todavía no implementada
+### Base multiworkspace (108)
+
+Implementada en la fuente; validación/release en quick260914-jhl. Contrato y
+compatibilidad en [multiworkspace](multiworkspace.md). Verificar GitOps antes de
+afirmar su disponibilidad productiva. Los puntos siguientes son sus invariantes.
 
 - Sustituir unicidad global de membresía por workspace/persona; conservar las
   filas existentes. La migración no añade miembros, proyectos ni privilegios.

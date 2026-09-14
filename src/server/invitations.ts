@@ -235,14 +235,17 @@ export class InvitationService {
         const [existingMembership] = await tx
           .select({ workspaceId: workspaceMembership.workspaceId })
           .from(workspaceMembership)
-          .where(eq(workspaceMembership.userId, existingUser.id))
+          .where(
+            and(
+              eq(workspaceMembership.userId, existingUser.id),
+              eq(workspaceMembership.workspaceId, actor.workspaceId),
+            ),
+          )
           .limit(1);
         if (existingMembership) {
           throw new DomainError(
             "conflict",
-            existingMembership.workspaceId === actor.workspaceId
-              ? "This person is already a workspace member"
-              : "This account already belongs to another workspace",
+            "This person is already a workspace member",
           );
         }
       }
@@ -395,19 +398,33 @@ export class InvitationService {
         type: "membership.revoked",
         previousRole: "member",
       });
-      await tx
-        .update(oauthAccessToken)
-        .set({ revoked: now })
-        .where(eq(oauthAccessToken.userId, userId));
-      await tx
-        .update(oauthRefreshToken)
-        .set({ revoked: now })
-        .where(eq(oauthRefreshToken.userId, userId));
-      await tx
-        .update(oauthClient)
-        .set({ disabled: true, updatedAt: now })
-        .where(eq(oauthClient.userId, userId));
-      await tx.delete(session).where(eq(session.userId, userId));
+      // Global web sessions remain valid in the person's other workspaces.
+      // Only installation grants bound to this membership are revoked.
+      const clients = await tx
+        .select({ clientId: oauthClient.clientId })
+        .from(oauthClient)
+        .where(
+          and(
+            eq(oauthClient.userId, userId),
+            eq(oauthClient.referenceId, "issopen-chrome"),
+            sql`${oauthClient.metadata}->>'workspaceId' = ${actor.workspaceId}`,
+          ),
+        );
+      const clientIds = clients.map((entry) => entry.clientId);
+      if (clientIds.length) {
+        await tx
+          .update(oauthAccessToken)
+          .set({ revoked: now })
+          .where(inArray(oauthAccessToken.clientId, clientIds));
+        await tx
+          .update(oauthRefreshToken)
+          .set({ revoked: now })
+          .where(inArray(oauthRefreshToken.clientId, clientIds));
+        await tx
+          .update(oauthClient)
+          .set({ disabled: true, updatedAt: now })
+          .where(inArray(oauthClient.clientId, clientIds));
+      }
       await tx
         .delete(workspaceMembership)
         .where(
@@ -626,12 +643,17 @@ async function acceptInvitation(
     const [existingMembership] = await tx
       .select({ workspaceId: workspaceMembership.workspaceId })
       .from(workspaceMembership)
-      .where(eq(workspaceMembership.userId, authenticatedUser.id))
+      .where(
+        and(
+          eq(workspaceMembership.userId, authenticatedUser.id),
+          eq(workspaceMembership.workspaceId, invite.workspaceId),
+        ),
+      )
       .limit(1);
     if (existingMembership) {
       throw new APIError("CONFLICT", {
         code: "MEMBERSHIP_ALREADY_EXISTS",
-        message: "This account already belongs to a workspace",
+        message: "This account already belongs to this workspace",
       });
     }
     const assignedProjects = await tx

@@ -10,6 +10,7 @@ import {
   useRef,
 } from "react";
 import { navigate } from "../lib/navigation.js";
+import { workspaceNavigationUrl } from "../lib/workspace-context.js";
 
 export function AppLink({
   href = "/",
@@ -19,7 +20,7 @@ export function AppLink({
   return (
     <a
       {...props}
-      href={href}
+      href={workspaceNavigationUrl(href)}
       onClick={(event) => {
         onClick?.(event);
         if (

@@ -92,6 +92,7 @@ export function ConsentRoute({
   const [clientName, setClientName] = useState<string | null>(null);
   const [failure, setFailure] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [boundWorkspace, setBoundWorkspace] = useState<string | null>(null);
 
   useEffect(() => {
     if (!clientId) {
@@ -102,6 +103,11 @@ export function ConsentRoute({
       `/api/auth/oauth2/public-client?client_id=${encodeURIComponent(clientId)}`,
     )
       .then((client) => setClientName(client.name?.trim() || "ChatGPT"))
+      .catch(() => setFailure(true));
+    apiRequest<{ workspace: { name: string } }>(
+      `/api/v1/oauth/workspace?clientId=${encodeURIComponent(clientId)}`,
+    )
+      .then((response) => setBoundWorkspace(response.workspace.name))
       .catch(() => setFailure(true));
   }, [clientId]);
 
@@ -145,7 +151,7 @@ export function ConsentRoute({
       ) : null}
       <section className="detail-panel" aria-labelledby="consent-workspace">
         <h2 id="consent-workspace">Workspace</h2>
-        <p>{workspaceName}</p>
+        <p>{boundWorkspace ?? workspaceName}</p>
         <h2>Requested capabilities</h2>
         <ul>
           {requestedScopes.map((scope) => (
@@ -163,7 +169,7 @@ export function ConsentRoute({
       <div className="page-actions">
         <Button
           type="button"
-          disabled={submitting || failure}
+          disabled={submitting || failure || !boundWorkspace}
           onClick={() => void decide(true)}
         >
           Allow access

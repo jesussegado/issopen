@@ -56,6 +56,8 @@ describe("MCP connection UI", () => {
         if (String(input).startsWith("/api/auth/oauth2/public-client")) {
           return json({ name: "<img src=x onerror=alert(1)>" });
         }
+        if (String(input).startsWith("/api/v1/oauth/workspace"))
+          return json({ workspace: { name: "Private workspace" } });
         expect(String(input)).toBe("/api/auth/oauth2/consent");
         expect(JSON.parse(String(init?.body))).toEqual({
           accept: false,
@@ -88,6 +90,6 @@ describe("MCP connection UI", () => {
     ).toBeInTheDocument();
     expect(document.body).not.toHaveTextContent("synthetic-signature");
     await user.click(screen.getByRole("button", { name: "Deny access" }));
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
   });
 });

@@ -143,6 +143,10 @@ describe("owner web entry", () => {
       "owner@example.test",
     );
     expect(screen.getByLabelText("Password (required)")).toHaveValue("");
+    expect(screen.getByLabelText("Password (required)")).toHaveAttribute(
+      "aria-describedby",
+      "sign-in-error",
+    );
     await waitFor(() =>
       expect(screen.getByLabelText("Password (required)")).toHaveFocus(),
     );

@@ -24,25 +24,21 @@ export type HumanAccess = {
 export async function resolveHumanAccess(
   db: Database,
   user: HumanIdentity,
+  workspaceId?: string,
 ): Promise<HumanAccess | null> {
-  const memberships = await db
-    .select({
-      workspaceId: workspaceMembership.workspaceId,
-      workspaceName: workspace.name,
-      workspaceVersion: workspace.version,
-      workspaceOwnerId: workspace.ownerId,
-      role: workspaceMembership.role,
-    })
-    .from(workspaceMembership)
-    .innerJoin(workspace, eq(workspace.id, workspaceMembership.workspaceId))
-    .where(eq(workspaceMembership.userId, user.id))
-    .orderBy(
-      asc(workspaceMembership.createdAt),
-      asc(workspaceMembership.workspaceId),
-    );
-
-  const membership = memberships[0];
-  if (!membership) return null;
+  const memberships = await listHumanWorkspaces(db, user.id);
+  // An unspecified context is only unambiguous for a single membership.
+  const membership =
+    workspaceId === undefined
+      ? memberships.length === 1
+        ? memberships[0]
+        : undefined
+      : memberships.find((entry) => entry.workspaceId === workspaceId);
+  if (!membership) {
+    if (workspaceId !== undefined)
+      throw new DomainError("not_found", "Workspace not found");
+    return null;
+  }
   if (membership.role === "owner" && membership.workspaceOwnerId !== user.id) {
     throw new DomainError("forbidden", "Invalid workspace ownership");
   }
@@ -62,7 +58,6 @@ export async function resolveHumanAccess(
             )
             .orderBy(asc(projectMembership.projectId))
         ).map((entry) => entry.projectId);
-
   return {
     workspaceId: membership.workspaceId,
     workspaceName: membership.workspaceName,
@@ -71,6 +66,26 @@ export async function resolveHumanAccess(
     projectIds,
     user,
   };
+}
+
+export async function listHumanWorkspaces(db: Database, userId: string) {
+  const memberships = await db
+    .select({
+      workspaceId: workspaceMembership.workspaceId,
+      workspaceName: workspace.name,
+      workspaceVersion: workspace.version,
+      workspaceOwnerId: workspace.ownerId,
+      role: workspaceMembership.role,
+    })
+    .from(workspaceMembership)
+    .innerJoin(workspace, eq(workspace.id, workspaceMembership.workspaceId))
+    .where(eq(workspaceMembership.userId, userId))
+    .orderBy(
+      asc(workspaceMembership.createdAt),
+      asc(workspaceMembership.workspaceId),
+    );
+
+  return memberships;
 }
 
 export function requireHumanAccess(access: HumanAccess | null): HumanAccess {

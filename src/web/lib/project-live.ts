@@ -1,3 +1,4 @@
+import { workspaceUrl } from "./workspace-context.js";
 // Events only invalidate authorized data; every refresh still goes through REST.
 export function subscribeToProjectChanges(
   projectId: string,
@@ -11,7 +12,9 @@ export function subscribeToProjectChanges(
   const stream =
     typeof EventSource === "undefined"
       ? null
-      : new EventSource(`/api/v1/projects/${projectId}/board/events`);
+      : new EventSource(
+          workspaceUrl(`/api/v1/projects/${projectId}/board/events`),
+        );
   const onAccessLost = () => {
     if (stopped) return;
     stop();

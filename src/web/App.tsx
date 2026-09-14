@@ -3,6 +3,12 @@ import { AuthenticatedShell, PublicShell } from "./components/Shell.js";
 import { Skeleton, StatusBanner } from "./components/ui.js";
 import { apiRequest } from "./lib/api.js";
 import { navigate, useLocation } from "./lib/navigation.js";
+import {
+  rememberWorkspace,
+  selectedWorkspace,
+  switchWorkspace,
+  workspaceHeaders,
+} from "./lib/workspace-context.js";
 import { AccountRoute } from "./routes/AccountRoute.js";
 import { AgentsRoute } from "./routes/AgentsRoute.js";
 import { BoardRoute } from "./routes/BoardRoute.js";
@@ -48,21 +54,39 @@ type Screen =
 export function App() {
   const location = useLocation();
   const pathname = location.split("?")[0] ?? "/";
+  const workspaceContext = selectedWorkspace();
   const [screen, setScreen] = useState<Screen>({ kind: "loading" });
 
   const readSession = useCallback(async () => {
-    const response = await fetch("/api/v1/session", {
+    const requestedWorkspace = selectedWorkspace();
+    let response = await fetch("/api/v1/session", {
       credentials: "same-origin",
+      headers: workspaceHeaders(),
     });
+    if (requestedWorkspace !== selectedWorkspace()) return null;
     if (response.status === 401) {
       setScreen({ kind: "anonymous" });
       return null;
+    }
+    if ([400, 404].includes(response.status) && selectedWorkspace() !== null) {
+      // An invalid/withdrawn context must present a choice, never silently switch.
+      response = await fetch("/api/v1/session", { credentials: "same-origin" });
+      if (requestedWorkspace !== selectedWorkspace()) return null;
+      if (response.ok) {
+        const session = (await response.json()) as Session;
+        setScreen({
+          kind: "authenticated",
+          session: { ...session, workspace: null },
+        });
+        return null;
+      }
     }
     if (!response.ok) {
       setScreen({ kind: "error" });
       return null;
     }
     const session = (await response.json()) as Session;
+    if (session.workspace) rememberWorkspace(session.workspace.id);
     setScreen({
       kind: "authenticated",
       session,
@@ -70,10 +94,11 @@ export function App() {
     return session;
   }, []);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: browser history can change workspace without changing pathname.
   useEffect(() => {
     if (!["/status", "/privacy", "/chrome", "/support"].includes(pathname))
       void readSession();
-  }, [pathname, readSession]);
+  }, [pathname, readSession, workspaceContext]);
 
   if (pathname === "/status") return <StatusRoute />;
   if (pathname === "/privacy") return <PrivacyRoute />;
@@ -137,15 +162,36 @@ export function App() {
       <PublicShell>
         <InvitationCompleteRoute
           invitationId={invitationCompleteMatch[1]}
-          onAccepted={async () => {
-            await readSession();
-            navigate("/", true);
+          onAccepted={async (workspaceId) => {
+            switchWorkspace(workspaceId);
           }}
         />
       </PublicShell>
     );
   }
   if (!screen.session.workspace) {
+    if (screen.session.workspaces?.length)
+      return (
+        <PublicShell>
+          <h1>Choose a workspace</h1>
+          <p>
+            Select where to work. No project data is shared between workspaces.
+          </p>
+          <ul>
+            {screen.session.workspaces.map((entry) => (
+              <li key={entry.id}>
+                <button
+                  className="button button-secondary"
+                  type="button"
+                  onClick={() => switchWorkspace(entry.id, location)}
+                >
+                  {entry.name} · {entry.role}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </PublicShell>
+      );
     if (pathname !== "/workspace/new") navigate("/workspace/new", true);
     return (
       <WorkspaceCreateRoute
@@ -153,8 +199,19 @@ export function App() {
       />
     );
   }
+  if (
+    workspaceContext !== null &&
+    screen.session.workspace.id !== workspaceContext
+  ) {
+    return (
+      <PublicShell>
+        <Skeleton label="Checking workspace access…" />
+      </PublicShell>
+    );
+  }
   return (
     <AuthenticatedApp
+      key={`${screen.session.user.id}:${screen.session.workspace.id}`}
       session={
         screen.session as Session & {
           workspace: NonNullable<Session["workspace"]>;

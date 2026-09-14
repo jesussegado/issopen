@@ -1,14 +1,10 @@
 # Workspace memberships and authorization
 
-Runtime baseline below is mono-workspace. Epic 3's approved next contract is
-Owner/Member per workspace plus project read/edit permissions and multiple
-memberships; see [collaboration plan](epic-3-collaboration-plan.md). Ticket 108
-must implement and validate tenancy before enabling it. Do not confuse the
-approved design with deployed capabilities or widen existing grants.
-
-Issopen's external-user pilot has two human roles. A person can belong to one
-workspace at a time; this keeps session routing unambiguous until workspace
-switching is deliberately designed.
+Ticket 108 adds [explicit multiworkspace context](multiworkspace.md): one person
+can belong to multiple workspaces, with independent per-tab selection. The
+server still uses Owner/Member and the explicit project allowlist. Project
+read/edit permissions remain the next increment (95); do not widen grants.
+Consult GitOps for the deployed revision, not this source document alone.
 
 ## Role contract
 
@@ -32,8 +28,8 @@ return `403` with an actionable message.
 
 ## Data model and audit
 
-- `workspace_membership` stores the `owner` or `member` role. Its unique user
-  index intentionally limits the pilot to one workspace membership per person.
+- `workspace_membership` stores the `owner` or `member` role. Its composite key
+  allows one membership per workspace/person; 0019 removes global user uniqueness.
 - `project_membership` is the explicit Member allowlist. Owner access is
   represented by the role and does not need one row per project.
 - `membership_event` is append-only application audit data for bootstrap,
@@ -44,7 +40,7 @@ return `403` with an actionable message.
   `workspace_invitation_event` implement the hash-only, one-use invitation
   protocol. Its complete lifecycle, Google proof and recovery contract is in
   [Member invitations](member-invitations.md).
-- The legacy `workspace.owner_id` remains the canonical instance owner and is
+- The legacy `workspace.owner_id` remains the canonical workspace owner and is
   retained for backward compatibility. An `owner` membership that does not
   match it is rejected by the authorization resolver.
 
@@ -54,6 +50,9 @@ or `requireProjectAccess` for project data, and build mutations through
 `humanMutationContext`.
 
 ## Migration and rollback
+
+The following describes historical 0017 only. For 0019 and multiple memberships,
+the [multiworkspace rollback warning](multiworkspace.md) takes precedence.
 
 Migration `0017_bright_fabian_cortez` is additive. It creates the three role
 and membership tables,

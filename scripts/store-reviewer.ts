@@ -17,6 +17,7 @@ import {
   account,
   membershipEvent,
   projectMembership,
+  session,
   user,
   workspace,
   workspaceMembership,
@@ -237,10 +238,15 @@ export async function revokeReviewDemo(db: Database, raw: ReviewInput) {
       );
     if (!owner || !event)
       throw new Error("This is not the operator-provisioned review identity");
-    const [membership] = await tx
+    const memberships = await tx
       .select()
       .from(workspaceMembership)
       .where(eq(workspaceMembership.userId, input.userId));
+    if (memberships.length > 1)
+      throw new Error(
+        "Refusing global reviewer credential revocation for a multiworkspace identity",
+      );
+    const [membership] = memberships;
     if (
       membership &&
       (membership.workspaceId !== input.workspaceId ||
@@ -252,6 +258,8 @@ export async function revokeReviewDemo(db: Database, raw: ReviewInput) {
         { workspaceId: input.workspaceId, userId: input.ownerUserId },
         input.userId,
       );
+    // This operator exception targets an isolated synthetic identity only.
+    await tx.delete(session).where(eq(session.userId, input.userId));
     // Removing membership is sufficient for access denial; also prevent password
     // login. Retain user/audit/tickets instead of deleting historical attribution.
     await tx

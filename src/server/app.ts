@@ -11,6 +11,7 @@ import type { Database } from "./db/client.js";
 import {
   instanceOwner,
   membershipEvent,
+  oauthClient,
   workspace,
   workspaceMembership,
 } from "./db/schema.js";
@@ -31,6 +32,7 @@ import {
 } from "./http/index.js";
 import {
   type HumanAccess,
+  listHumanWorkspaces,
   requireHumanAccess,
   requireWorkspaceOwner,
   resolveHumanAccess,
@@ -136,13 +138,34 @@ export function createApp({
       )
     ) {
       const clientId = await oauthClientIdFromRequest(context.req.raw);
+      if (clientId && isExtensionClientId(clientId)) {
+        const session = await auth.api
+          .getSession({ headers: context.req.raw.headers })
+          .catch(() => null);
+        if (session) {
+          const [client] = await db
+            .select({ userId: oauthClient.userId })
+            .from(oauthClient)
+            .where(eq(oauthClient.clientId, clientId))
+            .limit(1);
+          if (client?.userId !== session.user.id)
+            return context.json(
+              { error: "This installation belongs to another account" },
+              403,
+            );
+        }
+      }
       if (clientId && !isExtensionClientId(clientId)) {
         const session = await auth.api
           .getSession({ headers: context.req.raw.headers })
           .catch(() => null);
         if (session) {
-          const access = await resolveHumanAccess(db, session.user);
-          if (access?.role !== "owner") {
+          const owned = (await listHumanWorkspaces(db, session.user.id)).filter(
+            (entry) =>
+              entry.role === "owner" &&
+              entry.workspaceOwnerId === session.user.id,
+          );
+          if (owned.length !== 1) {
             return context.json(
               { error: "Only a workspace owner can connect an MCP client" },
               403,
@@ -186,11 +209,31 @@ export function createApp({
     }
 
     context.set("ownerSession", ownerSession);
-    context.set("humanAccess", await resolveHumanAccess(db, ownerSession.user));
+    const headerWorkspace = context.req.header("X-Issopen-Workspace");
+    const queryWorkspace = context.req.query("workspace");
+    if (
+      headerWorkspace !== undefined &&
+      queryWorkspace !== undefined &&
+      headerWorkspace !== queryWorkspace
+    ) {
+      return context.json({ error: "Conflicting workspace context" }, 400);
+    }
+    const selectedWorkspace = headerWorkspace ?? queryWorkspace;
+    if (
+      selectedWorkspace !== undefined &&
+      !z.uuid().safeParse(selectedWorkspace).success
+    ) {
+      return context.json({ error: "Invalid workspace context" }, 400);
+    }
+    context.set(
+      "humanAccess",
+      await resolveHumanAccess(db, ownerSession.user, selectedWorkspace),
+    );
     await next();
   });
 
   app.get("/api/v1/session", async (context) => {
+    context.header("Cache-Control", "no-store");
     const ownerSession = context.get("ownerSession");
     const access = context.get("humanAccess");
 
@@ -200,6 +243,14 @@ export function createApp({
         name: ownerSession.user.name,
         email: ownerSession.user.email,
       },
+      workspaces: (await listHumanWorkspaces(db, ownerSession.user.id)).map(
+        (entry) => ({
+          id: entry.workspaceId,
+          name: entry.workspaceName,
+          version: entry.workspaceVersion,
+          role: entry.role,
+        }),
+      ),
       workspace: access
         ? {
             id: access.workspaceId,
@@ -224,7 +275,7 @@ export function createApp({
     }
 
     const ownerSession = context.get("ownerSession");
-    if (context.get("humanAccess")) {
+    if ((await listHumanWorkspaces(db, ownerSession.user.id)).length > 0) {
       return context.json(
         { error: "A workspace membership already exists" },
         409,

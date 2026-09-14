@@ -35,6 +35,7 @@ import {
   workspace,
   workspaceMembership,
 } from "../../src/server/db/schema.js";
+import { InvitationService } from "../../src/server/invitations.js";
 import { syntheticPng } from "../fixtures/png.js";
 
 const base = "http://localhost:8080";
@@ -115,11 +116,14 @@ afterAll(async () => {
   await connection?.close();
   await container?.stop();
 });
-async function link(sessionCookie = cookie) {
+async function link(sessionCookie = cookie, workspaceId?: string) {
   const installationId = randomUUID();
   const response = await app.request("/api/v1/extensions/link", {
     method: "POST",
-    headers: headers(sessionCookie),
+    headers: {
+      ...headers(sessionCookie),
+      ...(workspaceId ? { "X-Issopen-Workspace": workspaceId } : {}),
+    },
     body: JSON.stringify({
       installationId,
       extensionId,
@@ -135,8 +139,13 @@ async function link(sessionCookie = cookie) {
       .authorizeUrl,
   };
 }
-async function grant(accept = true, write = false, sessionCookie = cookie) {
-  const linked = await link(sessionCookie);
+async function grant(
+  accept = true,
+  write = false,
+  sessionCookie = cookie,
+  workspaceId?: string,
+) {
+  const linked = await link(sessionCookie, workspaceId);
   const authorization = await app.request(linked.authorizeUrl, {
     headers: { Cookie: sessionCookie },
   });
@@ -174,8 +183,12 @@ function token(params: Record<string, string>) {
     body: new URLSearchParams({ ...params, resource }),
   });
 }
-async function connect(write = false, sessionCookie = cookie) {
-  const grant_ = await grant(true, write, sessionCookie);
+async function connect(
+  write = false,
+  sessionCookie = cookie,
+  workspaceId?: string,
+) {
+  const grant_ = await grant(true, write, sessionCookie, workspaceId);
   const response = await token({
     grant_type: "authorization_code",
     client_id: grant_.clientId,
@@ -228,13 +241,14 @@ async function createMemberSession(projectIds: string[]) {
       userId: member.id,
       role: "member",
     });
-    await tx.insert(projectMembership).values(
-      projectIds.map((projectId) => ({
-        workspaceId: personalWorkspace.id,
-        projectId,
-        userId: member.id,
-      })),
-    );
+    if (projectIds.length)
+      await tx.insert(projectMembership).values(
+        projectIds.map((projectId) => ({
+          workspaceId: personalWorkspace.id,
+          projectId,
+          userId: member.id,
+        })),
+      );
   });
   const signedIn = await app.request("/api/auth/sign-in/email", {
     method: "POST",
@@ -248,6 +262,83 @@ async function createMemberSession(projectIds: string[]) {
 }
 
 describe("human Chrome OAuth", () => {
+  it("binds installations to one workspace and revokes only the removed membership", async () => {
+    const [first] = await connection.db.select().from(workspace);
+    if (!first) throw new Error("Missing workspace");
+    const member = await createMemberSession([]);
+    const ownerB = randomUUID(),
+      workspaceB = randomUUID();
+    await connection.db.insert(user).values({
+      id: ownerB,
+      name: "Other owner",
+      email: `${ownerB}@example.test`,
+    });
+    await connection.db
+      .insert(workspace)
+      .values({ id: workspaceB, ownerId: ownerB, name: "Other workspace" });
+    await connection.db.insert(workspaceMembership).values([
+      { workspaceId: workspaceB, userId: ownerB, role: "owner" },
+      { workspaceId: workspaceB, userId: member.id, role: "member" },
+    ]);
+    const a = await connect(true, member.cookie, first.id);
+    const b = await connect(true, member.cookie, workspaceB);
+    expect((await (await readSession(a.tokens)).json()).workspaceId).toBe(
+      first.id,
+    );
+    expect((await (await readSession(b.tokens)).json()).workspaceId).toBe(
+      workspaceB,
+    );
+    // An attempted tab/header override never changes an OAuth token's workspace.
+    const override = await app.request("/api/extension/v1/session", {
+      headers: {
+        Authorization: `Bearer ${a.tokens.access_token}`,
+        Origin: origin,
+        "X-Issopen-Workspace": workspaceB,
+      },
+    });
+    expect((await override.json()).workspaceId).toBe(first.id);
+    const consentContext = await app.request(
+      `/api/v1/oauth/workspace?clientId=${a.clientId}`,
+      {
+        headers: {
+          ...headers(member.cookie),
+          "X-Issopen-Workspace": workspaceB,
+        },
+      },
+    );
+    expect((await consentContext.json()).workspace.id).toBe(first.id);
+    await new InvitationService(connection.db).removeMember(
+      { workspaceId: first.id, userId: first.ownerId },
+      member.id,
+    );
+    expect((await readSession(a.tokens)).status).toBe(401);
+    expect((await readSession(b.tokens)).status).toBe(200);
+    expect(
+      (
+        await token({
+          grant_type: "refresh_token",
+          client_id: a.clientId,
+          refresh_token: a.tokens.refresh_token,
+        })
+      ).status,
+    ).toBe(401);
+    expect(
+      (
+        await token({
+          grant_type: "refresh_token",
+          client_id: b.clientId,
+          refresh_token: b.tokens.refresh_token,
+        })
+      ).status,
+    ).toBe(200);
+    expect(
+      (
+        await app.request("/api/v1/session", {
+          headers: headers(member.cookie),
+        })
+      ).status,
+    ).toBe(200);
+  });
   it("lets a Member manage only their web sessions without disconnecting Chrome", async () => {
     const created = await app.request("/api/v1/projects", {
       method: "POST",

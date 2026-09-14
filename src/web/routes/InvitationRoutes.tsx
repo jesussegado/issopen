@@ -241,7 +241,7 @@ export function InvitationCompleteRoute({
   onAccepted,
 }: {
   invitationId: string;
-  onAccepted: () => Promise<void>;
+  onAccepted: (workspaceId: string) => Promise<void>;
 }) {
   const [error, setError] = useState<string | null>(null);
   const [needsGoogle, setNeedsGoogle] = useState(false);
@@ -252,8 +252,11 @@ export function InvitationCompleteRoute({
     setError(null);
     setNeedsGoogle(false);
     try {
-      await authPost("/api/auth/invitations/accept", { invitationId });
-      await onAccepted();
+      const result = await authPost<{ membership: { workspaceId: string } }>(
+        "/api/auth/invitations/accept",
+        { invitationId },
+      );
+      await onAccepted(result.membership.workspaceId);
     } catch (caught) {
       const authError = caught as Error & { code?: string };
       setNeedsGoogle(authError.code === "GOOGLE_REAUTH_REQUIRED");

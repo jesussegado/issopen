@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { workspaceNavigationUrl } from "./workspace-context.js";
 
 const readLocation = () =>
   `${window.location.pathname}${window.location.search}`;
@@ -8,7 +9,7 @@ function safeInternalPath(path: string): string {
 }
 
 export function navigate(path: string, replace = false) {
-  const target = safeInternalPath(path);
+  const target = workspaceNavigationUrl(safeInternalPath(path));
   window.history[replace ? "replaceState" : "pushState"]({}, "", target);
   window.dispatchEvent(new PopStateEvent("popstate"));
 }

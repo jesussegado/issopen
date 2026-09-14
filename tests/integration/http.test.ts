@@ -440,9 +440,18 @@ describe("protected tracker REST API", () => {
       { method: "DELETE" },
     );
     expect(removed.status).toBe(200);
+    const remainingSession = await requestWithCookie(
+      memberCookie,
+      "/api/v1/session",
+    );
+    expect(remainingSession.status).toBe(200);
+    expect(await remainingSession.json()).toMatchObject({
+      workspace: null,
+      workspaces: [],
+    });
     expect(
-      (await requestWithCookie(memberCookie, "/api/v1/session")).status,
-    ).toBe(401);
+      (await requestWithCookie(memberCookie, "/api/v1/projects")).status,
+    ).toBe(404);
     await expect(
       connection.db
         .update(workspaceInvitationEvent)

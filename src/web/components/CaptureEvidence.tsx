@@ -6,6 +6,7 @@ import {
   structuralSelector,
 } from "../../shared/capture-contract.js";
 import { apiRequest } from "../lib/api.js";
+import { workspaceUrl } from "../lib/workspace-context.js";
 import { Button, StatusBanner } from "./ui.js";
 
 const schema = z.object({
@@ -95,15 +96,19 @@ export function CaptureEvidence({ issueId }: { issueId: string }) {
           </p>
           {row.imageUrl && (
             <>
-              <a href={row.imageUrl} target="_blank" rel="noreferrer">
+              <a
+                href={workspaceUrl(row.imageUrl)}
+                target="_blank"
+                rel="noreferrer"
+              >
                 <img
-                  src={row.imageUrl}
+                  src={workspaceUrl(row.imageUrl)}
                   alt={`Attachment ${index + 1} for this issue`}
                   loading="lazy"
                 />
               </a>
               <p>
-                <a href={`${row.imageUrl}?download=1`}>
+                <a href={workspaceUrl(`${row.imageUrl}?download=1`)}>
                   Download image {index + 1} ({Math.ceil(row.bytes / 1024)} KiB)
                 </a>
               </p>

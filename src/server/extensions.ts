@@ -18,6 +18,7 @@ import {
 import { DomainError, TrackerService } from "./domain/index.js";
 import {
   type HumanAccess,
+  listHumanWorkspaces,
   requireHumanAccess,
   resolveHumanAccess,
 } from "./human-access.js";
@@ -39,6 +40,7 @@ export const extensionLinkSchema = z
   })
   .strict();
 const metadataSchema = z.object({
+  workspaceId: z.uuid(),
   extensionId: z.string().regex(/^[a-p]{32}$/),
   expiresAt: z.iso.datetime(),
 });
@@ -93,9 +95,11 @@ export async function oauthClientIdFromRequest(request: Request) {
 export async function extensionOAuthGuard(request: Request, db: Database) {
   const url = new URL(request.url);
   if (
-    !["/api/auth/oauth2/token", "/api/auth/oauth2/authorize"].includes(
-      url.pathname,
-    )
+    ![
+      "/api/auth/oauth2/token",
+      "/api/auth/oauth2/authorize",
+      "/api/auth/oauth2/consent",
+    ].includes(url.pathname)
   )
     return null;
   const id = await oauthClientIdFromRequest(request);
@@ -105,7 +109,14 @@ export async function extensionOAuthGuard(request: Request, db: Database) {
     .from(oauthClient)
     .where(eq(oauthClient.clientId, id))
     .limit(1);
-  if (!activeClient(client))
+  const metadata = activeClient(client);
+  const memberships = client?.userId
+    ? await listHumanWorkspaces(db, client.userId)
+    : [];
+  if (
+    !metadata ||
+    !memberships.some((entry) => entry.workspaceId === metadata.workspaceId)
+  )
     return Response.json(
       { error: "invalid_client" },
       { status: 401, headers: { "Cache-Control": "no-store" } },
@@ -146,6 +157,44 @@ export function createExtensionAccountRouter(db: Database, auth: IssopenAuth) {
     };
   }>();
   const resource = extensionResource(String(auth.options.baseURL));
+  router.get("/oauth/workspace", async (c) => {
+    const userId = c.get("ownerSession").user.id;
+    const clientId = c.req.query("clientId") ?? "";
+    if (isExtensionClientId(clientId)) {
+      const [client] = await db
+        .select()
+        .from(oauthClient)
+        .where(
+          and(
+            eq(oauthClient.clientId, clientId),
+            eq(oauthClient.userId, userId),
+          ),
+        )
+        .limit(1);
+      const metadata = activeClient(client);
+      if (!metadata)
+        throw new DomainError("not_found", "Installation not found");
+      const access = requireHumanAccess(
+        await resolveHumanAccess(
+          db,
+          c.get("ownerSession").user,
+          metadata.workspaceId,
+        ),
+      );
+      return c.json({
+        workspace: { id: access.workspaceId, name: access.workspaceName },
+      });
+    }
+    // Existing MCP grants target the sole owned workspace, not a tab selection.
+    const owned = (await listHumanWorkspaces(db, userId)).filter(
+      (entry) => entry.role === "owner" && entry.workspaceOwnerId === userId,
+    );
+    if (owned.length !== 1)
+      throw new DomainError("forbidden", "MCP workspace is unavailable");
+    return c.json({
+      workspace: { id: owned[0]?.workspaceId, name: owned[0]?.workspaceName },
+    });
+  });
   router.get("/extensions", async (c) => {
     requireHumanAccess(c.get("humanAccess"));
     const rows = await db
@@ -169,7 +218,7 @@ export function createExtensionAccountRouter(db: Database, auth: IssopenAuth) {
     });
   });
   router.post("/extensions/link", async (c) => {
-    requireHumanAccess(c.get("humanAccess"));
+    const access = requireHumanAccess(c.get("humanAccess"));
     const parsed = extensionLinkSchema.safeParse(
       await c.req.json().catch(() => null),
     );
@@ -233,6 +282,7 @@ export function createExtensionAccountRouter(db: Database, auth: IssopenAuth) {
           createdAt: now,
           updatedAt: now,
           metadata: {
+            workspaceId: access.workspaceId,
             extensionId: input.extensionId,
             expiresAt: new Date(now.getTime() + lifetimeMs).toISOString(),
           },
@@ -245,7 +295,8 @@ export function createExtensionAccountRouter(db: Database, auth: IssopenAuth) {
         .limit(1);
       if (
         registered?.userId !== userId ||
-        activeClient(registered)?.extensionId !== input.extensionId
+        activeClient(registered)?.extensionId !== input.extensionId ||
+        activeClient(registered)?.workspaceId !== access.workspaceId
       )
         throw new DomainError("conflict", "Start a new extension connection.");
       await tx
@@ -333,7 +384,7 @@ export function createExtensionRouter(
         .where(eq(user.id, payload.sub))
         .limit(1);
       if (!person) throw new Error("User unavailable");
-      const access = await resolveHumanAccess(db, person);
+      const access = await resolveHumanAccess(db, person, metadata.workspaceId);
       if (!access) return c.json({ error: "Workspace unavailable" }, 403);
       c.set("userId", payload.sub);
       c.set("clientId", payload.client_id);

@@ -1,3 +1,5 @@
+import { workspaceHeaders } from "./workspace-context.js";
+
 export type FieldError = { field: string; message: string };
 
 export class ApiError extends Error {
@@ -18,6 +20,7 @@ export async function apiRequest<T>(
     ...init,
     credentials: "same-origin",
     headers: {
+      ...(path.startsWith("/api/v1/") ? workspaceHeaders() : {}),
       ...(init.body ? { "Content-Type": "application/json" } : {}),
       ...init.headers,
     },

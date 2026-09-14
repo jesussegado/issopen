@@ -155,7 +155,7 @@ export function MembersRoute({ projects }: { projects: Project[] }) {
   async function removeMember(member: WorkspaceMember) {
     if (
       !window.confirm(
-        `Remove ${member.email} from this workspace? Their active sessions and agent access will be revoked.`,
+        `Remove ${member.email} from this workspace? Access and Chrome installations for this workspace will stop working. Other workspaces and web sessions are preserved.`,
       )
     ) {
       return;

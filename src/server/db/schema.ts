@@ -369,7 +369,7 @@ export const workspaceMembership = pgTable(
   },
   (table) => [
     primaryKey({ columns: [table.workspaceId, table.userId] }),
-    uniqueIndex("workspace_membership_user_uidx").on(table.userId),
+    index("workspace_membership_user_idx").on(table.userId),
     index("workspace_membership_workspace_role_idx").on(
       table.workspaceId,
       table.role,

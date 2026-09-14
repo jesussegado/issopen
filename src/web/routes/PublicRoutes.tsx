@@ -58,11 +58,16 @@ export function SignInRoute({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [passwordRejected, setPasswordRejected] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [googleAvailable, setGoogleAvailable] = useState(false);
   const [googleSubmitting, setGoogleSubmitting] = useState(false);
   const passwordRef = useRef<HTMLInputElement>(null);
   const online = useOnlineStatus();
+
+  useEffect(() => {
+    if (passwordRejected && !submitting) passwordRef.current?.focus();
+  }, [passwordRejected, submitting]);
 
   useEffect(() => {
     fetch("/api/public/auth-providers", { cache: "no-store" })
@@ -86,6 +91,7 @@ export function SignInRoute({
 
   async function signInWithGoogle() {
     setGoogleSubmitting(true);
+    setPasswordRejected(false);
     setError(null);
     try {
       const returnTo = returnPath();
@@ -123,6 +129,7 @@ export function SignInRoute({
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitting(true);
+    setPasswordRejected(false);
     setError(null);
     try {
       const response = await fetch("/api/auth/sign-in/email", {
@@ -136,7 +143,7 @@ export function SignInRoute({
         setError(
           "We couldn't sign you in. Check your email and password, then try again.",
         );
-        requestAnimationFrame(() => passwordRef.current?.focus());
+        setPasswordRejected(true);
         return;
       }
       const session = await apiRequest<Session>("/api/v1/session");
@@ -145,7 +152,9 @@ export function SignInRoute({
       const invitationFlow =
         intended.startsWith("/invite/") || intended.startsWith("/invitations/");
       navigate(
-        session.workspace || invitationFlow ? intended : "/workspace/new",
+        session.workspace || session.workspaces?.length || invitationFlow
+          ? intended
+          : "/workspace/new",
         true,
       );
     } catch {
@@ -161,8 +170,8 @@ export function SignInRoute({
       <p>This is a private Issopen instance.</p>
       {!online ? <OfflineBanner /> : null}
       {error ? (
-        <StatusBanner error focus>
-          {error}
+        <StatusBanner error focus={!passwordRejected}>
+          <span id="sign-in-error">{error}</span>
         </StatusBanner>
       ) : null}
       <form className="form-stack" onSubmit={submit}>
@@ -197,6 +206,8 @@ export function SignInRoute({
             id="password"
             type="password"
             autoComplete="current-password"
+            aria-invalid={passwordRejected || undefined}
+            aria-describedby={passwordRejected ? "sign-in-error" : undefined}
             required
             value={password}
             onChange={(event) => setPassword(event.currentTarget.value)}

@@ -14,6 +14,12 @@ export type IssuePriority = (typeof issuePriorities)[number];
 export type CodeLinkType = (typeof codeLinkTypes)[number];
 
 export type Session = {
+  workspaces?: {
+    id: string;
+    name: string;
+    version: number;
+    role: "owner" | "member";
+  }[];
   user: { id: string; name: string; email: string };
   workspace: {
     id: string;

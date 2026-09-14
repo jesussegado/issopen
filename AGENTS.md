@@ -29,13 +29,21 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+Ticket108 implementa membresías múltiples con contexto explícito por petición y
+pestaña; selector con confirmación, invitación al segundo workspace y OAuth Chrome
+fijado por instalación. Contrato y riesgos en [multiworkspace](docs/multiworkspace.md).
+0019 preserva filas/permisos y vincula instalaciones antiguas antes de retirar la
+unicidad global. Retirar membresía no revoca sesiones globales ni otros espacios.
+No hay registro público ni permiso lectura/edición todavía (95). La fuente se está
+validando; consultar GitOps para la versión productiva, no asumir despliegue.
+
 Epic 3, incrementos 100/104: cuenta con listado/revocación confirmada de
 sesiones web propias, separado de instalaciones Chrome; detalle con
 reconciliación SSE, comparación explícita conservando borradores y guards de
 versión en respuestas/revisiones. Los streams revalidan sesión/acceso en cada
 tick. Contratos en [sesiones](docs/account-sessions.md) y
 [detalle en vivo](docs/detail-live.md). No confundir esta entrega con la
-migración multiworkspace 108 ni los permisos por proyecto 95, aún pendientes.
+migración multiworkspace 108 descrita arriba ni los permisos por proyecto 95.
 Fuente `328a386` y GitOps `0ac6550d` verificados en producción el14/09/2026:
 Synced/Healthy, digest `aa622315`, pod Ready/0 reinicios, backup/restore y
 smoke Member a1440/360. 109 cierra el menú móvil al navegar. 94/100/104/109
@@ -115,8 +123,9 @@ están en revisión humana sin claims; seguir con108→95 y repetir integración
   guardado sólo como hash, enlace de revelado único/rotación, sesión provisional
   de 15 minutos sin acceso y vinculación Google explícita con email verificado
   idéntico. El Owner gestiona invitaciones y miembros en `/members`; revocar una
-  invitación sólo invalida su sesión provisional, mientras retirar un miembro
-  revoca sesiones y OAuth propios. Migración aditiva `0018_steady_ironclad` y
+  invitación sólo invalida su sesión provisional. Desde108, retirar un miembro
+  revoca acceso y OAuth Chrome de ese workspace, no sesiones globales ni otros
+  workspaces. Migración aditiva `0018_steady_ironclad` y
   contrato en [invitaciones de miembros](docs/member-invitations.md). No marcar
   la aceptación externa cerrada hasta probarla con una segunda cuenta Google
   real después de configurar 79.

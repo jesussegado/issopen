@@ -1,5 +1,9 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { apiRequest } from "../lib/api.js";
+import {
+  rememberWorkspace,
+  switchWorkspace,
+} from "../lib/workspace-context.js";
 import type { Project, Session } from "../types.js";
 import { Brand } from "./Brand.js";
 import { AppLink, Button } from "./ui.js";
@@ -119,6 +123,7 @@ export function AuthenticatedShell({
       method: "POST",
       body: JSON.stringify({}),
     });
+    rememberWorkspace(null);
     onSignedOut();
   }
 
@@ -137,6 +142,31 @@ export function AuthenticatedShell({
       <header className="app-header authenticated-header">
         <Brand />
         <span className="workspace-name">{session.workspace.name}</span>
+        {(session.workspaces?.length ?? 0) > 1 && (
+          <label className="workspace-switcher">
+            <span className="sr-only">Workspace</span>
+            <select
+              aria-label="Workspace"
+              value={session.workspace.id}
+              onChange={(event) => {
+                const id = event.target.value;
+                if (
+                  id !== session.workspace.id &&
+                  window.confirm(
+                    "Switch workspace? Unsaved drafts on this page will be discarded. Other tabs and Chrome installations keep their current workspace.",
+                  )
+                )
+                  switchWorkspace(id);
+              }}
+            >
+              {session.workspaces?.map((entry) => (
+                <option key={entry.id} value={entry.id}>
+                  {entry.name} · {entry.role}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <span className="metadata">
           {session.workspace.role === "owner" ? "Owner" : "Member"}
         </span>

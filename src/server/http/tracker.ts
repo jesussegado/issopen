@@ -396,7 +396,11 @@ export function createTrackerRouter({ db, auth }: TrackerRouterDependencies) {
           })
           .catch(() => null);
         const access = session
-          ? await resolveHumanAccess(db, session.user)
+          ? await resolveHumanAccess(
+              db,
+              session.user,
+              mutationContext.workspaceId,
+            ).catch(() => null)
           : null;
         if (
           !access ||

@@ -58,9 +58,9 @@ Owner can:
 
 Revoking a claimed invitation deletes only its provisional session. It never
 terminates unrelated sessions of a pre-existing account. Removing a Member
-deletes the membership and project grants, terminates all human sessions for
-that user, revokes their Issopen OAuth access/refresh tokens and disables OAuth
-clients owned by them. Historical audit rows remain.
+deletes that workspace membership and project grants and revokes only its bound
+Chrome clients/tokens. Global web sessions and other workspaces remain valid
+(multiworkspace108). Historical audit rows remain.
 
 ## Failure and recovery
 
@@ -72,8 +72,9 @@ clients owned by them. Historical audit rows remain.
 - Provisional session expired after Google was linked: sign in with that Google
   account, reopen the original link and continue. If the link itself expired,
   the Owner must issue a new one.
-- Member access must end: use **Remove access** and verify their old cookie gets
-  `401` and assigned projects no longer appear.
+- Member access must end: use **Remove access** and verify requests with that
+  workspace context get `404`; no assigned projects appear. A global session
+  may still access the person's other workspaces.
 
 ## Migration and rollback
 
