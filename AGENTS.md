@@ -34,8 +34,10 @@ pestaña; selector con confirmación, invitación al segundo workspace y OAuth C
 fijado por instalación. Contrato y riesgos en [multiworkspace](docs/multiworkspace.md).
 0019 preserva filas/permisos y vincula instalaciones antiguas antes de retirar la
 unicidad global. Retirar membresía no revoca sesiones globales ni otros espacios.
-No hay registro público ni permiso lectura/edición todavía (95). La fuente se está
-validando; consultar GitOps para la versión productiva, no asumir despliegue.
+No hay registro público. Fuente390f3d0/GitOpscbf737cd/digest06d2fec0 desplegados y
+verificados el14/09/2026: Synced/Healthy, Ready/0reinicios, readiness200, smoke
+Member1440/360, backup/restore y gates completos.108 en revisión sin claim.
+95 lectura/edición está en implementación, quick260914-k34; seguir el Epic.
 
 Epic 3, incrementos 100/104: cuenta con listado/revocación confirmada de
 sesiones web propias, separado de instalaciones Chrome; detalle con

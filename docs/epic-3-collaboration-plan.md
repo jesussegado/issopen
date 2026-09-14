@@ -10,8 +10,9 @@ respuestas. Leer siempre los tickets/versiones actuales.
 
 Primer bloque entregado el14/09/2026:94 contrato,100 sesiones propias,
 104 detalle en vivo y109 navegación móvil. Fuente328a386/GitOps0ac6550d,
-producción verificada y tickets Ready for Human Review sin claims. Doce tickets
-siguen en Backlog; siguiente108→95. No se declara terminado el Epic.
+producción verificada y tickets Ready for Human Review sin claims.108 entregado
+después:fuente390f3d0/GitOpscbf737cd, digest06d2fec0, Synced/Healthy y smokePASS.
+95 en implementación;10 Backlog restantes. No se declara terminado el Epic.
 
 ## Contrato tras respuestas — ticket 94
 
@@ -42,9 +43,9 @@ y allowlist propios; Chrome es humano y aplica la intersección con sus grants.
 
 ### Base multiworkspace (108)
 
-Implementada en la fuente; validación/release en quick260914-jhl. Contrato y
-compatibilidad en [multiworkspace](multiworkspace.md). Verificar GitOps antes de
-afirmar su disponibilidad productiva. Los puntos siguientes son sus invariantes.
+Implementada y desplegada:quick260914-jhl, fuente390f3d0/GitOpscbf737cd.
+Contrato y compatibilidad en [multiworkspace](multiworkspace.md).
+Los puntos siguientes son sus invariantes.
 
 - Sustituir unicidad global de membresía por workspace/persona; conservar las
   filas existentes. La migración no añade miembros, proyectos ni privilegios.
@@ -79,7 +80,7 @@ Google OAuth (79), Owner/Member y allowlist por proyecto (80), invitación
 hash-only de siete días y vinculación Google explícita (81), Chrome para miembros
 (82), privacidad (83) y detalle Member (91). No mover/reabrir/duplicar esas tareas.
 
-Evidencias de fuente inspeccionadas:
+Evidencias de fuente inspeccionadas en la planificación original (antes de108):
 
 - [Membresías](workspace-memberships.md): una membresía por usuario,
   Owner canónico en workspace.owner_id; no es multiworkspace todavía.
