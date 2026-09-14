@@ -100,6 +100,109 @@ async function expectStack(controls: Locator[], width: number) {
 }
 
 // biome-ignore lint/correctness/noEmptyPattern: Playwright fixture signature.
+test("read-only installation hides writes and keeps its draft and account usable", async ({}) => {
+  const output = resolve(".output/chrome-mv3");
+  const context = await chromium.launchPersistentContext("", {
+    channel: "chromium",
+    headless: true,
+    args: [
+      "--enable-unsafe-extension-debugging",
+      `--disable-extensions-except=${output}`,
+      `--load-extension=${output}`,
+    ],
+  });
+  try {
+    const cdp = await context.browser()?.newBrowserCDPSession();
+    if (!cdp) throw Error("Missing CDP");
+    const extension = (
+      await cdp.send("Extensions.getExtensions")
+    ).extensions.find((entry) => entry.name === "Issopen");
+    if (!extension) throw Error("Missing extension");
+    const page = await context.newPage();
+    await page.addInitScript(() => {
+      const state = globalThis as unknown as {
+        chrome: {
+          runtime: { sendMessage: (message: unknown) => Promise<unknown> };
+        };
+        mutations: number;
+      };
+      state.mutations = 0;
+      state.chrome.runtime.sendMessage = async (raw) => {
+        const message = raw as { type: string };
+        if (message.type === "account-status")
+          return {
+            ok: true,
+            connected: true,
+            name: "Read-only member",
+            expiresAt: new Date(Date.now() + 86400000).toISOString(),
+            userId: "synthetic-read-member",
+            workspaceId: "10000000-0000-4000-8000-000000000001",
+            workspaceRole: "member",
+            canWrite: false,
+            apiVersion: 1,
+            projects: [],
+          };
+        state.mutations++;
+        return { ok: false, code: "network" };
+      };
+    });
+    await page.goto(`chrome-extension://${extension.id}/sidepanel.html`);
+    await expect(page.locator("#account-status")).toHaveText("Sólo lectura");
+    await expect(
+      page.getByText(/Esta instalación no tiene permiso/),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /Crear (proyecto|Epic)/ }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("button", { name: /Enviar ticket|Reintentar/ }),
+    ).toHaveCount(0);
+    await page
+      .getByLabel("Título", { exact: true })
+      .fill("Borrador sin enviar");
+    await page.getByRole("button", { name: "Tu cuenta" }).click();
+    await expect(
+      page.getByRole("button", { name: "Desconectar esta instalación" }),
+    ).toBeEnabled();
+    await page.getByRole("button", { name: "Cerrar cuenta" }).click();
+    await expect(page.getByLabel("Título", { exact: true })).toHaveValue(
+      "Borrador sin enviar",
+    );
+    // Wait for the actual IndexedDB draft write, rather than racing its debounce.
+    await expect
+      .poll(() =>
+        page.evaluate(async () => {
+          const database = await new Promise<IDBDatabase>((resolve, reject) => {
+            const request = indexedDB.open("issopen-reviewed-draft-v1", 1);
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+          });
+          return new Promise<string | undefined>((resolve, reject) => {
+            const transaction = database.transaction("draft");
+            const request = transaction.objectStore("draft").get("current");
+            transaction.oncomplete = () => {
+              database.close();
+              resolve(request.result?.form?.title);
+            };
+            transaction.onerror = () => {
+              database.close();
+              reject(transaction.error);
+            };
+          });
+        }),
+      )
+      .toBe("Borrador sin enviar");
+    await page.reload();
+    await expect(page.getByLabel("Título", { exact: true })).toHaveValue(
+      "Borrador sin enviar",
+    );
+    expect(await page.evaluate("globalThis.mutations")).toBe(0);
+  } finally {
+    await context.close();
+  }
+});
+
+// biome-ignore lint/correctness/noEmptyPattern: Playwright fixture signature.
 test("success link and final actions stack without collisions on narrow panels", async ({}, info) => {
   const output = resolve(".output/chrome-mv3");
   const context = await chromium.launchPersistentContext("", {

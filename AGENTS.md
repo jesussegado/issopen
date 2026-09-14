@@ -29,6 +29,16 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+95 añade permiso read/edit por project_membership, política central REST/Chrome,
+capacidades de UI y revalidación SSE. La migración0020_project_permissions
+conserva el acceso anterior como edit; sin Viewer/Admin ni
+cambios de scopesMCP. [Matriz y operación](docs/project-permissions.md).
+Validado:123 tests unit/web,78 integración PostgreSQL,18 E2E web (2 skips),
+Compose y secret scan; extensión desarrollo0.6.3 añade UI sólo lectura con
+16 unit/13 E2E, build reproducible sin permisos nuevos. Store0.6.2 intacta.
+Producción sigue108 hasta actualizarGitOps.96 administra
+estos grants después; no modificar miembros/revisor reales para las pruebas.
+
 Ticket108 implementa membresías múltiples con contexto explícito por petición y
 pestaña; selector con confirmación, invitación al segundo workspace y OAuth Chrome
 fijado por instalación. Contrato y riesgos en [multiworkspace](docs/multiworkspace.md).

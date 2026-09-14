@@ -65,6 +65,7 @@ function fixture() {
     questionSummary: { total: 2, answered: 0, unansweredBlocking: 2 },
   };
   let status = 200;
+  let canEdit = true;
   const fetchMock = vi.fn(async (input: unknown, init?: RequestInit) => {
     const path = String(input);
     if (init?.method === "PATCH")
@@ -79,7 +80,9 @@ function fixture() {
     if (path.endsWith("/activity")) return json({ activity: [] });
     if (path.endsWith("/evidence")) return json({ evidence: [] });
     if (path === "/api/v1/projects/project")
-      return json({ project: { id: "project", name: "Project", key: "ISS" } });
+      return json({
+        project: { id: "project", name: "Project", key: "ISS", canEdit },
+      });
     if (path === "/api/v1/session") return json(viewer);
     throw new Error(`Unexpected ${path}`);
   });
@@ -87,6 +90,9 @@ function fixture() {
   return {
     data,
     fetchMock,
+    setCanEdit: (value: boolean) => {
+      canEdit = value;
+    },
     setStatus: (value: number) => {
       status = value;
     },
@@ -107,6 +113,37 @@ async function event(name = "board") {
     FakeStream.instances.at(-1)?.dispatchEvent(new Event(name));
   });
 }
+
+it("applies an edit downgrade immediately without discarding an unsaved answer", async () => {
+  const { setCanEdit } = fixture();
+  const user = userEvent.setup();
+  render(<IssueDetailRoute issueId="issue" session={viewer} />);
+  await screen.findByText("Question 1");
+  await user.click(screen.getByLabelText("Other", { exact: true }));
+  await user.type(
+    screen.getByLabelText("Your answer (required)"),
+    "Retain my draft",
+  );
+  setCanEdit(false);
+  await event();
+  await waitFor(() =>
+    expect(
+      screen.queryByRole("button", { name: "Save answer" }),
+    ).not.toBeInTheDocument(),
+  );
+  expect(screen.getByLabelText("Your answer (required)")).toBeDisabled();
+  expect(screen.getByLabelText("Your answer (required)")).toHaveValue(
+    "Retain my draft",
+  );
+  setCanEdit(true);
+  await event();
+  expect(
+    await screen.findByRole("button", { name: "Save answer" }),
+  ).toBeEnabled();
+  expect(screen.getByLabelText("Your answer (required)")).toHaveValue(
+    "Retain my draft",
+  );
+});
 
 it("updates clean details automatically and clears them when access is revoked", async () => {
   const { data } = fixture();

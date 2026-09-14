@@ -319,6 +319,12 @@ export function IssueDetailRoute({
         )
           return;
         setLiveError(false);
+        // Effective permissions update even while a content draft is preserved.
+        const effectiveEdit = next.project.canEdit;
+        if (effectiveEdit !== undefined)
+          setProject((previous) =>
+            previous ? { ...previous, canEdit: effectiveEdit } : next.project,
+          );
         // A late/mixed read must not roll back an already confirmed mutation.
         const current = state.current;
         if (
@@ -636,6 +642,7 @@ export function IssueDetailRoute({
   if (loading || (issue && issue.id !== issueId))
     return <Skeleton label="Loading issue…" />;
   if (missing || !issue || !project) return <UnavailableRoute />;
+  const canEdit = project.canEdit !== false;
   return (
     <div className="detail-column">
       <div className="page-header">
@@ -670,12 +677,16 @@ export function IssueDetailRoute({
           </div>
         </div>
         <div className="page-actions">
-          <AppLink
-            className="button button-secondary"
-            href={`/issues/${issue.id}/edit`}
-          >
-            Edit issue
-          </AppLink>
+          {canEdit ? (
+            <AppLink
+              className="button button-secondary"
+              href={`/issues/${issue.id}/edit`}
+            >
+              Edit issue
+            </AppLink>
+          ) : (
+            <Badge>Read-only</Badge>
+          )}
           {session.workspace?.role === "owner" &&
           session.workspace.id === issue.workspaceId ? (
             <DeleteIssueButton
@@ -803,39 +814,43 @@ export function IssueDetailRoute({
             aria-labelledby="issue-status-heading"
           >
             <h2 id="issue-status-heading">Status</h2>
-            <Field
-              label={`Change status for ${issueReference(issue)}`}
-              htmlFor="issue-status"
-            >
-              <Select
-                id="issue-status"
-                value={issue.status}
-                disabled={!online || submitting !== null}
-                aria-describedby={
-                  questionSummary.unansweredBlocking > 0 &&
-                  issue.status !== "ready_for_review"
-                    ? "review-block-explanation"
-                    : undefined
-                }
-                onChange={(event) =>
-                  void updateStatus(event.currentTarget.value as IssueStatus)
-                }
+            {canEdit ? (
+              <Field
+                label={`Change status for ${issueReference(issue)}`}
+                htmlFor="issue-status"
               >
-                {issueStatuses.map((status) => (
-                  <option
-                    key={status}
-                    value={status}
-                    disabled={
-                      status === "ready_for_review" &&
-                      issue.status !== "ready_for_review" &&
-                      questionSummary.unansweredBlocking > 0
-                    }
-                  >
-                    {statusLabels[status]}
-                  </option>
-                ))}
-              </Select>
-            </Field>
+                <Select
+                  id="issue-status"
+                  value={issue.status}
+                  disabled={!online || submitting !== null}
+                  aria-describedby={
+                    questionSummary.unansweredBlocking > 0 &&
+                    issue.status !== "ready_for_review"
+                      ? "review-block-explanation"
+                      : undefined
+                  }
+                  onChange={(event) =>
+                    void updateStatus(event.currentTarget.value as IssueStatus)
+                  }
+                >
+                  {issueStatuses.map((status) => (
+                    <option
+                      key={status}
+                      value={status}
+                      disabled={
+                        status === "ready_for_review" &&
+                        issue.status !== "ready_for_review" &&
+                        questionSummary.unansweredBlocking > 0
+                      }
+                    >
+                      {statusLabels[status]}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+            ) : (
+              <p>{statusLabels[issue.status]}</p>
+            )}
             {questionSummary.unansweredBlocking > 0 &&
             issue.status !== "ready_for_review" ? (
               <p id="review-block-explanation" className="metadata">
@@ -860,7 +875,7 @@ export function IssueDetailRoute({
               <p className="metadata">No description</p>
             )}
           </section>
-          <CaptureEvidence issueId={issue.id} />
+          <CaptureEvidence issueId={issue.id} canEdit={canEdit} />
           <section
             className="detail-panel question-panel"
             aria-labelledby="questions-heading"
@@ -908,7 +923,7 @@ export function IssueDetailRoute({
                 </div>
                 <fieldset
                   className="question-fieldset"
-                  disabled={submitting !== null}
+                  disabled={!canEdit || submitting !== null}
                 >
                   <legend>{currentQuestion.prompt}</legend>
                   <div className="recommendation">
@@ -980,16 +995,18 @@ export function IssueDetailRoute({
                   </StatusBanner>
                 ) : null}
                 <div className="inline-actions">
-                  <Button
-                    type="submit"
-                    disabled={!online || submitting !== null}
-                  >
-                    {submitting === "question"
-                      ? "Saving…"
-                      : currentQuestion.answeredAt
-                        ? "Change answer"
-                        : "Save answer"}
-                  </Button>
+                  {canEdit ? (
+                    <Button
+                      type="submit"
+                      disabled={!online || submitting !== null}
+                    >
+                      {submitting === "question"
+                        ? "Saving…"
+                        : currentQuestion.answeredAt
+                          ? "Change answer"
+                          : "Save answer"}
+                    </Button>
+                  ) : null}
                   {currentQuestion.answeredAt ? (
                     <span className="metadata">
                       Answered {formatTimestamp(currentQuestion.answeredAt)}
@@ -1028,23 +1045,25 @@ export function IssueDetailRoute({
                 ))}
               </ol>
             )}
-            <form className="form-stack" onSubmit={addComment}>
-              <Field label="Add comment" htmlFor="comment-body" required>
-                <TextArea
-                  id="comment-body"
-                  disabled={submitting !== null}
-                  required
-                  maxLength={20000}
-                  value={commentBody}
-                  onChange={(event) =>
-                    setCommentBody(event.currentTarget.value)
-                  }
-                />
-              </Field>
-              <Button type="submit" disabled={!online || submitting !== null}>
-                {submitting === "comment" ? "Adding…" : "Add comment"}
-              </Button>
-            </form>
+            {canEdit ? (
+              <form className="form-stack" onSubmit={addComment}>
+                <Field label="Add comment" htmlFor="comment-body" required>
+                  <TextArea
+                    id="comment-body"
+                    disabled={submitting !== null}
+                    required
+                    maxLength={20000}
+                    value={commentBody}
+                    onChange={(event) =>
+                      setCommentBody(event.currentTarget.value)
+                    }
+                  />
+                </Field>
+                <Button type="submit" disabled={!online || submitting !== null}>
+                  {submitting === "comment" ? "Adding…" : "Add comment"}
+                </Button>
+              </form>
+            ) : null}
           </section>
           <section
             className="detail-panel"
@@ -1100,41 +1119,43 @@ export function IssueDetailRoute({
                 ))}
               </ul>
             )}
-            <form className="form-stack" onSubmit={addLink}>
-              <Field label="Link type" htmlFor="link-type">
-                <Select
-                  id="link-type"
-                  disabled={submitting !== null}
-                  value={linkType}
-                  onChange={(event) =>
-                    setLinkType(event.currentTarget.value as CodeLinkType)
-                  }
-                >
-                  {codeLinkTypes.map((type) => (
-                    <option key={type} value={type}>
-                      {codeLinkLabels[type]}
-                    </option>
-                  ))}
-                </Select>
-              </Field>
-              <Field label="URL" htmlFor="link-url" required>
-                <TextInput
-                  id="link-url"
-                  disabled={submitting !== null}
-                  className="mono"
-                  type="url"
-                  required
-                  maxLength={2048}
-                  value={linkUrl}
-                  onChange={(event) => setLinkUrl(event.currentTarget.value)}
-                />
-              </Field>
-              <Button type="submit" disabled={!online || submitting !== null}>
-                {submitting === "link" ? "Adding…" : "Add code link"}
-              </Button>
-            </form>
+            {canEdit ? (
+              <form className="form-stack" onSubmit={addLink}>
+                <Field label="Link type" htmlFor="link-type">
+                  <Select
+                    id="link-type"
+                    disabled={submitting !== null}
+                    value={linkType}
+                    onChange={(event) =>
+                      setLinkType(event.currentTarget.value as CodeLinkType)
+                    }
+                  >
+                    {codeLinkTypes.map((type) => (
+                      <option key={type} value={type}>
+                        {codeLinkLabels[type]}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+                <Field label="URL" htmlFor="link-url" required>
+                  <TextInput
+                    id="link-url"
+                    disabled={submitting !== null}
+                    className="mono"
+                    type="url"
+                    required
+                    maxLength={2048}
+                    value={linkUrl}
+                    onChange={(event) => setLinkUrl(event.currentTarget.value)}
+                  />
+                </Field>
+                <Button type="submit" disabled={!online || submitting !== null}>
+                  {submitting === "link" ? "Adding…" : "Add code link"}
+                </Button>
+              </form>
+            ) : null}
           </section>
-          {issue.status === "ready_for_review" ? (
+          {canEdit && issue.status === "ready_for_review" ? (
             <section className="review-panel" aria-labelledby="review-heading">
               <h2 id="review-heading">Review result</h2>
               {links.length === 0 ? (

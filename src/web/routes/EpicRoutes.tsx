@@ -342,43 +342,54 @@ export function EpicsRoute({ projectId }: { projectId: string }) {
             </div>
           ) : null}
         </section>
-        <section className="detail-panel" aria-labelledby="create-epic-heading">
-          <h2 id="create-epic-heading">Create Epic</h2>
-          <form className="form-stack" onSubmit={createEpic}>
-            <Field
-              label="Title"
-              htmlFor="epic-title"
-              required
-              error={errors.find((item) => item.field === "title")?.message}
-            >
-              <TextInput
-                id="epic-title"
+        {project.canEdit !== false ? (
+          <section
+            className="detail-panel"
+            aria-labelledby="create-epic-heading"
+          >
+            <h2 id="create-epic-heading">Create Epic</h2>
+            <form className="form-stack" onSubmit={createEpic}>
+              <Field
+                label="Title"
+                htmlFor="epic-title"
                 required
-                maxLength={240}
-                value={title}
-                onChange={(event) => setTitle(event.currentTarget.value)}
-              />
-            </Field>
-            <Field
-              label="Description"
-              htmlFor="epic-description"
-              helper="Explain the shared goal or outcome."
-              error={
-                errors.find((item) => item.field === "description")?.message
-              }
-            >
-              <TextArea
-                id="epic-description"
-                maxLength={20000}
-                value={description}
-                onChange={(event) => setDescription(event.currentTarget.value)}
-              />
-            </Field>
-            <Button type="submit" disabled={!online || submitting}>
-              {submitting ? "Creating…" : "Create Epic"}
-            </Button>
-          </form>
-        </section>
+                error={errors.find((item) => item.field === "title")?.message}
+              >
+                <TextInput
+                  id="epic-title"
+                  required
+                  maxLength={240}
+                  value={title}
+                  onChange={(event) => setTitle(event.currentTarget.value)}
+                />
+              </Field>
+              <Field
+                label="Description"
+                htmlFor="epic-description"
+                helper="Explain the shared goal or outcome."
+                error={
+                  errors.find((item) => item.field === "description")?.message
+                }
+              >
+                <TextArea
+                  id="epic-description"
+                  maxLength={20000}
+                  value={description}
+                  onChange={(event) =>
+                    setDescription(event.currentTarget.value)
+                  }
+                />
+              </Field>
+              <Button type="submit" disabled={!online || submitting}>
+                {submitting ? "Creating…" : "Create Epic"}
+              </Button>
+            </form>
+          </section>
+        ) : (
+          <StatusBanner>
+            Read-only project. Ask the workspace owner for edit access.
+          </StatusBanner>
+        )}
       </div>
     </div>
   );
@@ -440,27 +451,33 @@ export function EpicDetailRoute({ epicId }: { epicId: string }) {
               View on board
             </AppLink>
           ) : null}
-          <AppLink
-            className="button button-secondary"
-            href={`/epics/${epic.id}/edit`}
-          >
-            Edit Epic
-          </AppLink>
-          {!epic.archivedAt ? (
-            <AppLink
-              className="button button-primary epic-create-button"
-              href={`/projects/${project.id}/issues/new?epic=${epic.id}`}
-            >
-              <span aria-hidden="true">+</span> Create ticket in Epic
-            </AppLink>
-          ) : null}
-          <ArchiveEpicControl
-            epic={epic}
-            onChange={(updated, message) => {
-              setEpic({ ...updated, summary: epic.summary });
-              setNotice(message);
-            }}
-          />
+          {project.canEdit !== false ? (
+            <>
+              <AppLink
+                className="button button-secondary"
+                href={`/epics/${epic.id}/edit`}
+              >
+                Edit Epic
+              </AppLink>
+              {!epic.archivedAt ? (
+                <AppLink
+                  className="button button-primary epic-create-button"
+                  href={`/projects/${project.id}/issues/new?epic=${epic.id}`}
+                >
+                  <span aria-hidden="true">+</span> Create ticket in Epic
+                </AppLink>
+              ) : null}
+              <ArchiveEpicControl
+                epic={epic}
+                onChange={(updated, message) => {
+                  setEpic({ ...updated, summary: epic.summary });
+                  setNotice(message);
+                }}
+              />
+            </>
+          ) : (
+            <Badge>Read-only</Badge>
+          )}
         </div>
       </div>
       {notice ? <StatusBanner>{notice}</StatusBanner> : null}
@@ -531,6 +548,7 @@ export function EpicDetailRoute({ epicId }: { epicId: string }) {
 }
 
 export function EpicFormRoute({ epicId }: { epicId: string }) {
+  const [canEdit, setCanEdit] = useState(true);
   const [epic, setEpic] = useState<Epic | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -544,8 +562,11 @@ export function EpicFormRoute({ epicId }: { epicId: string }) {
   const online = useOnlineStatus();
 
   useEffect(() => {
-    apiRequest<{ epic: Epic; issues: Issue[] }>(`/api/v1/epics/${epicId}`)
+    apiRequest<{ epic: Epic; issues: Issue[]; canEdit?: boolean }>(
+      `/api/v1/epics/${epicId}`,
+    )
       .then((response) => {
+        setCanEdit(response.canEdit !== false);
         setEpic(response.epic);
         setTitle(response.epic.title);
         setDescription(response.epic.description);
@@ -586,6 +607,13 @@ export function EpicFormRoute({ epicId }: { epicId: string }) {
 
   if (loading) return <Skeleton label="Loading Epic…" />;
   if (missing || !epic) return <UnavailableRoute />;
+  if (!canEdit)
+    return (
+      <StatusBanner>
+        Read-only project.{" "}
+        <AppLink href={`/epics/${epicId}`}>View Epic</AppLink>
+      </StatusBanner>
+    );
   return (
     <div className="reading-column">
       <PageHeading>Edit Epic</PageHeading>

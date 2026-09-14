@@ -18,6 +18,7 @@ export type HumanAccess = {
   workspaceVersion: number;
   role: WorkspaceRole;
   projectIds: string[] | null;
+  editableProjectIds: string[] | null;
   user: HumanIdentity;
 };
 
@@ -43,27 +44,32 @@ export async function resolveHumanAccess(
     throw new DomainError("forbidden", "Invalid workspace ownership");
   }
 
-  const projectIds =
+  const projectGrants =
     membership.role === "owner"
       ? null
-      : (
-          await db
-            .select({ projectId: projectMembership.projectId })
-            .from(projectMembership)
-            .where(
-              and(
-                eq(projectMembership.workspaceId, membership.workspaceId),
-                eq(projectMembership.userId, user.id),
-              ),
-            )
-            .orderBy(asc(projectMembership.projectId))
-        ).map((entry) => entry.projectId);
+      : await db
+          .select({
+            projectId: projectMembership.projectId,
+            permission: projectMembership.permission,
+          })
+          .from(projectMembership)
+          .where(
+            and(
+              eq(projectMembership.workspaceId, membership.workspaceId),
+              eq(projectMembership.userId, user.id),
+            ),
+          )
+          .orderBy(asc(projectMembership.projectId));
   return {
     workspaceId: membership.workspaceId,
     workspaceName: membership.workspaceName,
     workspaceVersion: membership.workspaceVersion,
     role: membership.role,
-    projectIds,
+    projectIds: projectGrants?.map((entry) => entry.projectId) ?? null,
+    editableProjectIds:
+      projectGrants
+        ?.filter((entry) => entry.permission === "edit")
+        .map((entry) => entry.projectId) ?? null,
     user,
   };
 }
@@ -129,4 +135,27 @@ export function humanMutationContext(access: HumanAccess): MutationContext {
     },
     source: "rest",
   };
+}
+
+export function canEditProject(
+  access: HumanAccess,
+  projectId: string,
+): boolean {
+  return (
+    canAccessProject(access, projectId) &&
+    (access.role === "owner" ||
+      access.editableProjectIds?.includes(projectId) === true)
+  );
+}
+
+export function requireProjectEdit(
+  access: HumanAccess,
+  projectId: string,
+): void {
+  requireProjectAccess(access, projectId);
+  if (!canEditProject(access, projectId))
+    throw new DomainError(
+      "forbidden",
+      "This project is read-only. Ask the workspace owner for edit access.",
+    );
 }

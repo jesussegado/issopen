@@ -9,6 +9,7 @@ import {
   workspace,
   workspaceMembership,
 } from "../../src/server/db/schema.js";
+import { TrackerService } from "../../src/server/domain/index.js";
 
 // Test-server-only seed, never imported by the product or exposed via an endpoint.
 export async function seedMultiworkspace(db: Database, auth: IssopenAuth) {
@@ -58,8 +59,40 @@ export async function seedMultiworkspace(db: Database, auth: IssopenAuth) {
       name: `Team ${suffix} project`,
       key: `TEAM${suffix}`,
     });
-    await db
-      .insert(projectMembership)
-      .values({ workspaceId, projectId, userId: memberId });
+    await db.insert(projectMembership).values({
+      workspaceId,
+      projectId,
+      userId: memberId,
+      permission: index === 0 ? "edit" : "read",
+    });
+    if (index === 1) {
+      const tracker = new TrackerService(db);
+      const ctx = {
+        workspaceId,
+        actor: {
+          type: "human" as const,
+          id: ownerId,
+          displayName: "Synthetic owner",
+        },
+        source: "rest" as const,
+      };
+      const epic = await tracker.createEpic(ctx, {
+        projectId,
+        title: "Read-only fixture Epic",
+      });
+      const ticket = await tracker.createIssue(ctx, {
+        projectId,
+        epicId: epic.id,
+        title: "Read-only fixture ticket",
+        status: "ready_for_review",
+      });
+      await tracker.createIssueQuestion(ctx, ticket.id, {
+        prompt: "Visible question",
+        recommendation: "A reader can consult but not answer",
+        options: [{ label: "First" }, { label: "Second" }],
+        recommendedOptionIndex: 0,
+        blocking: false,
+      });
+    }
   }
 }

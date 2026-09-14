@@ -572,6 +572,13 @@ export function IssueFormRoute({
 
   if (loading) return <Skeleton label="Loading issue form…" />;
   if (missing || !project) return <UnavailableRoute />;
+  if (project.canEdit === false)
+    return (
+      <StatusBanner>
+        Read-only project.{" "}
+        <AppLink href={`/projects/${project.id}`}>Return to board</AppLink>
+      </StatusBanner>
+    );
   return (
     <div className="reading-column">
       <PageHeading>{editing ? "Edit issue" : "Create issue"}</PageHeading>

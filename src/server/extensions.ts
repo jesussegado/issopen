@@ -17,6 +17,7 @@ import {
 } from "./db/schema.js";
 import { DomainError, TrackerService } from "./domain/index.js";
 import {
+  canEditProject,
   type HumanAccess,
   listHumanWorkspaces,
   requireHumanAccess,
@@ -392,10 +393,13 @@ export function createExtensionRouter(
       c.set("workspaceId", access.workspaceId);
       c.set("workspaceRole", access.role);
       c.set("projectIds", access.projectIds);
+      c.set("humanAccess", access);
       c.set(
         "canWrite",
         payload.scope.split(" ").includes("extension:write") &&
-          Boolean(client?.scopes?.includes("extension:write")),
+          Boolean(client?.scopes?.includes("extension:write")) &&
+          (access.role === "owner" ||
+            (access.editableProjectIds?.length ?? 0) > 0),
       );
     } catch {
       c.header("WWW-Authenticate", `Bearer resource="${resource}"`);
@@ -431,11 +435,7 @@ export function createExtensionRouter(
       projects: (
         await new TrackerService(db).listProjects(c.get("workspaceId"))
       )
-        .filter(
-          (project) =>
-            c.get("projectIds") === null ||
-            c.get("projectIds")?.includes(project.id),
-        )
+        .filter((project) => canEditProject(c.get("humanAccess"), project.id))
         .map((project) => ({ id: project.id, name: project.name })),
     }),
   );

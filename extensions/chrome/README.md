@@ -1,4 +1,8 @@
-# Issopen para Chrome — piloto 0.6.2
+# Issopen para Chrome — desarrollo 0.6.3
+
+0.6.3 adapta la UI a proyectos de sólo lectura: sin permiso de creación oculta
+esas acciones y conserva el borrador. La versión 0.6.2 enviada a Store permanece
+independiente; estos cambios no se han reenviado ni publicado en Store.
 
 Crea tickets con imágenes de tu herramienta de recorte favorita.
 Ya no hace falta capturar la página ni concederle acceso a cada web.

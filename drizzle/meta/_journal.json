@@ -141,6 +141,13 @@
       "when": 1789387486023,
       "tag": "0019_multiworkspace_context",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1789388946176,
+      "tag": "0020_project_permissions",
+      "breakpoints": true
     }
   ]
 }

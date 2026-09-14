@@ -631,12 +631,15 @@ export const project = pgTable(
   ],
 );
 
+export const projectPermission = pgEnum("project_permission", ["read", "edit"]);
+
 export const projectMembership = pgTable(
   "project_membership",
   {
     workspaceId: text("workspace_id").notNull(),
     projectId: text("project_id").notNull(),
     userId: text("user_id").notNull(),
+    permission: projectPermission("permission").default("edit").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),

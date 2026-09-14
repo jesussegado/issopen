@@ -5,7 +5,13 @@ repositorio; no crear otro Git. Epic Chrome
 `ca26c29b-43ac-4ca0-b768-594d6779d6e7`; ticket 51 simplifica las imágenes
 por petición explícita del owner. El criterio personal 33 sigue independiente.
 
-## Qué hace ahora (0.6.2)
+## Qué hace ahora (0.6.3 de desarrollo; Store 0.6.2 independiente)
+
+95 oculta creación/envío cuando el servidor anuncia canWrite=false y explica
+cómo recuperar acceso sin perder el borrador ni desconectar automáticamente.
+Los destinos Chrome son sólo proyectos editables. No modifica el paquete 0.6.2
+ya enviado ni opera sobre su revisión en Store. Validar/publicar esa actualización
+es una operación separada; la API sigue siendo compatible con 0.6.2.
 
 La fuente de la ficha Unlisted vive en `store/LISTING.es.md` y los recursos
 versionados en `store/assets`. `pnpm store:assets` los reconstruye desde el
@@ -74,7 +80,7 @@ No reintroducir controles de captura por seguir documentación histórica 0.3/0.
 - `/session` usa `userId` y `workspaceRole`; `ownerId` permanece como alias de
   transición para 0.5.x. El borrador usa `userId:workspaceId`, por lo que no se
   cruza entre personas. Member no ve ni puede invocar Crear proyecto, aunque sí
-  puede crear Epics/tickets en proyectos asignados. El servidor vuelve a
+  puede crear Epics/tickets en proyectos asignados con permiso edit. El servidor vuelve a
   comprobar membresía y cliente activo en cada petición y refresh.
 - `lib/draft.ts`: un borrador IndexedDB 24 h. Las imágenes que el usuario
   adjunta se incorporan explícitamente al borrador, sin confirmación separada.

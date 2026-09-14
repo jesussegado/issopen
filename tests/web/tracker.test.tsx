@@ -110,6 +110,93 @@ afterEach(() => {
 
 describe("tracker web routes", () => {
   it.each([
+    "board",
+    "epics",
+    "epic",
+    "epic-edit",
+    "issue",
+    "issue-edit",
+    "issue-new",
+  ])(
+    "hides denied mutations on read-only %s while preserving permitted content",
+    async (view) => {
+      const readonlyProject = { ...project, canEdit: false };
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async (input: RequestInfo | URL) => {
+          const path = String(input);
+          if (path === `/api/v1/projects/${project.id}`)
+            return json({ project: readonlyProject });
+          if (path.includes("/epics?archived=") || path.endsWith("/epics"))
+            return json({ epics: [epic] });
+          if (path === `/api/v1/projects/${project.id}/board`)
+            return json({
+              project: readonlyProject,
+              epics: [epic],
+              totalIssueCount: 1,
+              columns: [{ status: "backlog", issues: [issue] }],
+            });
+          if (path === `/api/v1/epics/${epic.id}`)
+            return json({ epic, issues: [issue], canEdit: false });
+          if (path === `/api/v1/issues/${issue.id}`)
+            return json({
+              issue: { ...issue, status: "ready_for_review" },
+              codeLinks: [],
+              comments: [],
+              questions: [],
+              questionSummary: { total: 0, answered: 0, unansweredBlocking: 0 },
+              canEdit: false,
+            });
+          if (path.endsWith("/activity")) return json({ activity: [] });
+          if (path.endsWith("/evidence")) return json({ evidence: [] });
+          throw new Error(`Unexpected request ${path}`);
+        }),
+      );
+      const memberSession: Session = {
+        ...ownerSession,
+        user: { id: "reader", name: "Reader", email: "reader@example.test" },
+        workspace: { ...ownerSession.workspace, role: "member" },
+      };
+      render(
+        view === "board" ? (
+          <BoardRoute projectId={project.id} canManageProject={false} />
+        ) : view === "epics" ? (
+          <EpicsRoute projectId={project.id} />
+        ) : view === "epic" ? (
+          <EpicDetailRoute epicId={epic.id} />
+        ) : view === "epic-edit" ? (
+          <EpicFormRoute epicId={epic.id} />
+        ) : view === "issue" ? (
+          <IssueDetailRoute issueId={issue.id} session={memberSession} />
+        ) : view === "issue-edit" ? (
+          <IssueFormRoute issueId={issue.id} />
+        ) : (
+          <IssueFormRoute projectId={project.id} />
+        ),
+      );
+      await screen.findByText(/Read-only/i);
+      for (const name of [
+        "Create issue",
+        "Create Epic",
+        "Edit issue",
+        "Edit Epic",
+        "Archive Epic",
+        "Add comment",
+        "Add code link",
+        "Save answer",
+        "Accept result",
+        "Delete ticket",
+      ])
+        expect(
+          screen.queryByRole("button", { name }) ??
+            screen.queryByRole("link", { name }),
+        ).not.toBeInTheDocument();
+      if (view === "issue")
+        expect(screen.getByRole("heading", { name: "Comments" })).toBeVisible();
+    },
+  );
+
+  it.each([
     { viewer: ownerSession, canDelete: true, ownerLabel: "Owner: You" },
     {
       viewer: {

@@ -37,8 +37,8 @@ import {
   TrackerService,
 } from "../../src/server/domain/index.js";
 
-const baseUrl = "http://localhost:8080";
-const resource = `${baseUrl}/mcp`;
+let baseUrl: string;
+let resource: string;
 const owner = {
   name: "MCP Owner",
   email: "owner-mcp@example.test",
@@ -62,7 +62,7 @@ let issueId: string;
 function config(databaseUrl: string) {
   return loadConfig({
     NODE_ENV: "test",
-    PORT: "8080",
+    PORT: new URL(baseUrl).port,
     DATABASE_URL: databaseUrl,
     ISSOPEN_BASE_URL: baseUrl,
     BETTER_AUTH_SECRET: "synthetic-mcp-better-auth-secret-for-tests",
@@ -178,10 +178,21 @@ beforeAll(async () => {
   container = await new PostgreSqlContainer("postgres:18.6-alpine").start();
   await migrateDatabase(container.getConnectionUri());
   connection = createDatabase(container.getConnectionUri());
-  httpServer = serve({
-    fetch: (request) => app.fetch(request),
-    port: 8080,
+  await new Promise<void>((resolve) => {
+    httpServer = serve(
+      {
+        fetch: (request) => app.fetch(request),
+        hostname: "127.0.0.1",
+        port: 0,
+      },
+      () => resolve(),
+    );
   });
+  const address = httpServer.address();
+  if (!address || typeof address === "string")
+    throw new Error("Test server port unavailable");
+  baseUrl = `http://127.0.0.1:${address.port}`;
+  resource = `${baseUrl}/mcp`;
 }, 120_000);
 
 beforeEach(async () => {

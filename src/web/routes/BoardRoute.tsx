@@ -301,6 +301,7 @@ export function BoardRoute({
     0,
   );
   const repository = repositoryLabel(project.repositoryUrl);
+  const canEdit = project.canEdit !== false;
   const activeEpics = epics.filter((epic) => !epic.archivedAt);
   return (
     <div className="detail-column board-page">
@@ -324,14 +325,16 @@ export function BoardRoute({
             className="button button-secondary"
             href={`/projects/${project.id}/epics`}
           >
-            Manage Epics
+            {canEdit ? "Manage Epics" : "View Epics"}
           </AppLink>
-          <AppLink
-            className="button button-primary"
-            href={`/projects/${project.id}/issues/new`}
-          >
-            Create issue
-          </AppLink>
+          {canEdit ? (
+            <AppLink
+              className="button button-primary"
+              href={`/projects/${project.id}/issues/new`}
+            >
+              Create issue
+            </AppLink>
+          ) : null}
         </div>
       </div>
       {new URLSearchParams(window.location.search).get("notice") ? (
@@ -346,6 +349,11 @@ export function BoardRoute({
         </StatusBanner>
       ) : null}
       <EpicOverview epics={activeEpics} />
+      {!canEdit ? (
+        <StatusBanner>
+          Read-only project. Ask the workspace owner for edit access.
+        </StatusBanner>
+      ) : null}
       {hiddenIssueCount > 0 ? (
         <StatusBanner>
           {hiddenIssueCount} hidden{" "}
@@ -360,14 +368,20 @@ export function BoardRoute({
       {totalIssueCount === 0 && epicFilter === "all" ? (
         <EmptyState
           heading="No issues yet"
-          body="Create the first issue to start this project's backlog."
+          body={
+            canEdit
+              ? "Create the first issue to start this project's backlog."
+              : "Tickets will appear here when a collaborator creates them."
+          }
           action={
-            <AppLink
-              className="button button-primary"
-              href={`/projects/${project.id}/issues/new`}
-            >
-              Create issue
-            </AppLink>
+            canEdit ? (
+              <AppLink
+                className="button button-primary"
+                href={`/projects/${project.id}/issues/new`}
+              >
+                Create issue
+              </AppLink>
+            ) : undefined
           }
         />
       ) : (
@@ -595,79 +609,90 @@ export function BoardRoute({
                                         Agent: {issue.claimedByAgentId}
                                       </p>
                                     ) : null}
-                                    <div className="card-status">
-                                      <label htmlFor={`status-${issue.id}`}>
-                                        <span>Status</span>
-                                        <Select
-                                          id={`status-${issue.id}`}
-                                          ref={(control) => {
-                                            if (control)
-                                              statusControls.current.set(
-                                                issue.id,
-                                                control,
-                                              );
-                                            else
-                                              statusControls.current.delete(
-                                                issue.id,
-                                              );
-                                          }}
-                                          aria-label={`Change status for ${issueReference(issue)}`}
-                                          aria-describedby={
-                                            (issue.questionSummary
-                                              ?.unansweredBlocking ?? 0) > 0 &&
-                                            issue.status !== "ready_for_review"
-                                              ? `review-block-${issue.id}`
-                                              : undefined
-                                          }
-                                          value={issue.status}
-                                          disabled={
-                                            !online || savingIssue === issue.id
-                                          }
-                                          onChange={(event) =>
-                                            void moveIssue(
-                                              issue,
-                                              event.currentTarget
-                                                .value as IssueStatus,
-                                            )
-                                          }
-                                        >
-                                          {issueStatuses.map((status) => (
-                                            <option
-                                              key={status}
-                                              value={status}
-                                              disabled={
-                                                status === "ready_for_review" &&
-                                                issue.status !==
-                                                  "ready_for_review" &&
-                                                (issue.questionSummary
-                                                  ?.unansweredBlocking ?? 0) > 0
-                                              }
-                                            >
-                                              {statusLabels[status]}
-                                            </option>
-                                          ))}
-                                        </Select>
-                                      </label>
-                                      {(issue.questionSummary
-                                        ?.unansweredBlocking ?? 0) > 0 &&
-                                      issue.status !== "ready_for_review" ? (
-                                        <span
-                                          id={`review-block-${issue.id}`}
-                                          className="metadata"
-                                        >
-                                          Answer blocking questions before
-                                          review.
-                                        </span>
-                                      ) : null}
-                                      {savingIssue === issue.id ? (
-                                        <span
-                                          role="status"
-                                          className="metadata"
-                                        >
-                                          Saving…
-                                        </span>
-                                      ) : null}
-                                    </div>
+                                    {canEdit ? (
+                                      <div className="card-status">
+                                        <label htmlFor={`status-${issue.id}`}>
+                                          <span>Status</span>
+                                          <Select
+                                            id={`status-${issue.id}`}
+                                            ref={(control) => {
+                                              if (control)
+                                                statusControls.current.set(
+                                                  issue.id,
+                                                  control,
+                                                );
+                                              else
+                                                statusControls.current.delete(
+                                                  issue.id,
+                                                );
+                                            }}
+                                            aria-label={`Change status for ${issueReference(issue)}`}
+                                            aria-describedby={
+                                              (issue.questionSummary
+                                                ?.unansweredBlocking ?? 0) >
+                                                0 &&
+                                              issue.status !==
+                                                "ready_for_review"
+                                                ? `review-block-${issue.id}`
+                                                : undefined
+                                            }
+                                            value={issue.status}
+                                            disabled={
+                                              !online ||
+                                              savingIssue === issue.id
+                                            }
+                                            onChange={(event) =>
+                                              void moveIssue(
+                                                issue,
+                                                event.currentTarget
+                                                  .value as IssueStatus,
+                                              )
+                                            }
+                                          >
+                                            {issueStatuses.map((status) => (
+                                              <option
+                                                key={status}
+                                                value={status}
+                                                disabled={
+                                                  status ===
+                                                    "ready_for_review" &&
+                                                  issue.status !==
+                                                    "ready_for_review" &&
+                                                  (issue.questionSummary
+                                                    ?.unansweredBlocking ?? 0) >
+                                                    0
+                                                }
+                                              >
+                                                {statusLabels[status]}
+                                              </option>
+                                            ))}
+                                          </Select>
+                                        </label>
+                                        {(issue.questionSummary
+                                          ?.unansweredBlocking ?? 0) > 0 &&
+                                        issue.status !== "ready_for_review" ? (
+                                          <span
+                                            id={`review-block-${issue.id}`}
+                                            className="metadata"
+                                          >
+                                            Answer blocking questions before
+                                            review.
+                                          </span>
+                                        ) : null}
+                                        {savingIssue === issue.id ? (
+                                          <span
+                                            role="status"
+                                            className="metadata"
+                                          >
+                                            Saving…
+                                          </span>
+                                        ) : null}
+                                      </div>
+                                    ) : (
+                                      <p className="metadata">
+                                        {statusLabels[issue.status]}
+                                      </p>
+                                    )}
                                   </div>
                                 </li>
                               );

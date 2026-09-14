@@ -59,6 +59,8 @@ export type WorkspaceMember = {
 };
 
 export type Project = {
+  // Optional only for compatibility with a pre-permission API during rollout.
+  canEdit?: boolean;
   id: string;
   workspaceId: string;
   name: string;

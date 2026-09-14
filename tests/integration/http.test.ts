@@ -269,6 +269,117 @@ afterAll(async () => {
 });
 
 describe("protected tracker REST API", () => {
+  it("enforces read/edit per project on every ticket mutation and refreshes live capabilities", async () => {
+    const writable = await createProjectFixture("Writable", "WRITE");
+    const readable = await createProjectFixture("Readable", "READ");
+    const hidden = await createProjectFixture("Hidden", "HIDDEN");
+    const epic = await createEpicFixture(readable.id);
+    const ticket = await createIssueFixture(readable.id, "backlog", epic.id);
+    const memberCookie = await createMemberSession([writable.id, readable.id]);
+    const request = (path: string, init?: RequestInit) =>
+      requestWithCookie(memberCookie, path, init);
+    const stream = await request(
+      `/api/v1/projects/${readable.id}/board/events`,
+    );
+    if (!stream.body) throw new Error("Stream missing");
+    const reader = stream.body.getReader();
+    expect(new TextDecoder().decode((await reader.read()).value)).toContain(
+      ":edit",
+    );
+    await connection.db
+      .update(projectMembership)
+      .set({ permission: "read" })
+      .where(eq(projectMembership.projectId, readable.id));
+    expect(new TextDecoder().decode((await reader.read()).value)).toContain(
+      ":read",
+    );
+    await reader.cancel();
+    expect(
+      (await (await request(`/api/v1/projects/${readable.id}`)).json()).project
+        .canEdit,
+    ).toBe(false);
+    expect(
+      (await (await request(`/api/v1/projects/${writable.id}`)).json()).project
+        .canEdit,
+    ).toBe(true);
+    expect(
+      (await (await request(`/api/v1/issues/${ticket.id}`)).json()).canEdit,
+    ).toBe(false);
+    for (const path of [
+      `/projects/${readable.id}/board`,
+      `/projects/${readable.id}/issues`,
+      `/projects/${readable.id}/epics`,
+      `/epics/${epic.id}`,
+      `/issues/${ticket.id}/activity`,
+      `/issues/${ticket.id}/evidence`,
+      "/account/sessions",
+    ])
+      expect((await request(`/api/v1${path}`)).status, path).toBe(200);
+    const events = await connection.db.select().from(activityEvent);
+    const attempts: [string, string][] = [
+      ["POST", `/projects/${readable.id}/issues`],
+      ["POST", `/projects/${readable.id}/epics`],
+      ["PATCH", `/epics/${epic.id}`],
+      ["PATCH", `/issues/${ticket.id}`],
+      ["POST", `/issues/${ticket.id}/comments`],
+      ["POST", `/issues/${ticket.id}/questions`],
+      ["PATCH", `/issues/${ticket.id}/questions/${randomUUID()}/answer`],
+      ["POST", `/issues/${ticket.id}/code-links`],
+      ["POST", `/issues/${ticket.id}/review/accept`],
+      ["POST", `/issues/${ticket.id}/review/request-changes`],
+      ["DELETE", `/issues/${ticket.id}`],
+      ["PATCH", `/projects/${readable.id}`],
+    ];
+    for (const [method, path] of attempts)
+      expect(
+        (await request(`/api/v1${path}`, { method, body: "{}" })).status,
+        `${method} ${path}`,
+      ).toBe(403);
+    const capture = {
+      idempotencyKey: randomUUID(),
+      projectId: readable.id,
+      epicId: null,
+      title: "Denied",
+      description: "",
+      priority: "medium",
+      status: "backlog",
+      images: [],
+    };
+    expect(
+      (
+        await request("/api/v1/captures", {
+          method: "POST",
+          body: JSON.stringify(capture),
+        })
+      ).status,
+    ).toBe(403);
+    expect(await connection.db.select().from(activityEvent)).toEqual(events);
+    expect(
+      (
+        await request(`/api/v1/projects/${hidden.id}/issues`, {
+          method: "POST",
+          body: JSON.stringify({ title: "No" }),
+        })
+      ).status,
+    ).toBe(404);
+    expect(
+      (
+        await request(`/api/v1/projects/${writable.id}/issues`, {
+          method: "POST",
+          body: JSON.stringify({ title: "Editor still works" }),
+        })
+      ).status,
+    ).toBe(201);
+    // Canonical Owner retains edit access regardless of member-level grants.
+    expect(
+      (
+        await (
+          await authenticatedRequest(`/api/v1/projects/${readable.id}`)
+        ).json()
+      ).project.canEdit,
+    ).toBe(true);
+  });
+
   it("invites a member through a one-use link, explicit Google proof and revocable access", async () => {
     const assignedProject = await createProjectFixture("Invited", "INVITE");
     const privateProject = await createProjectFixture("Owner only", "OWNER");

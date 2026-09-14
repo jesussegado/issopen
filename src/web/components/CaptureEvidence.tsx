@@ -25,7 +25,13 @@ const schema = z.object({
     }),
   ),
 });
-export function CaptureEvidence({ issueId }: { issueId: string }) {
+export function CaptureEvidence({
+  issueId,
+  canEdit = true,
+}: {
+  issueId: string;
+  canEdit?: boolean;
+}) {
   const [rows, setRows] = useState<z.infer<typeof schema>["evidence"]>([]);
   const [error, setError] = useState(false);
   const [reload, setReload] = useState(0);
@@ -114,7 +120,7 @@ export function CaptureEvidence({ issueId }: { issueId: string }) {
               </p>
             </>
           )}
-          {row.canDelete && (
+          {canEdit && row.canDelete && (
             <Button
               type="button"
               variant="destructive"

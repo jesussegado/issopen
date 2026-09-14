@@ -29,9 +29,11 @@ import {
   TrackerService,
 } from "./domain/index.js";
 import {
+  canEditProject,
   type HumanAccess,
   requireHumanAccess,
   requireProjectAccess,
+  requireProjectEdit,
   requireWorkspaceOwner,
 } from "./human-access.js";
 
@@ -44,6 +46,7 @@ export type ExtensionBindings = {
     canWrite: boolean;
     workspaceRole: "owner" | "member";
     projectIds: string[] | null;
+    humanAccess: HumanAccess;
   };
 };
 const projectInput = z
@@ -349,14 +352,6 @@ export function createCaptureRouter(
 ) {
   const router = new Hono<ExtensionBindings>();
   let active = 0;
-  const requireExtensionProject = (
-    projectIds: string[] | null,
-    projectId: string,
-  ) => {
-    if (projectIds !== null && !projectIds.includes(projectId)) {
-      throw new DomainError("not_found", "Project not found");
-    }
-  };
   router.onError(errorResult);
   router.use("*", async (c, next) => {
     if (c.req.method === "POST" && !c.get("canWrite"))
@@ -378,7 +373,7 @@ export function createCaptureRouter(
   });
   router.get("/projects/:id/epics", async (c) => {
     const id = z.uuid().parse(c.req.param("id"));
-    requireExtensionProject(c.get("projectIds"), id);
+    requireProjectAccess(c.get("humanAccess"), id);
     const tracker = new TrackerService(db);
     await tracker.getProject(c.get("workspaceId"), id);
     return c.json({
@@ -413,7 +408,7 @@ export function createCaptureRouter(
   });
   router.post("/projects/:id/epics", async (c) => {
     const projectId = z.uuid().parse(c.req.param("id"));
-    requireExtensionProject(c.get("projectIds"), projectId);
+    requireProjectEdit(c.get("humanAccess"), projectId);
     const input = epicInput.parse(await boundedJson(c.req.raw, 4096));
     const ctx = await context(db, c.get("workspaceId"), c.get("userId"));
     return c.json(
@@ -436,7 +431,7 @@ export function createCaptureRouter(
   });
   router.post("/captures", async (c) => {
     const input = captureSubmissionSchema.parse(await boundedJson(c.req.raw));
-    requireExtensionProject(c.get("projectIds"), input.projectId);
+    requireProjectEdit(c.get("humanAccess"), input.projectId);
     const ctx = await context(db, c.get("workspaceId"), c.get("userId"));
     const images = input.images ?? (input.image ? [input.image] : []);
     return c.json(
@@ -467,7 +462,7 @@ export function createEvidenceRouter(db: Database, storage?: CaptureStorage) {
   router.post("/captures", async (c) => {
     const input = webCaptureInput.parse(await boundedJson(c.req.raw));
     const access = requireHumanAccess(c.get("humanAccess"));
-    requireProjectAccess(access, input.projectId);
+    requireProjectEdit(access, input.projectId);
     const ctx = await context(db, access.workspaceId, access.user.id, "rest");
     return c.json(
       await createCapturedIssue(
@@ -530,7 +525,9 @@ export function createEvidenceRouter(db: Database, storage?: CaptureStorage) {
           sha256,
           createdAt,
           imageUrl: fileKey ? `/api/v1/evidence/${id}/image` : null,
-          canDelete: access.role === "owner" || ownerId === access.user.id,
+          canDelete:
+            canEditProject(access, foundIssue.projectId) &&
+            (access.role === "owner" || ownerId === access.user.id),
         }),
       ),
     });
@@ -566,7 +563,7 @@ export function createEvidenceRouter(db: Database, storage?: CaptureStorage) {
         .limit(1)
         .for("update");
       if (!row) throw new DomainError("not_found", "Evidence not found");
-      requireProjectAccess(access, row.projectId);
+      requireProjectEdit(access, row.projectId);
       if (access.role !== "owner" && row.evidence.ownerId !== access.user.id) {
         throw new DomainError(
           "forbidden",

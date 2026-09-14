@@ -262,6 +262,112 @@ async function createMemberSession(projectIds: string[]) {
 }
 
 describe("human Chrome OAuth", () => {
+  it("intersects existing Chrome grants with current project edit permission and image ownership", async () => {
+    const [space] = await connection.db.select().from(workspace);
+    if (!space) throw new Error("Workspace missing");
+    const readable = randomUUID(),
+      writable = randomUUID();
+    await connection.db.insert(project).values([
+      { id: readable, workspaceId: space.id, name: "Read later", key: "READ" },
+      { id: writable, workspaceId: space.id, name: "Writable", key: "WRITE" },
+    ]);
+    const member = await createMemberSession([readable, writable]);
+    const connected = await connect(true, member.cookie);
+    const tokenHeaders = {
+      Authorization: `Bearer ${connected.tokens.access_token}`,
+      Origin: origin,
+      "Content-Type": "application/json",
+    };
+    const payload = {
+      version: 1,
+      image: null,
+      idempotencyKey: randomUUID(),
+      projectId: readable,
+      epicId: null,
+      title: "Own image",
+      description: "",
+      priority: "medium",
+      status: "backlog",
+      images: [
+        `data:image/png;base64,${syntheticPng(true).toString("base64")}`,
+      ],
+      metadata: null,
+    };
+    const captured = await app.request("/api/extension/v1/captures", {
+      method: "POST",
+      headers: tokenHeaders,
+      body: JSON.stringify(payload),
+    });
+    expect(captured.status).toBe(201);
+    const ticket = (await captured.json()).issue;
+    await connection.db
+      .update(projectMembership)
+      .set({ permission: "read" })
+      .where(eq(projectMembership.projectId, readable));
+    const destinations = await app.request("/api/extension/v1/projects", {
+      headers: tokenHeaders,
+    });
+    expect(
+      (await destinations.json()).projects.map((p: { id: string }) => p.id),
+    ).toEqual([writable]);
+    for (const [path, body] of [
+      ["/captures", payload],
+      [
+        `/projects/${readable}/epics`,
+        { idempotencyKey: randomUUID(), title: "Denied" },
+      ],
+    ] as const)
+      expect(
+        (
+          await app.request(`/api/extension/v1${path}`, {
+            method: "POST",
+            headers: tokenHeaders,
+            body: JSON.stringify(body),
+          })
+        ).status,
+      ).toBe(403);
+    const evidence = await app.request(`/api/v1/issues/${ticket.id}/evidence`, {
+      headers: headers(member.cookie),
+    });
+    const image = (await evidence.json()).evidence[0];
+    expect(image.canDelete).toBe(false);
+    expect(
+      (await app.request(image.imageUrl, { headers: headers(member.cookie) }))
+        .status,
+    ).toBe(200);
+    expect(
+      (
+        await app.request(`/api/v1/evidence/${image.id}`, {
+          method: "DELETE",
+          headers: headers(member.cookie),
+        })
+      ).status,
+    ).toBe(403);
+    expect(
+      (
+        await app.request(`/api/v1/evidence/${image.id}`, {
+          method: "DELETE",
+          headers: headers(),
+        })
+      ).status,
+    ).toBe(200);
+    await connection.db
+      .update(projectMembership)
+      .set({ permission: "read" })
+      .where(eq(projectMembership.userId, member.id));
+    expect(await (await readSession(connected.tokens)).json()).toMatchObject({
+      canWrite: false,
+      workspaceId: space.id,
+    });
+    expect(
+      (
+        await app.request("/api/v1/account/sessions", {
+          headers: headers(member.cookie),
+        })
+      ).status,
+    ).toBe(200);
+  });
+
   it("binds installations to one workspace and revokes only the removed membership", async () => {
     const [first] = await connection.db.select().from(workspace);
     if (!first) throw new Error("Missing workspace");

@@ -86,6 +86,9 @@ export function Workspace({ account }: { account: AccountResponse | null }) {
   const writable = Boolean(
     connected?.canWrite && connected.apiVersion === 1 && identity && !mismatch,
   );
+  const readOnly = Boolean(
+    connected?.apiVersion === 1 && connected.canWrite === false,
+  );
   const changeImages = useCallback((images: string[]) => {
     setEvidence((previous) =>
       images.length || previous?.metadata
@@ -370,7 +373,15 @@ export function Workspace({ account }: { account: AccountResponse | null }) {
           ) : null}
           <section aria-labelledby="composer-heading">
             <h2 id="composer-heading">Crear ticket</h2>
-            {!created && (
+            {readOnly && (
+              <p role="status" className="notice">
+                Esta instalación no tiene permiso para crear tickets ni Epics.
+                Pide al Owner acceso de edición a un proyecto y actualiza tu
+                cuenta; si la vinculaste sólo para lectura, vuelve a conectarla
+                con permiso de creación. Tu borrador sigue guardado aquí.
+              </p>
+            )}
+            {!created && !readOnly && (
               <fieldset
                 className="create-destination"
                 disabled={locked || imageBusy}
@@ -666,7 +677,7 @@ export function Workspace({ account }: { account: AccountResponse | null }) {
                   </a>
                   .
                 </p>
-                {inline ? (
+                {readOnly ? null : inline ? (
                   <button
                     type="button"
                     disabled={busy || imageBusy || !writable}
@@ -698,7 +709,7 @@ export function Workspace({ account }: { account: AccountResponse | null }) {
                         : "Enviar ticket"}
                   </button>
                 )}
-                {!writable && (
+                {!writable && !readOnly && (
                   <p>Conecta Issopen con permiso de creación para enviar.</p>
                 )}
               </>
