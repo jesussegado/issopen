@@ -29,11 +29,15 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
-96 añade gestión de miembros aceptados (fuente en validación): búsqueda, grants
+96 añade gestión de miembros aceptados (desplegado3156b31/GitOps7f6d9515): búsqueda, grants
 none/read/edit, confirmación y conflictos conservando borradores; Owner protegido.
 0021 usa versión UUID opaca para evitar sobrescrituras incluso tras reinvitación;
 auditoría por delta. [Contrato y recuperación](docs/member-access.md).
 Sin suspensión, borrado de persona/contenido ni cambios de acceso reales.
+126unit/web80integración20webE2E+2skips/Chrome16+13/ComposePASS; backuprestore y
+smoke productivo1440/360PASS, ArgoSynced/Healthy y PVCs intactos.96 en revisión.
+98 onboarding en progreso quick260914-l2z; pregunta pilotoGoogle real pendiente
+sólo para aceptación externa. Continuar trabajo técnico y otros tickets.
 
 95 añade permiso read/edit por project_membership, política central REST/Chrome,
 capacidades de UI y revalidación SSE. La migración0020_project_permissions

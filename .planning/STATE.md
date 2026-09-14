@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Epic3 executing96 member access;95 deployed;97 email provider question pending
-last_updated: "2026-09-14T13:01:00Z"
+stopped_at: Epic3 executing98 onboarding;96 deployed;97 provider and98 Googlepilot questions pending
+last_updated: "2026-09-14T13:21:00Z"
 last_activity: 2026-09-14
 progress:
   total_phases: 9
@@ -22,6 +22,14 @@ See: .planning/PROJECT.md (updated 2026-08-30)
 
 **Core value:** Convertir una intención humana en trabajo estructurado y seguro que ChatGPT y agentes de código externos puedan entender, ejecutar y devolver a revisión dentro de un único flujo trazable.
 **Current focus:** Epic 3 implementation after all 20 human answers (v2).
+96 delivered3156b31/GitOps7f6d9515/digest5073c128: Synced/Healthy, Ready0restarts,
+readiness200/PVCunchanged, Member1440/360smokePASS.126unit/web80integration20webE2E
++2skips,Chrome16+13/reproducible,scan329/ComposePASS. Backuprestore113issues951events
+13images19receipts.96review/claimreleased;98executingquick260914-l2z.97 provider/from
+question0dd7a18c and98 realGooglepilot question1abf3039 pending; continue technical
+work and independent tickets. No real grants/tickets/existing sessions modified.
+
+Previous checkpoint:
 95 delivered23d789e/GitOpsb69e88b9/digeste37d0b3b, Synced/Healthy exactrevision,
 Ready0restarts/readiness200/PVCunchanged and isolatedMember1440/360smokePASS.
 123unit/web78integration18webE2E+2skips/ComposePASS; Chrome development0.6.3
@@ -334,6 +342,9 @@ Decisions are logged in PROJECT.md Key Decisions table. Current roadmap-level st
 
 | ID | Description | Date | Commits | Status | Directory |
 | --- | --- | --- | --- | --- | --- |
+| 260914-koj |96 gestión versionada de miembros/proyectos |2026-09-14|3156b31; GitOps7f6d9515|Gates/restore/smoke PASS; revisión humana|[260914-koj](./quick/260914-koj-epic-3-ticket96-gestionar-miembros-y-per/) |
+| 260914-k34 |95 permisos read/edit y UI Chrome |2026-09-14|23d789e; GitOpsb69e88b9|Gates/restore/smoke PASS; revisión humana|[260914-k34](./quick/260914-k34-epic-3-ticket95-permisos-lectura-edicion/) |
+| 260914-jhl |108 contexto multiworkspace |2026-09-14|390f3d0; GitOpscbf737cd|Gates/restore/smoke PASS; revisión humana|[260914-jhl](./quick/260914-jhl-epic-3-implementar-base-multiworkspace-t/) |
 | 260913-x6a | Epic 3: contrato94, sesiones100, detalle104 y navegación109 | 2026-09-14 | `4df0a09`, `dd5d777`, `79fd7a1`, `328a386`; GitOps `0ac6550d` | Gates/restore/smoke PASS; cuatro Ready for Human Review;108/95 y resto pendientes | [260913-x6a](./quick/260913-x6a-implementar-epic-3-tras-respuestas-contr/) |
 | 260913-vul | Planificar Epic 3 usuarios, roles y colaboración | 2026-09-13 | `eb4b4e1` | 14 tickets / 20 preguntas verificadas; sólo planificación, sin deploy | [260913-vul](./quick/260913-vul-planificar-epic-3-usuarios-roles-colabor/) |
 | 260913-v4j | Confirmar acceso de revisión y comprobar Store tras respuesta 86 | 2026-09-13 | `c0199fd` | 2/2 respuestas; reviewer smoke PASS; Store Pending review, sin deploy | [260913-v4j](./quick/260913-v4j-confirmar-acceso-de-review-del-ticket-86/) |

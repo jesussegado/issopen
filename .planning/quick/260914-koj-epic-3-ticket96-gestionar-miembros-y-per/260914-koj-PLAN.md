@@ -1,6 +1,6 @@
 ---
 type: quick
-status: executing
+status: complete
 ticket: 96
 epic: 3
 source_base: 23d789e
