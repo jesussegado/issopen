@@ -100,6 +100,17 @@ export function createApp({
   const resource = new URL("/mcp", String(auth.options.baseURL)).toString();
   const mcpHandler = createIssopenMcpHandler({ auth, db, resource });
 
+  app.use("*", async (context, next) => {
+    await next();
+    context.header("Referrer-Policy", "no-referrer");
+    if (
+      /^\/(?:invite\/|invitations\/|sign-in(?:$|\/)|api\/auth\/)/.test(
+        context.req.path,
+      )
+    )
+      context.header("Cache-Control", "no-store");
+  });
+
   app.get("/health/live", (context) => context.json({ status: "ok" }));
   app.get("/health/ready", async (context) => {
     try {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   AppLink,
   Button,
@@ -24,6 +24,8 @@ type AuthErrorBody = {
 async function authPost<T>(path: string, body: Record<string, unknown>) {
   const response = await fetch(path, {
     method: "POST",
+    cache: "no-store",
+    referrerPolicy: "no-referrer",
     credentials: "same-origin",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -41,6 +43,69 @@ async function authPost<T>(path: string, body: Record<string, unknown>) {
   return result;
 }
 
+function invitationError(code: string | undefined, fallback: string) {
+  switch (code) {
+    case "INVITATION_EMAIL_MISMATCH":
+      return "This Issopen account does not match the invitation. Switch to the invited account; no project access has been granted.";
+    case "EXISTING_ACCOUNT_REQUIRES_SIGN_IN":
+      return "This email already has an Issopen account. Sign in with that account first, then return here to accept the invitation.";
+    case "INVITATION_EXPIRED":
+    case "INVITATION_REVOKED":
+    case "INVITATION_UNAVAILABLE":
+      return "This invitation has expired or was revoked. Ask the workspace Owner for a new private link; retrying this one will not grant access.";
+    case "INVITATION_NOT_FOUND":
+      return "This invitation is unavailable for this account. Use the account it was sent to, or ask the workspace Owner for a new private link.";
+    case "INVITATION_USED":
+      return "This link has already been started or used. Sign in with the invited account to continue. If verification was interrupted and you cannot sign in, ask the Owner to revoke it and send a new link.";
+    case "GOOGLE_REAUTH_REQUIRED":
+      return "Verify this invitation with the matching Google account before continuing. Your workspace access is not active yet.";
+    default:
+      return (
+        fallback ||
+        "Couldn't complete the invitation. Check your connection and try again."
+      );
+  }
+}
+
+function SwitchInvitationAccount({ returnTo }: { returnTo: string }) {
+  const [busy, setBusy] = useState(false),
+    [error, setError] = useState(false);
+  return (
+    <div className="form-stack">
+      <Button
+        variant="secondary"
+        disabled={busy}
+        onClick={async () => {
+          if (
+            !window.confirm(
+              "Sign out of this Issopen browser session to use the invited account? Other sessions and Google sign-in are unchanged.",
+            )
+          )
+            return;
+          setBusy(true);
+          setError(false);
+          try {
+            await authPost("/api/auth/sign-out", {});
+            window.location.assign(
+              `/sign-in?returnTo=${encodeURIComponent(returnTo)}`,
+            );
+          } catch {
+            setBusy(false);
+            setError(true);
+          }
+        }}
+      >
+        {busy ? "Signing out…" : "Switch Issopen account"}
+      </Button>
+      {error ? (
+        <StatusBanner error>
+          Couldn't sign out. Your invitation has not been changed. Try again.
+        </StatusBanner>
+      ) : null}
+    </div>
+  );
+}
+
 export function InvitationRedeemRoute({
   token,
   authenticated,
@@ -55,28 +120,47 @@ export function InvitationRedeemRoute({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [requiresSignIn, setRequiresSignIn] = useState(false);
+  const [wrongAccount, setWrongAccount] = useState(false);
+  const generation = useRef(0);
 
   useEffect(() => {
+    const controller = new AbortController();
+    generation.current++;
+    setLoading(true);
+    setInvitation(null);
+    setError(null);
+    setRequiresSignIn(false);
+    setWrongAccount(false);
+    setBusy(false);
     fetch(`/api/public/invitations/${encodeURIComponent(token)}`, {
       cache: "no-store",
       referrerPolicy: "no-referrer",
+      signal: controller.signal,
     })
       .then(async (response) => {
         if (!response.ok) throw new Error("Invitation not found");
         const body = (await response.json()) as {
           invitation: PublicInvitation;
         };
-        setInvitation(body.invitation);
+        if (!controller.signal.aborted) setInvitation(body.invitation);
       })
-      .catch((caught) =>
-        setError(
-          caught instanceof Error ? caught.message : "Invitation not found",
-        ),
-      )
-      .finally(() => setLoading(false));
+      .catch(() => {
+        if (!controller.signal.aborted)
+          setError(
+            "Couldn't load this invitation. Check the full private link or ask the workspace Owner for a new one.",
+          );
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+    return () => {
+      generation.current++;
+      controller.abort();
+    };
   }, [token]);
 
   async function redeem() {
+    const requestGeneration = generation.current;
     setBusy(true);
     setError(null);
     setRequiresSignIn(false);
@@ -85,11 +169,14 @@ export function InvitationRedeemRoute({
         "/api/auth/invitations/redeem",
         { token },
       );
-      await onRedeemed(response.invitationId);
+      if (requestGeneration === generation.current)
+        await onRedeemed(response.invitationId);
     } catch (caught) {
+      if (requestGeneration !== generation.current) return;
       const authError = caught as Error & { code?: string };
       setRequiresSignIn(authError.code === "EXISTING_ACCOUNT_REQUIRES_SIGN_IN");
-      setError(authError.message);
+      setWrongAccount(authError.code === "INVITATION_EMAIL_MISMATCH");
+      setError(invitationError(authError.code, authError.message));
       setBusy(false);
     }
   }
@@ -125,13 +212,21 @@ export function InvitationRedeemRoute({
               This link has already been started. Sign in with the invited
               account to continue it.
             </StatusBanner>
+          ) : invitation.state === "accepted" ? (
+            <StatusBanner>
+              This invitation was already accepted. Sign in to the invited
+              account to open your projects; the link cannot be used for another
+              person.
+            </StatusBanner>
           ) : (
             <StatusBanner error>
               This invitation is {invitation.state} and can no longer be used.
               Ask the workspace Owner for a new link.
             </StatusBanner>
           )}
-          {requiresSignIn ? (
+          {requiresSignIn ||
+          (!authenticated &&
+            ["claimed", "accepted"].includes(invitation.state)) ? (
             <AppLink
               className="button button-secondary"
               href={`/sign-in?returnTo=${encodeURIComponent(`/invite/${token}`)}`}
@@ -139,8 +234,19 @@ export function InvitationRedeemRoute({
               Sign in first
             </AppLink>
           ) : null}
+          {wrongAccount && authenticated ? (
+            <SwitchInvitationAccount returnTo={`/invite/${token}`} />
+          ) : null}
+          {invitation.state === "claimed" ? (
+            <p className="helper-copy">
+              If the temporary verification session expired before Google was
+              linked, ask the Owner to revoke this invitation and send a new
+              one. No account or project access is granted by restarting here.
+            </p>
+          ) : null}
         </section>
       ) : null}
+      <AppLink href="/support">Invitation help</AppLink>
     </div>
   );
 }
@@ -206,6 +312,8 @@ export function InvitationLinkRoute({
       {new URLSearchParams(window.location.search).get("google") === "error" ? (
         <StatusBanner error>
           Google did not complete verification. No workspace access was granted.
+          Your invitation is still available until it expires or the Owner
+          revokes it. Retry below with the invited account.
         </StatusBanner>
       ) : null}
       {error ? (
@@ -231,6 +339,13 @@ export function InvitationLinkRoute({
         >
           {busy ? "Opening Google…" : "Verify with Google"}
         </Button>
+        <p className="helper-copy">
+          Use the Google account shown above. Cancelling Google does not
+          activate or delete the invitation. If this temporary session expires,
+          ask the Owner for a new invitation rather than creating another
+          account.
+        </p>
+        <AppLink href="/support">Invitation help</AppLink>
       </section>
     </div>
   );
@@ -245,6 +360,7 @@ export function InvitationCompleteRoute({
 }) {
   const [error, setError] = useState<string | null>(null);
   const [needsGoogle, setNeedsGoogle] = useState(false);
+  const [unavailable, setUnavailable] = useState(false);
   const [busy, setBusy] = useState(true);
 
   const accept = useCallback(async () => {
@@ -260,7 +376,15 @@ export function InvitationCompleteRoute({
     } catch (caught) {
       const authError = caught as Error & { code?: string };
       setNeedsGoogle(authError.code === "GOOGLE_REAUTH_REQUIRED");
-      setError(authError.message);
+      setUnavailable(
+        [
+          "INVITATION_NOT_FOUND",
+          "INVITATION_UNAVAILABLE",
+          "INVITATION_EXPIRED",
+          "INVITATION_REVOKED",
+        ].includes(authError.code ?? ""),
+      );
+      setError(invitationError(authError.code, authError.message));
       setBusy(false);
     }
   }, [invitationId, onAccepted]);
@@ -289,6 +413,10 @@ export function InvitationCompleteRoute({
               href={`/invitations/${invitationId}/link`}
             >
               Verify with Google again
+            </AppLink>
+          ) : unavailable ? (
+            <AppLink className="button button-secondary" href="/support">
+              Invitation help
             </AppLink>
           ) : (
             <Button type="button" onClick={() => void accept()}>

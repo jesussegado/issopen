@@ -84,8 +84,8 @@ export function SignInRoute({
     if (!oauthError) return;
     setError(
       oauthError === "access_denied"
-        ? "Google sign-in was cancelled. You can try again or use your Issopen password."
-        : "Google couldn't complete sign-in. Use an invited account or try your Issopen password.",
+        ? "Google sign-in was cancelled. Try again with the invited account; your invitation has not been removed. Password sign-in is only for accounts already provisioned by the operator."
+        : "Google couldn't complete sign-in. Use the account from your invitation. If you cannot continue, ask the workspace Owner for help; password sign-in is only for accounts already provisioned by the operator.",
     );
   }, []);
 
@@ -120,7 +120,7 @@ export function SignInRoute({
       window.location.assign(target.href);
     } catch {
       setError(
-        "Google couldn't start sign-in. Check your connection or use your Issopen password.",
+        "Google couldn't start sign-in. Check your connection and retry with the invited account, or ask the workspace Owner for help. Password sign-in is only for accounts already provisioned by the operator.",
       );
       setGoogleSubmitting(false);
     }
@@ -227,7 +227,10 @@ export function SignInRoute({
         </Button>
       ) : null}
       <p className="helper-copy">
-        Lost access? Use the documented owner recovery procedure.
+        Invited members use Google; a password is only available if an operator
+        explicitly provisioned one. Lost access as Owner? Use the documented
+        owner recovery procedure. An interrupted invitation may need a new link
+        from the workspace Owner.
       </p>
     </PublicShell>
   );

@@ -29,6 +29,12 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+98 mejora invitaciones/login: recuperación explícita, cabeceras privadas, returnTo
+interno estricto y destino un proyecto/selector/espera. [Contrato](docs/invited-onboarding.md).
+No cambia signup, permisos, esquema, proveedor o revisor. La pregunta1abf3039 pide
+cuenta piloto para aceptación Google real; los tests aislados no sustituyen esa prueba.
+Seguir tareas independientes mientras la aceptación externa esté pendiente.
+
 96 añade gestión de miembros aceptados (desplegado3156b31/GitOps7f6d9515): búsqueda, grants
 none/read/edit, confirmación y conflictos conservando borradores; Owner protegido.
 0021 usa versión UUID opaca para evitar sobrescrituras incluso tras reinvitación;
@@ -59,7 +65,7 @@ unicidad global. Retirar membresía no revoca sesiones globales ni otros espacio
 No hay registro público. Fuente390f3d0/GitOpscbf737cd/digest06d2fec0 desplegados y
 verificados el14/09/2026: Synced/Healthy, Ready/0reinicios, readiness200, smoke
 Member1440/360, backup/restore y gates completos.108 en revisión sin claim.
-95 lectura/edición entregada, quick260914-k34;96 en implementación quick260914-koj.
+95 lectura/edición entregada, quick260914-k34;96 entregado quick260914-koj.
 97 tiene pregunta bloqueante de proveedor/remitente sólo para activar correo;
 seguir todos los trabajos independientes sin modificar Store/revisor reales.
 

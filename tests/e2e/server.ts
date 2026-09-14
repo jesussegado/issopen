@@ -14,6 +14,7 @@ import { migrateDatabase } from "../../src/server/db/migrate.js";
 import { e2eBaseUrl, e2eOwner } from "./fixtures.js";
 import { seedMemberManagement } from "./member-access-fixture.js";
 import { seedMultiworkspace } from "./multiworkspace-fixture.js";
+import { seedOnboarding } from "./onboarding-fixture.js";
 
 const container = await new PostgreSqlContainer("postgres:18.6-alpine").start();
 await migrateDatabase(container.getConnectionUri());
@@ -29,6 +30,7 @@ const auth = createAuth(connection.db, config);
 await bootstrapOwner(connection.db, auth, e2eOwner);
 await seedMultiworkspace(connection.db, auth);
 await seedMemberManagement(connection.db, auth);
+await seedOnboarding(connection.db, auth);
 const app = createApp({
   captureStorage: new CaptureStorage(
     await mkdtemp(join(tmpdir(), "issopen-e2e-evidence-")),

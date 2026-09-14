@@ -4,7 +4,16 @@ import {
 } from "@testcontainers/postgresql";
 import { and, count, eq, ne } from "drizzle-orm";
 import pino from "pino";
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 import { bootstrapOwner, recoverOwner } from "../../scripts/owner.js";
 import {
   provisionReviewDemo,
@@ -102,7 +111,24 @@ afterAll(async () => {
   await container?.stop();
 });
 
+afterEach(() => vi.restoreAllMocks());
+
 describe("private owner authentication", () => {
+  it("does not cache invitation HTML or auth responses and suppresses token-bearing referrers", async () => {
+    const app = createTestApp();
+    for (const path of [
+      "/invite/synthetic-private-token",
+      "/invitations/synthetic-id/link",
+      "/sign-in?returnTo=%2Finvite%2Fsynthetic-private-token",
+      "/api/auth/get-session",
+      "/api/public/invitations/synthetic-private-token",
+    ]) {
+      const response = await app.request(path);
+      expect(response.headers.get("cache-control"), path).toBe("no-store");
+      expect(response.headers.get("referrer-policy"), path).toBe("no-referrer");
+    }
+  });
+
   it("lists only own active web sessions with safe metadata and revokes one immediately", async () => {
     const app = createTestApp();
     await bootstrapOwner(connection.db, auth, ownerInput);
@@ -452,6 +478,24 @@ describe("private owner authentication", () => {
   });
 
   it("advertises only configured Google OAuth and starts a bounded OIDC flow", async () => {
+    // Deterministic discovery contract, not a real Google login acceptance test.
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      if (
+        String(input) !==
+        "https://accounts.google.com/.well-known/openid-configuration"
+      )
+        throw new Error("Unexpected external request in isolated OAuth test");
+      return Response.json({
+        issuer: "https://accounts.google.com",
+        authorization_endpoint: "https://accounts.google.com/o/oauth2/v2/auth",
+        token_endpoint: "https://oauth2.googleapis.com/token",
+        userinfo_endpoint: "https://openidconnect.googleapis.com/v1/userinfo",
+        jwks_uri: "https://www.googleapis.com/oauth2/v3/certs",
+        response_types_supported: ["code"],
+        subject_types_supported: ["public"],
+        id_token_signing_alg_values_supported: ["RS256"],
+      });
+    });
     const clientId = "synthetic-google-client-id.apps.googleusercontent.com";
     const clientSecret = "synthetic-google-client-secret";
     const app = createTestApp({

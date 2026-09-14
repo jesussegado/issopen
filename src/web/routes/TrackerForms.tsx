@@ -59,9 +59,39 @@ export function HomeRoute({
   canCreateProject: boolean;
 }) {
   useEffect(() => {
-    if (projects[0]) navigate(`/projects/${projects[0].id}`, true);
+    if (projects.length === 1 && projects[0])
+      navigate(`/projects/${projects[0].id}`, true);
   }, [projects]);
-  if (projects.length > 0) return <Skeleton label="Opening project…" />;
+  if (projects.length === 1) return <Skeleton label="Opening project…" />;
+  if (projects.length > 1)
+    return (
+      <div className="reading-column form-stack">
+        <PageHeading>Choose a project</PageHeading>
+        <p>
+          These are the projects available in this workspace. Choose where to
+          work.
+        </p>
+        <ul className="access-list">
+          {projects.map((project) => (
+            <li key={project.id} className="access-list-item">
+              <AppLink href={`/projects/${project.id}`}>{project.name}</AppLink>
+              <span className="metadata">
+                {canCreateProject
+                  ? "Owner"
+                  : project.canEdit === false
+                    ? "Member · read only"
+                    : "Member · edit"}
+              </span>
+            </li>
+          ))}
+        </ul>
+        {canCreateProject ? (
+          <AppLink className="button button-primary" href="/projects/new">
+            Create project
+          </AppLink>
+        ) : null}
+      </div>
+    );
   return (
     <div className="reading-column">
       <PageHeading>No projects yet</PageHeading>
