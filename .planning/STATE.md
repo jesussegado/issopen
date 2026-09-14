@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Epic3 executing95 permissions;108 deployed and verified, no human blocker
-last_updated: "2026-09-14T12:34:00Z"
+stopped_at: Epic3 executing96 member access;95 deployed;97 email provider question pending
+last_updated: "2026-09-14T13:01:00Z"
 last_activity: 2026-09-14
 progress:
   total_phases: 9
@@ -22,12 +22,21 @@ See: .planning/PROJECT.md (updated 2026-08-30)
 
 **Core value:** Convertir una intención humana en trabajo estructurado y seguro que ChatGPT y agentes de código externos puedan entender, ejecutar y devolver a revisión dentro de un único flujo trazable.
 **Current focus:** Epic 3 implementation after all 20 human answers (v2).
+95 delivered23d789e/GitOpsb69e88b9/digeste37d0b3b, Synced/Healthy exactrevision,
+Ready0restarts/readiness200/PVCunchanged and isolatedMember1440/360smokePASS.
+123unit/web78integration18webE2E+2skips/ComposePASS; Chrome development0.6.3
+16unit13E2E/reproducible, submittedStore0.6.2 untouched. Backup isolatedrestore
+113issues942events13images19receipts.95 inreview withoutclaim.96 inprogress,
+quick260914-koj.97 question0dd7a18c provider/from/pilotrecipient pending: blocks
+realemailconfiguration only; continue all independent Epic work.
+
+Previous checkpoint:
 Continuation260914-jhl delivered108:source390f3d0/GitOpscbf737cd/digest06d2fec0,
 ArgoSynced/Healthy, Ready0restarts, readiness200, PVCsunchanged. Fullgates and
 productionMember smoke1440/360PASS; backuprestore113issues/932events/13images/
 19receipts.108 Ready for Human Review withoutclaim.95 nowclaimed/inprogress,
 quick260914-k34;10remainingBacklog. Keep executing until allfeasible tickets
-are ready or genuinely human/providerblocked. No current unansweredblockers.
+are ready or genuinely human/providerblocked.97 newblocker recorded above.
 No real sessions/reviewer/Storechanges. See quickSUMMARY for precise evidence.
 
 Previous increment:

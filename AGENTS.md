@@ -36,7 +36,9 @@ cambios de scopesMCP. [Matriz y operación](docs/project-permissions.md).
 Validado:123 tests unit/web,78 integración PostgreSQL,18 E2E web (2 skips),
 Compose y secret scan; extensión desarrollo0.6.3 añade UI sólo lectura con
 16 unit/13 E2E, build reproducible sin permisos nuevos. Store0.6.2 intacta.
-Producción sigue108 hasta actualizarGitOps.96 administra
+Desplegado23d789e/GitOpsb69e88b9/digeste37d0b3b: Synced/Healthy, readiness200,
+Ready/0reinicios, PVCs intactos y smokeMember1440/360PASS.95 en revisión sinclaim.
+96 administra
 estos grants después; no modificar miembros/revisor reales para las pruebas.
 
 Ticket108 implementa membresías múltiples con contexto explícito por petición y
@@ -47,7 +49,9 @@ unicidad global. Retirar membresía no revoca sesiones globales ni otros espacio
 No hay registro público. Fuente390f3d0/GitOpscbf737cd/digest06d2fec0 desplegados y
 verificados el14/09/2026: Synced/Healthy, Ready/0reinicios, readiness200, smoke
 Member1440/360, backup/restore y gates completos.108 en revisión sin claim.
-95 lectura/edición está en implementación, quick260914-k34; seguir el Epic.
+95 lectura/edición entregada, quick260914-k34;96 en implementación quick260914-koj.
+97 tiene pregunta bloqueante de proveedor/remitente sólo para activar correo;
+seguir todos los trabajos independientes sin modificar Store/revisor reales.
 
 Epic 3, incrementos 100/104: cuenta con listado/revocación confirmada de
 sesiones web propias, separado de instalaciones Chrome; detalle con
