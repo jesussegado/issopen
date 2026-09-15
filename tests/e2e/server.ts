@@ -35,6 +35,7 @@ await seedMemberManagement(connection.db, auth, "recipient");
 await seedMemberManagement(connection.db, auth, "notification");
 await seedMemberManagement(connection.db, auth, "ownership");
 await seedMemberManagement(connection.db, auth, "audit");
+await seedMemberManagement(connection.db, auth, "mail");
 await seedOnboarding(connection.db, auth);
 const app = createApp({
   captureStorage: new CaptureStorage(

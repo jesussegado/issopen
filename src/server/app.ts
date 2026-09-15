@@ -41,6 +41,7 @@ import {
   resolveHumanAccess,
 } from "./human-access.js";
 import { InvitationService } from "./invitations.js";
+import type { MailConfig } from "./mail-config.js";
 import { createIssopenMcpHandler } from "./mcp/index.js";
 
 type AppBindings = {
@@ -58,6 +59,7 @@ type AppDependencies = {
   webRoot?: string;
   captureStorage?: CaptureStorage | undefined;
   googleAuthEnabled?: boolean;
+  mail?: MailConfig | null;
 };
 
 const workspaceInputSchema = z.object({
@@ -92,6 +94,7 @@ export function createApp({
   webRoot = "./dist/web",
   captureStorage,
   googleAuthEnabled = false,
+  mail = null,
 }: AppDependencies) {
   const app = new Hono<AppBindings>();
   const oauthApi = auth.api as typeof auth.api & {
@@ -107,7 +110,7 @@ export function createApp({
     await next();
     context.header("Referrer-Policy", "no-referrer");
     if (
-      /^\/(?:invite\/|invitations\/|sign-in(?:$|\/)|api\/auth\/|api\/v1\/(?:notifications|workspace\/(?:ownership|audit))(?:$|\/))/.test(
+      /^\/(?:invite\/|invitations\/|sign-in(?:$|\/)|api\/auth\/|api\/v1\/(?:members|invitations|notifications|workspace\/(?:ownership|audit))(?:$|\/))/.test(
         context.req.path,
       )
     )
@@ -391,7 +394,7 @@ export function createApp({
   app.route("/api/v1", createAgentRouter({ db }));
   app.route(
     "/api/v1",
-    createInvitationRouter({ db, baseUrl: String(auth.options.baseURL) }),
+    createInvitationRouter({ db, baseUrl: String(auth.options.baseURL), mail }),
   );
   app.route("/api/v1", createExtensionAccountRouter(db, auth));
   app.route("/api/v1", createEvidenceRouter(db, captureStorage));

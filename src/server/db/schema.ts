@@ -566,6 +566,59 @@ export const workspaceInvitation = pgTable(
   ],
 );
 
+export const invitationDelivery = pgTable(
+  "invitation_delivery",
+  {
+    id: text("id").primaryKey(),
+    workspaceId: text("workspace_id").notNull(),
+    invitationId: text("invitation_id").notNull(),
+    requestedByUserId: text("requested_by_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    tokenHash: varchar("token_hash", { length: 64 }).notNull(),
+    ciphertext: text("ciphertext"),
+    status: varchar("status", { length: 16 }).notNull().default("queued"),
+    attempts: integer("attempts").notNull().default(0),
+    nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    leaseId: text("lease_id"),
+    leaseUntil: timestamp("lease_until", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    sentAt: timestamp("sent_at", { withTimezone: true }),
+    lastErrorCode: varchar("last_error_code", { length: 32 }),
+  },
+  (t) => [
+    foreignKey({
+      columns: [t.invitationId, t.workspaceId],
+      foreignColumns: [workspaceInvitation.id, workspaceInvitation.workspaceId],
+    }).onDelete("restrict"),
+    uniqueIndex("invitation_delivery_generation_idx").on(
+      t.invitationId,
+      t.tokenHash,
+    ),
+    index("invitation_delivery_queue_idx").on(t.status, t.nextAttemptAt),
+    index("invitation_delivery_workspace_created_idx").on(
+      t.workspaceId,
+      t.createdAt,
+    ),
+    check(
+      "invitation_delivery_status_check",
+      sql`${t.status} in ('queued','sending','sent','failed','cancelled')`,
+    ),
+    check(
+      "invitation_delivery_attempts_check",
+      sql`${t.attempts} between 0 and 3`,
+    ),
+    check(
+      "invitation_delivery_ciphertext_check",
+      sql`(${t.status} in ('queued','sending')) = (${t.ciphertext} is not null)`,
+    ),
+  ],
+);
+
 export const issueStatusValues = [
   "backlog",
   "ready",

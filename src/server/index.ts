@@ -5,6 +5,10 @@ import { createAuth } from "./auth.js";
 import { CaptureStorage } from "./capture-storage.js";
 import { ConfigError, loadConfig } from "./config.js";
 import { createDatabase } from "./db/client.js";
+import {
+  InvitationMailWorker,
+  smtpInvitationTransport,
+} from "./invitation-mail.js";
 
 const logger = pino({
   redact: {
@@ -39,15 +43,41 @@ async function main() {
     trustedOrigins: config.trustedOrigins,
     captureStorage,
     googleAuthEnabled: Boolean(config.googleOAuth),
+    mail: config.mail,
   });
   const server = serve({
     fetch: app.fetch,
     hostname: "0.0.0.0",
     port: config.port,
   });
+  const transport = config.mail ? smtpInvitationTransport(config.mail) : null;
+  const mailWorker = new InvitationMailWorker(
+    connection.db,
+    config.mail,
+    config.baseUrl.origin,
+    transport,
+  );
+  let mailRunning: Promise<unknown> | null = null;
+  const timer = setInterval(() => {
+    if (mailRunning) return;
+    mailRunning = mailWorker
+      .runOnce()
+      .catch(() =>
+        logger.warn(
+          "Invitation queue check failed; will retry without logging private payloads",
+        ),
+      )
+      .finally(() => {
+        mailRunning = null;
+      });
+  }, 10000);
+  timer.unref();
 
   const shutdown = async () => {
     server.close();
+    clearInterval(timer);
+    await mailRunning;
+    transport?.close?.();
     await connection.close();
   };
   process.once("SIGINT", shutdown);

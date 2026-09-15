@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Epic3 delivered105;106 gates/release;97 technical work;97/98 external questions pending
-last_updated: "2026-09-15T09:05:00Z"
+stopped_at: Epic3 delivered106;97 technical gates passed releasing;107 matrix;97/98 external prerequisites pending
+last_updated: "2026-09-15T09:34:00Z"
 last_activity: 2026-09-15
 progress:
   total_phases: 9
@@ -22,6 +22,15 @@ See: .planning/PROJECT.md (updated 2026-08-30)
 
 **Core value:** Convertir una intención humana en trabajo estructurado y seguro que ChatGPT y agentes de código externos puedan entender, ejecutar y devolver a revisión dentro de un único flujo trazable.
 **Current focus:** Epic 3 implementation after all 20 human answers (v2).
+106 delivered5044a29/GitOps66d84b95/digest60980357, Healthy/Synced/Ready/PVC,
+isolated1440/360production smokePASS; review/released.97 technical gatesPASS:
+167unit/web111integration36webE2E+2expectedskips,Chrome16unit13E2E, reproducible
+0.6.3/scan408/Compose. Backuprestore113issues1011events13matchingimages19receipts.
+97 releasing disabled SMTP;09:30production env confirms no transport/provider/key.
+97 question0dd7a18c and98 question1abf3039 stillunanswered.107 matrix in docs/
+epic-3-acceptance.md; finish97 safe rollout and record external blockers honestly.
+
+Previous checkpoint:
 105 delivered1033c36/GitOps77699d9d/digesta5673137, Healthy/Synced/Ready0restarts,
 readinessJSONok/PVCunchanged and isolated-network1440/360prodsmokePASS09:01;
 ReadyHumanReview/claimreleased.163unit/web99integration32webE2E+2skips/Chrome16+13,

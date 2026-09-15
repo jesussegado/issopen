@@ -28,6 +28,12 @@ import {
   workspaceMembership,
 } from "./db/schema.js";
 import { DomainError } from "./domain/index.js";
+import {
+  cancelInvitationMail,
+  invitationMailSummaries,
+  queueInvitationMail,
+} from "./invitation-mail.js";
+import type { MailConfig } from "./mail-config.js";
 
 const invitationLifetimeMs = 7 * 24 * 60 * 60 * 1000;
 const provisionalSessionMs = 15 * 60 * 1000;
@@ -36,6 +42,7 @@ export const createInvitationSchema = z
   .object({
     email: z.string().trim().toLowerCase().pipe(z.email().max(320)),
     projectIds: z.array(z.uuid()).min(1).max(100),
+    delivery: z.enum(["manual", "email"]).optional(),
   })
   .strict();
 
@@ -60,6 +67,29 @@ async function lockOwner(db: Database, actor: InvitationActor) {
     .for("update");
   if (!row || row.ownerId !== actor.userId)
     throw new DomainError("forbidden", "Workspace owner required");
+  await requireCurrentOwner(db, actor);
+}
+
+async function requireCurrentOwner(db: Database, actor: InvitationActor) {
+  const [owner] = await db
+    .select({ id: workspace.id })
+    .from(workspace)
+    .innerJoin(
+      workspaceMembership,
+      and(
+        eq(workspaceMembership.workspaceId, workspace.id),
+        eq(workspaceMembership.userId, actor.userId),
+        eq(workspaceMembership.role, "owner"),
+      ),
+    )
+    .where(
+      and(
+        eq(workspace.id, actor.workspaceId),
+        eq(workspace.ownerId, actor.userId),
+      ),
+    )
+    .limit(1);
+  if (!owner) throw new DomainError("forbidden", "Workspace owner required");
 }
 
 export type InvitationActor = {
@@ -134,7 +164,20 @@ async function invitationProjects(db: Database, invitationIds: string[]) {
 }
 
 export class InvitationService {
-  constructor(private readonly db: Database) {}
+  constructor(
+    private readonly db: Database,
+    private readonly mail: MailConfig | null = null,
+  ) {}
+
+  private emailKey(mode: "manual" | "email" | undefined) {
+    if (mode !== "email") return null;
+    if (!this.mail)
+      throw new DomainError(
+        "invalid",
+        "Email sending is not configured. Create and copy a private link instead.",
+      );
+    return this.mail.key;
+  }
 
   async inspect(rawToken: string) {
     const parsed = invitationTokenSchema.safeParse(rawToken);
@@ -160,12 +203,17 @@ export class InvitationService {
 
   async list(actor: InvitationActor) {
     return this.db.transaction(
-      (tx) => new InvitationService(tx).listSnapshot(actor),
+      (tx) => new InvitationService(tx, this.mail).listSnapshot(actor),
       { isolationLevel: "repeatable read", accessMode: "read only" },
     );
   }
 
   private async listSnapshot(actor: InvitationActor) {
+    await requireCurrentOwner(this.db, actor);
+    const deliveries = await invitationMailSummaries(
+      this.db,
+      actor.workspaceId,
+    );
     const [invitations, members] = await Promise.all([
       this.db
         .select()
@@ -211,9 +259,11 @@ export class InvitationService {
       projectsByMember.set(row.userId, values);
     }
     return {
-      invitations: invitations.map((row) =>
-        inviteSummary(row, inviteProjects.get(row.id) ?? []),
-      ),
+      emailEnabled: Boolean(this.mail),
+      invitations: invitations.map((row) => ({
+        ...inviteSummary(row, inviteProjects.get(row.id) ?? []),
+        delivery: deliveries.get(row.id) ?? null,
+      })),
       members: members.map((row) => ({
         ...row,
         projectGrants:
@@ -237,6 +287,7 @@ export class InvitationService {
     actor: InvitationActor,
     input: z.infer<typeof createInvitationSchema>,
   ) {
+    const key = this.emailKey(input.delivery);
     const email = normalizedEmail(input.email);
     const projectIds = [...new Set(input.projectIds)];
     if (projectIds.length !== input.projectIds.length) {
@@ -246,6 +297,7 @@ export class InvitationService {
     const now = new Date();
     const expiresAt = new Date(now.getTime() + invitationLifetimeMs);
     const created = await this.db.transaction(async (tx) => {
+      await lockOwner(tx, actor);
       await tx.execute(
         sql`select pg_advisory_xact_lock(hashtext(${`invitation-email:${actor.workspaceId}:${email}`}))`,
       );
@@ -331,16 +383,23 @@ export class InvitationService {
         actorUserId: actor.userId,
         type: "invitation.created",
       });
+      if (key) await queueInvitationMail(tx, row, rawToken, actor.userId, key);
       return row;
     });
     return { invitation: inviteSummary(created, projectIds), token: rawToken };
   }
 
-  async resend(actor: InvitationActor, invitationId: string) {
+  async resend(
+    actor: InvitationActor,
+    invitationId: string,
+    mode: "manual" | "email" = "manual",
+  ) {
+    const key = this.emailKey(mode);
     const rawToken = invitationToken();
     const now = new Date();
     const expiresAt = new Date(now.getTime() + invitationLifetimeMs);
     const updated = await this.db.transaction(async (tx) => {
+      await lockOwner(tx, actor);
       const [row] = await tx
         .update(workspaceInvitation)
         .set({
@@ -371,6 +430,8 @@ export class InvitationService {
         actorUserId: actor.userId,
         type: "invitation.resent",
       });
+      await cancelInvitationMail(tx, invitationId);
+      if (key) await queueInvitationMail(tx, row, rawToken, actor.userId, key);
       return row;
     });
     const projectIds =
@@ -382,6 +443,7 @@ export class InvitationService {
   async revoke(actor: InvitationActor, invitationId: string) {
     const now = new Date();
     return this.db.transaction(async (tx) => {
+      await lockOwner(tx, actor);
       const [row] = await tx
         .update(workspaceInvitation)
         .set({ revokedAt: now, updatedAt: now })
@@ -407,6 +469,7 @@ export class InvitationService {
         actorUserId: actor.userId,
         type: "invitation.revoked",
       });
+      await cancelInvitationMail(tx, invitationId);
       return { revoked: true, invitationId };
     });
   }

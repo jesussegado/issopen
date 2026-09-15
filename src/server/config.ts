@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { type MailConfig, mailConfig } from "./mail-config.js";
 
 const postgresUrlSchema = z
   .string()
@@ -61,6 +62,7 @@ export type AppConfig = {
   trustedOrigins: string[];
   secureCookies: boolean;
   googleOAuth: { clientId: string; clientSecret: string } | null;
+  mail: MailConfig | null;
 };
 
 export class ConfigError extends Error {
@@ -106,6 +108,17 @@ export function loadConfig(
   }
 
   return {
+    mail: (() => {
+      try {
+        return mailConfig(environment);
+      } catch (error) {
+        throw new ConfigError(
+          error instanceof Error
+            ? error.message
+            : "Invalid invitation mail configuration",
+        );
+      }
+    })(),
     nodeEnv: parsed.data.NODE_ENV,
     port: parsed.data.PORT,
     databaseUrl: parsed.data.DATABASE_URL,

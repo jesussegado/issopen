@@ -18,6 +18,7 @@ import type {
 } from "../types.js";
 
 type MembersResponse = {
+  emailEnabled?: boolean;
   invitations: WorkspaceInvitation[];
   members: WorkspaceMember[];
 };
@@ -51,12 +52,18 @@ export function MembersRoute({ projects }: { projects: Project[] }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<WorkspaceMember | null>(null);
+  const [delivery, setDelivery] = useState<"manual" | "email">("manual");
+  const [inviteSearch, setInviteSearch] = useState("");
+  const [inviteState, setInviteState] = useState("");
+  const [mailState, setMailState] = useState("");
 
   const load = useCallback(async () => {
     try {
       setData(await apiRequest<MembersResponse>("/api/v1/members"));
       setError(null);
     } catch (caught) {
+      setData(null);
+      setInviteUrl(null);
       setError(message(caught));
     }
   }, []);
@@ -88,13 +95,17 @@ export function MembersRoute({ projects }: { projects: Project[] }) {
         "/api/v1/invitations",
         {
           method: "POST",
-          body: JSON.stringify({ email, projectIds }),
+          body: JSON.stringify({ email, projectIds, delivery }),
         },
       );
       setInviteUrl(result.inviteUrl);
       setEmail("");
       setProjectIds([]);
-      setNotice("Invitation created. Copy and send this private link now.");
+      setNotice(
+        delivery === "email"
+          ? "Invitation created and email queued. You can also copy its private link now. Queued is not delivered."
+          : "Invitation created. Copy and send this private link now.",
+      );
       await load();
     } catch (caught) {
       setError(message(caught));
@@ -114,7 +125,18 @@ export function MembersRoute({ projects }: { projects: Project[] }) {
     }
   }
 
-  async function resend(invitationId: string) {
+  async function resend(
+    invitationId: string,
+    mode: "manual" | "email" = "manual",
+  ) {
+    if (
+      !window.confirm(
+        mode === "email"
+          ? "Create a new link and request an email? The previous link stops working. Automatic reminders are never sent."
+          : "Create a new private link? The previous link will stop working.",
+      )
+    )
+      return;
     setBusy(invitationId);
     setError(null);
     setNotice(null);
@@ -122,10 +144,14 @@ export function MembersRoute({ projects }: { projects: Project[] }) {
     try {
       const result = await apiRequest<InvitationResponse>(
         `/api/v1/invitations/${invitationId}/resend`,
-        { method: "POST" },
+        { method: "POST", body: JSON.stringify({ delivery: mode }) },
       );
       setInviteUrl(result.inviteUrl);
-      setNotice("A new link was created. The previous link no longer works.");
+      setNotice(
+        mode === "email"
+          ? "New link created and email queued. The previous link no longer works."
+          : "A new link was created. The previous link no longer works.",
+      );
       await load();
     } catch (caught) {
       setError(message(caught));
@@ -142,6 +168,7 @@ export function MembersRoute({ projects }: { projects: Project[] }) {
     }
     setBusy(invitationId);
     setError(null);
+    setInviteUrl(null);
     try {
       await apiRequest(`/api/v1/invitations/${invitationId}/revoke`, {
         method: "POST",
@@ -182,6 +209,24 @@ export function MembersRoute({ projects }: { projects: Project[] }) {
   const projectNames = new Map(
     projects.map((project) => [project.id, project.name]),
   );
+  const filteredInvitations =
+    data?.invitations.filter(
+      (i) =>
+        (!inviteSearch ||
+          `${i.email} ${i.projectIds.map((id) => projectNames.get(id) ?? "").join(" ")}`
+            .toLowerCase()
+            .includes(inviteSearch.trim().toLowerCase())) &&
+        (!inviteState || i.state === inviteState) &&
+        (!mailState || (i.delivery?.status ?? "manual") === mailState),
+    ) ?? [];
+  const mailLabels: Record<string, string> = {
+    manual: "Manual link (no email requested)",
+    queued: "Email queued; not sent yet",
+    sending: "Sending email",
+    sent: "Accepted by mail server (not proof of inbox delivery)",
+    failed: "Email failed; create a new link to retry",
+    cancelled: "Email cancelled; invitation state is shown separately",
+  };
 
   return (
     <div className="page-stack members-page">
@@ -199,6 +244,9 @@ export function MembersRoute({ projects }: { projects: Project[] }) {
           {error}
         </StatusBanner>
       ) : null}
+      <Button variant="secondary" type="button" onClick={() => void load()}>
+        Refresh invitations and members
+      </Button>
       {notice ? <StatusBanner>{notice}</StatusBanner> : null}
       {inviteUrl ? (
         <section
@@ -262,6 +310,25 @@ export function MembersRoute({ projects }: { projects: Project[] }) {
             </label>
           ))}
         </fieldset>
+        <Field label="Delivery method" htmlFor="invite-delivery">
+          <select
+            id="invite-delivery"
+            value={delivery}
+            onChange={(e) =>
+              setDelivery(e.currentTarget.value as "manual" | "email")
+            }
+          >
+            <option value="manual">Copy a private link</option>
+            <option value="email" disabled={!data?.emailEnabled}>
+              Send email and show link
+            </option>
+          </select>
+        </Field>
+        <p className="helper-copy">
+          {data?.emailEnabled
+            ? "Only explicitly requested emails are sent. No automatic reminders."
+            : "Email is not configured. You can create a private link and share it yourself."}
+        </p>
         <Button type="submit" disabled={busy === "create"}>
           {busy === "create" ? "Creating invitation…" : "Create invitation"}
         </Button>
@@ -277,19 +344,75 @@ export function MembersRoute({ projects }: { projects: Project[] }) {
           >
             <div className="section-heading">
               <h2 id="pending-invitations">Invitations</h2>
-              <Badge>{data.invitations.length}</Badge>
+              <Badge>
+                {filteredInvitations.length} / {data.invitations.length}
+              </Badge>
             </div>
-            {data.invitations.length === 0 ? (
+            <div className="form-stack">
+              <Field label="Find invitations" htmlFor="invite-search">
+                <TextInput
+                  id="invite-search"
+                  value={inviteSearch}
+                  onChange={(e) => setInviteSearch(e.currentTarget.value)}
+                  placeholder="Email or project"
+                />
+              </Field>
+              <Field label="Invitation status" htmlFor="invite-state">
+                <select
+                  id="invite-state"
+                  value={inviteState}
+                  onChange={(e) => setInviteState(e.currentTarget.value)}
+                >
+                  <option value="">All invitation statuses</option>
+                  {Object.entries(invitationLabels).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Email status" htmlFor="mail-state">
+                <select
+                  id="mail-state"
+                  value={mailState}
+                  onChange={(e) => setMailState(e.currentTarget.value)}
+                >
+                  <option value="">All delivery statuses</option>
+                  {Object.entries(mailLabels).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            </div>
+            {filteredInvitations.length === 0 ? (
               <EmptyState
-                heading="No invitations yet"
-                body="Create the first invitation when you are ready to add a member."
+                heading="No matching invitations"
+                body="Adjust the filters or create an invitation when you are ready to add a member."
               />
             ) : (
               <ul className="access-list">
-                {data.invitations.map((invitation) => (
+                {filteredInvitations.map((invitation) => (
                   <li key={invitation.id} className="access-list-item">
                     <div>
                       <strong>{invitation.email}</strong>
+                      <p className="metadata">
+                        {mailLabels[invitation.delivery?.status ?? "manual"]}
+                        {invitation.delivery
+                          ? ` · ${invitation.delivery.attempts}/3 attempts`
+                          : ""}
+                      </p>
+                      {invitation.delivery?.status === "queued" &&
+                      invitation.delivery.attempts > 0 ? (
+                        <p className="helper-copy">
+                          Temporary mail-server failure. Next retry:{" "}
+                          {new Date(
+                            invitation.delivery.nextAttemptAt,
+                          ).toLocaleString()}
+                          .
+                        </p>
+                      ) : null}
                       <p className="metadata">
                         {invitationLabels[invitation.state]} ·{" "}
                         {invitation.projectIds
@@ -305,6 +428,18 @@ export function MembersRoute({ projects }: { projects: Project[] }) {
                       </p>
                     </div>
                     <div className="access-actions">
+                      {data.emailEnabled &&
+                      (invitation.state === "pending" ||
+                        invitation.state === "expired") ? (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          disabled={busy === invitation.id}
+                          onClick={() => void resend(invitation.id, "email")}
+                        >
+                          Email a new link
+                        </Button>
+                      ) : null}
                       {invitation.state === "pending" ||
                       invitation.state === "expired" ? (
                         <Button

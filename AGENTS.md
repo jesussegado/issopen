@@ -29,6 +29,16 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+97: [operación y entrega de invitaciones](docs/invitation-delivery.md).0030 cola
+durable cifrada AES-GCM con clave independiente,3intentos/leases/idempotencia de
+generación, rotación/revocación/purga, estados email separados y filtros en Members.
+SMTP defaultdisabled; no proveedor/remitente/piloto real autorizado todavía.
+Revalidar Owner canónico dentro de crear/renovar/revocar, no sólo rol HTTP previo.
+107: [matriz de aceptación](docs/epic-3-acceptance.md); automatización y producción
+dedicada no sustituyen pilotoGoogle real98 ni Store87/88. No cerrar por inferencia.
+106 entregado5044a29/GitOps66d84b95/digest60980357;Healthy/Synced/PVCintactos,
+smoke1440/360PASS incluyendo auditMember403/no-store; revisiónhumana/sinclaim.
+
 106: [auditoría administrativa](docs/access-audit.md), Owner-only, paginada por
 fecha/source/id con microsegundos exactos. Reutiliza membership/invitation/ownership,
 sin nuevo ledger duplicado ni datos de sesiones personales.0029 snapshots futuros

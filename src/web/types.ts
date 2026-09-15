@@ -37,6 +37,13 @@ export type InvitationState =
   | "revoked";
 
 export type WorkspaceInvitation = {
+  delivery?: {
+    status: "queued" | "sending" | "sent" | "failed" | "cancelled";
+    attempts: number;
+    nextAttemptAt: string;
+    sentAt: string | null;
+    lastErrorCode: string | null;
+  } | null;
   id: string;
   email: string;
   role: "member";

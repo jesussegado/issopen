@@ -1,6 +1,6 @@
 ---
 type: quick
-status: executing
+status: verified-local-releasing
 ticket: 97
 epic: 3
 ---

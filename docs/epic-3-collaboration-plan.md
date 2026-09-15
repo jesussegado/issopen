@@ -16,10 +16,13 @@ Checkpoint15Sep:95/96/99/101/102 también entregados y en revisión humana, sin 
 98 entregado técnicamente pero con warning para pilotoGoogle real;97 necesita
 proveedor/remitente/destinatario piloto sólo para email real.103 entregado75dfb6e/
 GitOpsbfd8fce con producción verificada y revisión humana.105 entregado1033c36/
-GitOps77699d9d, producción verificada y revisión humana.106 validado163unit/web
-102integración34webE2E+2skips/Chrome16+13/reproducible/scan397/Compose y restore;
-en publicación.97 técnico en curso,97/98 decisiones operativas pendientes09:03.
-107 aceptación combinada pendiente. No se declara terminado el Epic.
+GitOps77699d9d, producción verificada y revisión humana.106 entregado5044a29/
+GitOps66d84b95/digest60980357,163unit/web102integración34webE2E+2skips/Chrome16+13,
+reproducible/scan397/Compose/restore y smoke1440/360PASS; revisiónhumana/sinclaim.
+97 cola/transporte/filtros implementados, gates globales en curso; email real
+desactivado esperando proveedor/From/piloto.98 pilotoGoogle sigue pendiente.
+107 [matriz combinada](epic-3-acceptance.md) documenta pruebas y límites externos.
+No se declara terminado el Epic ni se confunde este piloto con Store87/88.
 
 ## Contrato tras respuestas — ticket 94
 

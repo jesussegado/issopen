@@ -14,6 +14,7 @@ import {
   memberVersionSchema,
   updateMemberSchema,
 } from "../invitations.js";
+import type { MailConfig } from "../mail-config.js";
 
 type InvitationBindings = {
   Variables: {
@@ -41,12 +42,14 @@ function identifier(value: string, field: string) {
 export function createInvitationRouter({
   db,
   baseUrl,
+  mail = null,
 }: {
   db: Database;
   baseUrl: string;
+  mail?: MailConfig | null;
 }) {
   const router = new Hono<InvitationBindings>();
-  const invitations = new InvitationService(db);
+  const invitations = new InvitationService(db, mail);
   const response = <T extends { invitation: unknown; token: string }>(
     result: T,
   ) => {
@@ -82,6 +85,19 @@ export function createInvitationRouter({
   });
 
   router.post("/invitations/:invitationId/resend", async (context) => {
+    const text = await context.req.text();
+    let raw: unknown = {};
+    try {
+      raw = text ? JSON.parse(text) : {};
+    } catch {
+      throw new DomainError("invalid", "Invalid invitation delivery request");
+    }
+    const input = z
+      .object({ delivery: z.enum(["manual", "email"]).optional() })
+      .strict()
+      .safeParse(raw);
+    if (!input.success)
+      throw new DomainError("invalid", "Invalid invitation delivery request");
     const invitationId = identifier(
       context.req.param("invitationId"),
       "invitationId",
@@ -91,6 +107,7 @@ export function createInvitationRouter({
         await invitations.resend(
           owner(context.get("humanAccess")),
           invitationId,
+          input.data.delivery,
         ),
       ),
     );

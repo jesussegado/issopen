@@ -1,8 +1,9 @@
 # Member invitations and Google verification
 
-Status: implemented for Epic 7 ticket 81. Email delivery is deliberately manual
-for the pilot; the Owner copies the private link from Issopen and sends it over a
-trusted channel.
+Protocol implemented in Epic7 ticket81; Epic3 ticket97 adds configurable delivery
+and filters without changing this protocol. See [invitation delivery](invitation-delivery.md).
+Email remains disabled in production pending authorized provider/From/pilot;
+the Owner can copy a private link and share it through a trusted channel.
 
 ## Human flow
 
@@ -33,6 +34,9 @@ membership.
 - `workspace_invitation` stores only SHA-256 of a 256-bit random token, never
   the raw link. It records expiry, claim, acceptance, revocation and the exact
   provisional session, if any.
+- Optional97 email outbox temporarily stores only AES-256-GCM encrypted token,
+  separate operator key, then purges on delivery/final failure/expiry/revocation.
+  No URL bearer is persisted in plaintext; existing invites are not auto-enqueued.
 - `workspace_invitation_project` binds each planned grant to the same workspace
   through composite foreign keys.
 - `workspace_invitation_event` and `membership_event` are protected by

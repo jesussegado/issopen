@@ -7,3 +7,8 @@ allowBuilds:
   esbuild: true
   protobufjs: false
   ssh2: false
+
+minimumReleaseAgeExclude:
+  # Pinned, reviewed SMTP multiline-reply hardening (2026-09-14); no dependencies
+  # or install scripts. Scope stays this exact release, not the whole package.
+  - nodemailer@10.0.10
