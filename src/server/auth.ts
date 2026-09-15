@@ -59,7 +59,8 @@ export function createAuth(db: Database, config: AppConfig) {
         updateUserInfoOnLink: false,
       },
     },
-    disabledPaths: ["/sign-up/email"],
+    // Local profile API applies bounds/versioning; provider URLs are never avatars.
+    disabledPaths: ["/sign-up/email", "/update-user"],
     // Revocation must affect the next request, including on other browsers.
     session: { cookieCache: { enabled: false } },
     plugins: [

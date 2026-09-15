@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { AccountSessions } from "../components/AccountSessions.js";
+import { ProfileEditor } from "../components/ProfileEditor.js";
 import { Badge, Button, PageHeading, StatusBanner } from "../components/ui.js";
 import type { Session } from "../types.js";
 
@@ -8,7 +9,13 @@ type LinkedAccount = {
   providerId: string;
 };
 
-export function AccountRoute({ session }: { session: Session }) {
+export function AccountRoute({
+  session,
+  onProfileSaved,
+}: {
+  session: Session;
+  onProfileSaved?: (name: string) => void;
+}) {
   const [googleAvailable, setGoogleAvailable] = useState<boolean | null>(null);
   const [googleLinked, setGoogleLinked] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -97,6 +104,7 @@ export function AccountRoute({ session }: { session: Session }) {
         </StatusBanner>
       ) : null}
       {error ? <StatusBanner error>{error}</StatusBanner> : null}
+      <ProfileEditor onSaved={onProfileSaved} />
       <section className="detail-panel form-stack">
         <h2>Profile</h2>
         <dl className="metadata-list">

@@ -31,6 +31,27 @@ export const user = pgTable("user", {
     .notNull(),
 });
 
+// One bounded local avatar; never reuse/fetch the provider's image URL.
+export const userProfile = pgTable(
+  "user_profile",
+  {
+    userId: text("user_id")
+      .primaryKey()
+      .references(() => user.id, { onDelete: "cascade" }),
+    version: text("version").notNull().default(sql`gen_random_uuid()::text`),
+    avatarPng: text("avatar_png"),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    check(
+      "user_profile_avatar_size_check",
+      sql`${table.avatarPng} IS NULL OR length(${table.avatarPng}) <= 131094`,
+    ),
+  ],
+);
+
 export const session = pgTable(
   "session",
   {

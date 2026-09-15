@@ -1156,7 +1156,8 @@ describe("human Chrome OAuth", () => {
     expect(
       (await post("/captures", body, readOnly.tokens.access_token)).status,
     ).toBe(403);
-  });
+    // Three OAuth handshakes plus startup/restore of a second PostgreSQL.
+  }, 30_000);
   it("links with PKCE, reads human projects, rotates refresh and revokes one installation independently", async () => {
     const first = await connect();
     const second = await connect();

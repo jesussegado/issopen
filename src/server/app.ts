@@ -30,6 +30,7 @@ import {
   createTrackerRouter,
   domainErrorResponse,
 } from "./http/index.js";
+import { createProfileRouter } from "./http/profiles.js";
 import {
   type HumanAccess,
   listHumanWorkspaces,
@@ -382,6 +383,7 @@ export function createApp({
 
   app.route("/api/v1", createTrackerRouter({ db, auth }));
   app.route("/api/v1", createAccountRouter(db, auth));
+  app.route("/api/v1", createProfileRouter(db));
   app.route("/api/v1", createAgentRouter({ db }));
   app.route(
     "/api/v1",

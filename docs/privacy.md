@@ -24,7 +24,8 @@ dashboard de Google/Chrome; no mantener otro texto contradictorio.
 | Dato | Origen | Almacenamiento | Retención/control |
 | --- | --- | --- | --- |
 | nombre, email, avatar e IDs humanos | login local o Google OIDC | `user`, `account`, `session` en PostgreSQL | sesión hasta caducidad/revocación; membresía revocable; corrección/supresión completa por petición verificada |
-| membresías y proyectos permitidos | invitación/owner | PostgreSQL | hasta retirada; retirarla invalida sesiones y OAuth del miembro |
+| perfil y avatar local opcional | edición explícita en Cuenta | `user.name`, `user_profile` en PostgreSQL, un PNG validado de hasta128×128/96KiB | nombre y avatar visibles sólo a colaboradores actuales del proyecto; guardar reemplaza el avatar activo; quitar+guardar elimina el activo, no backups/cachés previos |
+| membresías y proyectos permitidos | invitación/owner | PostgreSQL | hasta retirada; retirarla bloquea acceso al workspace y su OAuth Chrome, sin revocar sesiones web globales ni otros workspaces (108) |
 | instalación, cliente y tokens Chrome | OAuth PKCE explícito | `oauth_client`/tokens en PostgreSQL y `chrome.storage.local` | access 5 min, vínculo/refresh máximo 30 días; desconectar o revocar elimina acceso y renovación |
 | proyecto/Epic/ticket, preguntas, comentarios, links y actividad | persona o agente autorizado | PostgreSQL | mientras el workspace lo necesite; borrar ticket es lógico y se declara como tal |
 | imágenes elegidas | pegado/subida explícitos | borrador IndexedDB; luego PNG normalizado en PVC privado y referencia en PostgreSQL | borrador máximo 24 h; uploader u owner pueden borrar cada imagen del almacenamiento activo |
@@ -38,6 +39,13 @@ owner; elimina la fila, retira el PNG del volumen activo y registra
 `canDelete` por evidencia para que la UI no ofrezca una acción denegada. Las
 copias descargadas y backups anteriores quedan fuera del alcance técnico de esa
 acción y se advierte antes de confirmar.
+
+99 actualiza el inventario técnico público a1.1 (15/09/2026), sin cambiar finalidades
+de Chrome ni permisos del paquete enviado0.6.2. La vista de perfil no usa URLs de
+Google como imágenes compartidas, no edita email/proveedor ni reescribe actividad
+histórica. Directorio paginado sólo por proyecto autorizado, sin emails del equipo.
+La web hace explícito cuándo se guarda y que los backups previos pueden conservar
+el avatar retirado. No se modificó el dashboard Store durante esta entrega web.
 
 ## RGPD básico para el piloto UE
 

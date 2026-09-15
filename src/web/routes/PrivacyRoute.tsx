@@ -7,7 +7,7 @@ export function PrivacyRoute() {
   return (
     <PublicShell>
       <article className="privacy-notice">
-        <p className="eyebrow">Versión 1.0 · vigente desde 13/09/2026</p>
+        <p className="eyebrow">Versión 1.1 · vigente desde 15/09/2026</p>
         <PageHeading>Privacidad y datos de Issopen</PageHeading>
         <p>
           Issopen es un gestor privado de tickets. Su extensión de Chrome tiene
@@ -53,6 +53,27 @@ export function PrivacyRoute() {
                     se conservan mientras sean necesarios para operar y auditar
                     el workspace. El owner puede retirar una membresía; para
                     borrar o corregir la cuenta, usa el contacto anterior.
+                  </td>
+                </tr>
+                <tr>
+                  <th>Perfil compartido</th>
+                  <td>
+                    Puedes editar tu nombre y elegir un avatar local desde
+                    Cuenta. La imagen se prepara como PNG de hasta 128×128
+                    píxeles y 96 KiB, sin metadatos auxiliares, y se guarda en
+                    PostgreSQL sólo al pulsar «Save profile». No cargamos URLs
+                    externas de avatar. El directorio de cada proyecto muestra
+                    nombre, rol, permiso y avatar a sus colaboradores actuales;
+                    no muestra emails ni identificadores del proveedor de login.
+                  </td>
+                  <td>
+                    Se conserva sólo el avatar actual. «Remove avatar» seguido
+                    de «Save profile» lo retira de la base activa; backups y
+                    copias previas pueden conservarlo. Cambiar el nombre no
+                    reescribe la atribución histórica ni cambia el email de
+                    acceso. Retirar acceso a un proyecto bloquea nuevas
+                    consultas a su directorio e imágenes, pero no borra copias
+                    ya vistas o descargadas.
                   </td>
                 </tr>
                 <tr>

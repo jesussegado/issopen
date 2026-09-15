@@ -313,6 +313,12 @@ export function BoardRoute({
           </div>
         </div>
         <div className="page-actions">
+          <AppLink
+            className="button button-secondary"
+            href={`/projects/${project.id}/collaborators`}
+          >
+            Collaborators
+          </AppLink>
           {canManageProject ? (
             <AppLink
               className="button button-secondary"

@@ -29,6 +29,16 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+99 implementa perfil propio (nombre/avatar local) y directorio por proyecto,
+sin emails/providerURLs: [contrato](docs/profiles-and-collaborators.md).
+0022 añade user_profile opcional en PostgreSQL, CAS UUID y PNG validado128×128/96KiB;
+sin nuevos PVCs. Guardar es explícito,409 conserva borrador/compara. Directorio
+revalida acceso y oculta personas sin grants; reutilizar CollaboratorService para
+101/102/103. No cambiar email/proveedor ni snapshots históricos ni revisor real.
+Gates99:155unit/web84integration24webE2E+2skips, Chrome16+13/reproducible0.6.3,
+scan349, ComposePASS. Backup15Sep/restauración aislada:113issues967events13images
+con hashes19receipts. Despliegue99 pendiente: no asumir entregado por existir código.
+
 98 mejora invitaciones/login: recuperación explícita, cabeceras privadas, returnTo
 interno estricto y destino un proyecto/selector/espera. [Contrato](docs/invited-onboarding.md).
 Desplegado19f3a81/GitOpsbebfda10/digest5bcce1f6: Synced/Healthy, readiness200,

@@ -12,6 +12,7 @@ import {
 import { AccountRoute } from "./routes/AccountRoute.js";
 import { AgentsRoute } from "./routes/AgentsRoute.js";
 import { BoardRoute } from "./routes/BoardRoute.js";
+import { CollaboratorsRoute } from "./routes/CollaboratorsRoute.js";
 import { ConnectRoute, ConsentRoute } from "./routes/ConnectRoute.js";
 import {
   EpicDetailRoute,
@@ -254,6 +255,9 @@ function AuthenticatedApp({
 
   let route: React.ReactNode;
   const projectMatch = pathname.match(/^\/projects\/([^/]+)$/);
+  const collaboratorsMatch = pathname.match(
+    /^\/projects\/([^/]+)\/collaborators$/,
+  );
   const projectSettingsMatch = pathname.match(
     /^\/projects\/([^/]+)\/settings$/,
   );
@@ -292,7 +296,25 @@ function AuthenticatedApp({
     route = <AgentsRoute projects={projects} />;
   else if (pathname === "/members" && session.workspace.role === "owner")
     route = <MembersRoute projects={projects} />;
-  else if (pathname === "/account") route = <AccountRoute session={session} />;
+  else if (pathname === "/account")
+    route = (
+      <AccountRoute
+        session={session}
+        onProfileSaved={(name) =>
+          onSession({
+            kind: "authenticated",
+            session: { ...session, user: { ...session.user, name } },
+          })
+        }
+      />
+    );
+  else if (collaboratorsMatch?.[1])
+    route = (
+      <CollaboratorsRoute
+        key={collaboratorsMatch[1]}
+        projectId={collaboratorsMatch[1]}
+      />
+    );
   else if (pathname === "/connect" && session.workspace.role === "owner")
     route = <ConnectRoute />;
   else if (pathname === "/extensions") route = <ExtensionsRoute />;
