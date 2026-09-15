@@ -30,6 +30,7 @@ import {
   createTrackerRouter,
   domainErrorResponse,
 } from "./http/index.js";
+import { createOwnershipRouter } from "./http/ownership.js";
 import { createProfileRouter } from "./http/profiles.js";
 import {
   type HumanAccess,
@@ -105,7 +106,7 @@ export function createApp({
     await next();
     context.header("Referrer-Policy", "no-referrer");
     if (
-      /^\/(?:invite\/|invitations\/|sign-in(?:$|\/)|api\/auth\/|api\/v1\/notifications(?:$|\/))/.test(
+      /^\/(?:invite\/|invitations\/|sign-in(?:$|\/)|api\/auth\/|api\/v1\/(?:notifications|workspace\/ownership)(?:$|\/))/.test(
         context.req.path,
       )
     )
@@ -384,6 +385,7 @@ export function createApp({
   app.route("/api/v1", createTrackerRouter({ db, auth }));
   app.route("/api/v1", createAccountRouter(db, auth));
   app.route("/api/v1", createProfileRouter(db));
+  app.route("/api/v1", createOwnershipRouter(db));
   app.route("/api/v1", createAgentRouter({ db }));
   app.route(
     "/api/v1",

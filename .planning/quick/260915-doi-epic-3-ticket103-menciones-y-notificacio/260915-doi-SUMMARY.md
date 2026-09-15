@@ -1,4 +1,4 @@
-# 103 — Local gates verified, deployment pending
+# 103 — Delivered and verified
 
 Directed in-app inbox with private count/read markers, scoped cursor and minimal
 content. Atomic events for assignments, questions, mentions and assigned-editor
@@ -22,7 +22,10 @@ rebuilt full validation passes. This is test history, not a production incident.
 
 Backup .local/backups/epic3-notifications-20260915/issopen-ghrLoY restored isolated
 PG18.6/networknone:113issues988events13images matching hashes/bytes19receipts.
-Source/image/GitOps observation and production read-only smoke required before
-moving103 to review.102 delivereda6f4297/GitOpsa6e79100; actual97/98 external
+Source75dfb6e/GitOpsbfd8fce/image notifications-75dfb6e digestaa9a22d3 observed
+Synced/Healthy/Ready0restarts, unchangedPVC and readinessJSONok. Production
+Member1440/360 smokePASS08:32 including inbox/count/filter. Only newly created
+smoke sessions revoked; no real answers/tickets/grants/previous sessions changed.
+103 ReadyHumanReview/claimreleased.102 delivereda6f4297/GitOpsa6e79100; actual97/98 external
 questions remain unanswered08:19.105 nextquick260915-e7e: explicit web transfer,
 auth assurance must distinguish login from a freshly minted invitation session.

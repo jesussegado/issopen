@@ -183,6 +183,27 @@
       "when": 1789458925774,
       "tag": "0025_directed_notifications",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1789460587563,
+      "tag": "0026_protected_ownership",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1789460698027,
+      "tag": "0027_ownership_consent_session",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1789461485057,
+      "tag": "0028_ownership_operator_audit",
+      "breakpoints": true
     }
   ]
 }

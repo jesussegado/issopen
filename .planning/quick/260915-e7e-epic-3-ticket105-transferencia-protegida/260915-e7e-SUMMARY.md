@@ -1,0 +1,28 @@
+# 105 — Protected transfer implemented, release verification
+
+Web-only proposal/accept/cancel, server login assurance within5min for both people,
+Owner session-bound consent, typed name and membership/workspace CAS. Invitation
+session creation/refresh do not mint assurance. Google provider login is not forced
+password/MFA. No real Google pilot claimed. Eligibility retains one-owned-space
+constraint. Atomic current owner/roles/issue-version reconciliation and historical
+audit; former Owner gets edit only for already accessible current projects.
+Preserve comments/answers/claims/assignees/attribution and external token scopes.
+
+Operator recovery verifies current canonical Owner, distinct from instance bootstrap,
+supports unique local emergency credential, revokes that identity's global web
+sessions only; infrastructure operator attribution, no secrets. Never executed on
+real Owner/reviewer. docs/workspace-ownership.md explains both paths and recovery.
+
+Tests found invalid upsert conflict target (actual project-membership PK is
+projectId/userId); corrected and all transaction tests pass. Added injected audit
+failure proving rollback of roles/grants/issues/proposal. Two isolated browser
+users confirm/cancel at1440/360, mobile reviewed; fields match existing form style.
+Final full gatesPASS08:46:163unit/web99integration32webE2E+2expectedskips,
+Chrome16unit13E2E/reproducible0.6.3/scan390;ComposePASS. No source runtime changes
+after this clean full run. Source/image/GitOps observation still required.
+
+Backup .local/backups/epic3-ownership-20260915/issopen-uROyx4 isolatedPG18.6networknone
+restorePASS:113issues995events13images matchingbytes/hashes19receipts. Source/image/
+GitOps exact revision, health and production readonly smoke required before review.
+103 delivered75dfb6e/bfd8fce/aa9a22d3, readyHumanReview/released.106 claimed+planned
+quick260915-exk;97/98 real-provider questions pending, continue independent work.

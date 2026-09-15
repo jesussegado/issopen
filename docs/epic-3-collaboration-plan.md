@@ -14,8 +14,9 @@ producción verificada y tickets Ready for Human Review sin claims.108 entregado
 después:fuente390f3d0/GitOpscbf737cd, digest06d2fec0, Synced/Healthy y smokePASS.
 Checkpoint15Sep:95/96/99/101/102 también entregados y en revisión humana, sin claims.
 98 entregado técnicamente pero con warning para pilotoGoogle real;97 necesita
-proveedor/remitente/destinatario piloto sólo para email real.103 validado localmente
-y en publicación;105/106/97/107 siguen pendientes. No se declara terminado el Epic.
+proveedor/remitente/destinatario piloto sólo para email real.103 entregado75dfb6e/
+GitOpsbfd8fce con producción verificada y revisión humana.105 implementado en
+verificación/liberación;106/97/107 siguen pendientes. No se declara terminado el Epic.
 
 ## Contrato tras respuestas — ticket 94
 

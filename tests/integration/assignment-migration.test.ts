@@ -59,6 +59,15 @@ it("adds optional human assignment without rewriting old ownership, claims, stat
       web_request_hash: null,
     });
     expect(await connection.client`select * from notification`).toHaveLength(0);
+    expect(
+      await connection.client`select * from authentication_assurance`,
+    ).toHaveLength(0);
+    expect(
+      await connection.client`select * from ownership_transfer`,
+    ).toHaveLength(0);
+    expect(await connection.client`select * from ownership_event`).toHaveLength(
+      0,
+    );
     const current = (await connection.client`select * from issue`)[0];
     expect(current).toEqual({
       ...before,

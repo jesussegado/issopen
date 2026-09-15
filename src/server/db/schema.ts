@@ -73,6 +73,32 @@ export const session = pgTable(
   (table) => [index("session_user_id_idx").on(table.userId)],
 );
 
+// Sensitive ownership operations require a successful login, not merely a new
+// session minted by invitation acceptance or cookie refresh.
+export const authenticationAssurance = pgTable(
+  "authentication_assurance",
+  {
+    sessionId: text("session_id")
+      .primaryKey()
+      .references(() => session.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    method: varchar("method", { length: 16 })
+      .$type<"password" | "google">()
+      .notNull(),
+    authenticatedAt: timestamp("authenticated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    check(
+      "authentication_assurance_method_check",
+      sql`${table.method} in ('password','google')`,
+    ),
+  ],
+);
+
 export const account = pgTable(
   "account",
   {
@@ -366,6 +392,88 @@ export const workspace = pgTable(
       .notNull(),
   },
   (table) => [index("workspace_owner_id_idx").on(table.ownerId)],
+);
+
+export const ownershipTransfer = pgTable(
+  "ownership_transfer",
+  {
+    id: text("id").primaryKey(),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => workspace.id, { onDelete: "restrict" }),
+    fromUserId: text("from_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    toUserId: text("to_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    fromName: varchar("from_name", { length: 120 }).notNull(),
+    fromSessionId: text("from_session_id").references(() => session.id, {
+      onDelete: "set null",
+    }),
+    toName: varchar("to_name", { length: 120 }).notNull(),
+    workspaceVersion: integer("workspace_version").notNull(),
+    recipientMembershipVersion: text("recipient_membership_version").notNull(),
+    version: text("version").notNull().default(sql`gen_random_uuid()::text`),
+    requestId: text("request_id").notNull(),
+    status: varchar("status", { length: 16 })
+      .$type<"pending" | "accepted" | "cancelled">()
+      .notNull()
+      .default("pending"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+  },
+  (table) => [
+    uniqueIndex("ownership_transfer_request_idx").on(
+      table.workspaceId,
+      table.fromUserId,
+      table.requestId,
+    ),
+    index("ownership_transfer_workspace_created_idx").on(
+      table.workspaceId,
+      table.createdAt,
+    ),
+    check(
+      "ownership_transfer_status_check",
+      sql`${table.status} in ('pending','accepted','cancelled')`,
+    ),
+    check(
+      "ownership_transfer_distinct_people_check",
+      sql`${table.fromUserId} <> ${table.toUserId}`,
+    ),
+  ],
+);
+
+export const ownershipEvent = pgTable(
+  "ownership_event",
+  {
+    id: text("id").primaryKey(),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => workspace.id, { onDelete: "restrict" }),
+    transferId: text("transfer_id").references(() => ownershipTransfer.id, {
+      onDelete: "restrict",
+    }),
+    actorUserId: text("actor_user_id").references(() => user.id, {
+      onDelete: "restrict",
+    }),
+    actorName: varchar("actor_name", { length: 120 }).notNull(),
+    type: varchar("type", { length: 64 }).notNull(),
+    changes: jsonb("changes").$type<Record<string, unknown>>().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("ownership_event_workspace_created_idx").on(
+      table.workspaceId,
+      table.createdAt,
+      table.id,
+    ),
+  ],
 );
 
 export const workspaceRoleValues = ["owner", "member"] as const;

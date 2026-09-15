@@ -12,8 +12,11 @@ import {
 import {
   account,
   instanceOwner,
+  ownershipEvent,
   session,
   user,
+  workspace,
+  workspaceMembership,
 } from "../src/server/db/schema.js";
 
 const OWNER_LOCK_ID = 4_974_957_679_781;
@@ -150,6 +153,94 @@ export async function recoverOwner(
   });
 }
 
+// Operator-only break-glass: verify the current canonical workspace Owner,
+// not the instance bootstrap identity or a caller's claimed role.
+export async function recoverWorkspaceOwner(
+  db: Database,
+  auth: IssopenAuth,
+  workspaceId: string,
+  input: OwnerInput,
+): Promise<void> {
+  z.uuid().parse(workspaceId);
+  const owner = ownerInputSchema.parse(input);
+  const passwordHash = await (await auth.$context).password.hash(
+    owner.password,
+  );
+  await db.transaction(async (tx) => {
+    const [space] = await tx
+      .select()
+      .from(workspace)
+      .where(eq(workspace.id, workspaceId))
+      .for("update");
+    if (!space)
+      throw new OwnerCommandError(
+        "Workspace recovery could not verify the current Owner.",
+      );
+    const [identity] = await tx
+      .select({ id: user.id, name: user.name })
+      .from(user)
+      .innerJoin(
+        workspaceMembership,
+        and(
+          eq(workspaceMembership.userId, user.id),
+          eq(workspaceMembership.workspaceId, workspaceId),
+          eq(workspaceMembership.role, "owner"),
+        ),
+      )
+      .where(
+        and(
+          eq(user.id, space.ownerId),
+          eq(user.email, owner.email),
+          eq(user.emailVerified, true),
+        ),
+      )
+      .for("update");
+    if (!identity)
+      throw new OwnerCommandError(
+        "Workspace recovery could not verify the current Owner.",
+      );
+    const [credential] = await tx
+      .select({ id: account.id })
+      .from(account)
+      .where(
+        and(
+          eq(account.userId, identity.id),
+          eq(account.providerId, "credential"),
+          eq(account.issuer, CREDENTIAL_ISSUER),
+        ),
+      );
+    if (credential)
+      await tx
+        .update(account)
+        .set({ password: passwordHash, updatedAt: new Date() })
+        .where(eq(account.id, credential.id));
+    else
+      await tx.insert(account).values({
+        id: randomUUID(),
+        issuer: CREDENTIAL_ISSUER,
+        accountId: identity.id,
+        providerId: "credential",
+        userId: identity.id,
+        password: passwordHash,
+      });
+    await tx.delete(session).where(eq(session.userId, identity.id));
+    await tx.insert(ownershipEvent).values({
+      id: randomUUID(),
+      workspaceId,
+      actorUserId: null,
+      actorName: "Infrastructure operator",
+      type: "ownership.recovered",
+      changes: {
+        subject: { id: identity.id, name: identity.name.slice(0, 120) },
+        credential: credential ? "rotated" : "created",
+        webSessions: "all_for_identity_revoked",
+        ownershipChanged: false,
+        externalTokensChanged: false,
+      },
+    });
+  });
+}
+
 function commandInput(): OwnerInput {
   const email = process.env.ISSOPEN_OWNER_EMAIL;
   const password = process.env.ISSOPEN_OWNER_PASSWORD;
@@ -188,7 +279,22 @@ async function runCommand(connection: DatabaseConnection) {
     return;
   }
 
-  throw new OwnerCommandError("Use owner bootstrap or owner recover.");
+  if (operation === "recover-workspace") {
+    const workspaceId = process.env.ISSOPEN_WORKSPACE_ID;
+    if (!workspaceId)
+      throw new OwnerCommandError(
+        "Set ISSOPEN_WORKSPACE_ID for the exact workspace to recover.",
+      );
+    await recoverWorkspaceOwner(connection.db, auth, workspaceId, input);
+    process.stdout.write(
+      "Current workspace Owner credential set; all web sessions for that identity revoked. Ownership and Google/MCP/Chrome credentials unchanged.\n",
+    );
+    return;
+  }
+
+  throw new OwnerCommandError(
+    "Use owner bootstrap, owner recover or owner recover-workspace.",
+  );
 }
 
 async function main() {

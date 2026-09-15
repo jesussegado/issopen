@@ -5,6 +5,7 @@ import type { BetterAuthPlugin } from "better-auth";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { genericOAuth, jwt } from "better-auth/plugins";
+import { authenticationMethod } from "./auth-assurance.js";
 import type { AppConfig } from "./config.js";
 import type { Database } from "./db/client.js";
 import * as schema from "./db/schema.js";
@@ -44,6 +45,24 @@ export function createAuth(db: Database, config: AppConfig) {
       provider: "pg",
       schema,
     }),
+    databaseHooks: {
+      session: {
+        create: {
+          after: async (created, context) => {
+            const method = authenticationMethod(context);
+            if (method)
+              await db
+                .insert(schema.authenticationAssurance)
+                .values({
+                  sessionId: created.id,
+                  userId: created.userId,
+                  method,
+                })
+                .onConflictDoNothing();
+          },
+        },
+      },
+    },
     emailAndPassword: {
       enabled: true,
       minPasswordLength: 12,

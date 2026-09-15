@@ -1,0 +1,1 @@
+ALTER TABLE "ownership_event" ALTER COLUMN "actor_user_id" DROP NOT NULL;

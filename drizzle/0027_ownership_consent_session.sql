@@ -1,0 +1,2 @@
+ALTER TABLE "ownership_transfer" ADD COLUMN "from_session_id" text;--> statement-breakpoint
+ALTER TABLE "ownership_transfer" ADD CONSTRAINT "ownership_transfer_from_session_id_session_id_fk" FOREIGN KEY ("from_session_id") REFERENCES "public"."session"("id") ON DELETE set null ON UPDATE no action;

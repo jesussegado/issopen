@@ -32,6 +32,7 @@ import {
 import { IssueDetailRoute } from "./routes/IssueDetailRoute.js";
 import { MembersRoute } from "./routes/MembersRoute.js";
 import { NotificationsRoute } from "./routes/NotificationsRoute.js";
+import { OwnershipRoute } from "./routes/OwnershipRoute.js";
 import { PrivacyRoute } from "./routes/PrivacyRoute.js";
 import {
   SignInRoute,
@@ -304,6 +305,8 @@ function AuthenticatedApp({
         key={`${session.workspace.id}:${session.user.id}`}
       />
     );
+  else if (pathname === "/ownership")
+    route = <OwnershipRoute workspaceId={session.workspace.id} />;
   else if (pathname === "/account")
     route = (
       <AccountRoute

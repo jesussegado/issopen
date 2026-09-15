@@ -29,6 +29,18 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+105: [transferencia protegida y recuperación](docs/workspace-ownership.md).
+Prueba de autenticación del servidor, no session.createdAt: las invitaciones
+también crean sesiones sin reautenticar. Ambas personas/login5min, confirmación
+explícita, consentimiento vinculado a sesión y versiones, atomicidad/auditoría.
+Anterior Owner conserva edición de proyectos actuales como Member. No modificar
+propietarios/revisor reales para tests. Recovery operador canónico separado de
+instance bootstrap; revoca sólo sesiones web de la identidad, no OAuth/MCP/Chrome.
+103 entregado75dfb6e/GitOpsbfd8fce/digestaa9a22d3: Healthy/Synced/Ready0restarts,
+readinessJSONok/PVCunchanged,smoke1440/360PASS; ReadyHumanReview/claimreleased.
+
+Checkpoint histórico anterior:
+
 103 en curso: [avisos personales](docs/personal-notifications.md). Sólo actividad
 dirigida/in-app, sin correo/watchers. Emisión transaccional+reintentos deduplicados,
 revalidación por proyecto en cada lectura/marcado. Menciones seleccionadas no
