@@ -37,6 +37,10 @@ import {
   requireWorkspaceOwner,
   resolveHumanAccess,
 } from "../human-access.js";
+import {
+  QuestionRecipientService,
+  recipientSchema,
+} from "../question-recipients.js";
 
 type TrackerBindings = {
   Variables: {
@@ -325,6 +329,10 @@ export function createTrackerRouter({ db, auth }: TrackerRouterDependencies) {
           context.req.query("assignee"),
           mutationContext.actor.id,
         ),
+        mutationContext.actor.id,
+        context.req.query("questionsFor") === "mine"
+          ? mutationContext.actor.id
+          : undefined,
       ),
     });
   });
@@ -377,6 +385,10 @@ export function createTrackerRouter({ db, auth }: TrackerRouterDependencies) {
         context.req.query("assignee"),
         mutationContext.actor.id,
       ),
+      mutationContext.actor.id,
+      context.req.query("questionsFor") === "mine"
+        ? mutationContext.actor.id
+        : undefined,
     );
     const visibleStatuses = issueStatusValues.filter((status) => {
       if (status === "ready_for_review") return foundProject.showReviewColumn;
@@ -476,7 +488,11 @@ export function createTrackerRouter({ db, auth }: TrackerRouterDependencies) {
     );
     requireProjectAccess(mutationContext.access, foundIssue.projectId);
     return context.json({
-      ...(await tracker.getIssueDetail(mutationContext.workspaceId, issueId)),
+      ...(await tracker.getIssueDetail(
+        mutationContext.workspaceId,
+        issueId,
+        mutationContext.actor.id,
+      )),
       canEdit: canEditProject(mutationContext.access, foundIssue.projectId),
     });
   });
@@ -513,6 +529,27 @@ export function createTrackerRouter({ db, auth }: TrackerRouterDependencies) {
       issue: await new AssignmentService(db).assign(access, issueId, input),
     });
   });
+
+  router.put(
+    "/issues/:issueId/questions/:questionId/recipient",
+    async (context) => {
+      const access = requireHumanAccess(context.get("humanAccess"));
+      const issueId = parseIdentifier(context.req.param("issueId"), "issueId");
+      const questionId = parseIdentifier(
+        context.req.param("questionId"),
+        "questionId",
+      );
+      const input = await parseBody(context, recipientSchema);
+      return context.json(
+        await new QuestionRecipientService(db).set(
+          access,
+          issueId,
+          questionId,
+          input,
+        ),
+      );
+    },
+  );
 
   router.get("/issues/:issueId/activity", async (context) => {
     const mutationContext = humanContext(context.get("humanAccess"));
@@ -588,9 +625,11 @@ export function createTrackerRouter({ db, auth }: TrackerRouterDependencies) {
       const detail = await tracker.getIssueDetail(
         mutationContext.workspaceId,
         issueId,
+        mutationContext.actor.id,
       );
       return context.json({
-        question,
+        question:
+          detail.questions.find((item) => item.id === question.id) ?? question,
         questionSummary: detail.questionSummary,
       });
     },

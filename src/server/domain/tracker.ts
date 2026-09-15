@@ -26,6 +26,7 @@ import {
   project,
   workspace,
 } from "../db/schema.js";
+import { recipientColumns } from "../question-recipients.js";
 import {
   type AddCodeLinkInput,
   type AddIssueCommentInput,
@@ -160,12 +161,24 @@ function requireHuman(context: MutationContext) {
 
 function summarizeQuestions(
   questions: Array<typeof issueQuestion.$inferSelect>,
+  viewerId?: string,
 ) {
   const answered = questions.filter((item) => item.answeredAt !== null).length;
   const unansweredBlocking = questions.filter(
     (item) => item.blocking && item.answeredAt === null,
   ).length;
-  return { total: questions.length, answered, unansweredBlocking };
+  return {
+    total: questions.length,
+    answered,
+    unansweredBlocking,
+    ...(viewerId
+      ? {
+          directedUnanswered: questions.filter(
+            (q) => q.recipientUserId === viewerId && !q.answeredAt,
+          ).length,
+        }
+      : {}),
+  };
 }
 
 function emptyEpicSummary() {
@@ -707,12 +720,17 @@ export class TrackerService {
     epicId?: string | null,
     includeArchivedEpicIssues = false,
     assignee?: string,
+    viewerId?: string,
+    questionsFor?: string,
   ) {
     const predicate = and(
       isNull(issue.deletedAt),
       eq(issue.workspaceId, workspaceId),
       projectId ? eq(issue.projectId, projectId) : undefined,
       assigneePredicate(assignee),
+      questionsFor
+        ? sql`exists (select 1 from issue_question q where q.issue_id = ${issue.id} and q.workspace_id = ${issue.workspaceId} and q.recipient_user_id = ${questionsFor} and q.answered_at is null)`
+        : undefined,
       epicId === null
         ? isNull(issue.epicId)
         : epicId
@@ -746,6 +764,7 @@ export class TrackerService {
         total: sql<number>`count(*)::int`,
         answered: sql<number>`count(${issueQuestion.answeredAt})::int`,
         unansweredBlocking: sql<number>`count(*) filter (where ${issueQuestion.blocking} and ${issueQuestion.answeredAt} is null)::int`,
+        directedUnanswered: sql<number>`count(*) filter (where ${issueQuestion.recipientUserId} = ${viewerId ?? null} and ${issueQuestion.answeredAt} is null)::int`,
       })
       .from(issueQuestion)
       .where(
@@ -767,6 +786,7 @@ export class TrackerService {
         total: 0,
         answered: 0,
         unansweredBlocking: 0,
+        directedUnanswered: 0,
       },
     }));
   }
@@ -913,7 +933,11 @@ export class TrackerService {
     return found;
   }
 
-  async getIssueDetail(workspaceId: string, issueId: string) {
+  async getIssueDetail(
+    workspaceId: string,
+    issueId: string,
+    viewerId?: string,
+  ) {
     const foundIssue = await this.getIssue(workspaceId, issueId);
     const [links, questions, comments, foundEpic] = await Promise.all([
       this.db
@@ -933,12 +957,15 @@ export class TrackerService {
         : Promise.resolve(null),
     ]);
     return {
-      issue: { ...foundIssue, questionSummary: summarizeQuestions(questions) },
+      issue: {
+        ...foundIssue,
+        questionSummary: summarizeQuestions(questions, viewerId),
+      },
       codeLinks: links,
       questions,
       comments,
       epic: foundEpic,
-      questionSummary: summarizeQuestions(questions),
+      questionSummary: summarizeQuestions(questions, viewerId),
     };
   }
 
@@ -1008,7 +1035,7 @@ export class TrackerService {
   async listIssueQuestions(workspaceId: string, issueId: string) {
     await this.getIssue(workspaceId, issueId);
     return this.db
-      .select()
+      .select({ ...getTableColumns(issueQuestion), ...recipientColumns })
       .from(issueQuestion)
       .where(
         and(

@@ -1,0 +1,159 @@
+import { randomUUID } from "node:crypto";
+import { and, eq, sql } from "drizzle-orm";
+import { z } from "zod";
+import type { Database } from "./db/client.js";
+import {
+  activityEvent,
+  epic,
+  issue,
+  issueQuestion,
+  workspace,
+} from "./db/schema.js";
+import { questionVersionsSchema } from "./domain/contracts.js";
+import { DomainError, TrackerService } from "./domain/index.js";
+import {
+  type HumanAccess,
+  humanMutationContext,
+  requireHumanAccess,
+  requireProjectEdit,
+  resolveHumanAccess,
+} from "./human-access.js";
+import { CollaboratorService } from "./profiles.js";
+
+export const recipientSchema = z
+  .object({
+    recipientId: z.string().min(1).max(128).nullable(),
+    expectedVersion: z.number().int().positive(),
+    questionVersions: questionVersionsSchema,
+  })
+  .strict();
+
+export const recipientCanAnswer = sql<boolean>`exists (
+  select 1 from issue qi join workspace_membership m on m.workspace_id = qi.workspace_id
+  join workspace w on w.id = qi.workspace_id
+  where qi.id = "issue_question"."issue_id" and qi.workspace_id = "issue_question"."workspace_id"
+  and m.user_id = "issue_question"."recipient_user_id"
+  and ((m.role = 'owner' and w.owner_id = m.user_id) or
+    (m.role = 'member' and exists (select 1 from project_membership p
+      where p.workspace_id = m.workspace_id and p.project_id = qi.project_id
+      and p.user_id = m.user_id and p.permission = 'edit'))))`;
+export const recipientColumns = {
+  recipientUserId: issueQuestion.recipientUserId,
+  recipientName: sql<string | null>`case when ${recipientCanAnswer}
+    then coalesce((select u.name from "user" u where u.id = "issue_question"."recipient_user_id"), "issue_question"."recipient_name")
+    else "issue_question"."recipient_name" end`,
+  recipientCanAnswer,
+};
+
+export class QuestionRecipientService {
+  constructor(private readonly db: Database) {}
+  async set(
+    access: HumanAccess,
+    issueId: string,
+    questionId: string,
+    input: z.infer<typeof recipientSchema>,
+  ) {
+    return this.db.transaction(async (tx) => {
+      await tx
+        .select({ id: workspace.id })
+        .from(workspace)
+        .where(eq(workspace.id, access.workspaceId))
+        .for("share");
+      const fresh = requireHumanAccess(
+        await resolveHumanAccess(tx, access.user, access.workspaceId),
+      );
+      const tracker = new TrackerService(tx);
+      const found = await tracker.getIssue(access.workspaceId, issueId);
+      requireProjectEdit(fresh, found.projectId);
+      const current = await tracker.updateIssue(
+        humanMutationContext(fresh),
+        issueId,
+        {
+          expectedVersion: input.expectedVersion,
+          questionVersions: input.questionVersions,
+          title: found.title,
+        },
+      );
+      if (current.epicId) {
+        const [container] = await tx
+          .select({ archivedAt: epic.archivedAt })
+          .from(epic)
+          .where(
+            and(
+              eq(epic.id, current.epicId),
+              eq(epic.workspaceId, access.workspaceId),
+            ),
+          )
+          .for("share");
+        if (container?.archivedAt)
+          throw new DomainError(
+            "conflict",
+            "Restore this Epic before changing question recipients.",
+          );
+      }
+      const [question] = await tx
+        .select()
+        .from(issueQuestion)
+        .where(
+          and(
+            eq(issueQuestion.id, questionId),
+            eq(issueQuestion.issueId, issueId),
+            eq(issueQuestion.workspaceId, access.workspaceId),
+          ),
+        );
+      if (!question) throw new DomainError("not_found", "Question not found");
+      const target =
+        input.recipientId === null
+          ? null
+          : await new CollaboratorService(tx).get(
+              fresh,
+              current.projectId,
+              input.recipientId,
+              true,
+            );
+      if (question.recipientUserId !== input.recipientId) {
+        await tx
+          .update(issueQuestion)
+          .set({
+            recipientUserId: target?.id ?? null,
+            recipientName: target?.name ?? null,
+            version: sql`${issueQuestion.version} + 1`,
+            updatedAt: new Date(),
+          })
+          .where(eq(issueQuestion.id, questionId));
+        await tx
+          .update(issue)
+          .set({ version: sql`${issue.version} + 1`, updatedAt: new Date() })
+          .where(eq(issue.id, issueId));
+        await tx.insert(activityEvent).values({
+          id: randomUUID(),
+          workspaceId: access.workspaceId,
+          projectId: current.projectId,
+          issueId,
+          type: "issue.question_recipient_changed",
+          actorType: "human",
+          actorId: fresh.user.id,
+          actorDisplayName: fresh.user.name,
+          source: "rest",
+          summary: target
+            ? `Directed a question on ${current.key} to ${target.name}`
+            : `Opened a question on ${current.key} to the team`,
+          changes: {
+            questionId,
+            recipient: {
+              from: question.recipientUserId
+                ? { id: question.recipientUserId, name: question.recipientName }
+                : null,
+              to: target,
+            },
+          },
+        });
+      }
+      return tracker.getIssueDetail(
+        access.workspaceId,
+        issueId,
+        access.user.id,
+      );
+    });
+  }
+}

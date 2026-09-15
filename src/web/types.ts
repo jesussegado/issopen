@@ -169,6 +169,7 @@ export type QuestionSummary = {
   total: number;
   answered: number;
   unansweredBlocking: number;
+  directedUnanswered?: number;
 };
 
 export function issueReference(issue: Pick<Issue, "number">) {
@@ -201,6 +202,9 @@ export type IssueQuestion = {
   workspaceId: string;
   issueId: string;
   prompt: string;
+  recipientUserId?: string | null;
+  recipientName?: string | null;
+  recipientCanAnswer?: boolean;
   recommendation: string;
   options: IssueQuestionOption[];
   recommendedOptionId: string;

@@ -29,12 +29,23 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
-101 en curso: [asignación humana](docs/human-assignment.md), independiente de Owner
+102 en curso: [preguntas dirigidas](docs/directed-questions.md). Destinatario
+opcional, cualquier editor puede responder/revisar; no revisor exclusivo ni
+cambio del ticket68. Web guarda con CAS completo, lectura MCP compatible, sin
+permisos mutantes nuevos para agentes/Chrome. Downgrade/retirada deja warning;
+conservar respuesta/actor/histórico. Gates160unit/web89integration28webE2E+2skips,
+Chrome16+13/reproducible0.6.3/scan367/ComposePASS; backuprestore113issues976events
+13images19receipts. Despliegue y smoke102 pendientes antes de revisión.
+
+101 entregado: [asignación humana](docs/human-assignment.md), independiente de Owner
 y claim; mutación sólo web con edición/CAS/preguntas/auditoría, filtros REST/MCP.
 No dar permisos nuevos a agentes/Chrome. Retirada de acceso conserva nombre
 histórico y warning; nunca crea grants. Gates158unit/web88integration26webE2E
 +2skips,Chrome16+13/reproducible0.6.3/scan361/ComposePASS; backuprestore113issues
-974events13images19receipts. Despliegue101 aún pendiente: verificar Argo+smoke.
+974events13images19receipts. Fuentecd83694/GitOpsc2cfee/digestb5d69949 observado
+Synced/Healthy, Ready0restarts/readinessJSONok/PVCsin cambios. Smoke1440/360PASS,
+101 en revisión sinclaim. SQLcorrelacionado debe cualificar tabla explícita en
+SELECT de Drizzle: otros grants no prueban elegibilidad para este proyecto.
 
 99 implementa perfil propio (nombre/avatar local) y directorio por proyecto,
 sin emails/providerURLs: [contrato](docs/profiles-and-collaborators.md).

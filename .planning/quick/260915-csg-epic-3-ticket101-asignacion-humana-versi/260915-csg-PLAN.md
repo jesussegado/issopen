@@ -1,6 +1,6 @@
 ---
 type: quick
-status: verified-local-deploying
+status: complete
 ticket: 101
 epic: 3
 ---

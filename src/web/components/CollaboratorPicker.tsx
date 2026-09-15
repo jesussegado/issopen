@@ -9,10 +9,12 @@ export function CollaboratorPicker({
   projectId,
   onChoose,
   disabled = false,
+  requireEdit = false,
 }: {
   projectId: string;
   onChoose: (person: Collaborator) => void;
   disabled?: boolean;
+  requireEdit?: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState<CollaboratorsPage | null>(null);
@@ -62,6 +64,12 @@ export function CollaboratorPicker({
         <input
           value={query}
           maxLength={80}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              if (!busy && !disabled) void search();
+            }
+          }}
           disabled={disabled || busy}
           onChange={(e) => {
             setQuery(e.currentTarget.value);
@@ -86,7 +94,11 @@ export function CollaboratorPicker({
                 <button
                   className="button button-secondary"
                   type="button"
-                  disabled={disabled || busy}
+                  disabled={
+                    disabled ||
+                    busy ||
+                    (requireEdit && person.permission !== "edit")
+                  }
                   onClick={() => onChoose(person)}
                 >
                   {person.name} · {person.role} ·{" "}

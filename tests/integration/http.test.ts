@@ -1803,7 +1803,12 @@ describe("protected tracker REST API", () => {
     expect(
       boardBody.columns.find((column) => column.status === "ready_for_review")
         ?.issues[0]?.questionSummary,
-    ).toEqual({ total: 1, answered: 0, unansweredBlocking: 1 });
+    ).toEqual({
+      total: 1,
+      answered: 0,
+      unansweredBlocking: 1,
+      directedUnanswered: 0,
+    });
 
     const hiddenColumnsUpdate = await authenticatedRequest(
       `/api/v1/projects/${createdProject.id}`,
@@ -1845,7 +1850,12 @@ describe("protected tracker REST API", () => {
     expect(
       (await body<{ questionSummary: Record<string, number> }>(answered))
         .questionSummary,
-    ).toEqual({ total: 1, answered: 1, unansweredBlocking: 0 });
+    ).toEqual({
+      total: 1,
+      answered: 1,
+      unansweredBlocking: 0,
+      directedUnanswered: 0,
+    });
 
     const changedAnswer = await authenticatedRequest(
       `/api/v1/issues/${createdIssue.id}/questions/${question.id}/answer`,
@@ -1923,6 +1933,7 @@ describe("protected tracker REST API", () => {
       total: 1,
       answered: 1,
       unansweredBlocking: 0,
+      directedUnanswered: 0,
     });
 
     const accepted = await authenticatedRequest(

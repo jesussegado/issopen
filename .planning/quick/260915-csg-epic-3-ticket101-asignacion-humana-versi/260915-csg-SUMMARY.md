@@ -1,4 +1,11 @@
-# 101 — Local verification; deploying
+# 101 — Verified production delivery
+
+15Sep07:51 sourcecd83694/GitOpsc2cfee/digestb5d69949 observed Synced/Healthy,
+Ready0restarts, readinessJSONok, PVCidentitiesunchanged. Production1440/360 smoke
+PASS including assignment projection/filter, own profile/directory, private image,
+foreign denial and revoking only a newly-created smoke session. No real tickets,
+grants/profiles or existing sessions changed.101 Ready for Human Review, claim
+released; live questions v2 unchanged. Continue102 and103, not an Epic closure.
 
 Optional single human assignment independent from owner/agent claim; versioned
 human-only PUT with full question snapshot, workspace lock/fresh edit scope,

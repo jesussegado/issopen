@@ -935,6 +935,10 @@ export const issueQuestion = pgTable(
     recommendation: text("recommendation").notNull(),
     options: jsonb("options").$type<IssueQuestionOption[]>().notNull(),
     recommendedOptionId: text("recommended_option_id").notNull(),
+    recipientUserId: text("recipient_user_id").references(() => user.id, {
+      onDelete: "restrict",
+    }),
+    recipientName: varchar("recipient_name", { length: 120 }),
     blocking: boolean("blocking").default(true).notNull(),
     answerOptionId: text("answer_option_id"),
     answerOtherText: text("answer_other_text"),
@@ -966,6 +970,14 @@ export const issueQuestion = pgTable(
     ),
     index("issue_question_workspace_id_idx").on(table.workspaceId),
     check("issue_question_version_check", sql`${table.version} > 0`),
+    index("issue_question_recipient_idx").on(
+      table.recipientUserId,
+      table.issueId,
+    ),
+    check(
+      "issue_question_recipient_consistency_check",
+      sql`(${table.recipientUserId} is null) = (${table.recipientName} is null)`,
+    ),
     check(
       "issue_question_answer_consistency_check",
       sql`(

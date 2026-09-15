@@ -131,7 +131,10 @@ export function BoardRoute({
       : assigneeMode === "all"
         ? undefined
         : assigneeMode;
-  const [warningFilter, setWarningFilter] = useState<"all" | "warnings">("all");
+  const [warningFilter, setWarningFilter] = useState<
+    "all" | "warnings" | "for_me"
+  >("all");
+  const questionsForMe = warningFilter === "for_me";
   const [collapsedColumns, setCollapsedColumns] = useState<Set<IssueStatus>>(
     () => new Set(),
   );
@@ -144,7 +147,7 @@ export function BoardRoute({
   const boardRequest = useRef(0);
   const lastAppliedBoardRequest = useRef(0);
   const mounted = useRef(true);
-  const boardRouteKey = `${projectId}:${epicFilter}:${assigneeFilter ?? "all"}`;
+  const boardRouteKey = `${projectId}:${epicFilter}:${assigneeFilter ?? "all"}:${questionsForMe}`;
   const activeBoardRoute = useRef(boardRouteKey);
   activeBoardRoute.current = boardRouteKey;
   const online = useOnlineStatus();
@@ -160,6 +163,7 @@ export function BoardRoute({
       const params = new URLSearchParams();
       if (epicFilter !== "all") params.set("epicId", epicFilter);
       if (assigneeFilter) params.set("assignee", assigneeFilter);
+      if (questionsForMe) params.set("questionsFor", "mine");
       const query = params.size ? `?${params}` : "";
       try {
         const board = await apiRequest<BoardResponse>(
@@ -199,7 +203,7 @@ export function BoardRoute({
         setLoading(false);
       }
     },
-    [boardRouteKey, epicFilter, projectId, assigneeFilter],
+    [boardRouteKey, epicFilter, projectId, assigneeFilter, questionsForMe],
   );
 
   useEffect(() => {
@@ -392,7 +396,8 @@ export function BoardRoute({
       ) : null}
       {totalIssueCount === 0 &&
       epicFilter === "all" &&
-      assigneeMode === "all" ? (
+      assigneeMode === "all" &&
+      !questionsForMe ? (
         <EmptyState
           heading="No issues yet"
           body={
@@ -474,12 +479,13 @@ export function BoardRoute({
                 value={warningFilter}
                 onChange={(event) =>
                   setWarningFilter(
-                    event.currentTarget.value as "all" | "warnings",
+                    event.currentTarget.value as "all" | "warnings" | "for_me",
                   )
                 }
               >
                 <option value="all">All tickets</option>
                 <option value="warnings">Warnings only</option>
+                <option value="for_me">Questions for me</option>
               </Select>
             </label>
           </div>
@@ -536,7 +542,7 @@ export function BoardRoute({
                 {columns.map((column) => {
                   const visibleIssues = column.issues.filter(
                     (issue) =>
-                      warningFilter === "all" ||
+                      warningFilter !== "warnings" ||
                       (issue.questionSummary?.unansweredBlocking ?? 0) > 0,
                   );
                   const columnCollapsed = collapsedColumns.has(column.status);
@@ -609,6 +615,17 @@ export function BoardRoute({
                                     </button>
                                   </div>
                                   <AssigneeLabel issue={issue} />
+                                  {(issue.questionSummary?.directedUnanswered ??
+                                    0) > 0 ? (
+                                    <span className="badge warning-badge">
+                                      ⚠{" "}
+                                      {
+                                        issue.questionSummary
+                                          ?.directedUnanswered
+                                      }{" "}
+                                      for you
+                                    </span>
+                                  ) : null}
                                   {(issue.questionSummary?.unansweredBlocking ??
                                     0) > 0 ? (
                                     <span

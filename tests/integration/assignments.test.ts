@@ -127,6 +127,7 @@ function request(
     headers: {
       Cookie: cookies.get(id) ?? "",
       Origin: origin,
+      "X-Issopen-Workspace": space,
       "Content-Type": "application/json",
     },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
@@ -263,22 +264,18 @@ it("keeps removed assignee attribution without access, filters consistently and 
   );
   // Other-project and other-workspace ownership must not make a withdrawn person
   // eligible for this ticket, or expose future profile changes through its label.
-  await connection.db
-    .insert(projectMembership)
-    .values({
-      workspaceId: space,
-      userId: reader,
-      projectId: otherProject,
-      permission: "edit",
-    });
+  await connection.db.insert(projectMembership).values({
+    workspaceId: space,
+    userId: reader,
+    projectId: otherProject,
+    permission: "edit",
+  });
   const personalSpace = randomUUID();
-  await connection.db
-    .insert(workspace)
-    .values({
-      id: personalSpace,
-      ownerId: reader,
-      name: "Reader private space",
-    });
+  await connection.db.insert(workspace).values({
+    id: personalSpace,
+    ownerId: reader,
+    name: "Reader private space",
+  });
   await connection.db
     .insert(workspaceMembership)
     .values({ workspaceId: personalSpace, userId: reader, role: "owner" });
@@ -351,4 +348,204 @@ it("keeps removed assignee attribution without access, filters consistently and 
     .from(issue)
     .where(eq(issue.id, ticket.id));
   expect(retained?.humanOwnerId).toBe(owner);
+});
+
+it("directs questions without exclusive answering or review rights and preserves snapshots on reassignment", async () => {
+  const ticket = await tracker.createIssue(context, {
+    projectId,
+    title: "Directed question",
+  });
+  const question = await tracker.createIssueQuestion(context, ticket.id, {
+    prompt: "Which flow?",
+    recommendation: "Use A",
+    options: [{ label: "A" }, { label: "B" }],
+    recommendedOptionIndex: 0,
+  });
+  const path = `/issues/${ticket.id}/questions/${question.id}/recipient`;
+  let guard = {
+    expectedVersion: ticket.version,
+    questionVersions: [{ id: question.id, version: question.version }],
+  };
+  const [membership] = await connection.db
+    .select()
+    .from(workspaceMembership)
+    .where(eq(workspaceMembership.userId, editor));
+  if (!membership) throw new Error("Expected editor fixture");
+  // The former reader has a different workspace and project, but cannot be directed here.
+  expect(
+    (await request(owner, path, { ...guard, recipientId: reader })).status,
+  ).toBe(400);
+  expect(
+    (await request(reader, path, { ...guard, recipientId: owner })).status,
+  ).toBe(404);
+  expect(
+    (await request(owner, path, { ...guard, recipientId: foreign })).status,
+  ).toBe(400);
+  expect(
+    (
+      await request(owner, path, {
+        ...guard,
+        recipientId: editor,
+        answerOtherText: "Not authorized",
+      })
+    ).status,
+  ).toBe(400);
+  const races = await Promise.all([
+    request(owner, path, { ...guard, recipientId: editor }),
+    request(editor, path, { ...guard, recipientId: owner }),
+  ]);
+  expect(races.map((r) => r.status).sort()).toEqual([200, 409]);
+  let detail = await tracker.getIssueDetail(space, ticket.id, owner);
+  guard = {
+    expectedVersion: detail.issue.version,
+    questionVersions: detail.questions.map((q) => ({
+      id: q.id,
+      version: q.version,
+    })),
+  };
+  const directed = await request(owner, path, {
+    ...guard,
+    recipientId: editor,
+  });
+  expect(directed.status).toBe(200);
+  detail = await tracker.getIssueDetail(space, ticket.id, editor);
+  expect(detail.questions[0]).toMatchObject({
+    recipientUserId: editor,
+    recipientName: "Same name",
+    recipientCanAnswer: true,
+    answeredByUserId: null,
+    answeredAt: null,
+  });
+  expect(detail.questionSummary.directedUnanswered).toBe(1);
+  const board = await (
+    await request(editor, `/projects/${projectId}/board?questionsFor=mine`)
+  ).json();
+  expect(
+    board.columns
+      .flatMap((c: { issues: { id: string }[] }) => c.issues)
+      .map((i: { id: string }) => i.id),
+  ).toEqual([ticket.id]);
+  guard = {
+    expectedVersion: detail.issue.version,
+    questionVersions: detail.questions.map((q) => ({
+      id: q.id,
+      version: q.version,
+    })),
+  };
+  const answered = await request(
+    owner,
+    `/issues/${ticket.id}/questions/${question.id}/answer`,
+    {
+      kind: "option",
+      optionId: question.recommendedOptionId,
+      expectedVersion: detail.questions[0]?.version,
+    },
+    base,
+    "PATCH",
+  );
+  expect(answered.status).toBe(200);
+  const storedAnswer = (await answered.json()).question;
+  expect(storedAnswer.answeredByUserId).toBe(owner); // not the recipient!
+  expect(
+    (await request(owner, path, { ...guard, recipientId: null })).status,
+  ).toBe(409);
+  const after = await tracker.getIssueDetail(space, ticket.id, editor);
+  expect(after.questionSummary.directedUnanswered).toBe(0);
+  guard = {
+    expectedVersion: after.issue.version,
+    questionVersions: after.questions.map((q) => ({
+      id: q.id,
+      version: q.version,
+    })),
+  };
+  // Downgrade leaves a recoverable warning; it does not suppress the saved answer.
+  await new InvitationService(connection.db).updateMember(
+    { workspaceId: space, userId: owner },
+    editor,
+    {
+      expectedVersion: membership.version,
+      grants: [{ projectId, permission: "read" }],
+    },
+  );
+  const revoked = await tracker.getIssueDetail(space, ticket.id, owner);
+  expect(revoked.questions[0]).toMatchObject({
+    recipientUserId: editor,
+    recipientCanAnswer: false,
+    answeredByUserId: owner,
+    answerOptionId: question.recommendedOptionId,
+  });
+  expect(
+    (await request(editor, path, { ...guard, recipientId: null })).status,
+  ).toBe(403);
+  expect(
+    (
+      await request(
+        editor,
+        `/issues/${ticket.id}/questions/${question.id}/answer`,
+        { kind: "other", text: "denied" },
+        base,
+        "PATCH",
+      )
+    ).status,
+  ).toBe(403);
+  const cleared = await request(owner, path, { ...guard, recipientId: null });
+  expect(cleared.status).toBe(200);
+  const clearedQuestion = (await cleared.json()).questions[0];
+  expect(clearedQuestion).toMatchObject({
+    recipientUserId: null,
+    recipientName: null,
+    answeredByUserId: owner,
+    answerOptionId: question.recommendedOptionId,
+  });
+  expect(clearedQuestion.answeredAt).toBe(storedAnswer.answeredAt);
+  expect(
+    (await tracker.listActivity(space, ticket.id)).filter(
+      (e) => e.type === "issue.question_recipient_changed",
+    ).length,
+  ).toBeGreaterThanOrEqual(2);
+  const [downgraded] = await connection.db
+    .select()
+    .from(workspaceMembership)
+    .where(eq(workspaceMembership.userId, editor));
+  if (!downgraded) throw new Error("Expected downgraded editor");
+  await new InvitationService(connection.db).updateMember(
+    { workspaceId: space, userId: owner },
+    editor,
+    {
+      expectedVersion: downgraded.version,
+      grants: [{ projectId, permission: "edit" }],
+    },
+  );
+  let current = await tracker.getIssueDetail(space, ticket.id);
+  const review = await request(
+    editor,
+    `/issues/${ticket.id}`,
+    {
+      status: "ready_for_review",
+      expectedVersion: current.issue.version,
+      questionVersions: current.questions.map((q) => ({
+        id: q.id,
+        version: q.version,
+      })),
+    },
+    base,
+    "PATCH",
+  );
+  expect(review.status).toBe(200);
+  current = await tracker.getIssueDetail(space, ticket.id);
+  const accepted = await request(
+    editor,
+    `/issues/${ticket.id}/review/accept`,
+    {
+      expectedVersion: current.issue.version,
+      questionVersions: current.questions.map((q) => ({
+        id: q.id,
+        version: q.version,
+      })),
+    },
+    base,
+    "POST",
+  );
+  expect(accepted.status).toBe(200);
+  expect((await accepted.json()).issue.status).toBe("done");
 });

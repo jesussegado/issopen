@@ -9,6 +9,7 @@ import {
 import { AssigneeEditor } from "../components/AssigneeEditor.js";
 import { CaptureEvidence } from "../components/CaptureEvidence.js";
 import { DeleteIssueButton } from "../components/DeleteIssueButton.js";
+import { QuestionRecipientEditor } from "../components/QuestionRecipientEditor.js";
 import {
   AppLink,
   Badge,
@@ -179,6 +180,7 @@ export function IssueDetailRoute({
   const [announcement, setAnnouncement] = useState("");
   const [answerDirty, setAnswerDirty] = useState(false);
   const [assigneeDirty, setAssigneeDirty] = useState(false);
+  const [recipientDirty, setRecipientDirty] = useState(false);
   const [pendingSnapshot, setPendingSnapshot] = useState<DetailSnapshot | null>(
     null,
   );
@@ -204,6 +206,7 @@ export function IssueDetailRoute({
     dirty:
       answerDirty ||
       assigneeDirty ||
+      recipientDirty ||
       commentBody !== "" ||
       linkUrl !== "" ||
       reason !== "" ||
@@ -457,7 +460,7 @@ export function IssueDetailRoute({
 
   async function saveQuestionAnswer(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!issue || !currentQuestion) return;
+    if (!issue || !currentQuestion || recipientDirty) return;
     if (answerKind === "option" && !answerOptionId) {
       setQuestionError("Choose an option or select Other.");
       return;
@@ -899,6 +902,11 @@ export function IssueDetailRoute({
             <div className="question-heading">
               <div>
                 <h2 id="questions-heading">Questions</h2>
+                {(questionSummary.directedUnanswered ?? 0) > 0 ? (
+                  <p className="warning-badge">
+                    ⚠ {questionSummary.directedUnanswered} unanswered for you
+                  </p>
+                ) : null}
                 <p className="metadata" aria-live="polite">
                   {questionSummary.answered} of {questionSummary.total} answered
                 </p>
@@ -917,7 +925,11 @@ export function IssueDetailRoute({
                   <Button
                     type="button"
                     variant="secondary"
-                    disabled={questionIndex === 0 || submitting === "question"}
+                    disabled={
+                      questionIndex === 0 ||
+                      submitting === "question" ||
+                      recipientDirty
+                    }
                     onClick={() => setQuestionIndex((current) => current - 1)}
                   >
                     Previous
@@ -930,6 +942,7 @@ export function IssueDetailRoute({
                     variant="secondary"
                     disabled={
                       questionIndex === questions.length - 1 ||
+                      recipientDirty ||
                       submitting === "question"
                     }
                     onClick={() => setQuestionIndex((current) => current + 1)}
@@ -937,9 +950,28 @@ export function IssueDetailRoute({
                     Next
                   </Button>
                 </div>
+                <QuestionRecipientEditor
+                  key={currentQuestion.id}
+                  issue={issue}
+                  question={currentQuestion}
+                  questions={questions}
+                  canEdit={canEdit && !epic?.archivedAt}
+                  onDirty={setRecipientDirty}
+                  onSaved={(snapshot) => {
+                    mutationEpoch.current += 1;
+                    preservedAnswerId.current = answerDirty
+                      ? currentQuestion.id
+                      : null;
+                    setIssue(snapshot.issue);
+                    setQuestions(snapshot.questions);
+                    setQuestionSummary(snapshot.questionSummary);
+                    setNotice("Question recipient updated");
+                    void refreshActivity();
+                  }}
+                />
                 <fieldset
                   className="question-fieldset"
-                  disabled={!canEdit || submitting !== null}
+                  disabled={!canEdit || submitting !== null || recipientDirty}
                 >
                   <legend>{currentQuestion.prompt}</legend>
                   <div className="recommendation">
@@ -1014,7 +1046,9 @@ export function IssueDetailRoute({
                   {canEdit ? (
                     <Button
                       type="submit"
-                      disabled={!online || submitting !== null}
+                      disabled={
+                        !online || submitting !== null || recipientDirty
+                      }
                     >
                       {submitting === "question"
                         ? "Saving…"

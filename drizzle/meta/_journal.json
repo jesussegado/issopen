@@ -169,6 +169,13 @@
       "when": 1789456529895,
       "tag": "0023_human_assignees",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1789457634304,
+      "tag": "0024_question_recipients",
+      "breakpoints": true
     }
   ]
 }
