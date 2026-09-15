@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { AssigneeLabel } from "../components/AssigneeEditor.js";
+import { CollaboratorPicker } from "../components/CollaboratorPicker.js";
 import {
   AppLink,
   Badge,
@@ -118,6 +120,17 @@ export function BoardRoute({
   const [error, setError] = useState<string | null>(null);
   const [savingIssue, setSavingIssue] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | IssueStatus>("all");
+  const [assigneeMode, setAssigneeMode] = useState("all");
+  const [selectedPerson, setSelectedPerson] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const assigneeFilter =
+    assigneeMode === "person"
+      ? selectedPerson?.id
+      : assigneeMode === "all"
+        ? undefined
+        : assigneeMode;
   const [warningFilter, setWarningFilter] = useState<"all" | "warnings">("all");
   const [collapsedColumns, setCollapsedColumns] = useState<Set<IssueStatus>>(
     () => new Set(),
@@ -131,7 +144,7 @@ export function BoardRoute({
   const boardRequest = useRef(0);
   const lastAppliedBoardRequest = useRef(0);
   const mounted = useRef(true);
-  const boardRouteKey = `${projectId}:${epicFilter}`;
+  const boardRouteKey = `${projectId}:${epicFilter}:${assigneeFilter ?? "all"}`;
   const activeBoardRoute = useRef(boardRouteKey);
   activeBoardRoute.current = boardRouteKey;
   const online = useOnlineStatus();
@@ -144,8 +157,10 @@ export function BoardRoute({
         setLoading(true);
         setError(null);
       }
-      const query =
-        epicFilter === "all" ? "" : `?epicId=${encodeURIComponent(epicFilter)}`;
+      const params = new URLSearchParams();
+      if (epicFilter !== "all") params.set("epicId", epicFilter);
+      if (assigneeFilter) params.set("assignee", assigneeFilter);
+      const query = params.size ? `?${params}` : "";
       try {
         const board = await apiRequest<BoardResponse>(
           `/api/v1/projects/${projectId}/board${query}`,
@@ -184,7 +199,7 @@ export function BoardRoute({
         setLoading(false);
       }
     },
-    [boardRouteKey, epicFilter, projectId],
+    [boardRouteKey, epicFilter, projectId, assigneeFilter],
   );
 
   useEffect(() => {
@@ -227,12 +242,16 @@ export function BoardRoute({
         `/api/v1/issues/${issue.id}`,
         {
           method: "PATCH",
-          body: JSON.stringify({ status }),
+          body: JSON.stringify({ status, expectedVersion: issue.version }),
         },
       );
       const updatedIssue: Issue = issue.questionSummary
-        ? { ...response.issue, questionSummary: issue.questionSummary }
-        : response.issue;
+        ? {
+            ...issue,
+            ...response.issue,
+            questionSummary: issue.questionSummary,
+          }
+        : { ...issue, ...response.issue };
       const targetIsVisible = columns.some(
         (column) => column.status === updatedIssue.status,
       );
@@ -371,7 +390,9 @@ export function BoardRoute({
           .
         </StatusBanner>
       ) : null}
-      {totalIssueCount === 0 && epicFilter === "all" ? (
+      {totalIssueCount === 0 &&
+      epicFilter === "all" &&
+      assigneeMode === "all" ? (
         <EmptyState
           heading="No issues yet"
           body={
@@ -393,6 +414,19 @@ export function BoardRoute({
       ) : (
         <>
           <div className="board-toolbar">
+            <label className="field" htmlFor="assignee-filter">
+              <span>Human assignee</span>
+              <Select
+                id="assignee-filter"
+                value={assigneeMode}
+                onChange={(event) => setAssigneeMode(event.currentTarget.value)}
+              >
+                <option value="all">All people</option>
+                <option value="mine">My tickets</option>
+                <option value="unassigned">Unassigned</option>
+                <option value="person">Choose a person</option>
+              </Select>
+            </label>
             <label className="field" htmlFor="epic-filter">
               <span>Show Epic</span>
               <Select
@@ -449,6 +483,20 @@ export function BoardRoute({
               </Select>
             </label>
           </div>
+          {assigneeMode === "person" ? (
+            <section className="detail-panel" aria-label="Filter by person">
+              <p>
+                {selectedPerson
+                  ? `Showing tickets for ${selectedPerson.name}`
+                  : "Choose a person below. All people are shown until you select someone."}
+              </p>
+              <CollaboratorPicker
+                key={projectId}
+                projectId={projectId}
+                onChoose={(person) => setSelectedPerson(person)}
+              />
+            </section>
+          ) : null}
           {issueCount === 0 ? (
             <EmptyState
               heading={
@@ -459,7 +507,7 @@ export function BoardRoute({
               body={
                 hiddenIssueCount > 0
                   ? "The matching tickets keep their status and can be shown again from project settings."
-                  : "This Epic filter does not contain any tickets yet."
+                  : "No tickets match the selected Epic and human assignee filters."
               }
               action={
                 hiddenIssueCount > 0 ? (
@@ -560,6 +608,7 @@ export function BoardRoute({
                                       </span>
                                     </button>
                                   </div>
+                                  <AssigneeLabel issue={issue} />
                                   {(issue.questionSummary?.unansweredBlocking ??
                                     0) > 0 ? (
                                     <span
@@ -609,7 +658,6 @@ export function BoardRoute({
                                     <p className="issue-card-description">
                                       {issue.description || "No description"}
                                     </p>
-                                    <p className="metadata">Owner: You</p>
                                     {issue.claimedByAgentId ? (
                                       <p className="metadata">
                                         Agent: {issue.claimedByAgentId}

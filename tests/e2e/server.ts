@@ -30,6 +30,7 @@ const auth = createAuth(connection.db, config);
 await bootstrapOwner(connection.db, auth, e2eOwner);
 await seedMultiworkspace(connection.db, auth);
 await seedMemberManagement(connection.db, auth);
+await seedMemberManagement(connection.db, auth, "assignment");
 await seedOnboarding(connection.db, auth);
 const app = createApp({
   captureStorage: new CaptureStorage(

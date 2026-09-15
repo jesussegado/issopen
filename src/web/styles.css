@@ -1439,3 +1439,22 @@ progress {
   min-width: 0;
   overflow-wrap: anywhere;
 }
+
+.collaborator-picker-list {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0;
+  list-style: none;
+}
+
+.collaborator-picker-list .button {
+  display: grid;
+  text-align: start;
+  width: 100%;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.assignee-label {
+  overflow-wrap: anywhere;
+}

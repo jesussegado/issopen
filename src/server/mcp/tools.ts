@@ -1,5 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
+import { assigneeFilterSchema } from "../assignee-projection.js";
 import type { Database } from "../db/client.js";
 import { issuePriorityValues, issueStatusValues } from "../db/schema.js";
 import {
@@ -349,13 +350,27 @@ export function createIssopenMcpServer(
           status: z.enum(issueStatusValues).optional(),
           priority: z.enum(issuePriorityValues).optional(),
           claim: z.enum(["any", "claimed", "unclaimed", "mine"]).default("any"),
+          assignee: assigneeFilterSchema
+            .optional()
+            .describe(
+              "Human user ID or unassigned. Distinct from the agent claim; does not grant access.",
+            ),
           limit: mcpPageLimitSchema,
           cursor: mcpCursorSchema,
         })
         .strict(),
       annotations: { readOnlyHint: true },
     },
-    async ({ projectId, epicId, status, priority, claim, limit, cursor }) => {
+    async ({
+      projectId,
+      epicId,
+      status,
+      priority,
+      claim,
+      assignee,
+      limit,
+      cursor,
+    }) => {
       agents.requireScope(principal, "issues:read");
       if (projectId) agents.requireProject(principal, projectId);
       if (epicId) {
@@ -374,6 +389,7 @@ export function createIssopenMcpServer(
         status: status ?? null,
         priority: priority ?? null,
         claim,
+        assignee: assignee ?? null,
         agentId: claim === "mine" ? principal.agent.id : null,
       });
       const after = decodeMcpCursor(
@@ -386,6 +402,7 @@ export function createIssopenMcpServer(
         projectIds: allowedProjectIds,
         claim,
         agentId: principal.agent.id,
+        ...(assignee ? { assignee } : {}),
         limit,
         ...(projectId ? { projectId } : {}),
         ...(epicId ? { epicId } : {}),

@@ -664,7 +664,10 @@ describe("tracker web routes", () => {
           });
         }
         if (path === `/api/v1/issues/${issue.id}` && init?.method === "PATCH") {
-          expect(JSON.parse(String(init.body))).toEqual({ status: "done" });
+          expect(JSON.parse(String(init.body))).toEqual({
+            status: "done",
+            expectedVersion: issue.version,
+          });
           return json({ issue: { ...issue, status: "done", version: 2 } });
         }
         throw new Error(`Unexpected request: ${path}`);

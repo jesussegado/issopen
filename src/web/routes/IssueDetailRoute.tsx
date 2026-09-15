@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { AssigneeEditor } from "../components/AssigneeEditor.js";
 import { CaptureEvidence } from "../components/CaptureEvidence.js";
 import { DeleteIssueButton } from "../components/DeleteIssueButton.js";
 import {
@@ -177,6 +178,7 @@ export function IssueDetailRoute({
   const [reason, setReason] = useState("");
   const [announcement, setAnnouncement] = useState("");
   const [answerDirty, setAnswerDirty] = useState(false);
+  const [assigneeDirty, setAssigneeDirty] = useState(false);
   const [pendingSnapshot, setPendingSnapshot] = useState<DetailSnapshot | null>(
     null,
   );
@@ -201,6 +203,7 @@ export function IssueDetailRoute({
   state.current = {
     dirty:
       answerDirty ||
+      assigneeDirty ||
       commentBody !== "" ||
       linkUrl !== "" ||
       reason !== "" ||
@@ -434,7 +437,7 @@ export function IssueDetailRoute({
           }),
         },
       );
-      setIssue({ ...response.issue, questionSummary });
+      setIssue({ ...issue, ...response.issue, questionSummary });
       setNotice("Issue updated");
       setAnnouncement(
         `${issueReference(response.issue)} moved to ${statusLabels[response.issue.status]}`,
@@ -545,7 +548,7 @@ export function IssueDetailRoute({
           body: JSON.stringify({ type: linkType, url: linkUrl }),
         },
       );
-      setIssue({ ...response.issue, questionSummary });
+      setIssue({ ...issue, ...response.issue, questionSummary });
       setLinks((current) => [...current, response.codeLink]);
       setLinkUrl("");
       setNotice("Code link added");
@@ -617,7 +620,7 @@ export function IssueDetailRoute({
           }),
         },
       );
-      setIssue(response.issue);
+      setIssue({ ...issue, ...response.issue });
       setRequestingChanges(false);
       setReason("");
       setNotice(outcome === "accept" ? "Result accepted" : "Changes requested");
@@ -809,6 +812,19 @@ export function IssueDetailRoute({
       ) : null}
       <div className="detail-grid">
         <div>
+          <AssigneeEditor
+            key={issue.id}
+            issue={issue}
+            questions={questions}
+            canEdit={canEdit && !epic?.archivedAt}
+            onDirty={setAssigneeDirty}
+            onSaved={(updated) => {
+              mutationEpoch.current += 1;
+              setIssue({ ...updated, questionSummary });
+              setNotice("Human assignee updated");
+              void refreshActivity();
+            }}
+          />
           <section
             className="detail-panel"
             aria-labelledby="issue-status-heading"

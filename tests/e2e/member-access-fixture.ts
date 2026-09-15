@@ -11,7 +11,11 @@ import {
 } from "../../src/server/db/schema.js";
 
 // Isolated test-server data, not an HTTP provisioning endpoint.
-export async function seedMemberManagement(db: Database, auth: IssopenAuth) {
+export async function seedMemberManagement(
+  db: Database,
+  auth: IssopenAuth,
+  prefix = "access",
+) {
   const password = await (await auth.$context).password.hash(
     "synthetic-member-management-password",
   );
@@ -25,13 +29,13 @@ export async function seedMemberManagement(db: Database, auth: IssopenAuth) {
       {
         id: ownerId,
         name: `Access owner ${variant}`,
-        email: `access-owner-${variant}@example.test`,
+        email: `${prefix}-owner-${variant}@example.test`,
         emailVerified: true,
       },
       {
         id: memberId,
         name: `Managed member ${variant}`,
-        email: `access-member-${variant}@example.test`,
+        email: `${prefix}-member-${variant}@example.test`,
         emailVerified: true,
       },
     ]);

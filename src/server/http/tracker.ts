@@ -2,6 +2,8 @@ import { and, count, eq, max } from "drizzle-orm";
 import { type Context, Hono } from "hono";
 import { streamSSE } from "hono/streaming";
 import { z } from "zod";
+import { assigneeFilterSchema } from "../assignee-projection.js";
+import { AssignmentService, assignmentSchema } from "../assignments.js";
 import type { IssopenAuth, OwnerSession } from "../auth.js";
 import type { Database } from "../db/client.js";
 import { activityEvent, issueStatusValues } from "../db/schema.js";
@@ -118,6 +120,15 @@ function parseEpicArchiveFilter(value: string | undefined) {
       },
     ]);
   }
+  return parsed.data;
+}
+
+function parseAssigneeFilter(value: string | undefined, viewerId: string) {
+  if (value === undefined) return undefined;
+  if (value === "mine") return viewerId;
+  const parsed = assigneeFilterSchema.safeParse(value);
+  if (!parsed.success)
+    throw new DomainError("invalid", "Invalid human assignee filter");
   return parsed.data;
 }
 
@@ -309,6 +320,11 @@ export function createTrackerRouter({ db, auth }: TrackerRouterDependencies) {
         mutationContext.workspaceId,
         projectId,
         epicFilter === "unassigned" ? null : epicFilter,
+        false,
+        parseAssigneeFilter(
+          context.req.query("assignee"),
+          mutationContext.actor.id,
+        ),
       ),
     });
   });
@@ -356,6 +372,11 @@ export function createTrackerRouter({ db, auth }: TrackerRouterDependencies) {
       mutationContext.workspaceId,
       projectId,
       epicFilter === "unassigned" ? null : epicFilter,
+      false,
+      parseAssigneeFilter(
+        context.req.query("assignee"),
+        mutationContext.actor.id,
+      ),
     );
     const visibleStatuses = issueStatusValues.filter((status) => {
       if (status === "ready_for_review") return foundProject.showReviewColumn;
@@ -481,6 +502,15 @@ export function createTrackerRouter({ db, auth }: TrackerRouterDependencies) {
     const input = await parseBody(context, updateIssueSchema);
     return context.json({
       issue: await tracker.updateIssue(mutationContext, issueId, input),
+    });
+  });
+
+  router.put("/issues/:issueId/assignee", async (context) => {
+    const access = requireHumanAccess(context.get("humanAccess"));
+    const issueId = parseIdentifier(context.req.param("issueId"), "issueId");
+    const input = await parseBody(context, assignmentSchema);
+    return context.json({
+      issue: await new AssignmentService(db).assign(access, issueId, input),
     });
   });
 

@@ -154,6 +154,9 @@ export type Issue = {
   priority: IssuePriority;
   status: IssueStatus;
   humanOwnerId: string;
+  humanAssigneeId?: string | null;
+  humanAssigneeName?: string | null;
+  humanAssigneeHasAccess?: boolean;
   claimedByAgentId: string | null;
   claimedAt: string | null;
   version: number;

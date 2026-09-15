@@ -29,6 +29,13 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+101 en curso: [asignación humana](docs/human-assignment.md), independiente de Owner
+y claim; mutación sólo web con edición/CAS/preguntas/auditoría, filtros REST/MCP.
+No dar permisos nuevos a agentes/Chrome. Retirada de acceso conserva nombre
+histórico y warning; nunca crea grants. Gates158unit/web88integration26webE2E
++2skips,Chrome16+13/reproducible0.6.3/scan361/ComposePASS; backuprestore113issues
+974events13images19receipts. Despliegue101 aún pendiente: verificar Argo+smoke.
+
 99 implementa perfil propio (nombre/avatar local) y directorio por proyecto,
 sin emails/providerURLs: [contrato](docs/profiles-and-collaborators.md).
 0022 añade user_profile opcional en PostgreSQL, CAS UUID y PNG validado128×128/96KiB;

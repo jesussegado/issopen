@@ -865,6 +865,10 @@ export const issue = pgTable(
     humanOwnerId: text("human_owner_id")
       .notNull()
       .references(() => user.id, { onDelete: "restrict" }),
+    humanAssigneeId: text("human_assignee_id").references(() => user.id, {
+      onDelete: "restrict",
+    }),
+    humanAssigneeName: varchar("human_assignee_name", { length: 120 }),
     claimedByAgentId: text("claimed_by_agent_id"),
     claimedAt: timestamp("claimed_at", { withTimezone: true }),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
@@ -896,6 +900,14 @@ export const issue = pgTable(
     uniqueIndex("issue_workspace_key_uidx").on(table.workspaceId, table.key),
     uniqueIndex("issue_id_workspace_uidx").on(table.id, table.workspaceId),
     index("issue_project_status_idx").on(table.projectId, table.status),
+    index("issue_project_assignee_idx").on(
+      table.projectId,
+      table.humanAssigneeId,
+    ),
+    check(
+      "issue_assignee_consistency_check",
+      sql`(${table.humanAssigneeId} is null) = (${table.humanAssigneeName} is null)`,
+    ),
     index("issue_epic_status_idx").on(table.epicId, table.status),
     index("issue_workspace_id_idx").on(table.workspaceId),
     check("issue_number_check", sql`${table.number} > 0`),

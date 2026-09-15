@@ -231,4 +231,16 @@ export class CollaboratorService {
       throw new DomainError("not_found", "Avatar not found");
     return Buffer.from(profile.avatarPng.slice(22), "base64");
   }
+  async get(access: HumanAccess, projectId: string, userId: string) {
+    const scope = await this.scope(access, projectId);
+    const [person] = await this.members(projectId).where(
+      and(scope, eq(user.id, userId)),
+    );
+    if (!person)
+      throw new DomainError(
+        "invalid",
+        "Choose someone who currently has access to this project.",
+      );
+    return { id: person.id, name: person.name };
+  }
 }

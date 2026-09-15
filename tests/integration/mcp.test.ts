@@ -253,6 +253,123 @@ afterAll(async () => {
 });
 
 describe("stateless Issopen MCP", () => {
+  it("reads human assignees with cursor-bound filters but grants no new agent mutation", async () => {
+    const agent = await new AgentService(connection.db).createAgent(
+      workspaceId,
+      {
+        name: "Assignment reader",
+        projectIds: [projectId],
+      },
+    );
+    const client = await mcpClient(agent.token);
+    const cookie = await signInOwner();
+    try {
+      const second = await tracker.createIssue(mutationContext(), {
+        projectId,
+        title: "Second assigned ticket",
+      });
+      for (const id of [issueId, second.id]) {
+        const current = await tracker.getIssue(workspaceId, id);
+        const response = await app.request(`/api/v1/issues/${id}/assignee`, {
+          method: "PUT",
+          headers: {
+            Cookie: cookie,
+            Origin: baseUrl,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            assigneeId: ownerId,
+            expectedVersion: current.version,
+            questionVersions: [],
+          }),
+        });
+        expect(response.status).toBe(200);
+      }
+      const args = { projectId, assignee: ownerId, limit: 1 };
+      const first = await client.callTool({
+        name: "list_issues",
+        arguments: args,
+      });
+      expect(first.isError).not.toBe(true);
+      const body = first.structuredContent as {
+        issues: {
+          id: string;
+          humanAssigneeId: string;
+          claimedByAgentId: null;
+        }[];
+        page: { nextCursor: string };
+      };
+      expect(body.issues[0]).toMatchObject({
+        id: issueId,
+        humanAssigneeId: ownerId,
+        claimedByAgentId: null,
+      });
+      expect(body.page.nextCursor).toBeTruthy();
+      const next = await client.callTool({
+        name: "list_issues",
+        arguments: { ...args, cursor: body.page.nextCursor },
+      });
+      expect(
+        (next.structuredContent as { issues: { id: string }[] }).issues[0]?.id,
+      ).toBe(second.id);
+      expect(
+        (
+          await client.callTool({
+            name: "list_issues",
+            arguments: {
+              ...args,
+              assignee: "unassigned",
+              cursor: body.page.nextCursor,
+            },
+          })
+        ).isError,
+      ).toBe(true);
+      expect(
+        (
+          await client.callTool({
+            name: "update_issue",
+            arguments: {
+              issueId,
+              humanAssigneeId: null,
+              idempotencyKey: "no-assignee-right",
+            },
+          })
+        ).isError,
+      ).toBe(true);
+      expect(
+        (await client.listTools()).tools.some((tool) =>
+          /assign/.test(tool.name),
+        ),
+      ).toBe(false);
+      const denied = await app.request(`/api/v1/issues/${issueId}/assignee`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${agent.token}`,
+          Origin: baseUrl,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          assigneeId: null,
+          expectedVersion: 2,
+          questionVersions: [],
+        }),
+      });
+      expect(denied.status).toBe(401);
+      expect(
+        (
+          await client.callTool({
+            name: "claim_issue",
+            arguments: { issueId, idempotencyKey: "claim-separate-human" },
+          })
+        ).isError,
+      ).not.toBe(true);
+      const found = await tracker.getIssue(workspaceId, issueId);
+      expect(found.humanAssigneeId).toBe(ownerId);
+      expect(found.claimedByAgentId).toBe(agent.agent.id);
+    } finally {
+      await client.close();
+    }
+  });
   it("has no delete tool and cannot read, mutate or replay creation of a web-deleted ticket", async () => {
     const agent = await new AgentService(connection.db).createAgent(
       workspaceId,

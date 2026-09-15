@@ -3,6 +3,7 @@ import {
   and,
   asc,
   eq,
+  getTableColumns,
   gt,
   inArray,
   isNotNull,
@@ -12,6 +13,7 @@ import {
   sql,
 } from "drizzle-orm";
 import { z } from "zod";
+import { assigneeColumns, assigneePredicate } from "../assignee-projection.js";
 import type { Database } from "../db/client.js";
 import {
   activityEvent,
@@ -704,11 +706,13 @@ export class TrackerService {
     projectId?: string,
     epicId?: string | null,
     includeArchivedEpicIssues = false,
+    assignee?: string,
   ) {
     const predicate = and(
       isNull(issue.deletedAt),
       eq(issue.workspaceId, workspaceId),
       projectId ? eq(issue.projectId, projectId) : undefined,
+      assigneePredicate(assignee),
       epicId === null
         ? isNull(issue.epicId)
         : epicId
@@ -730,7 +734,7 @@ export class TrackerService {
           ),
     );
     const issues = await this.db
-      .select()
+      .select({ ...getTableColumns(issue), ...assigneeColumns })
       .from(issue)
       .where(predicate)
       .orderBy(asc(issue.projectId), asc(issue.number));
@@ -777,6 +781,7 @@ export class TrackerService {
       priority?: (typeof issue.$inferSelect)["priority"];
       claim: IssueClaimFilter;
       agentId: string;
+      assignee?: string;
       limit: number;
       after?: IssuePageCursor;
     },
@@ -805,6 +810,7 @@ export class TrackerService {
         status: issue.status,
         claimedByAgentId: issue.claimedByAgentId,
         claimedAt: issue.claimedAt,
+        ...assigneeColumns,
         version: issue.version,
         createdAt: issue.createdAt,
         updatedAt: issue.updatedAt,
@@ -822,6 +828,7 @@ export class TrackerService {
           options.status ? eq(issue.status, options.status) : undefined,
           options.priority ? eq(issue.priority, options.priority) : undefined,
           claimPredicate,
+          assigneePredicate(options.assignee),
           notExists(
             this.db
               .select({ id: epic.id })
@@ -892,7 +899,7 @@ export class TrackerService {
 
   async getIssue(workspaceId: string, issueId: string) {
     const [found] = await this.db
-      .select()
+      .select({ ...getTableColumns(issue), ...assigneeColumns })
       .from(issue)
       .where(
         and(
