@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Epic3 delivered106;97 technical gates passed releasing;107 matrix;97/98 external prerequisites pending
-last_updated: "2026-09-15T09:34:00Z"
+stopped_at: Epic3 13 tickets ready for human review;97 technical delivered;98 Google pilot and97 mail activation block107 final acceptance
+last_updated: "2026-09-15T09:40:00Z"
 last_activity: 2026-09-15
 progress:
   total_phases: 9
@@ -22,6 +22,20 @@ See: .planning/PROJECT.md (updated 2026-08-30)
 
 **Core value:** Convertir una intención humana en trabajo estructurado y seguro que ChatGPT y agentes de código externos puedan entender, ejecutar y devolver a revisión dentro de un único flujo trazable.
 **Current focus:** Epic 3 implementation after all 20 human answers (v2).
+Final checkpoint:97 source3747d74/GitOps06a3d262/digest135f9430 delivered;
+Healthy/Synced/Ready0restarts/readinessJSONok/PVCunchanged. Production1440/360
+isolatedMember smokePASS, members/audit403/no-store, onlynewtestsessionrevoked.
+0030 tableexists/mailJobs0/mailDisabledtrue/noSMTPcredentials/queueWarnings0.
+Final167unit/web111integration36webE2E+2skips/Chrome16+13/reproducible0.6.3/scan409/
+Compose/backuprestore113issues1011events13matchingimages19receiptsPASS.
+13/16 ticketsReadyHumanReview:94,95,96,99,100,101,102,103,104,105,106,108,109.
+97 technical delivered but external provider/From/pilot pending;98 technical
+delivered but actualGooglepilot pending.107 technicalmatrix verified and complete
+local proof, not accepted realhumanpilot. Stop only for97question0dd7a18c and98
+question1abf3039; no further independent backlog found. Resume their answers,
+complete authorizedpilots and107 before closing. No Store87/88 mutations.
+
+Previous checkpoint:
 106 delivered5044a29/GitOps66d84b95/digest60980357, Healthy/Synced/Ready/PVC,
 isolated1440/360production smokePASS; review/released.97 technical gatesPASS:
 167unit/web111integration36webE2E+2expectedskips,Chrome16unit13E2E, reproducible

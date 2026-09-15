@@ -19,8 +19,10 @@ GitOpsbfd8fce con producción verificada y revisión humana.105 entregado1033c36
 GitOps77699d9d, producción verificada y revisión humana.106 entregado5044a29/
 GitOps66d84b95/digest60980357,163unit/web102integración34webE2E+2skips/Chrome16+13,
 reproducible/scan397/Compose/restore y smoke1440/360PASS; revisiónhumana/sinclaim.
-97 cola/transporte/filtros implementados, gates globales en curso; email real
-desactivado esperando proveedor/From/piloto.98 pilotoGoogle sigue pendiente.
+97 cola/transporte/filtros entregados3747d74/GitOps06a3d262/digest135f9430,
+gates167unit/web111integración36webE2E+2skips/Chrome16+13/reproducible/scan409/
+Compose/backuprestore/smoke1440/360PASS. Maildisabled/queue0; email real espera
+proveedor/From/piloto.98 pilotoGoogle sigue pendiente.13tickets en revisiónhumana.
 107 [matriz combinada](epic-3-acceptance.md) documenta pruebas y límites externos.
 No se declara terminado el Epic ni se confunde este piloto con Store87/88.
 

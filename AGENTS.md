@@ -29,6 +29,11 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+Último runtime:3747d74/GitOps06a3d262/digest135f9430,Healthy/Synced/Ready,
+smoke1440/360PASS y maildisabled/queue0.13ticketsReadyHumanReview;97 y98 técnicos
+entregados esperan preguntas externas,107 espera sus pilotos reales. Ver STATE
+y matriz107 para retomar sin repetir trabajo ni simular aceptación Google/Store.
+
 97: [operación y entrega de invitaciones](docs/invitation-delivery.md).0030 cola
 durable cifrada AES-GCM con clave independiente,3intentos/leases/idempotencia de
 generación, rotación/revocación/purga, estados email separados y filtros en Members.

@@ -1,6 +1,6 @@
 ---
 type: quick
-status: verified-local-releasing
+status: technical-delivered-awaiting-activation
 ticket: 97
 epic: 3
 ---

@@ -1,4 +1,14 @@
-#97 technical implementation verified; production delivery next
+#97 technical delivered; real email activation blocked
+
+Source3747d7421d3fff21fe508d53a8aa0db255cf0ea1, GitOps06a3d26268679dc5964e4fd1f5f108dcccdaa880,
+imageinvitations-3747d74@sha256:135f94309c57d75edd566ccda77ab5bd63fc96caa3dcec8e8cfb23a3d8c181ff.
+15Sep09:39 observedHealthy/Synced exactrevision/Ready1/1 zero restarts/readinessJSONok,
+PVCidentitiesunchanged. Production newreviewerMember smoke1440/360PASS, members+
+audit403/no-store, protectedimages/foreign404 and ownnewsessionrevocation/clearing;
+existing humans/Store sessions/grants/tickets untouched. Isolatedbrowsernamespace
+avoids unrelated n8nnetworkrestarts. DBmetadata0030exists/mailJobs0, envdisabled
+withoutcredentials/key; queueWarnings0. No real mail sent. Commitlinks in97/107.
+Final post-summary secret scan409PASS. Below preserves predeployment checkpoint.
 
 Approvedv2 email+manual, Owner-requested reminders only. Separate unansweredv1
 question0dd7a18c (provider/From/pilot) still blocks real email activation; no SMTP

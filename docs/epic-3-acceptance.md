@@ -55,6 +55,15 @@ mobile360px and desktop1440px include no-horizontal-overflow assertions.
 
 ## Delivery and operational proof
 
+Final97/107 technical delivery: source3747d74, GitOps06a3d262,
+imageinvitations-3747d74 digest135f9430, Healthy/Synced/Ready1/1/0restarts,
+readinessJSONok and unchangedPVCs.167unit/web111integration36webE2E+2expected
+skips,Chrome16unit13E2E,reproducible0.6.3,scan409,ComposePASS. Backuprestore
+113issues1011events13matchingimages19receipts. Production1440/360 safeMember
+smokePASS;0030 tableexists/mailJobs0/maildisabled/noSMTPcredentials/queueWarnings0.
+No real pilot or Store acceptance claimed. Later source-doc commit only records
+verification; runtime remains the exact3747d74 image above.
+
 Each increment has a quick GSD summary, source commit link and GitOps commit in
 its ticket. 106 source5044a29 / GitOps66d84b95 / imageaudit-5044a29 digest60980357
 was observedHealthy/Synced with Ready1/1,0restarts and readinessJSONok. Positive
