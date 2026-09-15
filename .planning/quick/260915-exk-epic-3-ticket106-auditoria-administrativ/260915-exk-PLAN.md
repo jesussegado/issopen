@@ -1,6 +1,6 @@
 ---
 type: quick
-status: executing
+status: verified-local-deploying
 ticket: 106
 epic: 3
 ---

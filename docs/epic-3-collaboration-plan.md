@@ -15,8 +15,11 @@ después:fuente390f3d0/GitOpscbf737cd, digest06d2fec0, Synced/Healthy y smokePAS
 Checkpoint15Sep:95/96/99/101/102 también entregados y en revisión humana, sin claims.
 98 entregado técnicamente pero con warning para pilotoGoogle real;97 necesita
 proveedor/remitente/destinatario piloto sólo para email real.103 entregado75dfb6e/
-GitOpsbfd8fce con producción verificada y revisión humana.105 implementado en
-verificación/liberación;106/97/107 siguen pendientes. No se declara terminado el Epic.
+GitOpsbfd8fce con producción verificada y revisión humana.105 entregado1033c36/
+GitOps77699d9d, producción verificada y revisión humana.106 validado163unit/web
+102integración34webE2E+2skips/Chrome16+13/reproducible/scan397/Compose y restore;
+en publicación.97 técnico en curso,97/98 decisiones operativas pendientes09:03.
+107 aceptación combinada pendiente. No se declara terminado el Epic.
 
 ## Contrato tras respuestas — ticket 94
 

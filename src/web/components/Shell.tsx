@@ -99,6 +99,7 @@ function Navigation({
       <div className="nav-divider" />
       {role === "owner" ? link("/agents", "Agents") : null}
       {role === "owner" ? link("/members", "Members") : null}
+      {role === "owner" ? link("/audit", "Access audit") : null}
       {link("/ownership", "Workspace ownership")}
       {role === "owner" ? link("/connect", "Connect ChatGPT") : null}
       {link("/extensions", "Extensiones Chrome")}

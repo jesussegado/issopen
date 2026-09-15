@@ -29,6 +29,15 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+106: [auditoría administrativa](docs/access-audit.md), Owner-only, paginada por
+fecha/source/id con microsegundos exactos. Reutiliza membership/invitation/ownership,
+sin nuevo ledger duplicado ni datos de sesiones personales.0029 snapshots futuros
+de nombres sin falsear histórico y trigger append-only para ownership. Sólo GET,
+no exportación/edit/delete. Cursor contextual y DTO explícito sin secretos.
+105 entregado1033c36/GitOps77699d9d/digesta5673137, producción sana y smoke1440/360
+PASS09:01; en revisión sinclaim. Para smoke usar navegador aislado si n8nLaurotech
+local sigue reiniciando y Chromium cancela por cambios de interfaz; no tocarlo.
+
 105: [transferencia protegida y recuperación](docs/workspace-ownership.md).
 Prueba de autenticación del servidor, no session.createdAt: las invitaciones
 también crean sesiones sin reautenticar. Ambas personas/login5min, confirmación

@@ -810,6 +810,8 @@ export const membershipEvent = pgTable(
     actorUserId: text("actor_user_id")
       .notNull()
       .references(() => user.id, { onDelete: "restrict" }),
+    actorName: varchar("actor_name", { length: 120 }),
+    subjectName: varchar("subject_name", { length: 120 }),
     projectId: text("project_id").references(() => project.id, {
       onDelete: "restrict",
     }),
@@ -870,6 +872,11 @@ export const workspaceInvitationEvent = pgTable(
     actorUserId: text("actor_user_id")
       .notNull()
       .references(() => user.id, { onDelete: "restrict" }),
+    actorName: varchar("actor_name", { length: 120 }),
+    subjectUserId: text("subject_user_id").references(() => user.id, {
+      onDelete: "restrict",
+    }),
+    subjectName: varchar("subject_name", { length: 120 }),
     type: varchar("type", { length: 64 }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()

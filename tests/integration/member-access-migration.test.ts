@@ -49,6 +49,8 @@ it("backfills stable distinct membership versions without changing grants or pri
         ...row,
         previous_permission: null,
         next_permission: null,
+        actor_name: null,
+        subject_name: null,
       })),
     );
     await migrateDatabase(container.getConnectionUri());

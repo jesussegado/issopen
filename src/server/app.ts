@@ -23,6 +23,7 @@ import {
   isExtensionClientId,
   oauthClientIdFromRequest,
 } from "./extensions.js";
+import { createAccessAuditRouter } from "./http/access-audit.js";
 import { createAccountRouter } from "./http/account.js";
 import {
   createAgentRouter,
@@ -106,7 +107,7 @@ export function createApp({
     await next();
     context.header("Referrer-Policy", "no-referrer");
     if (
-      /^\/(?:invite\/|invitations\/|sign-in(?:$|\/)|api\/auth\/|api\/v1\/(?:notifications|workspace\/ownership)(?:$|\/))/.test(
+      /^\/(?:invite\/|invitations\/|sign-in(?:$|\/)|api\/auth\/|api\/v1\/(?:notifications|workspace\/(?:ownership|audit))(?:$|\/))/.test(
         context.req.path,
       )
     )
@@ -386,6 +387,7 @@ export function createApp({
   app.route("/api/v1", createAccountRouter(db, auth));
   app.route("/api/v1", createProfileRouter(db));
   app.route("/api/v1", createOwnershipRouter(db));
+  app.route("/api/v1", createAccessAuditRouter(db));
   app.route("/api/v1", createAgentRouter({ db }));
   app.route(
     "/api/v1",

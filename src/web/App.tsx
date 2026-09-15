@@ -9,6 +9,7 @@ import {
   switchWorkspace,
   workspaceHeaders,
 } from "./lib/workspace-context.js";
+import { AccessAuditRoute } from "./routes/AccessAuditRoute.js";
 import { AccountRoute } from "./routes/AccountRoute.js";
 import { AgentsRoute } from "./routes/AgentsRoute.js";
 import { BoardRoute } from "./routes/BoardRoute.js";
@@ -298,6 +299,8 @@ function AuthenticatedApp({
     route = <AgentsRoute projects={projects} />;
   else if (pathname === "/members" && session.workspace.role === "owner")
     route = <MembersRoute projects={projects} />;
+  else if (pathname === "/audit" && session.workspace.role === "owner")
+    route = <AccessAuditRoute workspaceId={session.workspace.id} />;
   else if (pathname === "/notifications")
     route = (
       <NotificationsRoute

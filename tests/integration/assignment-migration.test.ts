@@ -51,7 +51,17 @@ it("adds optional human assignment without rewriting old ownership, claims, stat
       await connection.client`select * from issue_comment`
     )[0];
     const history = await connection.client`select * from activity_event`;
+    const oldAccessId = randomUUID();
+    await connection.client`insert into membership_event (id,workspace_id,subject_user_id,actor_user_id,type,next_role) values (${oldAccessId},${space},${owner},${owner},'membership.created','owner')`;
+    const oldAccess = (
+      await connection.client`select * from membership_event where id=${oldAccessId}`
+    )[0];
     await migrateDatabase(container.getConnectionUri());
+    expect(
+      (
+        await connection.client`select * from membership_event where id=${oldAccessId}`
+      )[0],
+    ).toEqual({ ...oldAccess, actor_name: null, subject_name: null });
     expect((await connection.client`select * from issue_comment`)[0]).toEqual({
       ...oldComment,
       mentions: [],
