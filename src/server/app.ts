@@ -105,7 +105,7 @@ export function createApp({
     await next();
     context.header("Referrer-Policy", "no-referrer");
     if (
-      /^\/(?:invite\/|invitations\/|sign-in(?:$|\/)|api\/auth\/)/.test(
+      /^\/(?:invite\/|invitations\/|sign-in(?:$|\/)|api\/auth\/|api\/v1\/notifications(?:$|\/))/.test(
         context.req.path,
       )
     )

@@ -232,6 +232,7 @@ export type IssueComment = {
   workspaceId: string;
   issueId: string;
   body: string;
+  mentions?: Array<{ id: string; name: string }>;
   authorType: "human" | "agent" | "system";
   authorId: string;
   authorDisplayName: string;

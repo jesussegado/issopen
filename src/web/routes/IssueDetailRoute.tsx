@@ -8,6 +8,7 @@ import {
 } from "react";
 import { AssigneeEditor } from "../components/AssigneeEditor.js";
 import { CaptureEvidence } from "../components/CaptureEvidence.js";
+import { CollaboratorPicker } from "../components/CollaboratorPicker.js";
 import { DeleteIssueButton } from "../components/DeleteIssueButton.js";
 import { QuestionRecipientEditor } from "../components/QuestionRecipientEditor.js";
 import {
@@ -153,6 +154,10 @@ export function IssueDetailRoute({
   const [links, setLinks] = useState<CodeLink[]>([]);
   const [comments, setComments] = useState<IssueComment[]>([]);
   const [commentBody, setCommentBody] = useState("");
+  const [mentions, setMentions] = useState<Array<{ id: string; name: string }>>(
+    [],
+  );
+  const commentRequest = useRef<{ payload: string; id: string } | null>(null);
   const [questions, setQuestions] = useState<IssueQuestion[]>([]);
   const [questionSummary, setQuestionSummary] = useState<QuestionSummary>({
     total: 0,
@@ -208,6 +213,7 @@ export function IssueDetailRoute({
       assigneeDirty ||
       recipientDirty ||
       commentBody !== "" ||
+      mentions.length > 0 ||
       linkUrl !== "" ||
       reason !== "" ||
       requestingChanges,
@@ -266,6 +272,8 @@ export function IssueDetailRoute({
     setActivity([]);
     setPendingSnapshot(null);
     setCommentBody("");
+    setMentions([]);
+    commentRequest.current = null;
     setAnswerOtherText("");
     setAnswerOptionId("");
     setLinkUrl("");
@@ -277,6 +285,8 @@ export function IssueDetailRoute({
     setLoading(true);
     setMissing(false);
     setCommentBody("");
+    setMentions([]);
+    commentRequest.current = null;
     setLinkUrl("");
     setReason("");
     setRequestingChanges(false);
@@ -284,8 +294,16 @@ export function IssueDetailRoute({
     setPendingSnapshot(null);
     void readDetailSnapshot(issueId, controller.signal)
       .then((snapshot) => {
-        if (!controller.signal.aborted && scopeRef.current === scope)
+        if (!controller.signal.aborted && scopeRef.current === scope) {
           applySnapshot(snapshot);
+          const directed = new URLSearchParams(window.location.search).get(
+            "question",
+          );
+          const directedIndex = snapshot.questions.findIndex(
+            (q) => q.id === directed,
+          );
+          if (directedIndex >= 0) setQuestionIndex(directedIndex);
+        }
       })
       .catch((caught) => {
         if (controller.signal.aborted || scopeRef.current !== scope) return;
@@ -571,6 +589,15 @@ export function IssueDetailRoute({
   async function addComment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!issue || !commentBody.trim()) return;
+    const requestedScope = scope;
+    const payload = JSON.stringify({
+      scope,
+      issueId: issue.id,
+      body: commentBody,
+      mentionIds: mentions.map((p) => p.id).sort(),
+    });
+    if (commentRequest.current?.payload !== payload)
+      commentRequest.current = { payload, id: crypto.randomUUID() };
     mutationEpoch.current += 1;
     setSubmitting("comment");
     setError(null);
@@ -580,11 +607,21 @@ export function IssueDetailRoute({
         `/api/v1/issues/${issue.id}/comments`,
         {
           method: "POST",
-          body: JSON.stringify({ body: commentBody }),
+          body: JSON.stringify({
+            body: commentBody,
+            mentionIds: mentions.map((p) => p.id),
+            clientRequestId: commentRequest.current.id,
+          }),
         },
       );
-      setComments((current) => [...current, response.comment]);
+      if (scopeRef.current !== requestedScope) return;
+      setComments((current) => [
+        ...current.filter((c) => c.id !== response.comment.id),
+        response.comment,
+      ]);
       setCommentBody("");
+      setMentions([]);
+      commentRequest.current = null;
       setNotice("Comment added");
       setAnnouncement(
         `Comment added to ${issueReference(issue)} by ${commentAuthorLabel(response.comment, session.user.id)}`,
@@ -1085,6 +1122,15 @@ export function IssueDetailRoute({
                       <Badge>{sourceLabels[comment.source]}</Badge>
                     </div>
                     <p className="description">{comment.body}</p>
+                    {comment.mentions?.length ? (
+                      <p className="mention-tags">
+                        {comment.mentions.map((person) => (
+                          <span className="badge" key={person.id}>
+                            @{person.name}
+                          </span>
+                        ))}
+                      </p>
+                    ) : null}
                     <time
                       className="activity-meta"
                       dateTime={comment.createdAt}
@@ -1109,6 +1155,43 @@ export function IssueDetailRoute({
                     }
                   />
                 </Field>
+                <details>
+                  <summary>Mention people ({mentions.length}/8)</summary>
+                  <p className="metadata">
+                    Choose project collaborators to notify. Typing a name in the
+                    comment alone does not notify or grant access.
+                  </p>
+                  <ul className="mention-list">
+                    {mentions.map((person) => (
+                      <li key={person.id}>
+                        @{person.name}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          disabled={submitting !== null}
+                          onClick={() =>
+                            setMentions((current) =>
+                              current.filter((p) => p.id !== person.id),
+                            )
+                          }
+                        >
+                          Remove mention {person.name}
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                  <CollaboratorPicker
+                    projectId={issue.projectId}
+                    disabled={submitting !== null || mentions.length >= 8}
+                    onChoose={(person) =>
+                      setMentions((current) =>
+                        current.some((p) => p.id === person.id)
+                          ? current
+                          : [...current, { id: person.id, name: person.name }],
+                      )
+                    }
+                  />
+                </details>
                 <Button type="submit" disabled={!online || submitting !== null}>
                   {submitting === "comment" ? "Adding…" : "Add comment"}
                 </Button>

@@ -29,6 +29,16 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+103 en curso: [avisos personales](docs/personal-notifications.md). Sólo actividad
+dirigida/in-app, sin correo/watchers. Emisión transaccional+reintentos deduplicados,
+revalidación por proyecto en cada lectura/marcado. Menciones seleccionadas no
+invitan ni conceden acceso. Acción obsoleta no borra auditoría.0025 no hace replay
+histórico, contratos MCP/Chrome mutantes intactos. Gates162unit/web92integration
+30webE2E+2skips/Chrome16+13/reproducible0.6.3/scan379/ComposePASS. Backuprestore
+113issues988events13images19receipts. Despliegue/smoke pendientes antes de revisión.
+102 entregadoa6f4297/GitOpsa6e79100/digest4704d59a, Healthy/Synced/Ready0restarts/
+readinessJSONok/PVCunchanged y smoke1440/360PASS; review/claimreleased.
+
 102 en curso: [preguntas dirigidas](docs/directed-questions.md). Destinatario
 opcional, cualquier editor puede responder/revisar; no revisor exclusivo ni
 cambio del ticket68. Web guarda con CAS completo, lectura MCP compatible, sin

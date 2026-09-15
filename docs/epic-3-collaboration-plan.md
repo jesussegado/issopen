@@ -12,7 +12,10 @@ Primer bloque entregado el14/09/2026:94 contrato,100 sesiones propias,
 104 detalle en vivo y109 navegación móvil. Fuente328a386/GitOps0ac6550d,
 producción verificada y tickets Ready for Human Review sin claims.108 entregado
 después:fuente390f3d0/GitOpscbf737cd, digest06d2fec0, Synced/Healthy y smokePASS.
-95 en implementación;10 Backlog restantes. No se declara terminado el Epic.
+Checkpoint15Sep:95/96/99/101/102 también entregados y en revisión humana, sin claims.
+98 entregado técnicamente pero con warning para pilotoGoogle real;97 necesita
+proveedor/remitente/destinatario piloto sólo para email real.103 validado localmente
+y en publicación;105/106/97/107 siguen pendientes. No se declara terminado el Epic.
 
 ## Contrato tras respuestas — ticket 94
 

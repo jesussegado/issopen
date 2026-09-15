@@ -1002,6 +1002,12 @@ export const issueComment = pgTable(
     workspaceId: text("workspace_id").notNull(),
     issueId: text("issue_id").notNull(),
     body: text("body").notNull(),
+    mentions: jsonb("mentions")
+      .$type<Array<{ id: string; name: string }>>()
+      .notNull()
+      .default([]),
+    webRequestId: text("web_request_id"),
+    webRequestHash: text("web_request_hash"),
     authorType: activityActorType("author_type").notNull(),
     authorId: text("author_id").notNull(),
     authorDisplayName: varchar("author_display_name", {
@@ -1020,6 +1026,12 @@ export const issueComment = pgTable(
     }).onDelete("restrict"),
     index("issue_comment_issue_created_idx").on(table.issueId, table.createdAt),
     index("issue_comment_workspace_id_idx").on(table.workspaceId),
+    uniqueIndex("issue_comment_web_request_idx").on(
+      table.workspaceId,
+      table.issueId,
+      table.authorId,
+      table.webRequestId,
+    ),
   ],
 );
 
@@ -1080,6 +1092,57 @@ export const activityEvent = pgTable(
       table.createdAt,
     ),
     index("activity_event_workspace_id_idx").on(table.workspaceId),
+  ],
+);
+
+export const notification = pgTable(
+  "notification",
+  {
+    id: text("id").primaryKey(),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => workspace.id, { onDelete: "restrict" }),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => project.id, { onDelete: "restrict" }),
+    issueId: text("issue_id")
+      .notNull()
+      .references(() => issue.id, { onDelete: "restrict" }),
+    eventId: text("event_id")
+      .notNull()
+      .references(() => activityEvent.id, { onDelete: "restrict" }),
+    recipientId: text("recipient_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    kind: varchar("kind", { length: 24 })
+      .$type<"assignment" | "question" | "mention" | "review">()
+      .notNull(),
+    questionId: text("question_id").references(() => issueQuestion.id, {
+      onDelete: "restrict",
+    }),
+    questionVersion: integer("question_version"),
+    readAt: timestamp("read_at", { withTimezone: true }),
+    obsoleteAt: timestamp("obsolete_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("notification_event_recipient_kind_idx").on(
+      table.eventId,
+      table.recipientId,
+      table.kind,
+    ),
+    index("notification_inbox_idx").on(
+      table.workspaceId,
+      table.recipientId,
+      table.createdAt,
+      table.id,
+    ),
+    check(
+      "notification_kind_check",
+      sql`${table.kind} in ('assignment','question','mention','review')`,
+    ),
   ],
 );
 

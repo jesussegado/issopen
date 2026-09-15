@@ -1,6 +1,6 @@
 ---
 type: quick
-status: planned
+status: verified-local-deploying
 ticket: 103
 epic: 3
 ---

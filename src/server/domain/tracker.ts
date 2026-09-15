@@ -14,6 +14,7 @@ import {
 } from "drizzle-orm";
 import { z } from "zod";
 import { assigneeColumns, assigneePredicate } from "../assignee-projection.js";
+import { commentColumns, publicComment } from "../comment-projection.js";
 import type { Database } from "../db/client.js";
 import {
   activityEvent,
@@ -26,6 +27,7 @@ import {
   project,
   workspace,
 } from "../db/schema.js";
+import { emitDirectedNotification } from "../notification-events.js";
 import { recipientColumns } from "../question-recipients.js";
 import {
   type AddCodeLinkInput,
@@ -138,19 +140,23 @@ async function recordActivity(
     changes: ActivityChanges;
   },
 ) {
-  await tx.insert(activityEvent).values({
-    id: randomUUID(),
-    workspaceId: context.workspaceId,
-    projectId: values.projectId,
-    issueId: values.issueId,
-    type: values.type,
-    actorType: context.actor.type,
-    actorId: context.actor.id,
-    actorDisplayName: context.actor.displayName,
-    source: context.source,
-    summary: boundedSummary(values.summary),
-    changes: values.changes,
-  });
+  const [event] = await tx
+    .insert(activityEvent)
+    .values({
+      id: randomUUID(),
+      workspaceId: context.workspaceId,
+      projectId: values.projectId,
+      issueId: values.issueId,
+      type: values.type,
+      actorType: context.actor.type,
+      actorId: context.actor.id,
+      actorDisplayName: context.actor.displayName,
+      source: context.source,
+      summary: boundedSummary(values.summary),
+      changes: values.changes,
+    })
+    .returning();
+  if (event) await emitDirectedNotification(tx, event);
 }
 
 function requireHuman(context: MutationContext) {
@@ -972,7 +978,7 @@ export class TrackerService {
   async listIssueComments(workspaceId: string, issueId: string) {
     await this.getIssue(workspaceId, issueId);
     return this.db
-      .select()
+      .select(commentColumns)
       .from(issueComment)
       .where(
         and(
@@ -1028,7 +1034,7 @@ export class TrackerService {
         summary: `Commented on ${currentIssue.key}`,
         changes: { commentId: created.id },
       });
-      return created;
+      return publicComment(created);
     });
   }
 

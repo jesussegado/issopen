@@ -18,6 +18,7 @@ import {
   requireProjectEdit,
   resolveHumanAccess,
 } from "./human-access.js";
+import { emitDirectedNotification } from "./notification-events.js";
 import { CollaboratorService } from "./profiles.js";
 
 export const recipientSchema = z
@@ -125,29 +126,36 @@ export class QuestionRecipientService {
           .update(issue)
           .set({ version: sql`${issue.version} + 1`, updatedAt: new Date() })
           .where(eq(issue.id, issueId));
-        await tx.insert(activityEvent).values({
-          id: randomUUID(),
-          workspaceId: access.workspaceId,
-          projectId: current.projectId,
-          issueId,
-          type: "issue.question_recipient_changed",
-          actorType: "human",
-          actorId: fresh.user.id,
-          actorDisplayName: fresh.user.name,
-          source: "rest",
-          summary: target
-            ? `Directed a question on ${current.key} to ${target.name}`
-            : `Opened a question on ${current.key} to the team`,
-          changes: {
-            questionId,
-            recipient: {
-              from: question.recipientUserId
-                ? { id: question.recipientUserId, name: question.recipientName }
-                : null,
-              to: target,
+        const [event] = await tx
+          .insert(activityEvent)
+          .values({
+            id: randomUUID(),
+            workspaceId: access.workspaceId,
+            projectId: current.projectId,
+            issueId,
+            type: "issue.question_recipient_changed",
+            actorType: "human",
+            actorId: fresh.user.id,
+            actorDisplayName: fresh.user.name,
+            source: "rest",
+            summary: target
+              ? `Directed a question on ${current.key} to ${target.name}`
+              : `Opened a question on ${current.key} to the team`,
+            changes: {
+              questionId,
+              recipient: {
+                from: question.recipientUserId
+                  ? {
+                      id: question.recipientUserId,
+                      name: question.recipientName,
+                    }
+                  : null,
+                to: target,
+              },
             },
-          },
-        });
+          })
+          .returning();
+        if (event) await emitDirectedNotification(tx, event);
       }
       return tracker.getIssueDetail(
         access.workspaceId,

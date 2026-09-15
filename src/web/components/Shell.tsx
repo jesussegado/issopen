@@ -4,6 +4,7 @@ import {
   rememberWorkspace,
   switchWorkspace,
 } from "../lib/workspace-context.js";
+import { NotificationLink } from "../routes/NotificationsRoute.js";
 import type { Project, Session } from "../types.js";
 import { Brand } from "./Brand.js";
 import { AppLink, Button } from "./ui.js";
@@ -170,6 +171,10 @@ export function AuthenticatedShell({
         <span className="metadata">
           {session.workspace.role === "owner" ? "Owner" : "Member"}
         </span>
+        <NotificationLink
+          workspaceId={session.workspace.id}
+          key={`${session.workspace.id}:${session.user.id}`}
+        />
         <MobileNavigation
           key={`${session.user.id}:${session.workspace.id}:${pathname}`}
         >

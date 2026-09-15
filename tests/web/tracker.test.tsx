@@ -1128,6 +1128,8 @@ describe("tracker web routes", () => {
         ) {
           expect(JSON.parse(String(init.body))).toEqual({
             body: "Human review note",
+            mentionIds: [],
+            clientRequestId: expect.any(String),
           });
           return json({
             comment: {

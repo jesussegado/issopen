@@ -31,6 +31,7 @@ import {
 } from "./routes/InvitationRoutes.js";
 import { IssueDetailRoute } from "./routes/IssueDetailRoute.js";
 import { MembersRoute } from "./routes/MembersRoute.js";
+import { NotificationsRoute } from "./routes/NotificationsRoute.js";
 import { PrivacyRoute } from "./routes/PrivacyRoute.js";
 import {
   SignInRoute,
@@ -296,6 +297,13 @@ function AuthenticatedApp({
     route = <AgentsRoute projects={projects} />;
   else if (pathname === "/members" && session.workspace.role === "owner")
     route = <MembersRoute projects={projects} />;
+  else if (pathname === "/notifications")
+    route = (
+      <NotificationsRoute
+        workspaceId={session.workspace.id}
+        key={`${session.workspace.id}:${session.user.id}`}
+      />
+    );
   else if (pathname === "/account")
     route = (
       <AccountRoute

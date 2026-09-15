@@ -9,7 +9,6 @@ import type { Database } from "../db/client.js";
 import { activityEvent, issueStatusValues } from "../db/schema.js";
 import {
   addCodeLinkSchema,
-  addIssueCommentSchema,
   answerIssueQuestionSchema,
   createEpicSchema,
   createIssueQuestionSchema,
@@ -37,6 +36,12 @@ import {
   requireWorkspaceOwner,
   resolveHumanAccess,
 } from "../human-access.js";
+import {
+  inboxQuerySchema,
+  NotificationService,
+  notificationReadSchema,
+  webCommentSchema,
+} from "../notifications.js";
 import {
   QuestionRecipientService,
   recipientSchema,
@@ -195,6 +200,31 @@ export function createTrackerRouter({ db, auth }: TrackerRouterDependencies) {
       }
       throw error;
     }
+  });
+
+  router.get("/notifications", async (context) => {
+    const access = requireHumanAccess(context.get("humanAccess"));
+    const parsed = inboxQuerySchema.safeParse(context.req.query());
+    if (!parsed.success)
+      throw new DomainError("invalid", "Invalid inbox query");
+    return context.json(
+      await new NotificationService(db).list(access, parsed.data),
+    );
+  });
+  router.put("/notifications/:notificationId/read", async (context) => {
+    const access = requireHumanAccess(context.get("humanAccess"));
+    const id = parseIdentifier(
+      context.req.param("notificationId"),
+      "notificationId",
+    );
+    const input = await parseBody(context, notificationReadSchema);
+    return context.json({
+      notification: await new NotificationService(db).mark(
+        access,
+        id,
+        input.read,
+      ),
+    });
   });
 
   router.get("/projects", async (context) => {
@@ -592,9 +622,9 @@ export function createTrackerRouter({ db, auth }: TrackerRouterDependencies) {
       issueId,
     );
     requireProjectEdit(mutationContext.access, foundIssue.projectId);
-    const input = await parseBody(context, addIssueCommentSchema);
-    const comment = await tracker.addIssueComment(
-      mutationContext,
+    const input = await parseBody(context, webCommentSchema);
+    const comment = await new NotificationService(db).comment(
+      mutationContext.access,
       issueId,
       input,
     );

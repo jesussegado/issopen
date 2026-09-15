@@ -45,8 +45,20 @@ it("adds optional human assignment without rewriting old ownership, claims, stat
     const oldQuestion = (
       await connection.client`select * from issue_question`
     )[0];
+    const comment = randomUUID();
+    await connection.client`insert into issue_comment (id,workspace_id,issue_id,body,author_type,author_id,author_display_name,source) values (${comment},${space},${ticket},'Original immutable comment','human',${owner},'Original owner','rest')`;
+    const oldComment = (
+      await connection.client`select * from issue_comment`
+    )[0];
     const history = await connection.client`select * from activity_event`;
     await migrateDatabase(container.getConnectionUri());
+    expect((await connection.client`select * from issue_comment`)[0]).toEqual({
+      ...oldComment,
+      mentions: [],
+      web_request_id: null,
+      web_request_hash: null,
+    });
+    expect(await connection.client`select * from notification`).toHaveLength(0);
     const current = (await connection.client`select * from issue`)[0];
     expect(current).toEqual({
       ...before,

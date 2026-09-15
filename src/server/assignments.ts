@@ -12,6 +12,7 @@ import {
   requireProjectEdit,
   resolveHumanAccess,
 } from "./human-access.js";
+import { emitDirectedNotification } from "./notification-events.js";
 import { CollaboratorService } from "./profiles.js";
 
 export const assignmentSchema = z
@@ -89,28 +90,35 @@ export class AssignmentService {
           updatedAt: new Date(),
         })
         .where(eq(issue.id, issueId));
-      await tx.insert(activityEvent).values({
-        id: randomUUID(),
-        workspaceId: access.workspaceId,
-        projectId: current.projectId,
-        issueId,
-        actorType: "human",
-        actorId: fresh.user.id,
-        actorDisplayName: fresh.user.name,
-        source: "rest",
-        type: "issue.assignee_changed",
-        summary: target
-          ? `Assigned ${current.key} to ${target.name}`
-          : `Unassigned ${current.key}`,
-        changes: {
-          humanAssignee: {
-            from: current.humanAssigneeId
-              ? { id: current.humanAssigneeId, name: current.humanAssigneeName }
-              : null,
-            to: target,
+      const [event] = await tx
+        .insert(activityEvent)
+        .values({
+          id: randomUUID(),
+          workspaceId: access.workspaceId,
+          projectId: current.projectId,
+          issueId,
+          actorType: "human",
+          actorId: fresh.user.id,
+          actorDisplayName: fresh.user.name,
+          source: "rest",
+          type: "issue.assignee_changed",
+          summary: target
+            ? `Assigned ${current.key} to ${target.name}`
+            : `Unassigned ${current.key}`,
+          changes: {
+            humanAssignee: {
+              from: current.humanAssigneeId
+                ? {
+                    id: current.humanAssigneeId,
+                    name: current.humanAssigneeName,
+                  }
+                : null,
+              to: target,
+            },
           },
-        },
-      });
+        })
+        .returning();
+      if (event) await emitDirectedNotification(tx, event);
       return tracker.getIssue(access.workspaceId, issueId);
     });
   }
