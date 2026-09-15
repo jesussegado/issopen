@@ -23,3 +23,11 @@ PG18.6/networknone restore113issues974events13images matched hashes/bytes19recei
 Source/image/GitOps and observed live smoke pending before moving101 to review.
 102 quick260915-d77 planned; continue independent tickets despite97/98 external
 provider/pilot questions (still unanswered15Sep07:30UTC).
+
+Pre-acceptance follow-up15Sep07:38: recipient-query tests exposed Drizzle single-
+table selection removing column qualification inside correlated SQL. Qualified
+the101 assignee predicates explicitly so other-project/workspace grants cannot
+make a withdrawn assignee appear eligible or expose their later profile name.
+Added regression with withdrawn person still assigned another project AND Owner
+of a different workspace. Assignment+tracker18testsPASS. Publish follow-up image
+before accepting101 production delivery; firstGitOps691af152 not yet observed.

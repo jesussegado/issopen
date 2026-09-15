@@ -261,6 +261,27 @@ it("keeps removed assignee attribution without access, filters consistently and 
     reader,
     { expectedVersion: membership.version, grants: [] },
   );
+  // Other-project and other-workspace ownership must not make a withdrawn person
+  // eligible for this ticket, or expose future profile changes through its label.
+  await connection.db
+    .insert(projectMembership)
+    .values({
+      workspaceId: space,
+      userId: reader,
+      projectId: otherProject,
+      permission: "edit",
+    });
+  const personalSpace = randomUUID();
+  await connection.db
+    .insert(workspace)
+    .values({
+      id: personalSpace,
+      ownerId: reader,
+      name: "Reader private space",
+    });
+  await connection.db
+    .insert(workspaceMembership)
+    .values({ workspaceId: personalSpace, userId: reader, role: "owner" });
   await connection.db
     .update(user)
     .set({ name: "Private future name" })
@@ -268,7 +289,9 @@ it("keeps removed assignee attribution without access, filters consistently and 
   const removed = await tracker.getIssue(space, ticket.id);
   expect(removed.humanAssigneeHasAccess).toBe(false);
   expect(removed.humanAssigneeName).toBe("Same name");
-  expect((await request(reader, `/issues/${ticket.id}`)).status).toBe(404);
+  expect(
+    (await request(reader, `/issues/${ticket.id}?workspace=${space}`)).status,
+  ).toBe(404);
   expect(
     (
       await request(owner, `/issues/${ticket.id}/assignee`, {

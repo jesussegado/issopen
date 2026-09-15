@@ -6,18 +6,18 @@ import { issue } from "./db/schema.js";
 export const assigneeHasAccess = sql<boolean>`exists (
   select 1 from workspace_membership m
   join workspace w on w.id = m.workspace_id
-  where m.workspace_id = ${issue.workspaceId} and m.user_id = ${issue.humanAssigneeId}
+  where m.workspace_id = "issue"."workspace_id" and m.user_id = "issue"."human_assignee_id"
   and ((m.role = 'owner' and w.owner_id = m.user_id) or
     (m.role = 'member' and exists (select 1 from project_membership p
-      where p.workspace_id = m.workspace_id and p.project_id = ${issue.projectId}
+      where p.workspace_id = m.workspace_id and p.project_id = "issue"."project_id"
       and p.user_id = m.user_id))))`;
 
 export const assigneeColumns = {
   humanAssigneeId: issue.humanAssigneeId,
   // Removed collaborators retain the name recorded at assignment, not future profile edits.
   humanAssigneeName: sql<string | null>`case when ${assigneeHasAccess}
-    then coalesce((select u.name from "user" u where u.id = ${issue.humanAssigneeId}), ${issue.humanAssigneeName})
-    else ${issue.humanAssigneeName} end`,
+    then coalesce((select u.name from "user" u where u.id = "issue"."human_assignee_id"), "issue"."human_assignee_name")
+    else "issue"."human_assignee_name" end`,
   humanAssigneeHasAccess: assigneeHasAccess,
 };
 
