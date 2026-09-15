@@ -37,7 +37,9 @@ revalida acceso y oculta personas sin grants; reutilizar CollaboratorService par
 101/102/103. No cambiar email/proveedor ni snapshots históricos ni revisor real.
 Gates99:155unit/web84integration24webE2E+2skips, Chrome16+13/reproducible0.6.3,
 scan349, ComposePASS. Backup15Sep/restauración aislada:113issues967events13images
-con hashes19receipts. Despliegue99 pendiente: no asumir entregado por existir código.
+con hashes19receipts. Desplegado93cdf43/GitOpsa0b1ab59/digest95473777:
+ArgoSynced/Healthy, Ready0restarts/PVCunchanged/readiness200, smokeMember1440/360PASS.
+99 en revisión/claimliberado;101 en progreso quick260915-csg.
 
 98 mejora invitaciones/login: recuperación explícita, cabeceras privadas, returnTo
 interno estricto y destino un proyecto/selector/espera. [Contrato](docs/invited-onboarding.md).

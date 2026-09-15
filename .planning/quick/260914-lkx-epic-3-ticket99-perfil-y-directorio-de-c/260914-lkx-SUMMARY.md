@@ -1,4 +1,4 @@
-# 99 — Local verification; deployment pending
+# 99 — Delivered and verified
 
 Profile/avatar CAS and project-only directory implemented according to both v2
 answers. 0022 optional bounded profile row; no provider image import, private PNG
@@ -21,3 +21,13 @@ and bytes19receipts. Pre0022 migration preserves users/grants/membership version
 idempotent upgrade, no avatar backfill and enforced DB size constraint. No production
 restore. Publish source/image/GitOps then observe exact revision and smoke before
 moving99 to human review. Continue101 and other independent tickets.
+
+15Sep07:24UTC delivery confirmed: source93cdf43c0efbc0edf6e4e32c7715c5223758acd1,
+GitOpsa0b1ab59a963156113f6db2104d3278fcf15ae3e, profiles-93cdf43@
+sha256:954737775cefb84e7b615f1d0e13f689017d1246a4a80bcc94e936e03eee1b62.
+Exact ArgoSynced/Healthy, podissopen-5c9b57fd67-d2mrm Ready0restart, readiness200,
+bothPVCidentitiesunchanged. Member HTTPS1440/360smokePASS including ownprofile+
+privateprojectdirectory/readprojection, foreign404, privateattachment, sessions,
+mobilemenu and only its own newlycreated session revoked. No realprofile/grant/
+ticket/oldsessions changed.99 moved Ready for Human Review with evidence and
+commitlinks viaMCP, claimreleased.101 executingquick260915-csg.
