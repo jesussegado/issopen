@@ -37,8 +37,10 @@ return `403` with an actionable message.
   It records the subject and human actor; invitation work must use the central
   membership service rather than mutate membership rows from route handlers.
 - `workspace_invitation`, `workspace_invitation_project` and
-  `workspace_invitation_event` implement the hash-only, one-use invitation
-  protocol. Its complete lifecycle, Google proof and recovery contract is in
+  `workspace_invitation_event` implement the hash-only private invitation
+  protocol. A claimed link may resume only its temporary verification session;
+  Google proof is still required and accepted/revoked/expired links cannot resume.
+  Its complete lifecycle, proof and recovery contract is in
   [Member invitations](member-invitations.md).
 - The legacy `workspace.owner_id` remains the canonical workspace owner and is
   retained for backward compatibility. An `owner` membership that does not

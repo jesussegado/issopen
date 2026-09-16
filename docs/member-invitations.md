@@ -70,7 +70,9 @@ Chrome clients/tokens. Global web sessions and other workspaces remain valid
 
 - Lost or leaked unclaimed link: use **Create new link**; the old token stops
   resolving.
-- Claimed by the wrong browser/account: revoke it and issue a new invitation.
+- Interrupted after claiming: reopen the latest private link and resume Google
+  verification. This replaces the previous provisional session but grants no access.
+- Link reached the wrong person: revoke it and issue a new invitation.
 - Google unavailable: no membership is created; keep password access for the
   Owner, restore Google and resume with the authenticated invited account.
 - Provisional session expired after Google was linked: sign in with that Google
@@ -90,7 +92,8 @@ disable Google login and revoke unfinished invitations from the last compatible
 version.
 
 Automated integration coverage proves normalization, hash-only storage, masked
-inspection, expiry, token rotation, anonymous replay denial, existing-account
+inspection, expiry, token rotation, bounded anonymous resume with provisional-session
+replacement, existing-account
 collision denial, explicit fresh Google proof, project isolation, revocation,
 session invalidation and immutable audit events. Final acceptance still uses a
 real second Google account after production OAuth is configured by ticket 79.

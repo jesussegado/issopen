@@ -85,7 +85,11 @@ export function SignInRoute({
     setError(
       oauthError === "access_denied"
         ? "Google sign-in was cancelled. Try again with the invited account; your invitation has not been removed. Password sign-in is only for accounts already provisioned by the operator."
-        : "Google couldn't complete sign-in. Use the account from your invitation. If you cannot continue, ask the workspace Owner for help; password sign-in is only for accounts already provisioned by the operator.",
+        : ["account_not_linked", "signup_disabled"].includes(oauthError)
+          ? "This Google account is not active in Issopen yet. Open its private invitation link and choose Resume verification; starting Google from this sign-in page cannot activate an invitation."
+          : oauthError === "state_mismatch"
+            ? "That Google attempt has expired or was already used. Reopen the private invitation link and restart verification."
+            : "Google couldn't complete sign-in. Use the account from your invitation. If you cannot continue, ask the workspace Owner for help; password sign-in is only for accounts already provisioned by the operator.",
     );
   }, []);
 

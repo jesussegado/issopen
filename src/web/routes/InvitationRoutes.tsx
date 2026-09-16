@@ -56,7 +56,7 @@ function invitationError(code: string | undefined, fallback: string) {
     case "INVITATION_NOT_FOUND":
       return "This invitation is unavailable for this account. Use the account it was sent to, or ask the workspace Owner for a new private link.";
     case "INVITATION_USED":
-      return "This link has already been started or used. Sign in with the invited account to continue. If verification was interrupted and you cannot sign in, ask the Owner to revoke it and send a new link.";
+      return "This invitation cannot be resumed in this browser. Reopen its latest private link, or ask the Owner to revoke it and send a new one.";
     case "GOOGLE_REAUTH_REQUIRED":
       return "Verify this invitation with the matching Google account before continuing. Your workspace access is not active yet.";
     default:
@@ -196,22 +196,22 @@ export function InvitationRedeemRoute({
         <section className="detail-panel form-stack">
           <h2>Confirm this invitation</h2>
           <p>
-            This one-time invitation is for <strong>{invitation.email}</strong>.
-            You will verify the exact address with Google before gaining access.
+            This private invitation is for <strong>{invitation.email}</strong>.
+            You can resume verification from this link until it expires, is
+            revoked or is accepted. Google must verify the exact address before
+            access is granted.
           </p>
           <p className="metadata">
             Link expires {new Date(invitation.expiresAt).toLocaleString()}.
           </p>
-          {invitation.state === "pending" ||
-          (invitation.state === "claimed" && authenticated) ? (
+          {invitation.state === "pending" || invitation.state === "claimed" ? (
             <Button type="button" disabled={busy} onClick={() => void redeem()}>
-              {busy ? "Checking invitation…" : "Continue securely"}
+              {busy
+                ? "Checking invitation…"
+                : invitation.state === "claimed" && !authenticated
+                  ? "Resume verification"
+                  : "Continue securely"}
             </Button>
-          ) : invitation.state === "claimed" ? (
-            <StatusBanner>
-              This link has already been started. Sign in with the invited
-              account to continue it.
-            </StatusBanner>
           ) : invitation.state === "accepted" ? (
             <StatusBanner>
               This invitation was already accepted. Sign in to the invited
@@ -225,8 +225,7 @@ export function InvitationRedeemRoute({
             </StatusBanner>
           )}
           {requiresSignIn ||
-          (!authenticated &&
-            ["claimed", "accepted"].includes(invitation.state)) ? (
+          (!authenticated && invitation.state === "accepted") ? (
             <AppLink
               className="button button-secondary"
               href={`/sign-in?returnTo=${encodeURIComponent(`/invite/${token}`)}`}
@@ -239,9 +238,9 @@ export function InvitationRedeemRoute({
           ) : null}
           {invitation.state === "claimed" ? (
             <p className="helper-copy">
-              If the temporary verification session expired before Google was
-              linked, ask the Owner to revoke this invitation and send a new
-              one. No account or project access is granted by restarting here.
+              Resuming replaces the previous temporary verification session. It
+              does not grant project access: Google must still confirm the exact
+              invited address before this invitation expires.
             </p>
           ) : null}
         </section>

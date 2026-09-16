@@ -626,7 +626,7 @@ describe("protected tracker REST API", () => {
     ).toBe(true);
   });
 
-  it("invites a member through a one-use link, explicit Google proof and revocable access", async () => {
+  it("resumes interrupted invitation verification while preserving explicit Google proof and isolation", async () => {
     const assignedProject = await createProjectFixture("Invited", "INVITE");
     const privateProject = await createProjectFixture("Owner only", "OWNER");
     const invitedEmail = "new-member@example.test";
@@ -688,7 +688,45 @@ describe("protected tracker REST API", () => {
       headers: { "Content-Type": "application/json", Origin: baseUrl },
       body: JSON.stringify({ token }),
     });
-    expect(anonymousReplay.status).toBe(409);
+    expect(anonymousReplay.status).toBe(200);
+    expect(await anonymousReplay.json()).toEqual({
+      invitationId: creation.invitation.id,
+      requiresGoogleVerification: true,
+      resumed: true,
+    });
+    const resumedCookie =
+      anonymousReplay.headers.get("set-cookie")?.split(";", 1)[0] ?? "";
+    expect(resumedCookie).toContain("issopen.session_token=");
+    expect(resumedCookie).not.toBe(provisionalCookie);
+
+    const replacedSession = await requestWithCookie(
+      provisionalCookie,
+      "/api/v1/session",
+    );
+    expect(replacedSession.status).toBe(401);
+
+    const interrupted = await app.request("/api/auth/sign-out", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Cookie: resumedCookie,
+        Origin: baseUrl,
+      },
+      body: "{}",
+    });
+    expect(interrupted.status).toBe(200);
+    const resumedAfterSignOut = await app.request(
+      "/api/auth/invitations/redeem",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Origin: baseUrl },
+        body: JSON.stringify({ token }),
+      },
+    );
+    expect(resumedAfterSignOut.status).toBe(200);
+    const finalProvisionalCookie =
+      resumedAfterSignOut.headers.get("set-cookie")?.split(";", 1)[0] ?? "";
+    expect(finalProvisionalCookie).toContain("issopen.session_token=");
 
     const authenticatedResume = await app.request(
       "/api/auth/invitations/redeem",
@@ -696,7 +734,7 @@ describe("protected tracker REST API", () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Cookie: provisionalCookie,
+          Cookie: finalProvisionalCookie,
           Origin: baseUrl,
         },
         body: JSON.stringify({ token }),
@@ -709,7 +747,7 @@ describe("protected tracker REST API", () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Cookie: provisionalCookie,
+        Cookie: finalProvisionalCookie,
         Origin: baseUrl,
       },
       body: JSON.stringify({ invitationId: creation.invitation.id }),
@@ -736,11 +774,21 @@ describe("protected tracker REST API", () => {
       updatedAt: new Date(claimed.claimedAt.getTime() + 1_000),
     });
 
+    const linkedAccountReplay = await app.request(
+      "/api/auth/invitations/redeem",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Origin: baseUrl },
+        body: JSON.stringify({ token }),
+      },
+    );
+    expect(linkedAccountReplay.status).toBe(409);
+
     const accepted = await app.request("/api/auth/invitations/accept", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Cookie: provisionalCookie,
+        Cookie: finalProvisionalCookie,
         Origin: baseUrl,
       },
       body: JSON.stringify({ invitationId: creation.invitation.id }),

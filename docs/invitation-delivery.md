@@ -1,6 +1,6 @@
 # Invitation operations97
 
-Approved: email plus manual one-time link; reminders only on explicit Owner
+Approved: email plus manual private link; reminders only on explicit Owner
 request. The seven-day token/Google claim/acceptance protocol is unchanged.
 On 16Sep the Owner authorized reuse of Gremiox's Gmail SMTP configuration and
 sender serviciosegado@gmail.com. Authentication with mandatory TLS passed without

@@ -743,7 +743,53 @@ async function redeemInvitation(
           userId: authenticatedUser.id,
           email: authenticatedUser.email,
           provisional: false,
+          resumed: false,
+          previousProvisionalSessionId: null,
         };
+      }
+      // A claimed invitation may have lost its short-lived browser cookie (for
+      // example after an earlier generic Google attempt). Possession of the
+      // private link still does not grant workspace access: only an unverified
+      // identity with no provider account or membership is resumable, and the
+      // exact invited Google address must still be proven before acceptance.
+      if (!authenticatedUser && invite.claimedByUserId) {
+        const [claimedUser] = await tx
+          .select({
+            id: user.id,
+            email: user.email,
+            emailVerified: user.emailVerified,
+          })
+          .from(user)
+          .where(eq(user.id, invite.claimedByUserId))
+          .limit(1);
+        const [linkedAccount] = await tx
+          .select({ id: account.id })
+          .from(account)
+          .where(eq(account.userId, invite.claimedByUserId))
+          .limit(1);
+        const [existingMembership] = await tx
+          .select({ workspaceId: workspaceMembership.workspaceId })
+          .from(workspaceMembership)
+          .where(eq(workspaceMembership.userId, invite.claimedByUserId))
+          .limit(1);
+        const resumableProvisionalIdentity =
+          claimedUser?.emailVerified === false &&
+          !linkedAccount &&
+          !existingMembership;
+        if (
+          claimedUser &&
+          normalizedEmail(claimedUser.email) === invite.email &&
+          resumableProvisionalIdentity
+        ) {
+          return {
+            invitationId: invite.id,
+            userId: claimedUser.id,
+            email: claimedUser.email,
+            provisional: true,
+            resumed: true,
+            previousProvisionalSessionId: invite.provisionalSessionId,
+          };
+        }
       }
       throw new APIError("CONFLICT", {
         code: "INVITATION_USED",
@@ -834,6 +880,8 @@ async function redeemInvitation(
       userId: targetUser.id,
       email: targetUser.email,
       provisional,
+      resumed: false,
+      previousProvisionalSessionId: null,
     };
   });
 }
@@ -1022,6 +1070,14 @@ export function invitationAuthPlugin(db: Database): BetterAuthPlugin {
                   eq(workspaceInvitation.id, redeemed.invitationId),
                   eq(workspaceInvitation.claimedByUserId, redeemed.userId),
                   isNull(workspaceInvitation.revokedAt),
+                  isNull(workspaceInvitation.acceptedAt),
+                  gt(workspaceInvitation.expiresAt, new Date()),
+                  redeemed.previousProvisionalSessionId
+                    ? eq(
+                        workspaceInvitation.provisionalSessionId,
+                        redeemed.previousProvisionalSessionId,
+                      )
+                    : isNull(workspaceInvitation.provisionalSessionId),
                 ),
               )
               .returning({ id: workspaceInvitation.id });
@@ -1034,6 +1090,11 @@ export function invitationAuthPlugin(db: Database): BetterAuthPlugin {
                 message: "This invitation can no longer be accepted",
               });
             }
+            if (redeemed.previousProvisionalSessionId) {
+              await db
+                .delete(session)
+                .where(eq(session.id, redeemed.previousProvisionalSessionId));
+            }
             await setSessionCookie(
               ctx,
               { session: provisionalSession, user: invitedUser },
@@ -1044,6 +1105,7 @@ export function invitationAuthPlugin(db: Database): BetterAuthPlugin {
           return ctx.json({
             invitationId: redeemed.invitationId,
             requiresGoogleVerification: true,
+            ...(redeemed.resumed ? { resumed: true } : {}),
           });
         },
       ),

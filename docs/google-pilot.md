@@ -28,8 +28,9 @@ deben ser sintéticos. La prueba no está superada hasta registrar su resultado.
 
 1. Abre otro perfil de Chrome o una ventana de incógnito. Mantén el Owner en
    su ventana original; no hace falta cerrar esa sesión.
-2. Abre el enlace del correo en esta segunda ventana. Es privado y de un solo
-   uso: no lo pegues en tickets, chats ni capturas. Caduca a los siete días.
+2. Abre el enlace del correo en esta segunda ventana. Es privado: no lo pegues
+   en tickets, chats ni capturas. Caduca a los siete días y deja de servir al
+   aceptar o revocar. Si se interrumpe, permite reanudar sólo la verificación.
 3. Pulsa **Continue securely** y después **Verify with Google**. Selecciona
    exactamente la cuenta invitada y completa la verificación en Google.
    Hazlo seguido: la sesión provisional de verificación dura 15 minutos.
@@ -59,8 +60,9 @@ deben ser sintéticos. La prueba no está superada hasta registrar su resultado.
 
 - Cuenta equivocada: usa la salida de esa sesión que ofrece Issopen y elige la
   cuenta exacta; nunca modifiques el email de la invitación para saltar el control.
-- Enlace caducado/revocado o verificación provisional caducada: como Owner
-  revoca esa invitación de prueba y crea otra. Renovar invalida el enlace anterior.
+- Enlace caducado/revocado: como Owner revoca esa invitación de prueba y crea
+  otra. Si sólo se interrumpió la sesión provisional, reabre el mismo enlace y
+  pulsa **Resume verification**; se invalida la sesión provisional anterior.
 - Google bloquea el acceso: indica el texto visible y la hora. No desactives
   protecciones ni cambies el OAuth; primero distinguiremos cuenta no habilitada,
   configuración, cancelación y error de callback.

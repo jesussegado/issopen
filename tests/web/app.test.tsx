@@ -117,6 +117,25 @@ describe("owner web entry", () => {
     expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled();
   });
 
+  it("directs an unlinked Google account back to its resumable invitation", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        if (String(input) === "/api/v1/session")
+          return json({ error: "Authentication required" }, 401);
+        if (String(input) === "/api/public/auth-providers")
+          return json({ google: true });
+        throw new Error(`Unexpected request: ${String(input)}`);
+      }),
+    );
+    window.history.replaceState({}, "", "/sign-in?error=account_not_linked");
+    render(<App />);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Open its private invitation link and choose Resume verification",
+    );
+  });
+
   it("renders the private sign-in and clears only the password after invalid credentials", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const path = String(input);

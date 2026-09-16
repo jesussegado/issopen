@@ -58,7 +58,8 @@ test("invitation recovery, provisional isolation and project landing work by key
     data: {},
   });
 
-  await page.goto(`/invite/${onboardingToken("new", variant)}`);
+  const resumableToken = onboardingToken("new", variant);
+  await page.goto(`/invite/${resumableToken}`);
   await page.getByRole("button", { name: "Continue securely" }).click();
   await expect(
     page.getByRole("heading", { name: "Verify your Google account" }),
@@ -74,6 +75,15 @@ test("invitation recovery, provisional isolation and project landing work by key
   ).toBeDisabled();
   await expect(
     page.getByText(/Google verification is not configured yet/),
+  ).toBeVisible();
+  await page.request.post("/api/auth/sign-out", {
+    headers: { Origin: "http://127.0.0.1:4173" },
+    data: {},
+  });
+  await page.goto(`/invite/${resumableToken}`);
+  await page.getByRole("button", { name: "Resume verification" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Verify your Google account" }),
   ).toBeVisible();
   await page.request.post("/api/auth/sign-out", {
     headers: { Origin: "http://127.0.0.1:4173" },

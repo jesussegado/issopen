@@ -9,8 +9,10 @@ workspace/project access on every request (95), so foreign links still fail clos
 
 ## Recovery
 
-- New invitation: redeem the one-time private link, then explicitly link the exact
-  verified Google address. The provisional session has no workspace permissions.
+- New invitation: redeem the private link, then explicitly link the exact verified
+  Google address. The provisional session has no workspace permissions. Reopening
+  a claimed link can replace only that temporary session and resume verification;
+  it cannot grant a membership or bypass Google.
 - Existing account: sign in first; the invitation is retained in the internal
   return path. No implicit account merging or public signup is introduced.
 - Wrong Issopen account: explain the mismatch and offer a confirmed sign-out of
@@ -18,7 +20,8 @@ workspace/project access on every request (95), so foreign links still fail clos
 - Google cancellation: return to verification with retry guidance; no activation
   or automatic invitation deletion. Retry still depends on link/session validity.
 - Expired/revoked invitation: ask Owner for a new private link, not endless retries.
-  If provisional verification expired before linking Google, Owner revokes/reinvites.
+  An interrupted claimed invitation remains resumable from its latest private link
+  until it expires; resuming invalidates the previous provisional browser session.
 - Already accepted: sign into the invited account. Used links cannot onboard someone
   else. A used link is not evidence that the current browser has access.
 - Password login remains only for operator-provisioned accounts, including recovery
@@ -38,7 +41,7 @@ Follow the [step-by-step human pilot](google-pilot.md), using another controlled
 Google account and a synthetic project. No credentials or private links in tickets.
 
 Isolated tests cover unsafe return paths (while retaining valid consent/MCP paths),
-expired/revoked/claimed/accepted links, mismatched account and cancel, late responses,
+expired/revoked/claimed/accepted links, claimed-session replacement, mismatched account and cancel, late responses,
 new provisional/existing account, keyboard/mobile, zero and multiple projects.
 Existing integration checks retain verified exact-email acceptance, replay/expiry,
 no membership before verification, denied signup and forged Google state. Google

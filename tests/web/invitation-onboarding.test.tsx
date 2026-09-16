@@ -117,25 +117,49 @@ it.each(["expired", "revoked"])(
     ).toHaveAttribute("href", "/support");
   },
 );
-it.each(["claimed", "accepted"])(
-  "offers sign-in preserving a %s invitation",
-  async (state) => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => json({ invitation: { ...invitation, state } })),
-    );
-    render(
-      <InvitationRedeemRoute
-        token="synthetic-token"
-        authenticated={false}
-        onRedeemed={async () => {}}
-      />,
-    );
-    expect(
-      await screen.findByRole("link", { name: "Sign in first" }),
-    ).toHaveAttribute("href", "/sign-in?returnTo=%2Finvite%2Fsynthetic-token");
-  },
-);
+it("offers a bounded resume action for an interrupted claimed invitation", async () => {
+  const fetchMock = vi.fn(async (_input: unknown, init?: RequestInit) =>
+    init?.method === "POST"
+      ? json({
+          invitationId: "invite-id",
+          requiresGoogleVerification: true,
+          resumed: true,
+        })
+      : json({ invitation: { ...invitation, state: "claimed" } }),
+  );
+  vi.stubGlobal("fetch", fetchMock);
+  const redeemed = vi.fn();
+  render(
+    <InvitationRedeemRoute
+      token="synthetic-token"
+      authenticated={false}
+      onRedeemed={redeemed}
+    />,
+  );
+  await userEvent.click(
+    await screen.findByRole("button", { name: "Resume verification" }),
+  );
+  expect(redeemed).toHaveBeenCalledWith("invite-id");
+  expect(fetchMock).toHaveBeenCalledTimes(2);
+});
+it("offers sign-in preserving an accepted invitation", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () =>
+      json({ invitation: { ...invitation, state: "accepted" } }),
+    ),
+  );
+  render(
+    <InvitationRedeemRoute
+      token="synthetic-token"
+      authenticated={false}
+      onRedeemed={async () => {}}
+    />,
+  );
+  expect(
+    await screen.findByRole("link", { name: "Sign in first" }),
+  ).toHaveAttribute("href", "/sign-in?returnTo=%2Finvite%2Fsynthetic-token");
+});
 it("explains wrong-account recovery without signing out or mutating the invitation automatically", async () => {
   const fetchMock = vi.fn(async (_input: unknown, init?: RequestInit) =>
     init?.method === "POST"
