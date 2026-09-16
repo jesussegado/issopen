@@ -33,6 +33,10 @@ not navigate to a previously viewed invitation.
 
 ## Validation and remaining external gate
 
+16Sep decision: the Owner will perform the Google interaction personally.
+Follow the [step-by-step human pilot](google-pilot.md), using another controlled
+Google account and a synthetic project. No credentials or private links in tickets.
+
 Isolated tests cover unsafe return paths (while retaining valid consent/MCP paths),
 expired/revoked/claimed/accepted links, mismatched account and cancel, late responses,
 new provisional/existing account, keyboard/mobile, zero and multiple projects.

@@ -29,6 +29,17 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+16/09: el propietario autoriza reutilizar Gmail SMTP de Gremiox, remitente
+serviciosegado@gmail.com, y realizará personalmente el piloto Google. Guía:
+[prueba humana](docs/google-pilot.md). Autenticación TLS local/máster comprobada
+sin enviar mensajes; configuración en Secret separado `issopen-mail-env`, con
+clave AES independiente y recuperación `.local/secrets/issopen-mail.env` 0600.
+Provisionado canónico en GitOps `scripts/provision-production-secrets.sh
+--mail-only`, sin sobrescribir Secrets ni cambiar Gremiox. Publicar privacidad1.2
+con la activación. La recepción real/Google sigue pendiente hasta evidencia del
+propietario; no sustituirla con SMTP verify ni cambiar Store/revisor. El bloque
+siguiente registra la release anterior deshabilitada; consultar STATE/GitOps.
+
 Último runtime:3747d74/GitOps06a3d262/digest135f9430,Healthy/Synced/Ready,
 smoke1440/360PASS y maildisabled/queue0.13ticketsReadyHumanReview;97 y98 técnicos
 entregados esperan preguntas externas,107 espera sus pilotos reales. Ver STATE

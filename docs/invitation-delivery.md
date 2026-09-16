@@ -2,8 +2,10 @@
 
 Approved: email plus manual one-time link; reminders only on explicit Owner
 request. The seven-day token/Google claim/acceptance protocol is unchanged.
-Production mail remains **disabled** pending the provider/From/authorized pilot
-answer in97. This implementation does not create an SMTP account or change DNS.
+On 16Sep the Owner authorized reuse of Gremiox's Gmail SMTP configuration and
+sender serviciosegado@gmail.com. Authentication with mandatory TLS passed without
+sending a message. No SMTP account or DNS change is needed for this configuration.
+Real receipt remains a [human pilot](google-pilot.md), not inferred from SMTP verify.
 
 ## Owner UI and API
 
@@ -54,10 +56,12 @@ completion never resurrects a cancelled job. Audit events reuse invitation histo
 with the initiating Owner's attribution; no duplicate business-event ledger.
 Database outage pauses worker; process shutdown stops timer and drains active run.
 
-## Operator configuration — not activated by this release
+## Operator configuration
 
-Default `ISSOPEN_MAIL_TRANSPORT=disabled` (or absent). To enable later, provision
-all values in protected runtime Secret `issopen-env`, never Git/tickets/logs:
+Default `ISSOPEN_MAIL_TRANSPORT=disabled` (or absent). Production activation uses
+the separate protected Secret `issopen-mail-env`; never overwrite `issopen-env`
+or PostgreSQL/Google keys. GitOps references the exact mail keys. Values never
+belong in Git/tickets/logs:
 
 | Variable | Meaning |
 | --- | --- |
@@ -69,11 +73,19 @@ all values in protected runtime Secret `issopen-env`, never Git/tickets/logs:
 | ISSOPEN_MAIL_ENCRYPTION_KEY | Independent random32-byte key encoded as64hex; not auth secret |
 
 Partial/invalid enabled configuration rejects startup with field names only.
-Before first real send, update the public privacy page with the chosen authorized
-provider and its invitation-email processing; review Store disclosure consistency
-without resubmitting or changing existing reviewer access by inference. No provider
-is named now because97's choice is still unanswered. Technical inventory below
-does not claim this activation/disclosure gate has been completed.
+The public privacy page 1.2 describes Google Gmail and invitation-email processing.
+Deploy that disclosure with activation before the Owner requests any real send.
+No Store resubmission or reviewer access changes. Current nonsecret settings:
+smtp.gmail.com:587, required STARTTLS, user/From serviciosegado@gmail.com.
+Reuse is temporary and shares provider quota and credential lifecycle with
+Gremiox; never revoke/rotate that shared credential as an Issopen-only operation.
+Prefer an independent provider credential in a later authorized change.
+Recovery source: `.local/secrets/issopen-mail.env` in this source checkout,
+ignored, mode0600, with an independent generated encryption key. The GitOps
+`scripts/provision-production-secrets.sh --mail-only` accepts
+`ISSOPEN_MAIL_SECRET_FILE` and creates only the absent mail Secret. It never
+overwrites an existing Secret; rotate through a separately approved procedure.
+The historical source copy of the bootstrap script is not the mail entrypoint.
 Never turn off TLS verification. RequiredSTARTTLS/implicitTLS, bounded DNS/
 connection/greeting/socket timeouts, no debug/logger or file/URL content access.
 No HTML/project/ticket payloads or attachments are sent; constant plain-text

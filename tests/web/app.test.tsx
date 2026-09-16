@@ -65,6 +65,16 @@ describe("owner web entry", () => {
       screen.getByRole("link", { name: "serviciosegado@gmail.com" }),
     ).toHaveAttribute("href", "mailto:serviciosegado@gmail.com");
     expect(screen.getByText(/máximo de 24 horas/)).toBeInTheDocument();
+    expect(screen.getByText(/Versión 1.2/)).toBeInTheDocument();
+    expect(
+      screen.getByRole("rowheader", { name: "Invitaciones por correo" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Google Gmail como proveedor SMTP/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/revocar el enlace no borra esos mensajes/),
+    ).toBeInTheDocument();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

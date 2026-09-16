@@ -31,14 +31,17 @@ dashboard de Google/Chrome; no mantener otro texto contradictorio.
 | imágenes elegidas | pegado/subida explícitos | borrador IndexedDB; luego PNG normalizado en PVC privado y referencia en PostgreSQL | borrador máximo 24 h; uploader u owner pueden borrar cada imagen del almacenamiento activo |
 | recibos e idempotencia | mutaciones explícitas | PostgreSQL | MCP 24 h; recibos Chrome sin caducidad automática para impedir duplicados |
 | logs | runtime | stdout/containerd | sólo startup/error sin payload sensible; rotación de plataforma, sin analítica propia |
-| invitación y entrega opcional97 | acción explícita Owner, email desactivado en producción | token hash en invitación, payload temporal AES-GCM en outbox, clave independiente fuera de DB | enlace7d; purga payload al enviar/fallo final/revocación/rotación/caducidad; eventos y backups privados conservan histórico |
+| invitación y entrega opcional97 | acción explícita Owner; Gmail SMTP del operador | token hash en invitación, payload temporal AES-GCM en outbox, clave independiente fuera de DB; Google recibe dirección, enlace y texto mínimo | enlace7d; purga payload al enviar/fallo final/revocación/rotación/caducidad; eventos, buzones y backups pueden conservar copias |
 
-97 añade transporte configurable, no activa proveedor ni envía correo real. Antes
-de activarlo se debe documentar el proveedor autorizado en la política pública y
-el envío de dirección destinataria/enlace privado/texto mínimo de invitación, sin
-contenido de tickets/proyectos o adjuntos; revisar coherencia con declaraciones
-Store por separado. No se afirma que ese gate esté cumplido mientras falte la
-respuesta de proveedor/From/piloto. Ver [entrega97](invitation-delivery.md).
+El 16/09/2026 el propietario autoriza reutilizar el correo de Gremiox: Google
+Gmail SMTP y remitente serviciosegado@gmail.com. La política pública 1.2 declara
+dirección destinataria, enlace privado y texto mínimo, sin contenido de
+proyectos/tickets ni imágenes. No se lee el Gmail del invitado ni se añaden
+scopes Google. Borrar la cola o revocar el enlace no retira mensajes ya enviados.
+La autenticación SMTP se comprobó sin enviar mensajes. La recepción real y el
+piloto Google requieren la [prueba humana](google-pilot.md). Ver también
+[entrega97](invitation-delivery.md). El despliegue publica esta política antes
+de permitir envíos; no se cambia ni reenvía la ficha Store por esta entrega web.
 
 El endpoint `DELETE /api/v1/evidence/:id` es sólo sesión web y same-origin. El
 servidor vuelve a comprobar workspace, proyecto y que la persona sea uploader u
@@ -67,7 +70,8 @@ plazos de respuesta, contratos con Google/Cloudflare, transferencias y una
 retención de backups documentada.
 
 No se vende información, no hay publicidad, scoring ni analítica oculta. Google
-se usa para autenticación y Cloudflare para transporte/protección. Los humanos
+se usa para autenticación y envío SMTP explícito de invitaciones desde la cuenta
+del operador; Cloudflare para transporte/protección. Los humanos
 sólo acceden al contenido para la colaboración elegida, soporte solicitado,
 seguridad u obligación legal.
 

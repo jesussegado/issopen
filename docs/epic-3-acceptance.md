@@ -90,21 +90,25 @@ technical gates plus the two real pilot prerequisites below to declare acceptanc
 
 ## External gates still blocking full acceptance
 
-1. **97** question0dd7a18c: choose authorized SMTP provider, verified From and
-   allowed pilot recipient, or explicitly defer activation. Secrets separately
-   in protected runtime storage, never questions. Source defaultdisabled, no
-   production SMTP account/DNS changes or real outbound mail made. Disclose the
-   chosen provider in public privacy before activation, not an invented provider.
-2. **98** question1abf3039: authorize a distinct controlled Google invited pilot
-   and who will perform its login. Never reuse Store reviewer for removal/role
+16Sep: both operational questions are answered. The Owner clarified in chat:
+reuse Gremiox mail now; the Owner will perform the real Google trial. The remaining
+gate is evidence, not another unanswered provider/operator decision.
+
+1. **97**: Google Gmail SMTP, From serviciosegado@gmail.com; local and master
+   authentication/TLS passed without sending. Separate mail Secret and privacy1.2
+   prepared for declarative activation, no DNS/Gremiox/Google login changes.
+   Owner must request a real invitation to their controlled pilot and confirm
+   receipt; SMTP verify or accepted status is not inbox proof.
+2. **98**: Owner follows [human pilot](google-pilot.md) with another controlled
+   Google account and a synthetic project. Never reuse Store reviewer for role
    experiments. Real Google browser/OIDC/consent/callback plus collaboration
    cannot be replaced by password login, mocked OAuth or an existing Owner.
 3. **107** depends on97/98 pilot evidence: record invitation acceptance, permitted
    project/denied project, assignee/question/mention/conflict, mobile and errors
    with authorized human identities. Do not mark complete based on automation.
 
-No new product question for107: answer existing97/98 questions rather than
-duplicating them. Technical work is not stopped by those external prerequisites.
+No new product question for107: record the real trial result rather than
+duplicating answered questions. Technical work is not stopped by that acceptance.
 Store review87/88 belongs toEpic7 and remains separate; localChrome0.6.3 tests
 do not prove approval of submitted0.6.2 or permission to resubmit the Store item.
 

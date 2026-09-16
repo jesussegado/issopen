@@ -25,7 +25,9 @@ The local Phase 1 implementation includes:
 - PostgreSQL 18 persistence and privacy-safe `/health/live` and
   `/health/ready` responses.
 
-S3 and SMTP are not part of this runtime. Google OIDC, invited human members
+S3 is not part of this runtime. Optional SMTP invitation delivery is configured
+as described in [invitation operations](docs/invitation-delivery.md); mail is
+disabled by default. Google OIDC, invited human members
 and project-scoped authorization are active; the owner password remains a
 reversible recovery path.
 The same image is deployed through Argo CD with PostgreSQL on the always-on K3s

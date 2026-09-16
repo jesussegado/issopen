@@ -7,7 +7,7 @@ export function PrivacyRoute() {
   return (
     <PublicShell>
       <article className="privacy-notice">
-        <p className="eyebrow">Versión 1.1 · vigente desde 15/09/2026</p>
+        <p className="eyebrow">Versión 1.2 · vigente desde 16/09/2026</p>
         <PageHeading>Privacidad y datos de Issopen</PageHeading>
         <p>
           Issopen es un gestor privado de tickets. Su extensión de Chrome tiene
@@ -74,6 +74,30 @@ export function PrivacyRoute() {
                     acceso. Retirar acceso a un proyecto bloquea nuevas
                     consultas a su directorio e imágenes, pero no borra copias
                     ya vistas o descargadas.
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row">Invitaciones por correo</th>
+                  <td>
+                    Cuando el owner elige enviar una invitación, usamos Google
+                    Gmail como proveedor SMTP, con el remitente
+                    serviciosegado@gmail.com. Google procesa la dirección
+                    destinataria, el enlace privado y el texto mínimo de la
+                    invitación. No enviamos contenido de proyectos, tickets ni
+                    imágenes. No hay recordatorios automáticos.
+                  </td>
+                  <td>
+                    El enlace caduca a los siete días y puede revocarse o
+                    renovarse. La cola guarda temporalmente su token cifrado y
+                    lo purga tras envío, fallo definitivo o invalidación. Se
+                    conserva el historial de entrega. Los correos ya enviados,
+                    buzones y backups pueden conservar copias; revocar el enlace
+                    no borra esos mensajes. El tratamiento del proveedor se
+                    describe en la{" "}
+                    <a href="https://policies.google.com/privacy?hl=es">
+                      política de privacidad de Google
+                    </a>
+                    .
                   </td>
                 </tr>
                 <tr>
@@ -161,9 +185,11 @@ export function PrivacyRoute() {
               únicamente cuando pulsas «Enviar ticket».
             </li>
             <li>
-              La app usa Google para autenticar y Cloudflare para transporte y
-              protección de la instancia. No vende datos, no incluye publicidad
-              ni comparte datos con brokers.
+              La app usa Google para autenticar y, desde la cuenta del operador,
+              para enviar invitaciones por Gmail. No solicita acceso al buzón
+              Gmail de las personas invitadas. Cloudflare proporciona transporte
+              y protección de la instancia. No vende datos, no incluye
+              publicidad ni comparte datos con brokers.
             </li>
           </ul>
         </section>
