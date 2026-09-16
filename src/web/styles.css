@@ -189,6 +189,7 @@ ol {
 }
 .centered-page {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   min-height: calc(100vh - 64px);
   place-items: center;
   padding: 32px 16px;
@@ -202,6 +203,7 @@ ol {
   background: var(--color-surface);
 }
 .centered-page > .page-panel {
+  min-width: 0;
   border-top: 4px solid var(--color-brand-mint);
 }
 .public-footer {
