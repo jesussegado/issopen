@@ -1,5 +1,5 @@
 ---
-status: fixing
+status: verifying
 trigger: "parece que no funciona con google; arreglalo, si intente loguearme antes con google de tener la invitacion lista"
 created: 2026-09-16
 updated: 2026-09-16
@@ -18,7 +18,7 @@ updated: 2026-09-16
 - hypothesis: Confirmed. The safe public-signup guard works, but an interrupted claimed invitation could not recreate its short-lived provisional session, so the user was routed into generic Google sign-in and looped on `account_not_linked`.
 - test: A claimed, unaccepted provisional identity can resume only with its private token, no linked provider account and no membership; resumption rotates the provisional session and still requires exact Google verification.
 - expecting: Reopening the same private invitation resumes verification without enabling public signup or granting access before Google proves the exact email.
-- next_action: Commit, deploy through GitOps and repeat the real Google pilot.
+- next_action: The Owner reopens the same private link, chooses Resume verification and completes exact-account Google verification.
 - reasoning_checkpoint: Production health and provider discovery pass; database shows one recent claimed/unaccepted invitation with no Google account or membership.
 - tdd_checkpoint: Regression failed before implementation; targeted, full validation, Compose, desktop/mobile E2E and isolated backup restore now pass.
 
@@ -32,6 +32,8 @@ updated: 2026-09-16
   observation: Subsequent generic Google attempts were rejected with `account_not_linked`; no Google account or membership was created.
 - timestamp: 2026-09-16T17:52:20+02:00
   observation: Full validation passed (168 unit/web, 111 integration, 38 web E2E plus 2 expected skips, 16 extension unit and 13 extension E2E); Compose and secret scan passed. Production backup restored in an isolated networkless PostgreSQL container with attachment hashes verified.
+- timestamp: 2026-09-16T17:58:37+02:00
+  observation: Source 847536a and GitOps 100b5a7b are live Synced/Healthy on digest 56ee4502, Ready with zero restarts and both PVC identities preserved. Public desktop/mobile recovery guidance passes; the claimed invitation remains unaccepted, has no membership and is eligible for bounded resume.
 
 ## Eliminated
 
@@ -44,5 +46,5 @@ updated: 2026-09-16
 
 - root_cause: A pre-invitation Google attempt was correctly rejected, but a later interrupted invitation had no bounded way to recreate its provisional session. Retrying from generic sign-in cannot implicitly link the provisional identity by design.
 - fix: Add private-link recovery for unverified identities with no provider account or membership, rotate the previous provisional session atomically, expose Resume verification and make generic Google errors actionable.
-- verification: Local regression, full test suite, desktop/mobile browser tests, Compose, secret scan and isolated backup restore pass. Real Google acceptance remains pending after deployment.
+- verification: Local regression, full test suite, desktop/mobile browser tests, Compose, secret scan, isolated backup restore and production health/guidance smoke pass. Real Google acceptance remains pending from the Owner.
 - files_changed: src/server/invitations.ts, src/web/routes/InvitationRoutes.tsx, src/web/routes/PublicRoutes.tsx, tests and invitation documentation.

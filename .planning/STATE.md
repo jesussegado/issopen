@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Epic3 Gmail delivery deployed and verified; Owner performs actual receipt and Google pilot using guide in ticket98
-last_updated: "2026-09-16T14:00:00Z"
+stopped_at: Google invitation recovery deployed; Owner reopens the same private link and repeats exact-account verification for ticket98
+last_updated: "2026-09-16T16:00:00Z"
 last_activity: 2026-09-16
 progress:
   total_phases: 9
@@ -22,6 +22,22 @@ See: .planning/PROJECT.md (updated 2026-08-30)
 
 **Core value:** Convertir una intención humana en trabajo estructurado y seguro que ChatGPT y agentes de código externos puedan entender, ejecutar y devolver a revisión dentro de un único flujo trazable.
 **Current focus:** Epic 3 implementation after all 20 human answers (v2).
+16Sep Google pilot diagnosed: attempts before the invitation were correctly denied
+as signup_disabled; after claim, retrying the generic Google button produced
+account_not_linked because an interrupted provisional session had no bounded resume.
+Recovery847536a/GitOps100b5a7b/digest56ee4502 is Synced/Healthy/Ready0restarts.
+The latest private invitation link now offers Resume verification only for an
+unverified identity with no provider account or membership, atomically replacing
+the prior provisional session. It still requires exact Google proof and grants no
+workspace/project access by itself; public signup/implicit linking remain disabled.
+Full gates168unit/web111integration38webE2E+2skips,Chrome16+13,reproducible,
+scan415/ComposePASS. Backuprestore113issues1053events13images19receiptsPASS;
+production guidance smoke1440/360, readiness/provider/PVCs PASS. The actual Google
+callback/acceptance remains human-pending: reopen the same link, Resume verification,
+then Verify with Google. Debug session .planning/debug/google-invitation-login.md;
+ticket98 released while awaiting that result.
+
+Previous checkpoint:
 16Sep decisions: reuse Gremiox Gmail SMTP and sender serviciosegado@gmail.com;
 Owner will perform the Google trial. Both operational questions are answered.
 Separate issopen-mail-env created with independent AES key; recovery source

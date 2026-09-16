@@ -29,6 +29,17 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+16/09 piloto Google: el intento anterior a la invitación fue rechazado correctamente,
+pero reintentar desde el login general tras reclamarla quedaba en account_not_linked.
+Recovery847536a/GitOps100b5a7b/digest56ee4502 está Synced/Healthy/Ready0restarts,
+PVCs intactos. El mismo enlace privado permite ahora **Resume verification** sólo
+para identidad provisional sin proveedor ni membresías, rota su sesión temporal y
+sigue exigiendo Google exacto antes de cualquier acceso. Signup público y linking
+implícito siguen deshabilitados. Gates168unit/web111integration38webE2E+2skips,
+Chrome16+13,reproducible/scan415/Compose; backuprestore113issues1053events13images
+19receipts y smoke público1440/360PASS. Falta que el propietario reabra el mismo
+enlace y complete Google; no marcar98/107 por inferencia ni crear otra invitación.
+
 16/09: el propietario autoriza reutilizar Gmail SMTP de Gremiox, remitente
 serviciosegado@gmail.com, y realizará personalmente el piloto Google. Guía:
 [prueba humana](docs/google-pilot.md). Autenticación TLS local/máster comprobada
