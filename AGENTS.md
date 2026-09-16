@@ -39,8 +39,12 @@ Provisionado canónico en GitOps `scripts/provision-production-secrets.sh
 con la activación. La recepción real/Google sigue pendiente hasta evidencia del
 propietario; no sustituirla con SMTP verify ni cambiar Store/revisor. El bloque
 siguiente registra la release anterior deshabilitada; consultar STATE/GitOps.
+Runtime16Sep: f5dbbc4/GitOpsa3704a4a/digest65141db3, Synced/Healthy/Ready sin
+reinicios, correo habilitado, PVCs conservados. Gate completo, Compose y smoke
+productivo1440/360 PASS, incluida privacidad1.2 y corrección del grid móvil.
+No se enviaron correos de prueba ni se ha validado el piloto Google real.
 
-Último runtime:3747d74/GitOps06a3d262/digest135f9430,Healthy/Synced/Ready,
+Release histórica15Sep:3747d74/GitOps06a3d262/digest135f9430,Healthy/Synced/Ready,
 smoke1440/360PASS y maildisabled/queue0.13ticketsReadyHumanReview;97 y98 técnicos
 entregados esperan preguntas externas,107 espera sus pilotos reales. Ver STATE
 y matriz107 para retomar sin repetir trabajo ni simular aceptación Google/Store.

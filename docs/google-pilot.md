@@ -2,7 +2,9 @@
 
 El propietario realizará esta prueba (decisión del 16/09/2026). No hay que crear
 otro cliente OAuth ni compartir contraseñas. Usa otra cuenta Google que controles,
-distinta del Owner y del revisor de Chrome Web Store. Todos los datos de prueba
+distinta del Owner y del revisor de Chrome Web Store, que todavía no sea miembro
+de este workspace. Puede tener cuenta Issopen en otro workspace. No retires los
+permisos de una persona real sólo para repetir el alta. Todos los datos de prueba
 deben ser sintéticos. La prueba no está superada hasta registrar su resultado.
 
 ## 1. Preparación como Owner

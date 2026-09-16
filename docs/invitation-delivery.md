@@ -6,6 +6,10 @@ On 16Sep the Owner authorized reuse of Gremiox's Gmail SMTP configuration and
 sender serviciosegado@gmail.com. Authentication with mandatory TLS passed without
 sending a message. No SMTP account or DNS change is needed for this configuration.
 Real receipt remains a [human pilot](google-pilot.md), not inferred from SMTP verify.
+Activation and mobile disclosure fix were observed in production16Sep:
+sourcef5dbbc4/GitOpsa3704a4a, digest65141db3, Synced/Healthy/Ready0restarts,
+readinessJSONok and preserved PVCs. Live-secret SMTP verify and final public+
+authenticated browser smoke1440/360 passed. No real message sent by the agent.
 
 ## Owner UI and API
 

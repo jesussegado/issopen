@@ -55,6 +55,18 @@ mobile360px and desktop1440px include no-horizontal-overflow assertions.
 
 ## Delivery and operational proof
 
+16Sep continuation: sourcef5dbbc4/GitOpsa3704a4a/digest65141db3 observed
+Synced/Healthy/Ready0restarts/readinessJSONok/PVCs unchanged. Gmail enabled in
+separate Secret, local/master/live-secret SMTP verify PASS without sending mail.
+Queue0 at activation; user requests the first real invitation. Public privacy1.2
+and authenticated Member smoke1440/360 PASS. A mobile min-content overflow found
+by the first smoke was reproduced and fixed before the successful second smoke.
+Final gate167unit/web111integration38webE2E+2skips,Chrome16+13/reproducible0.6.3,
+scan414,ComposePASS; backuprestore113issues1041events13matchingimages19receipts.
+SMTP authentication is not receipt or Google acceptance. Guide delivered in98.
+
+Historical 15Sep release:
+
 Final97/107 technical delivery: source3747d74, GitOps06a3d262,
 imageinvitations-3747d74 digest135f9430, Healthy/Synced/Ready1/1/0restarts,
 readinessJSONok and unchangedPVCs.167unit/web111integration36webE2E+2expected

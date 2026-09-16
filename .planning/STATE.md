@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Epic3 13 tickets ready for human review;97 technical delivered;98 Google pilot and97 mail activation block107 final acceptance
-last_updated: "2026-09-15T09:40:00Z"
-last_activity: 2026-09-15
+stopped_at: Epic3 Gmail delivery deployed and verified; Owner performs actual receipt and Google pilot using guide in ticket98
+last_updated: "2026-09-16T14:00:00Z"
+last_activity: 2026-09-16
 progress:
   total_phases: 9
   completed_phases: 0
@@ -22,18 +22,24 @@ See: .planning/PROJECT.md (updated 2026-08-30)
 
 **Core value:** Convertir una intención humana en trabajo estructurado y seguro que ChatGPT y agentes de código externos puedan entender, ejecutar y devolver a revisión dentro de un único flujo trazable.
 **Current focus:** Epic 3 implementation after all 20 human answers (v2).
-Final checkpoint:97 source3747d74/GitOps06a3d262/digest135f9430 delivered;
-Healthy/Synced/Ready0restarts/readinessJSONok/PVCunchanged. Production1440/360
-isolatedMember smokePASS, members/audit403/no-store, onlynewtestsessionrevoked.
-0030 tableexists/mailJobs0/mailDisabledtrue/noSMTPcredentials/queueWarnings0.
-Final167unit/web111integration36webE2E+2skips/Chrome16+13/reproducible0.6.3/scan409/
-Compose/backuprestore113issues1011events13matchingimages19receiptsPASS.
-13/16 ticketsReadyHumanReview:94,95,96,99,100,101,102,103,104,105,106,108,109.
-97 technical delivered but external provider/From/pilot pending;98 technical
-delivered but actualGooglepilot pending.107 technicalmatrix verified and complete
-local proof, not accepted realhumanpilot. Stop only for97question0dd7a18c and98
-question1abf3039; no further independent backlog found. Resume their answers,
-complete authorizedpilots and107 before closing. No Store87/88 mutations.
+16Sep decisions: reuse Gremiox Gmail SMTP and sender serviciosegado@gmail.com;
+Owner will perform the Google trial. Both operational questions are answered.
+Separate issopen-mail-env created with independent AES key; recovery source
+.local/secrets/issopen-mail.env ignored0600. No existing secrets/Gremiox/DNS changed.
+Activation6005ace / GitOps33a99f6e / digest17dead1b observed Synced/Healthy/Ready,
+SMTP authentication from actual pod environment passed, queue0/readinessok/PVCs
+unchanged. No email sent by the agent; receipt and Google remain unverified.
+Public mobile smoke found min-content overflow; regression and two-CSS-rule fix
+f5dbbc4 passed full gates167unit/web111integration38webE2E+2skips,Chrome16+13,
+reproducible0.6.3/scan414/Compose. GitOpsa3704a4a/digest65141db3 observed
+Synced/Healthy/Ready0restarts with readinessJSONok/PVCs unchanged. Final production
+smoke passed: public privacy1.2 at1440/360, authenticated Member flows, private
+images/foreign404, admin403 and only-new-test-session revocation/cleared detail.
+Backuprestore113issues1041events13matchingimages19receiptsPASS.
+13 tickets remain ReadyHumanReview;97/98/107 await actual human pilot evidence,
+not more provider/operator questions. Guide docs/google-pilot.md and comment98.
+Never reuse Store reviewer for pilot grants/Google, alter Store87/88 or close by
+inference. GSD quick260916-llb records the current continuation.
 
 Previous checkpoint:
 106 delivered5044a29/GitOps66d84b95/digest60980357, Healthy/Synced/Ready/PVC,
@@ -293,7 +299,7 @@ retained for rollback. No server/GitOps change. Parallel creation buttons
 Phase: 1 (Private Single-Owner Dogfooding MVP) — EXECUTING
 Plan: 5 of 5
 Status: Epic 3 planning delivered; awaiting human decisions and implementation request
-Last activity: 2026-09-13 - Quick 260913-vul, source eb4b4e1: 14 tickets (94–107), 20 blocking questions and Epic map verified through MCP. Documentation/diff/secret checks passed; no new runtime tests or deployment. Existing roadmap phase progress unchanged.
+Last activity: 2026-09-16 - Completed quick260916-llb: Gmail SMTP reuse activated and verified; mobile privacy fix deployed; guide delivered for Owner's actual Google/receipt pilot. Roadmap phase progress unchanged.
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -419,6 +425,7 @@ Decisions are logged in PROJECT.md Key Decisions table. Current roadmap-level st
 
 | ID | Description | Date | Commits | Status | Directory |
 | --- | --- | --- | --- | --- | --- |
+| 260916-llb | Gmail de Gremiox, privacidad y guía de piloto Google | 2026-09-16 | 6005ace, f5dbbc4; GitOps33a99f6e, a3704a4a | Desplegado, SMTP/gates/restore/smoke PASS; recepción y Google pendientes del Owner | [260916-llb](./quick/260916-llb-epic-3-reutilizar-correo-de-gremiox-y-gu/) |
 | 260914-koj |96 gestión versionada de miembros/proyectos |2026-09-14|3156b31; GitOps7f6d9515|Gates/restore/smoke PASS; revisión humana|[260914-koj](./quick/260914-koj-epic-3-ticket96-gestionar-miembros-y-per/) |
 | 260914-k34 |95 permisos read/edit y UI Chrome |2026-09-14|23d789e; GitOpsb69e88b9|Gates/restore/smoke PASS; revisión humana|[260914-k34](./quick/260914-k34-epic-3-ticket95-permisos-lectura-edicion/) |
 | 260914-jhl |108 contexto multiworkspace |2026-09-14|390f3d0; GitOpscbf737cd|Gates/restore/smoke PASS; revisión humana|[260914-jhl](./quick/260914-jhl-epic-3-implementar-base-multiworkspace-t/) |
@@ -447,9 +454,10 @@ Decisions are logged in PROJECT.md Key Decisions table. Current roadmap-level st
 
 ### Blockers/Concerns
 
-- Epic 3: 20 product questions created in 94–106, initially unanswered. Start
-  with 94/95; optional scopes stay undecided. Ticket 107 depends on the approved
-  outcomes. Planning is complete, implementation has not been requested.
+- Epic 3: product and operational questions answered, implementation delivered.
+  97 needs actual requested-email receipt,98 needs Owner's distinct Google pilot,
+  107 needs its real collaboration evidence. Follow docs/google-pilot.md; do not
+  repeat provider/operator questions or replace Google with fixture acceptance.
 
 - Epic 7: Google approval/manual publication and real Store pilot/update gates
   in 87/88 remain. Access clarification 86 is resolved: keep the current local
@@ -477,6 +485,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-09-13
-Stopped at: Epic 3 planned with tickets 94–107 and 20 native questions. Answer 94 then 95. All created in Backlog, no claims held, no implementation or deployment. Prior Epic 7 evidence remains historical; this turn did not check or change Store/runtime.
-Resume file: ./quick/260913-vul-planificar-epic-3-usuarios-roles-colabor/260913-vul-SUMMARY.md (derived planning evidence; reread live Epic and answers)
+Last session: 2026-09-16
+Stopped at: Gmail and mobile disclosure deployed/verified at GitOpsa3704a4a; await Owner's actual receipt/Google/collaboration result for97/98/107. Guide in98 and docs/google-pilot.md; no Store changes.
+Resume file: ./quick/260916-llb-epic-3-reutilizar-correo-de-gremiox-y-gu/260916-llb-SUMMARY.md (reread live issues and user results)
