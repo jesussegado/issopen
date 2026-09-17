@@ -8,11 +8,23 @@ import {
   sessionMiddleware,
 } from "better-auth/api";
 import { setSessionCookie } from "better-auth/cookies";
-import { and, asc, desc, eq, gt, gte, inArray, isNull, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gt,
+  gte,
+  inArray,
+  isNotNull,
+  isNull,
+  sql,
+} from "drizzle-orm";
 import { z } from "zod";
 import type { Database } from "./db/client.js";
 import {
   account,
+  instanceOwner,
   membershipEvent,
   oauthAccessToken,
   oauthClient,
@@ -798,7 +810,11 @@ async function redeemInvitation(
     }
 
     const [existingUser] = await tx
-      .select({ id: user.id, email: user.email })
+      .select({
+        id: user.id,
+        email: user.email,
+        emailVerified: user.emailVerified,
+      })
       .from(user)
       .where(eq(user.email, invite.email))
       .limit(1);
@@ -806,12 +822,63 @@ async function redeemInvitation(
     let provisional = false;
     if (existingUser) {
       if (!authenticatedUser) {
-        throw new APIError("CONFLICT", {
-          code: "EXISTING_ACCOUNT_REQUIRES_SIGN_IN",
-          message: "Sign in to the existing Issopen account before continuing",
-        });
-      }
-      if (
+        // A revoked or expired invitation can leave behind an identity that
+        // never proved an email and never gained a sign-in method or access.
+        // A replacement private invitation may reuse only that inert row. Any
+        // authentication, access, ownership or competing live claim keeps the
+        // normal explicit-sign-in boundary intact.
+        await tx.execute(
+          sql`select pg_advisory_xact_lock(hashtext(${`invitation-user:${existingUser.id}`}))`,
+        );
+        const [linkedAccount] = await tx
+          .select({ id: account.id })
+          .from(account)
+          .where(eq(account.userId, existingUser.id))
+          .limit(1);
+        const [existingMembership] = await tx
+          .select({ workspaceId: workspaceMembership.workspaceId })
+          .from(workspaceMembership)
+          .where(eq(workspaceMembership.userId, existingUser.id))
+          .limit(1);
+        const [ownedInstance] = await tx
+          .select({ userId: instanceOwner.userId })
+          .from(instanceOwner)
+          .where(eq(instanceOwner.userId, existingUser.id))
+          .limit(1);
+        const [ownedWorkspace] = await tx
+          .select({ id: workspace.id })
+          .from(workspace)
+          .where(eq(workspace.ownerId, existingUser.id))
+          .limit(1);
+        const [otherActiveClaim] = await tx
+          .select({ id: workspaceInvitation.id })
+          .from(workspaceInvitation)
+          .where(
+            and(
+              eq(workspaceInvitation.claimedByUserId, existingUser.id),
+              isNotNull(workspaceInvitation.claimedAt),
+              isNull(workspaceInvitation.acceptedAt),
+              isNull(workspaceInvitation.revokedAt),
+              gt(workspaceInvitation.expiresAt, now),
+            ),
+          )
+          .limit(1);
+        const reusableAbandonedIdentity =
+          existingUser.emailVerified === false &&
+          !linkedAccount &&
+          !existingMembership &&
+          !ownedInstance &&
+          !ownedWorkspace &&
+          !otherActiveClaim;
+        if (!reusableAbandonedIdentity) {
+          throw new APIError("CONFLICT", {
+            code: "EXISTING_ACCOUNT_REQUIRES_SIGN_IN",
+            message:
+              "Sign in to the existing Issopen account before continuing",
+          });
+        }
+        provisional = true;
+      } else if (
         authenticatedUser.id !== existingUser.id ||
         normalizedEmail(authenticatedUser.email) !== invite.email
       ) {
@@ -839,7 +906,11 @@ async function redeemInvitation(
           emailVerified: false,
           name: invite.email.split("@")[0] || "Invited member",
         })
-        .returning({ id: user.id, email: user.email });
+        .returning({
+          id: user.id,
+          email: user.email,
+          emailVerified: user.emailVerified,
+        });
       if (!created) throw new Error("Invitation user insert returned no row");
       targetUser = created;
       provisional = true;

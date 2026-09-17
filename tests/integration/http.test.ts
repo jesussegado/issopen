@@ -931,6 +931,31 @@ describe("protected tracker REST API", () => {
       ).status,
     ).toBe(401);
 
+    const [abandonedIdentity] = await connection.db
+      .select({ userId: workspaceInvitation.claimedByUserId })
+      .from(workspaceInvitation)
+      .where(eq(workspaceInvitation.id, revocable.id));
+    expect(abandonedIdentity?.userId).toBeTruthy();
+    const replacement = await createInvite("revoked@example.test");
+    const replacementClaim = await redeem(replacement.token);
+    expect(replacementClaim.status).toBe(200);
+    expect(replacementClaim.headers.get("set-cookie")).toBeTruthy();
+    const [replacementInvitation] = await connection.db
+      .select({ userId: workspaceInvitation.claimedByUserId })
+      .from(workspaceInvitation)
+      .where(eq(workspaceInvitation.id, replacement.id));
+    expect(replacementInvitation?.userId).toBe(abandonedIdentity?.userId);
+    const [abandonedAccountCount] = await connection.db
+      .select({ value: count() })
+      .from(account)
+      .where(eq(account.userId, abandonedIdentity?.userId ?? ""));
+    const [abandonedMembershipCount] = await connection.db
+      .select({ value: count() })
+      .from(workspaceMembership)
+      .where(eq(workspaceMembership.userId, abandonedIdentity?.userId ?? ""));
+    expect(abandonedAccountCount?.value).toBe(0);
+    expect(abandonedMembershipCount?.value).toBe(0);
+
     const expiring = await createInvite("expired@example.test");
     await connection.db
       .update(workspaceInvitation)
