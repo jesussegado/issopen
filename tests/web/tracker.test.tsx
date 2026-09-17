@@ -816,6 +816,11 @@ describe("tracker web routes", () => {
     ).toBeVisible();
     expect(within(epicOverview).getByText("0 tickets")).toBeVisible();
     expect(
+      within(epicOverview).getByRole("link", {
+        name: `View tickets for 7-${epic.title}`,
+      }),
+    ).toHaveAttribute("href", `/projects/${project.id}?epic=${epic.id}`);
+    expect(
       screen.getByRole("heading", { name: "No issues yet" }),
     ).toBeVisible();
   });
@@ -852,6 +857,11 @@ describe("tracker web routes", () => {
     expect(screen.getByText("0 done")).toBeVisible();
     expect(screen.getByText("1 tickets · 0%")).toBeVisible();
     expect(screen.queryByText(epic.description)).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("link", {
+        name: `View tickets for 7-${epic.title}`,
+      }),
+    ).toHaveAttribute("href", `/projects/${project.id}?epic=${epic.id}`);
     await user.type(
       screen.getByLabelText("Title (required)"),
       "Release readiness",
@@ -965,6 +975,11 @@ describe("tracker web routes", () => {
     expect(screen.queryByText("Archived")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Show archived (1)" }));
     expect(screen.getByText("Archived")).toBeVisible();
+    expect(
+      screen.getAllByRole("link", {
+        name: `View tickets for 7-${epic.title}`,
+      }),
+    ).toHaveLength(1);
 
     cleanup();
     render(<EpicDetailRoute epicId={epic.id} />);

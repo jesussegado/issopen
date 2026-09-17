@@ -838,6 +838,9 @@ progress {
   border-radius: 8px;
   background: var(--color-subtle);
 }
+.epic-board-link {
+  justify-self: start;
+}
 .board-region {
   overflow-x: auto;
   padding: 4px;

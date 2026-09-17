@@ -313,6 +313,13 @@ export function EpicsRoute({ projectId }: { projectId: string }) {
                     {epicLabel(epic)}
                   </AppLink>
                   <Progress epic={epic} />
+                  <AppLink
+                    className="button button-secondary epic-board-link"
+                    href={`/projects/${epic.projectId}?epic=${epic.id}`}
+                    aria-label={`View tickets for ${epicLabel(epic)}`}
+                  >
+                    View tickets
+                  </AppLink>
                 </li>
               ))}
             </ul>

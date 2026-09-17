@@ -89,6 +89,13 @@ function EpicOverview({ epics }: { epics: Epic[] }) {
                     aria-label={`${epicLabel(epic)}: ${doneIssues} of ${totalIssues} tickets done`}
                   />
                 </div>
+                <AppLink
+                  className="button button-secondary epic-board-link"
+                  href={`/projects/${epic.projectId}?epic=${epic.id}`}
+                  aria-label={`View tickets for ${epicLabel(epic)}`}
+                >
+                  View tickets
+                </AppLink>
               </li>
             );
           })}
