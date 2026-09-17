@@ -29,7 +29,9 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
-17/09 ticket115: onboarding autocontenido para agentes implementado y validado. La entrada
+17/09 ticket115: onboarding autocontenido para agentes desplegado desde fuente
+`5131c64`, imagen `agent-onboarding-5131c64` y digest `432ed2ca`; GitOps
+`cbf58075`, Argo Synced/Healthy, pod 0 reinicios y PVCs conservados. La entrada
 pública `/agent-onboarding` se acompaña de texto, JSON y `llms.txt`; publica un
 ZIP determinista de la skill con versión y SHA-256, nunca credenciales. **Agents**
 genera una guía por identidad con MCP, proyectos, scopes, preflight y prompt,

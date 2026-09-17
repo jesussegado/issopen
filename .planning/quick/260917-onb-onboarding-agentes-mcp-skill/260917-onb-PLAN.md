@@ -1,6 +1,6 @@
 ---
 quick_id: 260917-onb
-status: in_progress
+status: complete
 ticket: ISSOPEN-115
 epic: 4
 ---

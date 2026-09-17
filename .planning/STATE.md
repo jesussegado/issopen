@@ -315,7 +315,7 @@ retained for rollback. No server/GitOps change. Parallel creation buttons
 Phase: 1 (Private Single-Owner Dogfooding MVP) — EXECUTING
 Plan: 5 of 5
 Status: Epic 3 planning delivered; awaiting human decisions and implementation request
-Last activity: 2026-09-16 - Completed quick260916-llb: Gmail SMTP reuse activated and verified; mobile privacy fix deployed; guide delivered for Owner's actual Google/receipt pilot. Roadmap phase progress unchanged.
+Last activity: 2026-09-17 - Completed quick260917-onb: secret-free agent onboarding, pinned skill 0.2.0 and personalized MCP setup deployed and verified in production. Roadmap phase progress unchanged.
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -441,6 +441,7 @@ Decisions are logged in PROJECT.md Key Decisions table. Current roadmap-level st
 
 | ID | Description | Date | Commits | Status | Directory |
 | --- | --- | --- | --- | --- | --- |
+| 260917-onb | Onboarding autocontenido para agentes, MCP y skill | 2026-09-17 | Fuente `5131c64`; GitOps `cbf58075` | Gates/Compose/Argo/smoke responsive PASS; ticket 115 Ready for Human Review | [260917-onb](./quick/260917-onb-onboarding-agentes-mcp-skill/) |
 | 260916-llb | Gmail de Gremiox, privacidad y guía de piloto Google | 2026-09-16 | 6005ace, f5dbbc4; GitOps33a99f6e, a3704a4a | Desplegado, SMTP/gates/restore/smoke PASS; recepción y Google pendientes del Owner | [260916-llb](./quick/260916-llb-epic-3-reutilizar-correo-de-gremiox-y-gu/) |
 | 260914-koj |96 gestión versionada de miembros/proyectos |2026-09-14|3156b31; GitOps7f6d9515|Gates/restore/smoke PASS; revisión humana|[260914-koj](./quick/260914-koj-epic-3-ticket96-gestionar-miembros-y-per/) |
 | 260914-k34 |95 permisos read/edit y UI Chrome |2026-09-14|23d789e; GitOpsb69e88b9|Gates/restore/smoke PASS; revisión humana|[260914-k34](./quick/260914-k34-epic-3-ticket95-permisos-lectura-edicion/) |
@@ -501,6 +502,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-09-16
-Stopped at: Gmail and mobile disclosure deployed/verified at GitOpsa3704a4a; await Owner's actual receipt/Google/collaboration result for97/98/107. Guide in98 and docs/google-pilot.md; no Store changes.
-Resume file: ./quick/260916-llb-epic-3-reutilizar-correo-de-gremiox-y-gu/260916-llb-SUMMARY.md (reread live issues and user results)
+Last session: 2026-09-17
+Stopped at: ticket115 agent onboarding deployed/verified at GitOps cbf58075; human review remains. Existing external Owner gates for97/98/107 and Store87/88 remain unchanged.
+Resume file: ./quick/260917-onb-onboarding-agentes-mcp-skill/260917-onb-SUMMARY.md
