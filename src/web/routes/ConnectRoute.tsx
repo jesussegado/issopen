@@ -48,14 +48,37 @@ export function ConnectRoute() {
       </Button>
       <ol className="connection-steps">
         <li>Copy the MCP URL above.</li>
-        <li>Add it as a personal MCP plugin in ChatGPT Work.</li>
-        <li>Authorize access in Issopen.</li>
+        <li>
+          Add it as a personal MCP plugin in ChatGPT, choose OAuth, then click
+          Authenticate. Do not paste a Codex API key or your Issopen password
+          into ChatGPT.
+        </li>
+        <li>
+          In the Issopen window, sign in as the workspace Owner and review the
+          permissions before allowing access.
+        </li>
         <li>Ask ChatGPT to list your private projects.</li>
       </ol>
       <p className="helper-copy">
-        Issopen reports a connection only after a successful OAuth authorization
-        or tool request.
+        Copying this URL does not connect ChatGPT. Complete authentication in
+        ChatGPT and verify it by asking for your projects.
       </p>
+      <details>
+        <summary>Authenticate failed?</summary>
+        <p>
+          If the error appears before the Issopen sign-in or consent screen,
+          client discovery may have failed. An invalid_client or metadata-fetch
+          error is not an incorrect password. Retry Authenticate; if it still
+          fails, share only the error message with the operator, never the full
+          callback URL, authorization code or token.
+        </p>
+        <p>
+          Issopen supports automatic OAuth client discovery (CIMD). You do not
+          need to create a Google OAuth app or rotate your Codex API key for
+          this connection.
+        </p>
+        <a href="/agent-onboarding">Full agent connection guide</a>
+      </details>
     </div>
   );
 }
@@ -70,6 +93,8 @@ const scopeLabels: Record<string, string> = {
   "code:link": "Link code results",
   "issues:review": "Move work through Ready for Human Review",
   "issues:close": "Close issues",
+  "epics:create": "Create Epics",
+  "epics:write": "Edit Epics",
   "extension:read":
     "Leer tus proyectos desde esta instalación de Chrome (sin permisos de agente)",
   "extension:write":

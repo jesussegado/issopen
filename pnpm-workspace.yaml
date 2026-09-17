@@ -2,6 +2,10 @@ packages:
   - "."
   - "extensions/chrome"
 
+# Preserve CIMD DNS pinning while honoring Node 24's all:true lookup contract.
+patchedDependencies:
+  '@better-auth/cimd@1.7.2': patches/@better-auth__cimd@1.7.2.patch
+
 allowBuilds:
   cpu-features: false
   esbuild: true

@@ -29,6 +29,16 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+Ticket117 corrige Authenticate de ChatGPT: parche versionado de
+`@better-auth/cimd@1.7.2` para el contrato DNS `all:true` de Node24, conservando
+pinning/TLS/rechazo de IPs privadas; ambos stages Docker deben copiar `patches/`.
+El login web reenvía la query OAuth firmada, verificada por Better Auth, para
+volver al consentimiento con contraseña o Google. No reemplazar el transporte
+por fetch sin restricciones ni habilitar DCR como workaround. Diagnóstico y
+regresiones en `.planning/debug/chatgpt-authenticate.md`; operación en
+[onboarding](docs/agent-onboarding.md). El handshake con fixtures no sustituye
+la aceptación final dentro de la cuenta ChatGPT del propietario.
+
 ### Regla de sincronización del onboarding
 
 Todo cambio que afecte al MCP, sus tools, autenticación, permisos, scopes,

@@ -9,8 +9,17 @@ import {
   type StartedPostgreSqlContainer,
 } from "@testcontainers/postgresql";
 import { eq } from "drizzle-orm";
+import { exportJWK, generateKeyPair, SignJWT } from "jose";
 import pino from "pino";
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 import { bootstrapOwner } from "../../scripts/owner.js";
 import { createApp } from "../../src/server/app.js";
 import { createAuth, type IssopenAuth } from "../../src/server/auth.js";
@@ -38,6 +47,12 @@ import {
 } from "../../src/server/domain/index.js";
 
 let baseUrl: string;
+// Isolate discovery from the public internet; the actual DNS/HTTPS transport
+// contract is exercised separately in cimd-transport.test.ts.
+const cimdFetch = vi.hoisted(() => vi.fn());
+vi.mock("@better-auth/cimd/node", () => ({
+  fetchClientMetadataResource: cimdFetch,
+}));
 let resource: string;
 const owner = {
   name: "MCP Owner",
@@ -196,6 +211,7 @@ beforeAll(async () => {
 }, 120_000);
 
 beforeEach(async () => {
+  cimdFetch.mockReset();
   await connection.client.unsafe(
     'TRUNCATE TABLE "activity_event", "code_link", "issue", "agent_project", "agent_scope", "agent_credential", "agent_identity", "project", "oauth_client_resource", "oauth_consent", "oauth_access_token", "oauth_refresh_token", "oauth_client", "oauth_resource", "jwks", "verification", "session", "account", "workspace", "instance_owner", "user" CASCADE',
   );
@@ -902,6 +918,122 @@ describe("stateless Issopen MCP", () => {
       }),
     });
     expect(dcr.status).toBeGreaterThanOrEqual(400);
+  });
+
+  it("discovers a ChatGPT-style CIMD client, resumes signed login and exchanges private_key_jwt with PKCE", async () => {
+    const clientId = "https://chatgpt.example.test/oauth/client.json";
+    const redirectUri =
+      "https://chatgpt.example.test/connector_platform_oauth_redirect";
+    const { publicKey, privateKey } = await generateKeyPair("RS256");
+    const jwk = {
+      ...(await exportJWK(publicKey)),
+      kid: "synthetic-chatgpt",
+      alg: "RS256",
+      use: "sig",
+    };
+    const jwksUrl = "https://chatgpt.example.test/oauth/jwks.json";
+    cimdFetch.mockImplementation(async (input: string) => {
+      if (input === jwksUrl) return Response.json({ keys: [jwk] });
+      expect(input).toBe(clientId);
+      return Response.json(
+        {
+          client_id: clientId,
+          client_name: "ChatGPT fixture",
+          redirect_uris: [redirectUri],
+          grant_types: ["authorization_code", "refresh_token"],
+          response_types: ["code"],
+          token_endpoint_auth_method: "private_key_jwt",
+          token_endpoint_auth_methods_supported: ["none", "private_key_jwt"],
+          token_endpoint_auth_signing_alg: "RS256",
+          jwks_uri: jwksUrl,
+        },
+        { headers: { "Cache-Control": "max-age=300" } },
+      );
+    });
+    const verifier = "synthetic-cimd-pkce-verifier-0123456789abcdef0123456789";
+    const authorize = new URL("/api/auth/oauth2/authorize", baseUrl);
+    authorize.search = new URLSearchParams({
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      response_type: "code",
+      scope: "issues:read offline_access",
+      state: "synthetic-cimd-state",
+      code_challenge: pkceChallenge(verifier),
+      code_challenge_method: "S256",
+      resource,
+    }).toString();
+    const start = await app.request(authorize.pathname + authorize.search);
+    expect(start.status).toBe(302);
+    const login = new URL(await responseRedirect(start), baseUrl);
+    expect(login.pathname).toBe("/sign-in");
+    expect(login.searchParams.get("sig")).toBeTruthy();
+    const signedIn = await app.request("/api/auth/sign-in/email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Origin: baseUrl },
+      body: JSON.stringify({
+        email: owner.email,
+        password: owner.password,
+        oauth_query: login.search.slice(1),
+      }),
+    });
+    expect(signedIn.status).toBe(200);
+    const cookie = signedIn.headers.get("set-cookie")?.split(";", 1)[0] ?? "";
+    const consentUrl = new URL(await responseRedirect(signedIn), baseUrl);
+    expect(consentUrl.pathname).toBe("/consent");
+    const consent = await app.request("/api/auth/oauth2/consent", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Origin: baseUrl,
+        Cookie: cookie,
+      },
+      body: JSON.stringify({
+        accept: true,
+        scope: "issues:read offline_access",
+        oauth_query: consentUrl.search.slice(1),
+      }),
+    });
+    expect(consent.status).toBe(200);
+    const callback = new URL(await responseRedirect(consent));
+    expect(callback.origin + callback.pathname).toBe(redirectUri);
+    expect(callback.searchParams.get("iss")).toBe(`${baseUrl}/api/auth`);
+    expect(callback.searchParams.get("state")).toBe("synthetic-cimd-state");
+    const assertion = await new SignJWT({})
+      .setProtectedHeader({ alg: "RS256", kid: jwk.kid })
+      .setIssuer(clientId)
+      .setSubject(clientId)
+      .setAudience(`${baseUrl}/api/auth`)
+      .setJti(randomUUID())
+      .setIssuedAt()
+      .setExpirationTime("2m")
+      .sign(privateKey);
+    const token = await app.request("/api/auth/oauth2/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "authorization_code",
+        client_id: clientId,
+        redirect_uri: redirectUri,
+        code: callback.searchParams.get("code") ?? "",
+        code_verifier: verifier,
+        resource,
+        client_assertion_type:
+          "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
+        client_assertion: assertion,
+      }),
+    });
+    const tokens = await token.json();
+    expect(token.status, JSON.stringify(tokens)).toBe(200);
+    expect(tokens.refresh_token).toBeTruthy();
+    const client = await mcpClient(tokens.access_token);
+    try {
+      expect(
+        (await client.callTool({ name: "list_projects", arguments: {} }))
+          .isError,
+      ).not.toBe(true);
+    } finally {
+      await client.close();
+    }
   });
 
   it("completes authorization-code PKCE with explicit scopes", async () => {

@@ -4,13 +4,16 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  '@better-auth/cimd@1.7.2': f74e31eedb93e1ae5d55b007fdf168c522072ed6faca0a02e46a24080e4539dd
+
 importers:
 
   .:
     dependencies:
       '@better-auth/cimd':
         specifier: 1.7.2
-        version: 1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.1.3)(kysely@0.29.5)(nanostores@1.5.2))(@better-auth/oauth-provider@1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.1.3)(kysely@0.29.5)(nanostores@1.5.2))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-auth@1.7.2(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(kysely@0.29.5)(postgres@3.4.9))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@4.1.11))(better-call@1.4.0(zod@4.5.4)))(better-auth@1.7.2(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(kysely@0.29.5)(postgres@3.4.9))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@4.1.11))(better-call@1.4.0(zod@4.5.4))
+        version: 1.7.2(patch_hash=f74e31eedb93e1ae5d55b007fdf168c522072ed6faca0a02e46a24080e4539dd)(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.1.3)(kysely@0.29.5)(nanostores@1.5.2))(@better-auth/oauth-provider@1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.1.3)(kysely@0.29.5)(nanostores@1.5.2))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-auth@1.7.2(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(kysely@0.29.5)(postgres@3.4.9))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@4.1.11))(better-call@1.4.0(zod@4.5.4)))(better-auth@1.7.2(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(kysely@0.29.5)(postgres@3.4.9))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@4.1.11))(better-call@1.4.0(zod@4.5.4))
       '@better-auth/mcp':
         specifier: 1.7.2
         version: 1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.1.3)(kysely@0.29.5)(nanostores@1.5.2))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-auth@1.7.2(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(kysely@0.29.5)(postgres@3.4.9))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@4.1.11))(better-call@1.4.0(zod@4.5.4))
@@ -3193,7 +3196,7 @@ snapshots:
 
   '@bcoe/v8-coverage@1.0.2': {}
 
-  '@better-auth/cimd@1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.1.3)(kysely@0.29.5)(nanostores@1.5.2))(@better-auth/oauth-provider@1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.1.3)(kysely@0.29.5)(nanostores@1.5.2))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-auth@1.7.2(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(kysely@0.29.5)(postgres@3.4.9))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@4.1.11))(better-call@1.4.0(zod@4.5.4)))(better-auth@1.7.2(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(kysely@0.29.5)(postgres@3.4.9))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@4.1.11))(better-call@1.4.0(zod@4.5.4))':
+  '@better-auth/cimd@1.7.2(patch_hash=f74e31eedb93e1ae5d55b007fdf168c522072ed6faca0a02e46a24080e4539dd)(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.1.3)(kysely@0.29.5)(nanostores@1.5.2))(@better-auth/oauth-provider@1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.1.3)(kysely@0.29.5)(nanostores@1.5.2))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-auth@1.7.2(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(kysely@0.29.5)(postgres@3.4.9))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@4.1.11))(better-call@1.4.0(zod@4.5.4)))(better-auth@1.7.2(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(kysely@0.29.5)(postgres@3.4.9))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@4.1.11))(better-call@1.4.0(zod@4.5.4))':
     dependencies:
       '@better-auth/core': 1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.1.3)(kysely@0.29.5)(nanostores@1.5.2)
       '@better-auth/oauth-provider': 1.7.2(@better-auth/core@1.7.2(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-call@1.4.0(zod@4.5.4))(jose@6.1.3)(kysely@0.29.5)(nanostores@1.5.2))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-auth@1.7.2(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(kysely@0.29.5)(postgres@3.4.9))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@4.1.11))(better-call@1.4.0(zod@4.5.4))

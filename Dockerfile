@@ -8,6 +8,7 @@ RUN corepack enable && corepack prepare pnpm@11.22.0 --activate
 
 FROM toolchain AS dependencies
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY patches ./patches
 RUN pnpm install --frozen-lockfile
 
 FROM dependencies AS builder
@@ -19,6 +20,7 @@ RUN pnpm build
 
 FROM toolchain AS production-dependencies
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY patches ./patches
 RUN pnpm install --frozen-lockfile --prod
 
 FROM ${NODE_IMAGE} AS runtime

@@ -39,6 +39,14 @@ describe("public agent onboarding contract", () => {
     expect(onboarding).toContain("Ready for Human Review");
     expect(onboarding).toContain("context, not authorization");
     expect(onboarding).toContain("ChatGPT uses the same MCP URL through OAuth");
+    expect(onboarding).toContain("click Authenticate");
+    expect(onboarding).toContain(
+      "client discovery failure, not a wrong password",
+    );
+    expect(createAgentOnboardingDocument(baseUrl).mcp.chatgptSetup).toContain(
+      "CIMD",
+    );
+    expect(llms).toContain("OAuth with automatic CIMD discovery");
     expect(onboarding).toContain("Multiple MCP API keys");
     expect(onboarding).toContain("up to 10 active named keys");
     expect(onboarding).toContain("Revoke key affects one consumer");

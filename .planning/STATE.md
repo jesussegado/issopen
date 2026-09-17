@@ -16,6 +16,15 @@ progress:
 
 # Project State
 
+## Follow-up 17Sep — ChatGPT Authenticate (ticket117)
+
+User reports Authenticate failure. Confirmed CIMD1.7.2/Node24 pinned DNS callback
+shape error before login, plus web sign-in losing the signed OAuth continuation.
+Plan derived from issue117v4/questions[] in quick/260917-oauth117; persistent
+debug evidence in debug/chatgpt-authenticate.md. Patched dependency, isolated
+regressions, updated onboarding; full gates/release ongoing. No credential,
+permission or schema changes. Do not infer actual ChatGPT account acceptance.
+
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-08-30)

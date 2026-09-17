@@ -149,6 +149,16 @@ export function AgentOnboardingRoute() {
               Usa el mismo endpoint mediante OAuth 2.1 y consentimiento. No
               reutiliza el PAT de Codex ni una contraseña de usuario.
             </p>
+            <p>
+              Selecciona OAuth en ChatGPT, pulsa Authenticate e inicia sesión
+              como Owner de tu workspace en la ventana de Issopen. Revisa los
+              permisos antes de autorizar; el cliente se descubre mediante CIMD.
+            </p>
+            <p>
+              Si aparece invalid_client o un error de metadatos antes del login,
+              no es una contraseña incorrecta: reintenta Authenticate y comunica
+              sólo el mensaje al operador, nunca la URL de retorno ni códigos.
+            </p>
           </div>
         </div>
       </section>

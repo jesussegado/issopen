@@ -77,6 +77,40 @@ installing/configuring, then call `get_agent_context`.
 ChatGPT uses the same MCP URL with OAuth 2.1 and consent. It does not receive or
 reuse the Codex PAT.
 
+Choose OAuth in ChatGPT and click **Authenticate**. In the Issopen window,
+sign in as the workspace Owner and review the requested permissions. The
+client is discovered automatically using CIMD; no Google app registration or
+Codex key rotation is needed. Copying the MCP URL is not proof of connection:
+ask ChatGPT to list the allowed projects after consent.
+
+If Authenticate fails before sign-in/consent with `invalid_client` or a
+metadata-fetch error, retry and report only the message, not the callback URL,
+code or token. This is client discovery, not a bad password.
+
+### Operator: CIMD transport regression (ticket 117)
+
+`@better-auth/cimd@1.7.2` returned a scalar from its pinned DNS callback even
+when Node24 requested `all:true`, causing `ERR_INVALID_IP_ADDRESS: undefined`.
+The version-pinned pnpm patch returns an array only for that mode. Both Docker
+dependency stages copy the patch before frozen installs. DNS is still resolved
+once, every answer must be publicly routable, the chosen address remains pinned,
+TLS/SNI verification stays enabled and redirects are not followed. Do not replace
+it with unrestricted fetch or globally disable network family autoselection.
+
+Run the transport regression before removing the patch on a dependency upgrade.
+An unauthenticated authorize request with the official ChatGPT CIMD client should
+reach `/sign-in`; an authenticated one should reach `/consent`. Neither probe alone
+proves the final token exchange from the user's ChatGPT account.
+
+The sign-in form also forwards only the server-signed OAuth query to password
+and Google sign-in. Better Auth verifies it and resumes consent; normal sign-in
+and invitation return destinations remain unchanged. Callback error parameters
+are not included in the signed query. Never reconstruct consent from arbitrary
+browser parameters or bypass its signature/expiry checks.
+
+References: [ChatGPT OAuth](https://developers.openai.com/plugins/build/auth),
+[Node lookup contract](https://nodejs.org/api/net.html#socketconnectoptions-connectlistener).
+
 ## Meaning of shared links
 
 An Issopen Epic or ticket URL identifies context only. It does not prove that

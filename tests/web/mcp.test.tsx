@@ -43,6 +43,11 @@ describe("MCP connection UI", () => {
       "https://issues.example.test/mcp",
     );
     expect(screen.getAllByRole("listitem")).toHaveLength(4);
+    expect(screen.getByText(/choose OAuth, then click/)).toBeInTheDocument();
+    expect(screen.getByText(/not an incorrect password/)).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Full agent connection guide" }),
+    ).toHaveAttribute("href", "/agent-onboarding");
     await user.click(screen.getByRole("button", { name: "Copy MCP URL" }));
     expect(writeText).toHaveBeenCalledWith("https://issues.example.test/mcp");
     expect(screen.getByRole("status")).toHaveTextContent("MCP URL copied");

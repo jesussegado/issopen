@@ -16,6 +16,7 @@ import {
 } from "../components/ui.js";
 import { ApiError, apiRequest } from "../lib/api.js";
 import { navigate, returnPath } from "../lib/navigation.js";
+import { oauthSignInQuery } from "../lib/oauth-sign-in.js";
 import { useOnlineStatus } from "../lib/online.js";
 import type { Session } from "../types.js";
 
@@ -99,7 +100,10 @@ export function SignInRoute({
     setError(null);
     try {
       const returnTo = returnPath();
-      const errorCallbackURL = `/sign-in?returnTo=${encodeURIComponent(returnTo)}`;
+      const oauthQuery = oauthSignInQuery(window.location.search);
+      const errorCallbackURL = oauthQuery
+        ? `/sign-in?${oauthQuery}`
+        : `/sign-in?returnTo=${encodeURIComponent(returnTo)}`;
       const response = await fetch("/api/auth/sign-in/social", {
         method: "POST",
         credentials: "same-origin",
@@ -108,6 +112,7 @@ export function SignInRoute({
           provider: "google",
           callbackURL: returnTo,
           errorCallbackURL,
+          ...(oauthQuery ? { oauth_query: oauthQuery } : {}),
         }),
       });
       const body = (await response.json().catch(() => null)) as {
@@ -136,11 +141,16 @@ export function SignInRoute({
     setPasswordRejected(false);
     setError(null);
     try {
+      const oauthQuery = oauthSignInQuery(window.location.search);
       const response = await fetch("/api/auth/sign-in/email", {
         method: "POST",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({
+          email,
+          password,
+          ...(oauthQuery ? { oauth_query: oauthQuery } : {}),
+        }),
       });
       if (!response.ok) {
         setPassword("");
@@ -152,6 +162,24 @@ export function SignInRoute({
       }
       const session = await apiRequest<Session>("/api/v1/session");
       onSignedIn(session);
+      if (oauthQuery) {
+        const body = await response.json();
+        const destination = body.url ?? body.redirect_uri;
+        if (typeof destination !== "string")
+          throw new Error("Missing OAuth continuation");
+        const target = new URL(destination, window.location.origin);
+        // This URL comes from successful server-side signed OAuth validation,
+        // never directly from the browser query's redirect_uri.
+        if (
+          target.origin === window.location.origin &&
+          target.pathname === "/consent"
+        )
+          navigate(target.pathname + target.search, true);
+        else if (target.protocol === "https:")
+          window.location.assign(target.href);
+        else throw new Error("Invalid OAuth continuation");
+        return;
+      }
       const intended = returnPath();
       const invitationFlow =
         intended.startsWith("/invite/") || intended.startsWith("/invitations/");

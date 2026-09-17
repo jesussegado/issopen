@@ -28,6 +28,10 @@ export function createAgentOnboardingDocument(baseUrl: string) {
       method: "POST",
       codexAuth: "Scoped PAT read from ISSOPEN_AGENT_TOKEN",
       chatgptAuth: "OAuth 2.1 authorization code with PKCE",
+      chatgptSetup:
+        "Choose OAuth in ChatGPT, click Authenticate, sign in as the Issopen workspace Owner and review consent. CIMD discovers the client automatically; do not supply a Codex PAT.",
+      chatgptTroubleshooting:
+        "invalid_client or metadata-fetch errors before sign-in indicate client discovery failure, not a wrong password. Retry Authenticate; share only the error text, never callback URLs or codes.",
     },
     credentials: {
       model: "One named MCP API key per consumer under one PAT identity",
@@ -108,6 +112,8 @@ real code results and return verified work for human review.
    get_agent_context. Confirm the returned identity, project allowlist and scopes.
 
 ChatGPT uses the same MCP URL through OAuth and does not use the Codex PAT.
+${document.mcp.chatgptSetup}
+${document.mcp.chatgptTroubleshooting}
 
 ## Multiple MCP API keys
 
@@ -161,5 +167,8 @@ Agents must authenticate separately, call get_agent_context before acting and
 treat ticket/Epic links as context rather than authorization. Secrets never
 belong in URLs, prompts, tickets, repositories or logs. PAT identities support
 several named MCP API keys; use one key per consumer and rotate it independently.
+ChatGPT instead uses OAuth with automatic CIMD discovery: click Authenticate,
+sign in as an Issopen workspace Owner and review consent. See agent onboarding
+for authentication troubleshooting; never share callback URLs, codes or tokens.
 `;
 }
