@@ -125,6 +125,8 @@ export function AuthenticatedShell({
   onSignedOut: () => void;
   children: ReactNode;
 }) {
+  const [desktopNavigationOpen, setDesktopNavigationOpen] = useState(true);
+
   async function signOut() {
     await apiRequest<Record<string, never>>("/api/auth/sign-out", {
       method: "POST",
@@ -182,6 +184,21 @@ export function AuthenticatedShell({
           workspaceId={session.workspace.id}
           key={`${session.workspace.id}:${session.user.id}`}
         />
+        <Button
+          type="button"
+          variant="secondary"
+          className="desktop-menu-trigger"
+          aria-label={
+            desktopNavigationOpen
+              ? "Hide desktop navigation"
+              : "Show desktop navigation"
+          }
+          aria-expanded={desktopNavigationOpen}
+          aria-controls="workspace-sidebar"
+          onClick={() => setDesktopNavigationOpen((current) => !current)}
+        >
+          Menu
+        </Button>
         <MobileNavigation
           key={`${session.user.id}:${session.workspace.id}:${pathname}`}
         >
@@ -207,8 +224,15 @@ export function AuthenticatedShell({
           </div>
         </details>
       </header>
-      <div className="authenticated-layout">
-        <aside className="sidebar">{navigation}</aside>
+      <div
+        className={`authenticated-layout${desktopNavigationOpen ? "" : " sidebar-collapsed"}`}
+      >
+        <aside
+          id="workspace-sidebar"
+          className={`sidebar${desktopNavigationOpen ? "" : " sidebar-hidden"}`}
+        >
+          {navigation}
+        </aside>
         <main id="main-content" className="main-content">
           {children}
         </main>

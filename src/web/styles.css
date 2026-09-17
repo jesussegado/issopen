@@ -331,10 +331,16 @@ ol {
   min-height: calc(100vh - 64px);
   grid-template-columns: 240px minmax(0, 1fr);
 }
+.authenticated-layout.sidebar-collapsed {
+  grid-template-columns: minmax(0, 1fr);
+}
 .sidebar {
   padding: 24px 16px;
   border-right: 1px solid var(--color-border);
   background: var(--color-subtle);
+}
+.sidebar-hidden {
+  display: none;
 }
 .main-content {
   min-width: 0;
@@ -382,9 +388,12 @@ ol {
   margin: 16px 8px;
   background: var(--color-border);
 }
-.mobile-menu-trigger,
+.button.mobile-menu-trigger,
 .mobile-navigation {
   display: none;
+}
+.desktop-menu-trigger {
+  display: inline-flex;
 }
 .owner-menu {
   position: relative;
@@ -1341,9 +1350,12 @@ progress {
   .sidebar {
     display: none;
   }
-  .mobile-menu-trigger {
+  .button.mobile-menu-trigger {
     display: inline-flex;
     margin-left: auto;
+  }
+  .button.desktop-menu-trigger {
+    display: none;
   }
   .mobile-navigation {
     position: absolute;

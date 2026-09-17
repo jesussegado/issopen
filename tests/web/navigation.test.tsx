@@ -51,6 +51,36 @@ it("shows Owner provisioning only to the instance administrator", () => {
   ).not.toBeInTheDocument();
 });
 
+it("collapses and restores the desktop sidebar from Menu", async () => {
+  const user = userEvent.setup();
+  const result = render(shell("/projects/one"));
+  const trigger = screen.getByRole("button", {
+    name: "Hide desktop navigation",
+  });
+  const sidebar = result.container.querySelector("#workspace-sidebar");
+
+  expect(trigger).toHaveAttribute("aria-expanded", "true");
+  expect(sidebar).not.toHaveClass("sidebar-hidden");
+
+  await user.click(trigger);
+
+  expect(
+    screen.getByRole("button", { name: "Show desktop navigation" }),
+  ).toHaveAttribute("aria-expanded", "false");
+  expect(sidebar).toHaveClass("sidebar-hidden");
+  expect(result.container.querySelector(".authenticated-layout")).toHaveClass(
+    "sidebar-collapsed",
+  );
+
+  await user.click(
+    screen.getByRole("button", { name: "Show desktop navigation" }),
+  );
+  expect(
+    screen.getByRole("button", { name: "Hide desktop navigation" }),
+  ).toHaveFocus();
+  expect(sidebar).not.toHaveClass("sidebar-hidden");
+});
+
 it("closes the mobile overlay on route or identity change", async () => {
   const user = userEvent.setup();
   const result = render(shell("/projects/one"));
