@@ -1,6 +1,6 @@
 ---
 quick_id: 260917-mak
-status: in_progress
+status: complete
 ticket: ISSOPEN-116
 epic: 8
 must_haves:

@@ -29,12 +29,16 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
-17/09 ticket116 en implementación: una identidad PAT admite claves MCP
-nombradas por consumidor, con revelado único, expiración/uso/revocación
-independientes y límite de diez activas. Todas heredan en vivo los scopes y
-proyectos de la identidad; no autorizan REST humano ni se mezclan con OAuth.
-La migración0032 conserva la credencial anterior como `Primary` sin reescribir
-su hash. Operación y rollback: [claves MCP](docs/agent-credentials.md).
+17/09 ticket116 entregado: una identidad PAT admite hasta diez claves MCP
+activas y nombradas por consumidor, con revelado único, expiración/uso/revocación
+independientes. Todas heredan en vivo los scopes y proyectos de la identidad;
+no autorizan REST humano ni se mezclan con OAuth. La migración0032 conserva la
+credencial anterior como `Primary` sin reescribir su hash. Fuente `f053a55`,
+imagen `mcp-keys-f053a55`/digest `131ac463`, GitOps `969b7c50`, Argo
+Synced/Healthy, pod Ready0reinicios y PVCs intactos. El smoke productivo creó,
+usó y revocó una clave temporal; REST devolvió401, la clave revocada dejó de
+autenticar y `Primary` siguió conectando. Operación y rollback:
+[claves MCP](docs/agent-credentials.md).
 
 17/09 ticket115: onboarding autocontenido para agentes desplegado desde fuente
 `5131c64`, imagen `agent-onboarding-5131c64` y digest `432ed2ca`; GitOps
