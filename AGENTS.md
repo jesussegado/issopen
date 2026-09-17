@@ -43,11 +43,14 @@ explicar por qué. Nunca publicar credenciales reales en esas superficies.
 activas y nombradas por consumidor, con revelado único, expiración/uso/revocación
 independientes. Todas heredan en vivo los scopes y proyectos de la identidad;
 no autorizan REST humano ni se mezclan con OAuth. La migración0032 conserva la
-credencial anterior como `Primary` sin reescribir su hash. Fuente `f053a55`,
-imagen `mcp-keys-f053a55`/digest `131ac463`, GitOps `969b7c50`, Argo
-Synced/Healthy, pod Ready0reinicios y PVCs intactos. El smoke productivo creó,
-usó y revocó una clave temporal; REST devolvió401, la clave revocada dejó de
-autenticar y `Primary` siguió conectando. Operación y rollback:
+credencial anterior como `Primary` sin reescribir su hash. Implementación
+`f053a55`; onboarding HTML/texto/JSON/llms y regla de sincronización en
+`b120926`; imagen `agent-onboarding-keys-b120926`/digest `a5d01acb`, GitOps
+`2f449caa`, Argo Synced/Healthy, pod Ready0reinicios y PVCs intactos. El smoke
+productivo creó, usó y revocó una clave temporal; REST devolvió401, la clave
+revocada dejó de autenticar y `Primary` siguió conectando. La página pública
+desktop/móvil explica clave por consumidor, rotación y revocación sin overflow
+ni errores de consola. Operación y rollback:
 [claves MCP](docs/agent-credentials.md).
 
 17/09 ticket115: onboarding autocontenido para agentes desplegado desde fuente

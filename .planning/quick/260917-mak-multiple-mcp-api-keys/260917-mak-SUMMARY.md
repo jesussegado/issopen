@@ -4,6 +4,8 @@ status: complete
 ticket: ISSOPEN-116
 source_commit: f053a551261965bb8582c002c142f58bdccd8845
 gitops_commit: 969b7c50e232014b86c2da657fdc9e5c9c2959ca
+onboarding_commit: b120926500f683bdb1b1f9db5b8718cdb661e0ba
+onboarding_gitops_commit: 2f449caac22cc9a6423829a04fc9fb7e7dac56e2
 ---
 
 # Varias claves MCP por identidad de agente
@@ -56,3 +58,21 @@ rotación segura es crear, validar, sustituir y revocar la anterior. Revocar una
 clave no afecta a sus hermanas; revocar la identidad las invalida todas. El
 rollback de código consiste en volver a la imagen previa conservando la columna
 y el índice aditivos; no se eliminan filas, Secrets ni PVCs.
+
+## Seguimiento: onboarding público
+
+La entrega `b120926` sincroniza el modelo de claves múltiples en la página
+`/agent-onboarding`, la guía de texto, el contrato JSON, `llms.txt`, la guía
+generada por identidad y la documentación interna. Explica una clave nombrada
+por consumidor, límite de diez activas, `Primary`, revelado único, preflight,
+rotación sin interrupción y diferencia entre revocar una clave o la identidad.
+`AGENTS.md` obliga desde ahora a revisar todas esas superficies en cada cambio
+de MCP o skill.
+
+Gate completo: 177 unit/web, 114 integración, 42 E2E web y 2 skips previstos,
+16 Chrome unit, 13 Chrome E2E, reproducibilidad y secret scan 436 PASS. Imagen
+`agent-onboarding-keys-b120926` con digest
+`sha256:a5d01acb21373fac9683be8220bfe044754db4f25fead604893a3634063bd525`;
+GitOps `2f449caa`, Argo Synced/Healthy, pod Ready con 0 reinicios, readiness OK y
+PVCs intactos. Smoke público desktop 1440 y móvil 360 PASS, sin overflow ni
+errores de consola; texto, JSON y llms contienen el contrato esperado.
