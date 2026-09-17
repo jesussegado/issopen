@@ -55,6 +55,17 @@ mobile360px and desktop1440px include no-horizontal-overflow assertions.
 
 ## Delivery and operational proof
 
+17Sep ticket98 continuation: source222348d/GitOpsa50b27ab/digest0af833aa is
+Synced/Healthy/Ready with zero restarts and unchanged PVCs. A regression first
+reproduced the replacement-invitation failure, then verified bounded adoption of
+only an abandoned unverified identity with no provider, access, ownership or
+competing active claim. The real Google invitation completed and landed the Member
+directly in its sole project; only that project was listed and the foreign Minecraft
+URL returned the generic unavailable page. Production read-only verification found
+exactly one accepted invitation, verified Google account, workspace membership and
+project grant. A separate ordinary Google re-login has reached its passkey challenge
+and still needs user presence before ticket98 can claim that final persistence step.
+
 16Sep continuation: sourcef5dbbc4/GitOpsa3704a4a/digest65141db3 observed
 Synced/Healthy/Ready0restarts/readinessJSONok/PVCs unchanged. Gmail enabled in
 separate Secret, local/master/live-secret SMTP verify PASS without sending mail.
@@ -111,10 +122,11 @@ gate is evidence, not another unanswered provider/operator decision.
    prepared for declarative activation, no DNS/Gremiox/Google login changes.
    Owner must request a real invitation to their controlled pilot and confirm
    receipt; SMTP verify or accepted status is not inbox proof.
-2. **98**: Owner follows [human pilot](google-pilot.md) with another controlled
-   Google account and a synthetic project. Never reuse Store reviewer for role
-   experiments. Real Google browser/OIDC/consent/callback plus collaboration
-   cannot be replaced by password login, mocked OAuth or an existing Owner.
+2. **98**: Real Google browser/OIDC acceptance, one-project landing and foreign
+   project denial pass with a controlled invited account. The remaining pilot step
+   is to complete the already-open ordinary Google re-login with user presence and
+   confirm the same single-project access persists. Never reuse Store reviewer for
+   role experiments; mocked OAuth or an existing Owner is not equivalent.
 3. **107** depends on97/98 pilot evidence: record invitation acceptance, permitted
    project/denied project, assignee/question/mention/conflict, mobile and errors
    with authorized human identities. Do not mark complete based on automation.

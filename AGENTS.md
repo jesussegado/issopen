@@ -29,16 +29,17 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
-16/09 piloto Google: el intento anterior a la invitación fue rechazado correctamente,
-pero reintentar desde el login general tras reclamarla quedaba en account_not_linked.
-Recovery847536a/GitOps100b5a7b/digest56ee4502 está Synced/Healthy/Ready0restarts,
-PVCs intactos. El mismo enlace privado permite ahora **Resume verification** sólo
-para identidad provisional sin proveedor ni membresías, rota su sesión temporal y
-sigue exigiendo Google exacto antes de cualquier acceso. Signup público y linking
-implícito siguen deshabilitados. Gates168unit/web111integration38webE2E+2skips,
-Chrome16+13,reproducible/scan415/Compose; backuprestore113issues1053events13images
-19receipts y smoke público1440/360PASS. Falta que el propietario reabra el mismo
-enlace y complete Google; no marcar98/107 por inferencia ni crear otra invitación.
+17/09 ticket98: la segunda causa del piloto Google era una identidad provisional
+abandonada por el intento anterior a la invitación. La adopción acotada sólo acepta
+identidades sin verificar, proveedor, membresía, ownership ni otra invitación activa,
+serializada por identidad; cuentas reales siguen obligadas a iniciar sesión. Fuente
+222348d/GitOpsa50b27ab/digest0af833aa está Synced/Healthy/Ready0restarts, PVCs
+intactos. La invitación real completó Google, creó una sola membresía/grant y aterrizó
+directamente en Issopen; la URL del proyecto Minecraft devolvió la página genérica
+sin datos. Signup público y linking implícito siguen deshabilitados. Gates168unit/web,
+111integration,38webE2E+2skips,Chrome16+13,reproducible/scan415/Compose y restore
+113issues1059events13images19receipts pasan. Falta sólo confirmar con presencia la
+segunda entrada Google ya abierta; no marcar107 por inferencia.
 
 16/09: el propietario autoriza reutilizar Gmail SMTP de Gremiox, remitente
 serviciosegado@gmail.com, y realizará personalmente el piloto Google. Guía:

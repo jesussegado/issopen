@@ -1,5 +1,5 @@
 ---
-status: fixing
+status: verifying
 trigger: "parece que no funciona con google; arreglalo, si intente loguearme antes con google de tener la invitacion lista"
 created: 2026-09-16
 updated: 2026-09-17
@@ -19,7 +19,7 @@ updated: 2026-09-17
 - hypothesis: Confirmed follow-up. The first recovery fixed a claimed invitation, but a newly issued invitation still treats the abandoned, unverified provisional identity as an established account and asks for a sign-in method that does not exist.
 - test: A pending replacement invitation may adopt an existing identity only when it is unverified, has no provider account, membership, instance/workspace ownership or other active claimed invitation. Established accounts must continue to sign in first.
 - expecting: The current private invitation advances directly to exact-account Google verification while public signup and implicit account linking remain disabled.
-- next_action: Commit and deploy the validated fix, then complete the same private invitation in the live Chrome session.
+- next_action: Complete one ordinary Google re-login for the accepted pilot identity; the real invitation acceptance and cross-project denial already pass.
 - reasoning_checkpoint: Production has exactly one recent pending invitation whose matching identity is unverified and has zero accounts, memberships, ownership and competing active claims.
 - tdd_checkpoint: The replacement-invitation regression failed with 409 before the fix and now passes. Full validation passes: 168 unit/web, 111 integration, 38 browser tests plus 2 expected skips, 16 extension unit and 13 extension browser tests, reproducible build and secret scan.
 
@@ -41,6 +41,12 @@ updated: 2026-09-17
   observation: The new integration regression failed with 409 before implementation and passes after bounded orphan adoption. Full validation passes (168 unit/web, 111 integration, 38 web E2E plus 2 expected skips, Chrome 16+13, reproducibility and secret scan).
 - timestamp: 2026-09-17T17:10:00+02:00
   observation: Compose passes. Fresh production backup is complete and its hashes pass; the actual dump restores in a disposable PostgreSQL 18.6 container with no network or published ports (113 issues, 1059 events, 13 evidence files with matching bytes/SHA-256, 19 receipts).
+- timestamp: 2026-09-17T17:21:00+02:00
+  observation: The deployed source 222348d / GitOps a50b27ab is Synced and Healthy on immutable digest 0af833aa; the new pod is Ready with zero restarts, readiness passes and both PVC identities are unchanged.
+- timestamp: 2026-09-17T17:24:00+02:00
+  observation: The real private invitation completed Google verification and landed as Member directly in its only assigned project. The navigation exposed only that project, and an explicit request for the foreign Minecraft project returned the generic unavailable page without project data.
+- timestamp: 2026-09-17T17:30:00+02:00
+  observation: A read-only production check confirms one verified Google account, one accepted invitation, one workspace membership and exactly one project grant for the pilot identity. A fresh incognito Google re-login reaches the account's passkey challenge and awaits user presence.
 
 ## Eliminated
 
@@ -53,5 +59,5 @@ updated: 2026-09-17
 
 - root_cause: A pre-invitation Google attempt was correctly rejected. Recovery now works for the same claimed invitation, but a replacement invitation sees the abandoned provisional row through the generic existing-user branch and demands an impossible sign-in.
 - fix: Existing private-link recovery is deployed. The follow-up implements bounded adoption for a replacement invitation and requires an unverified identity with no authentication, access, ownership or competing active claim, serialized by identity.
-- verification: The first recovery passed local regression, full test suite, desktop/mobile browser tests, Compose, secret scan, isolated backup restore and production health/guidance smoke. Follow-up production verification and real Google acceptance remain pending.
+- verification: The first recovery and bounded orphan adoption pass local regressions, the full suite, desktop/mobile browser tests, Compose, secret scan, isolated backup restore and production health. Real Google invitation acceptance, correct one-project landing and foreign-project denial pass. Only the explicit second-login persistence check awaits passkey user presence.
 - files_changed: src/server/invitations.ts, src/web/routes/InvitationRoutes.tsx, src/web/routes/PublicRoutes.tsx, tests and invitation documentation.
