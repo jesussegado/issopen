@@ -2,10 +2,13 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, expect, it } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 import { AuthenticatedShell } from "../../src/web/components/Shell.js";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 const session = {
   user: { id: "person", name: "Person", email: "person@example.test" },
   workspace: {
@@ -79,6 +82,26 @@ it("collapses and restores the desktop sidebar from Menu", async () => {
     screen.getByRole("button", { name: "Hide desktop navigation" }),
   ).toHaveFocus();
   expect(sidebar).not.toHaveClass("sidebar-hidden");
+});
+
+it("keeps the sidebar below the measured sticky header", () => {
+  vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+    x: 0,
+    y: 0,
+    width: 1200,
+    height: 88,
+    top: 0,
+    right: 1200,
+    bottom: 88,
+    left: 0,
+    toJSON: () => ({}),
+  });
+
+  const result = render(shell("/projects/one"));
+
+  expect(result.container.querySelector(".authenticated-layout")).toHaveStyle(
+    "--authenticated-header-height: 88px",
+  );
 });
 
 it("closes the mobile overlay on route or identity change", async () => {

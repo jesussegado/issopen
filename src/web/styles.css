@@ -171,6 +171,9 @@ ol {
   color: var(--color-muted);
 }
 .authenticated-header {
+  position: sticky;
+  z-index: 20;
+  top: 0;
   flex-wrap: wrap;
 }
 .workspace-switcher {
@@ -335,9 +338,15 @@ ol {
   grid-template-columns: minmax(0, 1fr);
 }
 .sidebar {
+  position: sticky;
+  top: var(--authenticated-header-height, 64px);
+  align-self: start;
+  max-height: calc(100dvh - var(--authenticated-header-height, 64px));
   padding: 24px 16px;
+  overflow-y: auto;
   border-right: 1px solid var(--color-border);
   background: var(--color-subtle);
+  overscroll-behavior: contain;
 }
 .sidebar-hidden {
   display: none;
@@ -1360,7 +1369,7 @@ progress {
   .mobile-navigation {
     position: absolute;
     z-index: 9;
-    top: 64px;
+    top: 100%;
     left: 0;
     right: 0;
     padding: 16px;
@@ -1393,7 +1402,7 @@ progress {
     display: none;
   }
   .mobile-navigation {
-    top: 56px;
+    top: 100%;
   }
   .owner-menu summary {
     min-height: 44px;

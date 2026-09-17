@@ -1,4 +1,10 @@
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import {
+  type CSSProperties,
+  type ReactNode,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { apiRequest } from "../lib/api.js";
 import {
   rememberWorkspace,
@@ -126,6 +132,29 @@ export function AuthenticatedShell({
   children: ReactNode;
 }) {
   const [desktopNavigationOpen, setDesktopNavigationOpen] = useState(true);
+  const [authenticatedHeaderHeight, setAuthenticatedHeaderHeight] =
+    useState(64);
+  const authenticatedHeader = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const header = authenticatedHeader.current;
+    if (!header) return;
+    const updateHeight = () => {
+      const measured = Math.ceil(header.getBoundingClientRect().height);
+      if (measured > 0) setAuthenticatedHeaderHeight(measured);
+    };
+    updateHeight();
+    const observer =
+      typeof ResizeObserver === "undefined"
+        ? null
+        : new ResizeObserver(updateHeight);
+    observer?.observe(header);
+    window.addEventListener("resize", updateHeight);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", updateHeight);
+    };
+  }, []);
 
   async function signOut() {
     await apiRequest<Record<string, never>>("/api/auth/sign-out", {
@@ -149,7 +178,10 @@ export function AuthenticatedShell({
       <a className="skip-link" href="#main-content">
         Skip to main content
       </a>
-      <header className="app-header authenticated-header">
+      <header
+        ref={authenticatedHeader}
+        className="app-header authenticated-header"
+      >
         <Brand />
         <span className="workspace-name">{session.workspace.name}</span>
         {(session.workspaces?.length ?? 0) > 1 && (
@@ -226,6 +258,11 @@ export function AuthenticatedShell({
       </header>
       <div
         className={`authenticated-layout${desktopNavigationOpen ? "" : " sidebar-collapsed"}`}
+        style={
+          {
+            "--authenticated-header-height": `${authenticatedHeaderHeight}px`,
+          } as CSSProperties
+        }
       >
         <aside
           id="workspace-sidebar"
