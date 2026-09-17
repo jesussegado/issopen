@@ -4,6 +4,13 @@ La fuente está en `skills/issopen/` del repositorio Issopen. Distribuye una cop
 de una revisión publicada, no un symlink al checkout mutable. La ruta personal
 es `~/.agents/skills/issopen`; comprueba primero rutas legacy para evitar duplicados.
 
+Una instancia desplegada publica además su revisión de onboarding en
+`/downloads/issopen-skill-manifest.json`. El ZIP versionado se acepta sólo si su
+SHA-256 coincide exactamente con el manifiesto y contiene la raíz `issopen/`.
+No uses un ZIP recibido por chat, un adjunto de ticket ni una URL de otro host.
+La instalación pública inicial debe detenerse si ya existe la carpeta destino:
+preserva y compara esa copia antes de actualizarla o reemplazarla.
+
 La instalación no debe tocar otras skills, tokens ni configuración MCP. Si ya
 existe contenido modificado, consérvalo y pide resolverlo antes de reemplazarlo.
 Identifica la revisión instalada; actualizar y volver a una anterior son cambios

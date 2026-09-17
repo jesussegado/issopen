@@ -202,6 +202,15 @@ The command intentionally does not reveal whether an arbitrary email exists.
 
 ## Agent and MCP operation
 
+New agents start at the public, secret-free **Agent onboarding** page at
+`/agent-onboarding`. Plain-text and JSON discovery are available at
+`/agent-onboarding.txt`, `/llms.txt` and `/api/public/agent-onboarding`; the
+page exposes a deterministic, SHA-256-addressed skill package. An Owner can
+also open **Setup guide** beside an active identity to generate instructions
+containing its projects, scopes, MCP URL, Codex setup, preflight and starter
+prompt without including its PAT. The complete contract and rollback procedure
+are in [docs/agent-onboarding.md](docs/agent-onboarding.md).
+
 Open **Agents** in the authenticated web UI to create a separate Codex
 identity. Select at least one project and the minimum scopes it needs. The
 default scopes allow read, creation, blocking questions, claim/release, field

@@ -11,6 +11,11 @@ import {
   TextArea,
   TextInput,
 } from "../components/ui.js";
+import {
+  type AgentOnboardingInstructions,
+  buildAgentOnboardingInstructions,
+  parseAgentSkillManifest,
+} from "../lib/agent-onboarding.js";
 import { ApiError, apiRequest } from "../lib/api.js";
 import type { Agent, AgentScope, Project } from "../types.js";
 import { agentScopes } from "../types.js";
@@ -75,6 +80,16 @@ export function AgentsRoute({ projects }: { projects: Project[] }) {
     [],
   );
   const [submitting, setSubmitting] = useState(false);
+  const [onboarding, setOnboarding] = useState<{
+    agentId: string;
+    instructions: AgentOnboardingInstructions;
+  } | null>(null);
+  const [onboardingLoadingId, setOnboardingLoadingId] = useState<string | null>(
+    null,
+  );
+  const [onboardingCopied, setOnboardingCopied] = useState<
+    "full" | "prompt" | null
+  >(null);
 
   const refresh = useCallback(async () => {
     const response = await apiRequest<{ agents: Agent[] }>("/api/v1/agents");
@@ -172,6 +187,44 @@ export function AgentsRoute({ projects }: { projects: Project[] }) {
     }
   }
 
+  async function openOnboarding(agent: Agent) {
+    setErrors([]);
+    setOnboardingCopied(null);
+    setOnboardingLoadingId(agent.id);
+    try {
+      const [config, manifestResponse] = await Promise.all([
+        apiRequest<{ resource: string }>("/api/v1/mcp/config"),
+        fetch("/downloads/issopen-skill-manifest.json"),
+      ]);
+      if (!manifestResponse.ok) throw new Error("Skill manifest unavailable");
+      const manifest = parseAgentSkillManifest(await manifestResponse.json());
+      setOnboarding({
+        agentId: agent.id,
+        instructions: buildAgentOnboardingInstructions({
+          origin: window.location.origin,
+          mcpUrl: config.resource,
+          agent,
+          manifest,
+        }),
+      });
+    } catch {
+      setErrors([
+        {
+          field: "onboarding",
+          message:
+            "We couldn't prepare this agent's onboarding. Check the connection and published skill manifest, then try again.",
+        },
+      ]);
+    } finally {
+      setOnboardingLoadingId(null);
+    }
+  }
+
+  async function copyOnboarding(kind: "full" | "prompt", value: string) {
+    await navigator.clipboard?.writeText(value);
+    setOnboardingCopied(kind);
+  }
+
   if (loading) return <Skeleton label="Loading agents…" />;
   if (token) {
     return (
@@ -204,6 +257,9 @@ export function AgentsRoute({ projects }: { projects: Project[] }) {
           >
             Finish agent setup
           </Button>
+          <a className="button button-secondary" href="/agent-onboarding">
+            Open onboarding guide
+          </a>
         </div>
       </div>
     );
@@ -361,6 +417,16 @@ export function AgentsRoute({ projects }: { projects: Project[] }) {
                   </Button>
                   <Button
                     type="button"
+                    variant="secondary"
+                    disabled={onboardingLoadingId === agent.id}
+                    onClick={() => void openOnboarding(agent)}
+                  >
+                    {onboardingLoadingId === agent.id
+                      ? "Preparing…"
+                      : "Setup guide"}
+                  </Button>
+                  <Button
+                    type="button"
                     variant="destructive"
                     onClick={() => setRevokeTarget(agent)}
                   >
@@ -369,6 +435,69 @@ export function AgentsRoute({ projects }: { projects: Project[] }) {
                 </div>
               )}
             </div>
+            {onboarding?.agentId === agent.id ? (
+              <section
+                className="agent-onboarding-panel"
+                aria-labelledby={`agent-onboarding-${agent.id}`}
+              >
+                <div className="page-header">
+                  <div>
+                    <h3 id={`agent-onboarding-${agent.id}`}>
+                      Onboard {agent.name}
+                    </h3>
+                    <p>
+                      These instructions contain projects and scopes, but never
+                      the PAT. Deliver the one-time token separately.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setOnboarding(null)}
+                  >
+                    Close guide
+                  </Button>
+                </div>
+                {onboardingCopied ? (
+                  <StatusBanner>
+                    {onboardingCopied === "full"
+                      ? "Onboarding instructions copied"
+                      : "Starter prompt copied"}
+                  </StatusBanner>
+                ) : null}
+                <div className="page-actions">
+                  <Button
+                    type="button"
+                    onClick={() =>
+                      void copyOnboarding("full", onboarding.instructions.full)
+                    }
+                  >
+                    Copy full onboarding
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() =>
+                      void copyOnboarding(
+                        "prompt",
+                        onboarding.instructions.prompt,
+                      )
+                    }
+                  >
+                    Copy starter prompt
+                  </Button>
+                  <a
+                    className="button button-secondary"
+                    href="/agent-onboarding"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Open public guide
+                  </a>
+                </div>
+                <pre>{onboarding.instructions.full}</pre>
+              </section>
+            ) : null}
             {editTarget?.id === agent.id ? (
               <form className="form-panel form-stack" onSubmit={saveAccess}>
                 <StatusBanner>

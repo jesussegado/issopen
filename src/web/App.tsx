@@ -11,6 +11,7 @@ import {
 } from "./lib/workspace-context.js";
 import { AccessAuditRoute } from "./routes/AccessAuditRoute.js";
 import { AccountRoute } from "./routes/AccountRoute.js";
+import { AgentOnboardingRoute } from "./routes/AgentOnboardingRoute.js";
 import { AgentsRoute } from "./routes/AgentsRoute.js";
 import { BoardRoute } from "./routes/BoardRoute.js";
 import { CollaboratorsRoute } from "./routes/CollaboratorsRoute.js";
@@ -101,7 +102,15 @@ export function App() {
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: browser history can change workspace without changing pathname.
   useEffect(() => {
-    if (!["/status", "/privacy", "/chrome", "/support"].includes(pathname))
+    if (
+      ![
+        "/status",
+        "/privacy",
+        "/chrome",
+        "/support",
+        "/agent-onboarding",
+      ].includes(pathname)
+    )
       void readSession();
   }, [pathname, readSession, workspaceContext]);
 
@@ -109,6 +118,12 @@ export function App() {
   if (pathname === "/privacy") return <PrivacyRoute />;
   if (pathname === "/chrome") return <ChromeExtensionRoute />;
   if (pathname === "/support") return <SupportRoute />;
+  if (pathname === "/agent-onboarding")
+    return (
+      <PublicShell>
+        <AgentOnboardingRoute />
+      </PublicShell>
+    );
   if (screen.kind === "loading")
     return (
       <PublicShell>

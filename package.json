@@ -11,7 +11,7 @@
   "scripts": {
     "dev": "tsx watch src/server/index.ts",
     "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
-    "build": "pnpm clean && vite build && tsc -p tsconfig.build.json",
+    "build": "pnpm clean && vite build && tsc -p tsconfig.build.json && pnpm skill:package",
     "start": "node dist/runtime/src/server/index.js",
     "lint": "biome check --files-ignore-unknown=true --indent-style=space --css-parse-tailwind-directives=true package.json pnpm-workspace.yaml tsconfig.json tsconfig.build.json vite.config.ts drizzle.config.ts src scripts skills tests",
     "typecheck": "tsc --noEmit",
@@ -37,7 +37,8 @@
     "extension:validate": "pnpm extension:lint && pnpm extension:check && pnpm extension:test && pnpm extension:e2e && pnpm extension:reproducible && pnpm test:secrets",
     "extension:release": "tsx scripts/package-extension.ts",
     "store:assets": "pnpm extension:build && tsx scripts/store-assets.ts",
-    "captures:audit": "tsx scripts/capture-storage.ts"
+    "captures:audit": "tsx scripts/capture-storage.ts",
+    "skill:package": "tsx scripts/package-skill.ts"
   },
   "dependencies": {
     "@better-auth/cimd": "1.7.2",

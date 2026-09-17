@@ -29,6 +29,14 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+17/09 ticket115: onboarding autocontenido para agentes implementado y validado. La entrada
+pública `/agent-onboarding` se acompaña de texto, JSON y `llms.txt`; publica un
+ZIP determinista de la skill con versión y SHA-256, nunca credenciales. **Agents**
+genera una guía por identidad con MCP, proyectos, scopes, preflight y prompt,
+pero el PAT continúa revelándose y entregándose por separado. Contrato y rollback
+en [onboarding de agentes](docs/agent-onboarding.md). Un enlace de ticket/Epic es
+contexto, no autorización ni configuración de secretos.
+
 17/09 ticket114: nuevo flujo privado para ampliar la instancia con Owners de
 workspaces aislados. Sólo el singleton `instance_owner` crea/rota/revoca enlaces;
 un Owner normal nunca hereda administración global. Email exacto y Google

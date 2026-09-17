@@ -14,6 +14,7 @@ FROM dependencies AS builder
 COPY tsconfig.json tsconfig.build.json vite.config.ts drizzle.config.ts ./
 COPY src ./src
 COPY scripts ./scripts
+COPY skills ./skills
 RUN pnpm build
 
 FROM toolchain AS production-dependencies

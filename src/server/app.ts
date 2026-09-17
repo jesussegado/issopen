@@ -4,6 +4,11 @@ import { eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import type { Logger } from "pino";
 import { z } from "zod";
+import {
+  createAgentOnboardingDocument,
+  createAgentOnboardingText,
+  createLlmsText,
+} from "./agent-onboarding.js";
 import type { IssopenAuth, OwnerSession } from "./auth.js";
 import { createEvidenceRouter } from "./capture-api.js";
 import type { CaptureStorage } from "./capture-storage.js";
@@ -109,6 +114,7 @@ export function createApp({
     }): Promise<Response>;
   };
   const resource = new URL("/mcp", String(auth.options.baseURL)).toString();
+  const baseUrl = String(auth.options.baseURL);
   const mcpHandler = createIssopenMcpHandler({ auth, db, resource });
 
   app.use("*", async (context, next) => {
@@ -135,6 +141,18 @@ export function createApp({
   app.get("/api/public/auth-providers", (context) =>
     context.json({ google: googleAuthEnabled }),
   );
+  app.get("/api/public/agent-onboarding", (context) => {
+    context.header("Cache-Control", "public, max-age=300");
+    return context.json(createAgentOnboardingDocument(baseUrl));
+  });
+  app.get("/agent-onboarding.txt", (context) => {
+    context.header("Cache-Control", "public, max-age=300");
+    return context.text(createAgentOnboardingText(baseUrl));
+  });
+  app.get("/llms.txt", (context) => {
+    context.header("Cache-Control", "public, max-age=300");
+    return context.text(createLlmsText(baseUrl));
+  });
   app.get("/api/public/invitations/:token", async (context) => {
     context.header("Cache-Control", "no-store");
     context.header("Referrer-Policy", "no-referrer");
@@ -427,6 +445,7 @@ export function createApp({
   );
 
   app.use("/assets/*", serveStatic({ root: webRoot }));
+  app.use("/downloads/*", serveStatic({ root: webRoot }));
   app.get(
     "/favicon.ico",
     serveStatic({

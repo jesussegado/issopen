@@ -70,9 +70,23 @@ describe("agent management", () => {
     };
     let created = false;
     let edited = false;
+    const writeText = vi.fn().mockResolvedValue(undefined);
     vi.stubGlobal(
       "fetch",
       vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+        if (String(_input) === "/api/v1/mcp/config")
+          return json({ resource: "https://issues.example.test/mcp" });
+        if (String(_input) === "/downloads/issopen-skill-manifest.json")
+          return json({
+            schemaVersion: 1,
+            name: "issopen",
+            version: "0.2.0",
+            archive: "/downloads/issopen-skill-0.2.0.zip",
+            sha256: "b".repeat(64),
+            files: 17,
+            installDirectory: "~/.agents/skills/issopen",
+            entrypoint: "SKILL.md",
+          });
         if (init?.method === "POST" && String(_input) === "/api/v1/agents") {
           created = true;
           const submitted = JSON.parse(String(init.body));
@@ -122,6 +136,10 @@ describe("agent management", () => {
     );
 
     const user = userEvent.setup();
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
     render(<AgentsRoute projects={[project]} />);
     expect(await screen.findByText("No agents yet")).toBeInTheDocument();
     const submit = screen
@@ -151,6 +169,22 @@ describe("agent management", () => {
     expect(screen.queryByText(token)).not.toBeInTheDocument();
     expect(screen.getByText("PAT")).toBeInTheDocument();
     expect(screen.getByText("Never")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Setup guide" }));
+    expect(
+      await screen.findByRole("heading", { name: "Onboard Codex" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Allowed projects: Issopen/)).toBeInTheDocument();
+    expect(screen.getByText(/Skill release: 0.2.0/)).toBeInTheDocument();
+    expect(screen.getByText(/get_agent_context/)).toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent(token);
+    await user.click(
+      screen.getByRole("button", { name: "Copy full onboarding" }),
+    );
+    expect(writeText).toHaveBeenCalledWith(
+      expect.stringContaining("https://issues.example.test/mcp"),
+    );
+    expect(writeText.mock.calls.at(-1)?.[0]).not.toContain(token);
+    await user.click(screen.getByRole("button", { name: "Close guide" }));
     await user.click(screen.getByRole("button", { name: "Edit permissions" }));
     expect(
       screen.getByText(/Permissions can only be reduced/),
