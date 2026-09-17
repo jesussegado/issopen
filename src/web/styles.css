@@ -863,6 +863,11 @@ progress {
   overflow-x: auto;
   padding: 4px;
 }
+.drag-instructions {
+  margin: 0 0 12px;
+  color: var(--color-muted);
+  font-size: 14px;
+}
 .board {
   display: grid;
   grid-template-columns: repeat(5, minmax(208px, 1fr));
@@ -879,6 +884,14 @@ progress {
 }
 .board-column {
   min-width: 0;
+  border-radius: 8px;
+  transition:
+    background-color 120ms ease,
+    box-shadow 120ms ease;
+}
+.board-column.is-drop-target {
+  background: var(--color-accent-soft);
+  box-shadow: 0 0 0 3px var(--color-accent);
 }
 .board-column-header {
   display: flex;
@@ -929,6 +942,12 @@ progress {
   border: 1px solid var(--color-border);
   border-radius: 8px;
   background: var(--color-surface);
+}
+.issue-card[draggable="true"] {
+  cursor: grab;
+}
+.issue-card[draggable="true"]:active {
+  cursor: grabbing;
 }
 .issue-card-summary {
   align-items: flex-start;

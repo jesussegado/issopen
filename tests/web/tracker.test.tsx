@@ -2,6 +2,7 @@
 import "@testing-library/jest-dom/vitest";
 import {
   cleanup,
+  fireEvent,
   render,
   screen,
   waitFor,
@@ -493,6 +494,61 @@ describe("tracker web routes", () => {
     expect(
       screen.getByRole("heading", { name: "Ready" }).closest("section"),
     ).toHaveTextContent(issue.title);
+  });
+
+  it("moves an editable ticket by dragging it to another visible column", async () => {
+    const fetchMock = vi.fn(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const path = String(input);
+        if (path.endsWith("/board")) {
+          return json({
+            project,
+            columns: issueStatuses.map((status) => ({
+              status,
+              issues: status === "backlog" ? [issue] : [],
+            })),
+          });
+        }
+        if (path === `/api/v1/issues/${issue.id}` && init?.method === "PATCH") {
+          expect(JSON.parse(String(init.body))).toEqual({
+            status: "ready",
+            expectedVersion: issue.version,
+          });
+          return json({ issue: { ...issue, status: "ready", version: 2 } });
+        }
+        throw new Error(`Unexpected request: ${path}`);
+      },
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    render(<BoardRoute projectId={project.id} canManageProject />);
+
+    const title = await screen.findByRole("link", {
+      name: `1-${issue.title}`,
+    });
+    const card = title.closest("li");
+    const readyColumn = screen
+      .getByRole("heading", { name: "Ready" })
+      .closest("section");
+    if (!card || !readyColumn)
+      throw new Error("Expected card and Ready column");
+    const data = new Map<string, string>();
+    const dataTransfer = {
+      dropEffect: "none",
+      effectAllowed: "none",
+      getData: (format: string) => data.get(format) ?? "",
+      setData: (format: string, value: string) => data.set(format, value),
+    };
+
+    fireEvent.dragStart(card, { dataTransfer });
+    expect(
+      screen.getByText("Dragging 1. Choose a destination column."),
+    ).toBeInTheDocument();
+    fireEvent.dragOver(readyColumn, { dataTransfer });
+    expect(readyColumn).toHaveClass("is-drop-target");
+    fireEvent.drop(readyColumn, { dataTransfer });
+
+    expect(await screen.findByText("1 moved to Ready")).toBeInTheDocument();
+    expect(readyColumn).toHaveTextContent(issue.title);
   });
 
   it("refreshes an open board from SSE while preserving local presentation state", async () => {
@@ -1116,6 +1172,29 @@ describe("tracker web routes", () => {
     ).toBeDisabled();
     expect(
       screen.getByText("Answer blocking questions before review."),
+    ).toBeInTheDocument();
+    const blockedCard = screen
+      .getByRole("link", { name: `1-${blocked.title}` })
+      .closest("li");
+    const reviewColumn = screen
+      .getByRole("heading", { name: "Ready for Human Review" })
+      .closest("section");
+    if (!blockedCard || !reviewColumn)
+      throw new Error("Expected blocked card and review column");
+    const dataTransfer = {
+      dropEffect: "none",
+      effectAllowed: "none",
+      getData: () => blocked.id,
+      setData: vi.fn(),
+    };
+    fireEvent.dragStart(blockedCard, { dataTransfer });
+    fireEvent.dragOver(reviewColumn, { dataTransfer });
+    expect(reviewColumn).not.toHaveClass("is-drop-target");
+    fireEvent.drop(reviewColumn, { dataTransfer });
+    expect(
+      screen.getByText(
+        "Answer blocking questions before moving 1 to Ready for Human Review.",
+      ),
     ).toBeInTheDocument();
     await user.selectOptions(
       screen.getByRole("combobox", { name: "Show questions" }),

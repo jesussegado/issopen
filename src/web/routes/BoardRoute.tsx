@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  type DragEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { AssigneeLabel } from "../components/AssigneeEditor.js";
 import { CollaboratorPicker } from "../components/CollaboratorPicker.js";
 import {
@@ -147,6 +153,10 @@ export function BoardRoute({
   );
   const [expandedIssues, setExpandedIssues] = useState<Set<string>>(
     () => new Set(),
+  );
+  const [draggedIssueId, setDraggedIssueId] = useState<string | null>(null);
+  const [dragOverStatus, setDragOverStatus] = useState<IssueStatus | null>(
+    null,
   );
   const [announcement, setAnnouncement] = useState("");
   const [focusIssueId, setFocusIssueId] = useState<string | null>(null);
@@ -304,6 +314,90 @@ export function BoardRoute({
     } finally {
       setSavingIssue(null);
     }
+  }
+
+  function findIssue(issueId: string) {
+    return columns
+      .flatMap((column) => column.issues)
+      .find((issue) => issue.id === issueId);
+  }
+
+  function canDropIssue(issue: Issue, status: IssueStatus) {
+    return (
+      canEdit &&
+      online &&
+      savingIssue === null &&
+      status !== issue.status &&
+      !(
+        status === "ready_for_review" &&
+        (issue.questionSummary?.unansweredBlocking ?? 0) > 0
+      )
+    );
+  }
+
+  function issueFromDrag(event: DragEvent<HTMLElement>) {
+    const issueId = draggedIssueId || event.dataTransfer.getData("text/plain");
+    return issueId ? findIssue(issueId) : undefined;
+  }
+
+  function startDragging(event: DragEvent<HTMLLIElement>, issue: Issue) {
+    if (!canEdit || !online || savingIssue !== null) {
+      event.preventDefault();
+      return;
+    }
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", issue.id);
+    setDraggedIssueId(issue.id);
+    setDragOverStatus(null);
+    setAnnouncement(
+      `Dragging ${issueReference(issue)}. Choose a destination column.`,
+    );
+  }
+
+  function dragOverColumn(event: DragEvent<HTMLElement>, status: IssueStatus) {
+    const issue = issueFromDrag(event);
+    if (!issue || !canDropIssue(issue, status)) {
+      event.dataTransfer.dropEffect = "none";
+      if (dragOverStatus === status) setDragOverStatus(null);
+      return;
+    }
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    setDragOverStatus(status);
+  }
+
+  function leaveColumn(event: DragEvent<HTMLElement>, status: IssueStatus) {
+    if (
+      event.relatedTarget instanceof Node &&
+      event.currentTarget.contains(event.relatedTarget)
+    )
+      return;
+    setDragOverStatus((current) => (current === status ? null : current));
+  }
+
+  function dropOnColumn(event: DragEvent<HTMLElement>, status: IssueStatus) {
+    event.preventDefault();
+    const issue = issueFromDrag(event);
+    setDraggedIssueId(null);
+    setDragOverStatus(null);
+    if (!issue) return;
+    if (!canDropIssue(issue, status)) {
+      if (
+        status === "ready_for_review" &&
+        (issue.questionSummary?.unansweredBlocking ?? 0) > 0
+      ) {
+        setAnnouncement(
+          `Answer blocking questions before moving ${issueReference(issue)} to ${statusLabels[status]}.`,
+        );
+      }
+      return;
+    }
+    void moveIssue(issue, status);
+  }
+
+  function finishDragging() {
+    setDraggedIssueId(null);
+    setDragOverStatus(null);
   }
 
   function toggleColumn(status: IssueStatus) {
@@ -545,6 +639,12 @@ export function BoardRoute({
               className="board-region"
               aria-label={`${project.name} issue board`}
             >
+              {canEdit ? (
+                <p className="drag-instructions">
+                  Drag tickets between columns, or expand a ticket and use its
+                  status selector.
+                </p>
+              ) : null}
               <div className={`board board-columns-${columns.length}`}>
                 {columns.map((column) => {
                   const visibleIssues = column.issues.filter(
@@ -555,10 +655,15 @@ export function BoardRoute({
                   const columnCollapsed = collapsedColumns.has(column.status);
                   return (
                     <section
-                      className={`board-column${columnCollapsed ? " is-collapsed" : ""}`}
+                      className={`board-column${columnCollapsed ? " is-collapsed" : ""}${dragOverStatus === column.status ? " is-drop-target" : ""}`}
                       key={column.status}
                       aria-labelledby={`column-${column.status}`}
                       hidden={filter !== "all" && filter !== column.status}
+                      onDragOver={(event) =>
+                        dragOverColumn(event, column.status)
+                      }
+                      onDragLeave={(event) => leaveColumn(event, column.status)}
+                      onDrop={(event) => dropOnColumn(event, column.status)}
                     >
                       <div className="board-column-header">
                         <h2 id={`column-${column.status}`}>
@@ -600,7 +705,17 @@ export function BoardRoute({
                                 issue.id,
                               );
                               return (
-                                <li className="issue-card" key={issue.id}>
+                                <li
+                                  className="issue-card"
+                                  key={issue.id}
+                                  draggable={
+                                    canEdit && online && savingIssue === null
+                                  }
+                                  onDragStart={(event) =>
+                                    startDragging(event, issue)
+                                  }
+                                  onDragEnd={finishDragging}
+                                >
                                   <div className="issue-card-summary">
                                     <AppLink
                                       className="issue-card-title"
