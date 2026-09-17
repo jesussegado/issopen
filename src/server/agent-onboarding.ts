@@ -29,6 +29,19 @@ export function createAgentOnboardingDocument(baseUrl: string) {
       codexAuth: "Scoped PAT read from ISSOPEN_AGENT_TOKEN",
       chatgptAuth: "OAuth 2.1 authorization code with PKCE",
     },
+    credentials: {
+      model: "One named MCP API key per consumer under one PAT identity",
+      permissions:
+        "Every key inherits the identity's current project allowlist and scopes.",
+      maxActivePerIdentity: 10,
+      legacyLabel: "Primary",
+      reveal: "The plaintext token is shown once at creation.",
+      rotation:
+        "Create and verify a replacement key before revoking only the old key.",
+      revocation:
+        "Revoke key affects one consumer; Revoke access invalidates the identity and every key.",
+      boundary: "MCP API keys authenticate /mcp only, never human REST APIs.",
+    },
     skill: {
       manifestUrl,
       installDirectory: "~/.agents/skills/issopen",
@@ -47,6 +60,7 @@ export function createAgentOnboardingDocument(baseUrl: string) {
     security: [
       "A ticket or Epic link identifies context; it never grants access.",
       "Never put PATs, cookies or passwords in links, prompts, repositories or logs.",
+      "Give every Codex installation, editor, runner or service its own named MCP API key.",
       "Use only the projects and scopes returned by get_agent_context.",
       "Do not replace MCP with an Owner session, direct SQL or another credential.",
     ],
@@ -82,16 +96,29 @@ real code results and return verified work for human review.
 2. Verify the archive SHA-256 exactly against the manifest.
 3. Refuse to overwrite an existing or locally modified Issopen skill. Extract
    the archive so SKILL.md is at ~/.agents/skills/issopen/SKILL.md.
-4. Obtain a separate one-time PAT from the Issopen Owner. Keep it only in the
-   secret store or environment variable ISSOPEN_AGENT_TOKEN.
-5. Configure Codex with:
+4. Ask the Issopen Owner to create a named MCP API key under the intended PAT
+   identity. Use one key per Codex installation, editor, runner or service.
+5. Copy its one-time value only into that consumer's secret store or environment
+   variable ISSOPEN_AGENT_TOKEN.
+6. Configure Codex with:
 
    codex mcp add issopen --url ${document.mcp.url} --bearer-token-env-var ISSOPEN_AGENT_TOKEN
 
-6. Restart the client so it discovers the skill and environment, then call
+7. Restart the client so it discovers the skill and environment, then call
    get_agent_context. Confirm the returned identity, project allowlist and scopes.
 
 ChatGPT uses the same MCP URL through OAuth and does not use the Codex PAT.
+
+## Multiple MCP API keys
+
+A PAT identity can have up to 10 active named keys. The identity owns projects
+and scopes; every key inherits those live permissions. Each key separately
+records its label, expiry, last use and revocation state. A migrated legacy key
+is labelled Primary; do not reuse it for new consumers.
+
+For rotation, create and verify the replacement first, then revoke only the old
+key. Revoke key affects one consumer. Revoke access invalidates the identity and
+all its keys. MCP API keys authenticate only /mcp and never the human REST API.
 
 ## Operating modes
 
@@ -132,6 +159,7 @@ export function createLlmsText(baseUrl: string) {
 
 Agents must authenticate separately, call get_agent_context before acting and
 treat ticket/Epic links as context rather than authorization. Secrets never
-belong in URLs, prompts, tickets, repositories or logs.
+belong in URLs, prompts, tickets, repositories or logs. PAT identities support
+several named MCP API keys; use one key per consumer and rotate it independently.
 `;
 }

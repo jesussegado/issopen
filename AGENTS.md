@@ -29,6 +29,16 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+### Regla de sincronización del onboarding
+
+Todo cambio que afecte al MCP, sus tools, autenticación, permisos, scopes,
+transporte o a la skill de Issopen debe actualizar en el mismo cambio la
+documentación de onboarding que corresponda. Como mínimo hay que revisar la
+página `/agent-onboarding`, `/agent-onboarding.txt`, el contrato
+`/api/public/agent-onboarding`, `/llms.txt`, `docs/agent-onboarding.md` y sus
+tests. Si una superficie no necesita cambios, la evidencia del ticket debe
+explicar por qué. Nunca publicar credenciales reales en esas superficies.
+
 17/09 ticket116 entregado: una identidad PAT admite hasta diez claves MCP
 activas y nombradas por consumidor, con revelado único, expiración/uso/revocación
 independientes. Todas heredan en vivo los scopes y proyectos de la identidad;

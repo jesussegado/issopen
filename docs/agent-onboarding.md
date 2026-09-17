@@ -38,6 +38,25 @@ the guide again after reducing access so its informational snapshot is current.
 Use a different named key for every client; see
 [MCP API keys](agent-credentials.md) for rotation and identity-wide revocation.
 
+## Multiple MCP API keys
+
+Projects and scopes belong to the PAT identity, while authentication secrets
+belong to its named API keys. Create a different key for every Codex
+installation, editor, CI runner or automation service. Each key has independent
+creation, expiry, last-use and revocation metadata, but inherits the identity's
+current permissions on every MCP request.
+
+An identity accepts at most ten active keys. `Primary` identifies a credential
+migrated from the previous one-key model; it is not a shared default for new
+consumers. A key is revealed once and only authenticates `/mcp`, never browser
+sessions or `/api/v1` REST routes.
+
+Rotate without interruption by creating and validating the replacement before
+revoking the old key. **Revoke key** affects only that consumer. **Revoke
+access** disables the identity, all its keys and any associated OAuth access.
+The full operating and rollback contract is in
+[MCP API keys](agent-credentials.md).
+
 ## Agent flow
 
 The archive must be verified against the manifest before extraction. A new

@@ -87,8 +87,10 @@ Skill SHA-256: ${manifest.sha256}
 
 ${install}
 
-2. Receive the one-time PAT separately from the Owner. Never paste it into a
-   prompt, URL, ticket, repository, config file or command argument.
+2. Ask the Owner for a named MCP API key dedicated to this consumer. Do not
+   share Primary or another consumer's key. Receive its one-time value
+   separately and never paste it into a prompt, URL, ticket, repository, config
+   file or command argument.
 
 3. Configure Codex:
 

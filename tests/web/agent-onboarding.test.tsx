@@ -58,6 +58,13 @@ it("publishes a session-free agent guide with a verified skill release", async (
     "http://localhost:3000/downloads/issopen-skill-0.2.0.zip",
   );
   expect(screen.getByText(/Un enlace de Epic o ticket/)).toBeInTheDocument();
+  expect(
+    screen.getByRole("heading", {
+      name: "Una identidad, una clave por consumidor",
+    }),
+  ).toBeInTheDocument();
+  expect(screen.getByText(/hasta 10 claves activas/)).toBeInTheDocument();
+  expect(screen.getByText(/Primary/)).toBeInTheDocument();
   await user.click(screen.getByRole("button", { name: "Copiar instalación" }));
   expect(writeText).toHaveBeenCalledWith(expect.stringContaining("sha256sum"));
   expect(writeText.mock.calls.at(-1)?.[0]).not.toMatch(/issopen_pat_/);

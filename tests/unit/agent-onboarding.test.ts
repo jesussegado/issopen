@@ -20,6 +20,10 @@ describe("public agent onboarding contract", () => {
         manifestUrl:
           "https://issues.example.test/downloads/issopen-skill-manifest.json",
       },
+      credentials: {
+        maxActivePerIdentity: 10,
+        legacyLabel: "Primary",
+      },
     });
     expect(JSON.stringify(document)).not.toMatch(
       /issopen_pat_|password=|authorization:/i,
@@ -35,6 +39,10 @@ describe("public agent onboarding contract", () => {
     expect(onboarding).toContain("Ready for Human Review");
     expect(onboarding).toContain("context, not authorization");
     expect(onboarding).toContain("ChatGPT uses the same MCP URL through OAuth");
+    expect(onboarding).toContain("Multiple MCP API keys");
+    expect(onboarding).toContain("up to 10 active named keys");
+    expect(onboarding).toContain("Revoke key affects one consumer");
+    expect(llms).toContain("use one key per consumer");
     expect(llms).toContain("https://issues.example.test/agent-onboarding.txt");
     expect(llms).toContain("https://issues.example.test/mcp");
     expect(`${onboarding}\n${llms}`).not.toMatch(/issopen_pat_[A-Za-z0-9_-]+/);

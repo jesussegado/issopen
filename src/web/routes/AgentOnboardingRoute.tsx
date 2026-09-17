@@ -68,7 +68,12 @@ export function AgentOnboardingRoute() {
         <ol className="connection-steps">
           <li>
             El Owner crea una identidad en <strong>Agents</strong>, limita sus
-            proyectos y scopes y entrega el PAT una sola vez.
+            proyectos y scopes.
+          </li>
+          <li>
+            Dentro de esa identidad crea una <strong>API key MCP</strong> con un
+            nombre que identifique al consumidor y una caducidad adecuada. El
+            secreto sólo se muestra una vez.
           </li>
           <li>
             Descarga la revisión publicada de la skill y verifica su SHA-256
@@ -133,8 +138,8 @@ export function AgentOnboardingRoute() {
           <div>
             <h3>Codex</h3>
             <p>
-              Usa un PAT revocable y acotado, leído desde la variable
-              <code> ISSOPEN_AGENT_TOKEN</code>. El endpoint es:
+              Usa una API key MCP nombrada, revocable y acotada, leída desde la
+              variable <code>ISSOPEN_AGENT_TOKEN</code>. El endpoint es:
             </p>
             <p className="mono">{mcpUrl}</p>
           </div>
@@ -146,6 +151,45 @@ export function AgentOnboardingRoute() {
             </p>
           </div>
         </div>
+      </section>
+
+      <section aria-labelledby="agent-keys">
+        <h2 id="agent-keys">Una identidad, una clave por consumidor</h2>
+        <p>
+          La identidad define los proyectos y scopes. Sus API keys son secretos
+          independientes para cada instalación de Codex, editor, runner o
+          servicio: todas heredan los permisos actuales de la identidad, pero
+          cada una conserva su propio nombre, caducidad, último uso y estado de
+          revocación.
+        </p>
+        <ol className="connection-steps">
+          <li>
+            En <strong>Agents</strong>, abre una identidad PAT y pulsa
+            <strong> Create API key</strong>. Usa una etiqueta reconocible como
+            <code> VS Code portátil</code> o <code>CI producción</code>.
+          </li>
+          <li>
+            Copia el token durante el revelado único y guárdalo en el almacén de
+            secretos del consumidor como <code>ISSOPEN_AGENT_TOKEN</code>.
+          </li>
+          <li>
+            Reinicia el cliente y valida <code>get_agent_context</code>. La
+            identidad, los proyectos y los scopes deben coincidir con lo
+            esperado antes de trabajar.
+          </li>
+          <li>
+            Para rotar, crea y valida primero la clave nueva; después revoca
+            sólo la anterior. Las demás claves continúan funcionando.
+          </li>
+        </ol>
+        <StatusBanner>
+          Una identidad admite hasta 10 claves activas.{" "}
+          <strong>Revoke key</strong>
+          afecta sólo a ese consumidor; <strong>Revoke access</strong> invalida
+          toda la identidad y todas sus claves. <strong>Primary</strong> es el
+          nombre de una credencial anterior migrada, no una clave que deba
+          compartirse. Ninguna API key MCP autoriza la API REST humana.
+        </StatusBanner>
       </section>
 
       <section aria-labelledby="agent-modes">
