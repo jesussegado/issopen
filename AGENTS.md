@@ -229,9 +229,9 @@ están en revisión humana sin claims; seguir con108→95 y repetir integración
   contacto verificado y declaración de no operador indicada por el dueño.
   Las instrucciones privadas de prueba están guardadas. Estado observado:
   enviado el 2026-09-13 a las 19:24 UTC, Unlisted y publicación automática
-  desactivada. El 2026-09-17 Google mostró el borrador aceptado y **Listo para
-  publicar** antes del 15/10/2026. Sigue sin publicar ni ser instalable hasta
-  ejecutar el gesto manual de publicación.
+  desactivada. Google aceptó el borrador y el 2026-09-17 se ejecutó el gesto
+  manual autorizado: el dashboard muestra **Publicado - oculto** y la ficha
+  directa ofrece **Añadir a Chrome** para la misma versión 0.6.2.
   La aclaración de 86 está resuelta: el 2026-09-13 a las 20:21 UTC la persona
   eligió mantener el Member local durante esta revisión (2/2 respondidas,
   sin preguntas bloqueantes pendientes). No sustituirlo ni retirar su acceso;

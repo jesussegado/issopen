@@ -1,14 +1,15 @@
 # Chrome Web Store: contrato de publicación Unlisted
 
-Estado reconsultado el 2026-09-17: **Listo para publicar**. Google ha aceptado
-el borrador Issopen 0.6.2, con visibilidad **Sin mostrar (Unlisted)** y
-publicación automática desactivada. Aún no está publicado: el dashboard exige
-el gesto manual de publicación antes del 15 de octubre de 2026.
+Estado reconsultado el 2026-09-17: **Publicado - oculto**. Google aceptó y se
+publicó manualmente Issopen 0.6.2 con visibilidad **Sin mostrar (Unlisted)**.
+La ficha directa ya carga la extensión y ofrece **Añadir a Chrome**; no aparece
+en las búsquedas de Chrome Web Store.
 
 - Publisher: `0c6be6e6-1d57-48de-acb3-66166bda94a3`.
 - Item: `eohpecaogeelnicbpeedjdganacfknok`.
 - Fuente del ZIP: `d4a0ae8be185fec921602fbc12a0fe723b01ff56`.
 - SHA-256: `0e9c636c51407797e95697fa5cb1a8d679448d13775c7887161079f2e2fb177b`.
+- [Instalar Issopen desde Chrome Web Store](https://chromewebstore.google.com/detail/issopen/eohpecaogeelnicbpeedjdganacfknok).
 - [Estado en el dashboard](https://chrome.google.com/webstore/devconsole/0c6be6e6-1d57-48de-acb3-66166bda94a3/eohpecaogeelnicbpeedjdganacfknok/edit/status).
 - [Operación del canal](chrome-store-operations.md) y [piloto](chrome-store-pilot.md).
 
@@ -37,7 +38,7 @@ o tokens.
 | Imagen activa | `chrome-listing-40cc4af` por digest `sha256:d85312e46ce4bc871becd1e6c7343c2f8363b1c574efde760f4459a40f6276a1` | Deployment observado |
 | Datos | PostgreSQL y adjuntos PNG privados en PVC separados y retenidos | manifiestos y PVC `Bound` |
 | Extensión base | MV3 0.6.2; panel lateral, OAuth PKCE por persona/instalación, acceso Owner/Member, imágenes elegidas por la persona, consentimiento y creación de tickets | manifest y paquete auditados, tickets 82–85 |
-| Distribución actual | borrador Store 0.6.2 aprobado y pendiente de publicación manual; el enlace aún no es instalable | dashboard reconsultado el 2026-09-17 |
+| Distribución actual | Store 0.6.2 publicada como **Sin mostrar**; ficha directa instalable con **Añadir a Chrome** | dashboard y enlace público reconsultados el 2026-09-17 |
 | Repositorio | fuente independiente, rama `main`; Forgejo privado | `http://192.168.2.165:3000/jsegado/issopen` |
 
 ## Borrador reproducible de la ficha
@@ -58,9 +59,10 @@ comprobó su persistencia. El posterior envío fue autorizado con «enviala».
 La aclaración del ticket 86 quedó respondida el 13/09 a las 20:21 UTC:
 mantener el acceso Member local durante esta revisión. Conservamos la elección
 anterior de Google de pruebas como historial, pero esta respuesta específica
-resuelve qué acceso usa el envío actual. No quedan preguntas pendientes en 86;
-falta el resultado de Google y la publicación manual, no otra decisión de
-credenciales. Véase [acceso de revisión](chrome-review-access.md).
+resuelve qué acceso usa el envío actual. No quedan preguntas pendientes en 86.
+Google aprobó el candidato y la publicación manual se completó el 2026-09-17
+sin cambiar item, versión ni visibilidad. Véase
+[acceso de revisión](chrome-review-access.md).
 
 La revisión de GitOps y el digest observados mandan sobre descriptores locales
 desactualizados. Antes de cada publicación se vuelve a consultar el clúster.

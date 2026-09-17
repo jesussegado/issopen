@@ -1,14 +1,15 @@
 # Piloto Store — ticket 87
 
-Estado: checklist preparado, **pendiente de una versión Store publicada**.
-Las pruebas unpacked previas no satisfacen el gate de instalación Store.
+Estado: checklist preparado y versión Store 0.6.2 **publicada como Unlisted**;
+queda pendiente ejecutar el recorrido completo desde un perfil u ordenador
+limpio. Las pruebas unpacked previas no satisfacen el gate de instalación Store.
 
 ## Preflight
 
-1. Consultar 86 y el dashboard: aprobación, versión 0.6.2 (o candidato posterior
-   validado), item `eohpecaogeelnicbpeedjdganacfknok`, Unlisted y publish manual.
-   Copiar el enlace real desde el dashboard; no dar por instalable una URL
-   construida a mano. No reenviar el enlace a personas fuera del piloto.
+1. Consultar 86 y el dashboard: versión publicada 0.6.2 (o candidato posterior
+   validado), item `eohpecaogeelnicbpeedjdganacfknok` y visibilidad Unlisted.
+   Usar el [enlace real verificado](https://chromewebstore.google.com/detail/issopen/eohpecaogeelnicbpeedjdganacfknok),
+   revalidar que ofrece **Añadir a Chrome** y no reenviarlo fuera del piloto.
 2. Confirmar con el owner la cuenta Google piloto que controla y un proyecto
    sintético asignado. No utilizar la cuenta del publisher ni prestar una
    sesión Owner. [Invitar desde la web](member-invitations.md).
