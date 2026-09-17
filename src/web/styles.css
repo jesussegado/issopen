@@ -1228,6 +1228,15 @@ progress {
   display: grid;
   gap: 16px;
 }
+.agent-key-list {
+  display: grid;
+  gap: 12px;
+  margin: 16px 0 24px;
+}
+.agent-key-list .form-panel {
+  width: 100%;
+  padding: 20px;
+}
 
 .check-row {
   display: block;

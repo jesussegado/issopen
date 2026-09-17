@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AgentsRoute } from "../../src/web/routes/AgentsRoute.js";
@@ -54,12 +54,24 @@ describe("agent management", () => {
       ],
       credential: {
         id: "credential-1",
+        label: "Primary",
         fingerprint: "abcdef0123456789",
         expiresAt: null,
         revokedAt: null,
         lastUsedAt: null,
         createdAt: project.createdAt,
       },
+      credentials: [
+        {
+          id: "credential-1",
+          label: "Primary",
+          fingerprint: "abcdef0123456789",
+          expiresAt: null,
+          revokedAt: null,
+          lastUsedAt: null,
+          createdAt: project.createdAt,
+        },
+      ],
       access: {
         kind: "pat",
         expiresAt: null,
@@ -70,6 +82,18 @@ describe("agent management", () => {
     };
     let created = false;
     let edited = false;
+    let keyCreated = false;
+    let keyRevoked = false;
+    const secondToken = `issopen_pat_${"b".repeat(43)}`;
+    const secondCredential = {
+      id: "44444444-4444-4444-8444-444444444444",
+      label: "VS Code",
+      fingerprint: "1234567890abcdef",
+      expiresAt: "2026-11-30T12:00:00.000Z",
+      revokedAt: null as string | null,
+      lastUsedAt: null,
+      createdAt: project.createdAt,
+    };
     const writeText = vi.fn().mockResolvedValue(undefined);
     vi.stubGlobal(
       "fetch",
@@ -111,6 +135,25 @@ describe("agent management", () => {
             },
           });
         }
+        if (
+          init?.method === "POST" &&
+          String(_input).endsWith(`/agents/${agent.id}/credentials`)
+        ) {
+          const submitted = JSON.parse(String(init.body));
+          expect(submitted).toEqual({ label: "VS Code", expiresInDays: 30 });
+          keyCreated = true;
+          return json({ credential: secondCredential, token: secondToken });
+        }
+        if (
+          init?.method === "POST" &&
+          String(_input).endsWith(
+            `/agents/${agent.id}/credentials/${secondCredential.id}/revoke`,
+          )
+        ) {
+          keyRevoked = true;
+          secondCredential.revokedAt = new Date().toISOString();
+          return json({ credential: secondCredential });
+        }
         if (String(_input).endsWith("/revoke"))
           return json({
             credential: {
@@ -128,7 +171,12 @@ describe("agent management", () => {
                         (scope) => scope !== "issues:create",
                       ),
                     }
-                  : agent,
+                  : {
+                      ...agent,
+                      credentials: keyCreated
+                        ? [agent.credential, secondCredential]
+                        : agent.credentials,
+                    },
               ]
             : [],
         });
@@ -163,12 +211,43 @@ describe("agent management", () => {
       ),
     ).toBeInTheDocument();
     expect(screen.getByLabelText("Personal access token")).toHaveValue(token);
-    await user.click(
-      screen.getByRole("button", { name: "Finish agent setup" }),
-    );
+    await user.click(screen.getByRole("button", { name: "Finish key setup" }));
     expect(screen.queryByText(token)).not.toBeInTheDocument();
     expect(screen.getByText("PAT")).toBeInTheDocument();
-    expect(screen.getByText("Never")).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "MCP API keys" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Primary" }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText("Never").length).toBeGreaterThan(0);
+    await user.click(screen.getByRole("button", { name: "Create API key" }));
+    await user.type(screen.getByLabelText("Key label (required)"), "VS Code");
+    await user.click(
+      screen.getByRole("button", { name: "Create and reveal key" }),
+    );
+    expect(
+      await screen.findByRole("heading", { name: "API key: VS Code" }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Personal access token")).toHaveValue(
+      secondToken,
+    );
+    await user.click(screen.getByRole("button", { name: "Finish key setup" }));
+    const secondKeyCard = screen
+      .getByRole("heading", { name: "VS Code" })
+      .closest("article");
+    if (!secondKeyCard) throw new Error("Expected the second API key card");
+    await user.click(
+      within(secondKeyCard).getByRole("button", { name: "Revoke key" }),
+    );
+    expect(screen.getByRole("dialog")).toHaveTextContent(
+      "Other keys for Codex will continue to work",
+    );
+    await user.click(screen.getByRole("button", { name: "Revoke API key" }));
+    expect(keyRevoked).toBe(true);
+    expect(
+      await screen.findByText("Revoked · Fingerprint 1234567890abcdef"),
+    ).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Setup guide" }));
     expect(
       await screen.findByRole("heading", { name: "Onboard Codex" }),

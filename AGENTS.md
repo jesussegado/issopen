@@ -29,6 +29,13 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+17/09 ticket116 en implementación: una identidad PAT admite claves MCP
+nombradas por consumidor, con revelado único, expiración/uso/revocación
+independientes y límite de diez activas. Todas heredan en vivo los scopes y
+proyectos de la identidad; no autorizan REST humano ni se mezclan con OAuth.
+La migración0032 conserva la credencial anterior como `Primary` sin reescribir
+su hash. Operación y rollback: [claves MCP](docs/agent-credentials.md).
+
 17/09 ticket115: onboarding autocontenido para agentes desplegado desde fuente
 `5131c64`, imagen `agent-onboarding-5131c64` y digest `432ed2ca`; GitOps
 `cbf58075`, Argo Synced/Healthy, pod 0 reinicios y PVCs conservados. La entrada
@@ -603,7 +610,10 @@ tests de `tests/web/` usan Testing Library y los de `tests/e2e/` levantan una
 PostgreSQL efímera para verificar Chromium desktop y móvil, incluido teclado.
 
 El plan `01-04` añade identidades agenticas con scopes y allowlist por proyecto,
-PAT de revelado único guardados sólo como Argon2id y revocación inmediata. El
+PAT de revelado único guardados sólo como Argon2id y revocación inmediata. Una
+identidad PAT puede tener varias claves MCP nombradas, una por consumidor, con
+expiración, último uso y revocación individuales; todas resuelven los permisos
+actuales de la identidad y nunca autorizan REST humano. El
 servidor `src/server/mcp/` expone una superficie acotada de herramientas tipadas sobre
 los servicios de dominio existentes mediante MCP 2.0 stateless. Better Auth,
 `@better-auth/mcp` y `@better-auth/cimd` están fijados conjuntamente en `1.7.2`;
@@ -620,8 +630,9 @@ Los grants de agente se pueden reducir mediante
 `PATCH /api/v1/agents/:agentId/access`, nunca ampliar. Cada petición MCP vuelve
 a resolver desde PostgreSQL la identidad, scopes y allowlist, aunque el cliente
 ya estuviera conectado. `agent_identity` conserva `last_used_at` y
-`revoked_at`; la UI expone sólo metadatos seguros de acceso. Revocar una
-identidad invalida su PAT o, para OAuth, sus access tokens, refresh tokens y
+`revoked_at`; la UI expone sólo metadatos seguros de acceso. Revocar una clave
+PAT no afecta a sus hermanas; revocar la identidad invalida todas sus claves o,
+para OAuth, sus access tokens, refresh tokens y
 consentimiento. La actividad histórica mantiene la instantánea de ID y nombre
 del actor. `offline_access` es un scope OAuth de conexión, no un permiso de
 producto y no debe persistirse en `agent_scope`.

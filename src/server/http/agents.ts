@@ -52,6 +52,48 @@ export function createAgentRouter({ db }: { db: Database }) {
     });
   });
 
+  router.post("/agents/:agentId/credentials", async (context) => {
+    const parsedId = z.uuid().safeParse(context.req.param("agentId"));
+    if (!parsedId.success) {
+      throw new DomainError("invalid", "Invalid request", [
+        { field: "agentId", message: "Must be a valid identifier" },
+      ]);
+    }
+    const workspaceId = ownerWorkspaceId(context.get("humanAccess"));
+    const input = await context.req.json().catch(() => null);
+    const created = await agents.createCredential(
+      workspaceId,
+      parsedId.data,
+      input,
+    );
+    return context.json(created, 201);
+  });
+
+  router.post(
+    "/agents/:agentId/credentials/:credentialId/revoke",
+    async (context) => {
+      const parsed = z
+        .object({ agentId: z.uuid(), credentialId: z.uuid() })
+        .safeParse({
+          agentId: context.req.param("agentId"),
+          credentialId: context.req.param("credentialId"),
+        });
+      if (!parsed.success) {
+        throw new DomainError("invalid", "Invalid request", [
+          { field: "credentialId", message: "Must be a valid identifier" },
+        ]);
+      }
+      const workspaceId = ownerWorkspaceId(context.get("humanAccess"));
+      return context.json({
+        credential: await agents.revokeCredential(
+          workspaceId,
+          parsed.data.agentId,
+          parsed.data.credentialId,
+        ),
+      });
+    },
+  );
+
   router.post("/agents/:agentId/revoke", async (context) => {
     const parsedId = z.uuid().safeParse(context.req.param("agentId"));
     if (!parsedId.success) {

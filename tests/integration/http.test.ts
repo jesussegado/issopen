@@ -1624,7 +1624,7 @@ describe("protected tracker REST API", () => {
     }
   });
 
-  it("lets only the owner reduce an existing agent grant", async () => {
+  it("lets only the owner reduce grants and manage independent MCP keys", async () => {
     const firstProject = await createProjectFixture();
     const secondResponse = await authenticatedRequest("/api/v1/projects", {
       method: "POST",
@@ -1676,6 +1676,53 @@ describe("protected tracker REST API", () => {
     );
     expect(expansion.status).toBe(403);
     expect(JSON.stringify(await body(expansion))).not.toContain(created.token);
+
+    const createdKeyResponse = await authenticatedRequest(
+      `/api/v1/agents/${created.agent.id}/credentials`,
+      {
+        method: "POST",
+        body: JSON.stringify({ label: "VS Code", expiresInDays: 30 }),
+      },
+    );
+    expect(createdKeyResponse.status).toBe(201);
+    const createdKey = await body<{
+      credential: { id: string; label: string };
+      token: string;
+    }>(createdKeyResponse);
+    expect(createdKey.credential.label).toBe("VS Code");
+    expect(createdKey.token).toMatch(/^issopen_pat_/);
+    expect(
+      (await new AgentService(connection.db).resolvePat(createdKey.token)).agent
+        .id,
+    ).toBe(created.agent.id);
+
+    const bearerRest = await app.request("/api/v1/projects", {
+      headers: { Authorization: `Bearer ${createdKey.token}` },
+    });
+    expect(bearerRest.status).toBe(401);
+
+    const listedWithKeys = await authenticatedRequest("/api/v1/agents");
+    const listedWithKeysText = await listedWithKeys.text();
+    expect(listedWithKeysText).toContain('"label":"Primary"');
+    expect(listedWithKeysText).toContain('"label":"VS Code"');
+    expect(listedWithKeysText).not.toContain(createdKey.token);
+    expect(listedWithKeysText).not.toContain("tokenHash");
+
+    const revokedKey = await authenticatedRequest(
+      `/api/v1/agents/${created.agent.id}/credentials/${createdKey.credential.id}/revoke`,
+      { method: "POST", body: "{}" },
+    );
+    expect(revokedKey.status).toBe(200);
+    expect(await body(revokedKey)).toMatchObject({
+      credential: { label: "VS Code", revokedAt: expect.any(String) },
+    });
+    await expect(
+      new AgentService(connection.db).resolvePat(createdKey.token),
+    ).rejects.toThrow();
+    expect(
+      (await new AgentService(connection.db).resolvePat(created.token)).agent
+        .id,
+    ).toBe(created.agent.id);
 
     const revoked = await authenticatedRequest(
       `/api/v1/agents/${created.agent.id}/revoke`,

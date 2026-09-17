@@ -794,6 +794,7 @@ export const agentCredential = pgTable(
     id: text("id").primaryKey(),
     agentId: text("agent_id").notNull(),
     workspaceId: text("workspace_id").notNull(),
+    label: varchar("label", { length: 80 }).default("Primary").notNull(),
     tokenHash: varchar("token_hash", { length: 255 }).notNull(),
     fingerprint: varchar("fingerprint", { length: 16 }).notNull(),
     expiresAt: timestamp("expires_at", { withTimezone: true }),
@@ -804,7 +805,10 @@ export const agentCredential = pgTable(
       .notNull(),
   },
   (table) => [
-    uniqueIndex("agent_credential_agent_uidx").on(table.agentId),
+    uniqueIndex("agent_credential_agent_label_uidx").on(
+      table.agentId,
+      sql`lower(${table.label})`,
+    ),
     uniqueIndex("agent_credential_fingerprint_uidx").on(table.fingerprint),
     foreignKey({
       columns: [table.agentId, table.workspaceId],

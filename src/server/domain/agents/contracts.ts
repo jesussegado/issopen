@@ -40,6 +40,19 @@ export const createAgentSchema = z
 
 export type CreateAgentInput = z.input<typeof createAgentSchema>;
 
+export const createAgentCredentialSchema = z
+  .object({
+    label: z.string().trim().min(1).max(80),
+    expiresInDays: z
+      .union([z.literal(7), z.literal(30), z.literal(90), z.null()])
+      .default(30),
+  })
+  .strict();
+
+export type CreateAgentCredentialInput = z.input<
+  typeof createAgentCredentialSchema
+>;
+
 export const updateAgentAccessSchema = z
   .object({
     projectIds: z

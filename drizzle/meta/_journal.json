@@ -225,6 +225,13 @@
       "when": 1789665136382,
       "tag": "0031_thick_inertia",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1789671172421,
+      "tag": "0032_public_doomsday",
+      "breakpoints": true
     }
   ]
 }

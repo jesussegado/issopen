@@ -221,15 +221,24 @@ one-time screen into the external agent's secret store, never a repository
 file or command argument. Revocation is immediate and existing activity keeps
 the agent attribution.
 
+A PAT identity can hold several named **MCP API keys**. Give every Codex
+session, editor or automation service a different key, so it can be rotated or
+revoked without interrupting the others. New keys inherit the identity's live
+projects and scopes; their plaintext is also revealed only once. Keys never
+authorize browser or `/api/v1` REST access. Provisioning, rotation and rollback
+are documented in [docs/agent-credentials.md](docs/agent-credentials.md).
+
 An active identity has an **Edit permissions** action. It can retain a strict
 subset of its current projects and scopes; it cannot expand an existing grant.
 The reduced allowlist is read from PostgreSQL on the next MCP request, including
 requests made by an already-open client. Create a separate grant when broader
 access is required. The Agents page shows PAT or OAuth type, expiry, last use
-and revoked state without returning a PAT, token hash, OAuth token or cookie.
+and revoked state for each key without returning a PAT, token hash, OAuth token
+or cookie.
 
-**Revoke access** is identity-wide and immediate. For PAT agents it revokes the
-credential and identity. For OAuth agents it also revokes stored access and
+**Revoke key** invalidates only that named PAT. **Revoke access** is
+identity-wide and immediate: for PAT agents it revokes every key and the
+identity. For OAuth agents it also revokes stored access and
 refresh tokens and removes consent, while append-only issue activity keeps the
 original agent ID and display-name snapshot. OAuth clients may request
 `offline_access` so refresh remains possible only until the owner revokes the

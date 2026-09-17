@@ -17,7 +17,7 @@ import {
   parseAgentSkillManifest,
 } from "../lib/agent-onboarding.js";
 import { ApiError, apiRequest } from "../lib/api.js";
-import type { Agent, AgentScope, Project } from "../types.js";
+import type { Agent, AgentCredential, AgentScope, Project } from "../types.js";
 import { agentScopes } from "../types.js";
 
 const defaultScopes = agentScopes.filter(
@@ -60,6 +60,14 @@ function dateLabel(value: string | null) {
     : "Never";
 }
 
+function credentialStatus(credential: AgentCredential) {
+  if (credential.revokedAt) return "Revoked";
+  if (credential.expiresAt && new Date(credential.expiresAt) <= new Date()) {
+    return "Expired";
+  }
+  return "Active";
+}
+
 export function AgentsRoute({ projects }: { projects: Project[] }) {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,7 +80,19 @@ export function AgentsRoute({ projects }: { projects: Project[] }) {
     "7" | "30" | "90" | "never"
   >("30");
   const [token, setToken] = useState<string | null>(null);
+  const [tokenLabel, setTokenLabel] = useState("Primary");
   const [revokeTarget, setRevokeTarget] = useState<Agent | null>(null);
+  const [credentialRevokeTarget, setCredentialRevokeTarget] = useState<{
+    agent: Agent;
+    credential: AgentCredential;
+  } | null>(null);
+  const [credentialAgentId, setCredentialAgentId] = useState<string | null>(
+    null,
+  );
+  const [credentialLabel, setCredentialLabel] = useState("");
+  const [credentialExpiresInDays, setCredentialExpiresInDays] = useState<
+    "7" | "30" | "90" | "never"
+  >("30");
   const [editTarget, setEditTarget] = useState<Agent | null>(null);
   const [editProjectIds, setEditProjectIds] = useState<string[]>([]);
   const [editScopes, setEditScopes] = useState<AgentScope[]>([]);
@@ -135,6 +155,7 @@ export function AgentsRoute({ projects }: { projects: Project[] }) {
           }),
         },
       );
+      setTokenLabel("Primary");
       setToken(result.token);
       setShowForm(false);
       await refresh();
@@ -142,6 +163,53 @@ export function AgentsRoute({ projects }: { projects: Project[] }) {
       setErrors(messageFor(error));
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function createCredential(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!credentialAgentId) return;
+    setErrors([]);
+    setSubmitting(true);
+    try {
+      const result = await apiRequest<{
+        credential: AgentCredential;
+        token: string;
+      }>(`/api/v1/agents/${credentialAgentId}/credentials`, {
+        method: "POST",
+        body: JSON.stringify({
+          label: credentialLabel,
+          expiresInDays:
+            credentialExpiresInDays === "never"
+              ? null
+              : Number(credentialExpiresInDays),
+        }),
+      });
+      setTokenLabel(result.credential.label);
+      setToken(result.token);
+      setCredentialAgentId(null);
+      setCredentialLabel("");
+      await refresh();
+    } catch (error) {
+      setErrors(messageFor(error));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function revokeCredential() {
+    if (!credentialRevokeTarget) return;
+    setErrors([]);
+    try {
+      const { agent, credential } = credentialRevokeTarget;
+      await apiRequest(
+        `/api/v1/agents/${agent.id}/credentials/${credential.id}/revoke`,
+        { method: "POST", body: "{}" },
+      );
+      setCredentialRevokeTarget(null);
+      await refresh();
+    } catch (error) {
+      setErrors(messageFor(error));
     }
   }
 
@@ -229,7 +297,7 @@ export function AgentsRoute({ projects }: { projects: Project[] }) {
   if (token) {
     return (
       <div className="reading-column">
-        <PageHeading>Agent credential</PageHeading>
+        <PageHeading>API key: {tokenLabel}</PageHeading>
         <StatusBanner focus>
           Copy this token now. You won't be able to see it again.
         </StatusBanner>
@@ -253,9 +321,12 @@ export function AgentsRoute({ projects }: { projects: Project[] }) {
           <Button
             type="button"
             variant="secondary"
-            onClick={() => setToken(null)}
+            onClick={() => {
+              setToken(null);
+              setTokenLabel("Primary");
+            }}
           >
-            Finish agent setup
+            Finish key setup
           </Button>
           <a className="button button-secondary" href="/agent-onboarding">
             Open onboarding guide
@@ -300,6 +371,37 @@ export function AgentsRoute({ projects }: { projects: Project[] }) {
               onClick={() => void revoke(revokeTarget)}
             >
               Revoke access
+            </Button>
+          </div>
+        </div>
+      ) : null}
+      {credentialRevokeTarget ? (
+        <div
+          className="confirmation-dialog"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="revoke-key-title"
+        >
+          <h2 id="revoke-key-title">Revoke this API key?</h2>
+          <p>
+            {credentialRevokeTarget.credential.label} will stop working
+            immediately. Other keys for {credentialRevokeTarget.agent.name} will
+            continue to work.
+          </p>
+          <div className="page-actions">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setCredentialRevokeTarget(null)}
+            >
+              Keep API key
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => void revokeCredential()}
+            >
+              Revoke API key
             </Button>
           </div>
         </div>
@@ -557,6 +659,129 @@ export function AgentsRoute({ projects }: { projects: Project[] }) {
                 </div>
               </form>
             ) : null}
+            {agent.access.kind === "pat" && !agent.access.revokedAt ? (
+              <section aria-labelledby={`api-keys-${agent.id}`}>
+                <div className="page-header">
+                  <div>
+                    <h3 id={`api-keys-${agent.id}`}>MCP API keys</h3>
+                    <p>
+                      Use a separate key for every Codex session, MCP client or
+                      external service. All keys inherit this agent's projects
+                      and scopes.
+                    </p>
+                  </div>
+                  {credentialAgentId === agent.id ? null : (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => {
+                        setCredentialAgentId(agent.id);
+                        setCredentialLabel("");
+                      }}
+                    >
+                      Create API key
+                    </Button>
+                  )}
+                </div>
+                {credentialAgentId === agent.id ? (
+                  <form
+                    className="form-panel form-stack"
+                    onSubmit={createCredential}
+                  >
+                    <Field
+                      label="Key label"
+                      htmlFor={`key-label-${agent.id}`}
+                      required
+                    >
+                      <TextInput
+                        id={`key-label-${agent.id}`}
+                        required
+                        maxLength={80}
+                        placeholder="VS Code laptop"
+                        value={credentialLabel}
+                        onChange={(event) =>
+                          setCredentialLabel(event.currentTarget.value)
+                        }
+                      />
+                    </Field>
+                    <Field
+                      label="Key expiry"
+                      htmlFor={`key-expiry-${agent.id}`}
+                    >
+                      <Select
+                        id={`key-expiry-${agent.id}`}
+                        value={credentialExpiresInDays}
+                        onChange={(event) =>
+                          setCredentialExpiresInDays(
+                            event.currentTarget
+                              .value as typeof credentialExpiresInDays,
+                          )
+                        }
+                      >
+                        <option value="7">7 days</option>
+                        <option value="30">30 days</option>
+                        <option value="90">90 days</option>
+                        <option value="never">No expiry</option>
+                      </Select>
+                    </Field>
+                    <div className="page-actions">
+                      <Button type="submit" disabled={submitting}>
+                        {submitting ? "Creating…" : "Create and reveal key"}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => setCredentialAgentId(null)}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </form>
+                ) : null}
+                <div className="agent-key-list">
+                  {agent.credentials.map((credential) => {
+                    const status = credentialStatus(credential);
+                    return (
+                      <article className="form-panel" key={credential.id}>
+                        <div className="page-header">
+                          <div>
+                            <h4>{credential.label}</h4>
+                            <p>
+                              {status} · Fingerprint {credential.fingerprint}
+                            </p>
+                          </div>
+                          {status === "Active" ? (
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              onClick={() =>
+                                setCredentialRevokeTarget({ agent, credential })
+                              }
+                            >
+                              Revoke key
+                            </Button>
+                          ) : null}
+                        </div>
+                        <dl className="metadata-list">
+                          <div>
+                            <dt>Expires</dt>
+                            <dd>
+                              {credential.expiresAt
+                                ? dateLabel(credential.expiresAt)
+                                : "No expiry"}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt>Last used</dt>
+                            <dd>{dateLabel(credential.lastUsedAt)}</dd>
+                          </div>
+                        </dl>
+                      </article>
+                    );
+                  })}
+                </div>
+              </section>
+            ) : null}
             <dl className="metadata-list">
               <div>
                 <dt>Access type</dt>
@@ -575,19 +800,19 @@ export function AgentsRoute({ projects }: { projects: Project[] }) {
                 </dd>
               </div>
               <div>
-                <dt>Credential status</dt>
+                <dt>Agent status</dt>
                 <dd>{agent.access.revokedAt ? "Revoked" : "Active"}</dd>
               </div>
-              <div>
-                <dt>Expiry</dt>
-                <dd>
-                  {agent.access.expiresAt
-                    ? dateLabel(agent.access.expiresAt)
-                    : agent.access.kind === "oauth"
-                      ? "Managed by OAuth"
-                      : "No expiry"}
-                </dd>
-              </div>
+              {agent.access.kind === "oauth" ? (
+                <div>
+                  <dt>Expiry</dt>
+                  <dd>
+                    {agent.access.expiresAt
+                      ? dateLabel(agent.access.expiresAt)
+                      : "Managed by OAuth"}
+                  </dd>
+                </div>
+              ) : null}
               <div>
                 <dt>Last used</dt>
                 <dd>{dateLabel(agent.access.lastUsedAt)}</dd>

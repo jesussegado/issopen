@@ -139,6 +139,16 @@ export const agentScopes = [
 
 export type AgentScope = (typeof agentScopes)[number];
 
+export type AgentCredential = {
+  id: string;
+  label: string;
+  fingerprint: string;
+  expiresAt: string | null;
+  revokedAt: string | null;
+  lastUsedAt: string | null;
+  createdAt: string;
+};
+
 export type Agent = {
   id: string;
   name: string;
@@ -146,14 +156,9 @@ export type Agent = {
   projects: Pick<Project, "id" | "name" | "key">[];
   projectIds: string[];
   scopes: AgentScope[];
-  credential: {
-    id: string;
-    fingerprint: string;
-    expiresAt: string | null;
-    revokedAt: string | null;
-    lastUsedAt: string | null;
-    createdAt: string;
-  } | null;
+  /** Kept for compatibility with clients that expect the original key. */
+  credential: AgentCredential | null;
+  credentials: AgentCredential[];
   access: {
     kind: "pat" | "oauth";
     expiresAt: string | null;

@@ -87,7 +87,8 @@ describe("agent identities and credentials", () => {
     expect(safeList[0]).toMatchObject({
       name: "Codex",
       projectIds: [projectId],
-      credential: { lastUsedAt: null },
+      credential: { label: "Primary", lastUsedAt: null },
+      credentials: [{ label: "Primary", lastUsedAt: null }],
       access: {
         kind: "pat",
         lastUsedAt: null,
@@ -108,6 +109,78 @@ describe("agent identities and credentials", () => {
     expect(
       (await agents.listAgents(workspaceId))[0]?.access.lastUsedAt,
     ).toBeInstanceOf(Date);
+  });
+
+  it("creates independent named MCP keys and revokes only the selected key", async () => {
+    const created = await agents.createAgent(workspaceId, {
+      name: "Multi-client Codex",
+      projectIds: [projectId],
+      scopes: ["issues:read", "comments:write"],
+    });
+    const vscode = await agents.createCredential(
+      workspaceId,
+      created.agent.id,
+      { label: "VS Code", expiresInDays: 90 },
+    );
+    const ci = await agents.createCredential(workspaceId, created.agent.id, {
+      label: "CI runner",
+      expiresInDays: null,
+    });
+
+    expect(vscode.token).toMatch(/^issopen_pat_[A-Za-z0-9_-]{43}$/);
+    expect(ci.token).not.toBe(vscode.token);
+    expect((await agents.resolvePat(created.token)).agent.id).toBe(
+      created.agent.id,
+    );
+    expect((await agents.resolvePat(vscode.token)).scopes).toEqual(
+      new Set(["issues:read", "comments:write"]),
+    );
+    expect((await agents.resolvePat(ci.token)).projectIds).toEqual(
+      new Set([projectId]),
+    );
+
+    const listed = (await agents.listAgents(workspaceId))[0];
+    expect(listed?.credentials.map((item) => item.label)).toEqual([
+      "Primary",
+      "VS Code",
+      "CI runner",
+    ]);
+    expect(JSON.stringify(listed)).not.toContain(vscode.token);
+    expect(JSON.stringify(listed)).not.toContain(ci.token);
+
+    await agents.revokeCredential(
+      workspaceId,
+      created.agent.id,
+      vscode.credential.id,
+    );
+    await expect(agents.resolvePat(vscode.token)).rejects.toBeInstanceOf(
+      AgentAuthenticationError,
+    );
+    expect((await agents.resolvePat(created.token)).agent.id).toBe(
+      created.agent.id,
+    );
+    expect((await agents.resolvePat(ci.token)).agent.id).toBe(created.agent.id);
+
+    await expect(
+      agents.createCredential(workspaceId, created.agent.id, {
+        label: "ci RUNNER",
+        expiresInDays: 30,
+      }),
+    ).rejects.toMatchObject({ code: "conflict" });
+
+    await agents.revokeAgentAccess(workspaceId, created.agent.id);
+    await expect(agents.resolvePat(created.token)).rejects.toBeInstanceOf(
+      AgentAuthenticationError,
+    );
+    await expect(agents.resolvePat(ci.token)).rejects.toBeInstanceOf(
+      AgentAuthenticationError,
+    );
+    await expect(
+      agents.createCredential(workspaceId, created.agent.id, {
+        label: "After revoke",
+        expiresInDays: 30,
+      }),
+    ).rejects.toMatchObject({ code: "conflict" });
   });
 
   it("only reduces persisted projects and scopes and applies them on the next PAT resolution", async () => {
@@ -187,7 +260,11 @@ describe("agent identities and credentials", () => {
       name: "Revoked agent",
       projectIds: [projectId],
     });
-    const revoked = await agents.revokeCredential(workspaceId, active.agent.id);
+    const revoked = await agents.revokeCredential(
+      workspaceId,
+      active.agent.id,
+      active.agent.credential.id,
+    );
     expect(revoked.revokedAt).toBeInstanceOf(Date);
     await expect(agents.resolvePat(active.token)).rejects.toBeInstanceOf(
       AgentAuthenticationError,

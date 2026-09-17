@@ -7,7 +7,15 @@ import { expect, it } from "vitest";
 import { createDatabase } from "../../src/server/db/client.js";
 import { migrateDatabase } from "../../src/server/db/migrate.js";
 import { user, workspace } from "../../src/server/db/schema.js";
-import { AgentService } from "../../src/server/domain/index.js";
+import {
+  agentTokenFingerprint,
+  generateAgentToken,
+  hashAgentToken,
+} from "../../src/server/domain/agents/secrets.js";
+import {
+  AgentService,
+  defaultCodexScopes,
+} from "../../src/server/domain/index.js";
 
 it("adds opt-in Epic scopes without altering any existing grants and keeps old queries compatible", async () => {
   const folder = await mkdtemp(join(tmpdir(), "issopen-scope-migration-"));
@@ -36,14 +44,27 @@ it("adds opt-in Epic scopes without altering any existing grants and keeps old q
     // Seed the historical schema directly; today's ORM includes newer columns.
     await connection.client`INSERT INTO project (id, workspace_id, name, key)
       VALUES (${project.id}, ${workspaceId}, 'Scopes', 'SCOPES')`;
-    const agents = new AgentService(connection.db);
-    const existing = await agents.createAgent(workspaceId, {
-      name: "Existing",
-      projectIds: [project.id],
-    });
+    const existing = {
+      agent: { id: randomUUID() },
+      token: generateAgentToken(),
+    };
+    await connection.client`INSERT INTO agent_identity (id, workspace_id, name)
+      VALUES (${existing.agent.id}, ${workspaceId}, 'Existing')`;
+    await connection.client`INSERT INTO agent_project (agent_id, workspace_id, project_id)
+      VALUES (${existing.agent.id}, ${workspaceId}, ${project.id})`;
+    for (const scope of defaultCodexScopes) {
+      await connection.client`INSERT INTO agent_scope (agent_id, workspace_id, scope)
+        VALUES (${existing.agent.id}, ${workspaceId}, ${scope})`;
+    }
+    await connection.client`INSERT INTO agent_credential
+      (id, agent_id, workspace_id, token_hash, fingerprint)
+      VALUES (${randomUUID()}, ${existing.agent.id}, ${workspaceId},
+        ${await hashAgentToken(existing.token)},
+        ${agentTokenFingerprint(existing.token)})`;
     const before =
       await connection.client`SELECT * FROM agent_scope ORDER BY scope`;
     await migrateDatabase(container.getConnectionUri());
+    const agents = new AgentService(connection.db);
     expect(
       await connection.client`SELECT * FROM agent_scope ORDER BY scope`,
     ).toEqual(before);

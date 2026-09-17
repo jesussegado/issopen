@@ -1357,7 +1357,11 @@ describe("stateless Issopen MCP", () => {
       ).isError,
     ).toBe(true);
 
-    await agents.revokeCredential(workspaceId, created.agent.id);
+    await agents.revokeCredential(
+      workspaceId,
+      created.agent.id,
+      created.agent.credential.id,
+    );
     await expect(
       client.listTools({ cursor: "after-revoke" }),
     ).rejects.toThrow();

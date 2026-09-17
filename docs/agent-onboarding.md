@@ -22,8 +22,9 @@ required for every tool call.
 ## Owner flow
 
 1. Open **Agents** and create a separate identity with the minimum projects and
-   scopes required.
-2. Copy the PAT from its one-time reveal and deliver it through an appropriate
+   scopes required, or select an existing PAT identity with that exact access.
+2. Create a named MCP API key for this consumer. Copy it from its one-time
+   reveal and deliver it through an appropriate
    secret channel. Do not paste it into Issopen, chat, email, Git or a URL.
 3. Reopen **Agents** and choose **Setup guide** for that identity.
 4. Copy the generated onboarding. It contains the canonical MCP URL, exact
@@ -34,6 +35,8 @@ required for every tool call.
 
 Reducing or revoking permissions takes effect on the next MCP request. Generate
 the guide again after reducing access so its informational snapshot is current.
+Use a different named key for every client; see
+[MCP API keys](agent-credentials.md) for rotation and identity-wide revocation.
 
 ## Agent flow
 
