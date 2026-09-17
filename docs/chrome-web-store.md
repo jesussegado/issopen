@@ -1,8 +1,9 @@
 # Chrome Web Store: contrato de publicación Unlisted
 
-Estado reconsultado el 2026-09-13 a las 20:23 UTC: **Pendiente de revisión**.
-Issopen 0.6.2 está enviado, con visibilidad **Sin mostrar (Unlisted)** y
-publicación automática desactivada. No hay versión aprobada/publicada todavía.
+Estado reconsultado el 2026-09-17: **Listo para publicar**. Google ha aceptado
+el borrador Issopen 0.6.2, con visibilidad **Sin mostrar (Unlisted)** y
+publicación automática desactivada. Aún no está publicado: el dashboard exige
+el gesto manual de publicación antes del 15 de octubre de 2026.
 
 - Publisher: `0c6be6e6-1d57-48de-acb3-66166bda94a3`.
 - Item: `eohpecaogeelnicbpeedjdganacfknok`.
@@ -36,7 +37,7 @@ o tokens.
 | Imagen activa | `chrome-listing-40cc4af` por digest `sha256:d85312e46ce4bc871becd1e6c7343c2f8363b1c574efde760f4459a40f6276a1` | Deployment observado |
 | Datos | PostgreSQL y adjuntos PNG privados en PVC separados y retenidos | manifiestos y PVC `Bound` |
 | Extensión base | MV3 0.6.2; panel lateral, OAuth PKCE por persona/instalación, acceso Owner/Member, imágenes elegidas por la persona, consentimiento y creación de tickets | manifest y paquete auditados, tickets 82–85 |
-| Distribución actual | paquete local/desempaquetado; sin ficha Store aprobada | `extensions/chrome/.output/chrome-mv3` |
+| Distribución actual | borrador Store 0.6.2 aprobado y pendiente de publicación manual; el enlace aún no es instalable | dashboard reconsultado el 2026-09-17 |
 | Repositorio | fuente independiente, rama `main`; Forgejo privado | `http://192.168.2.165:3000/jsegado/issopen` |
 
 ## Borrador reproducible de la ficha

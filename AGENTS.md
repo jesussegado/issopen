@@ -228,13 +228,16 @@ están en revisión humana sin claims; seguir con108→95 y repetir integración
   `eohpecaogeelnicbpeedjdganacfknok`, versión 0.6.2, ficha Unlisted guardada,
   contacto verificado y declaración de no operador indicada por el dueño.
   Las instrucciones privadas de prueba están guardadas. Estado observado:
-  enviado el 2026-09-13 a las 19:24 UTC, Pendiente de revisión, Unlisted y
-  publicación automática desactivada. No aprobado/publicado todavía.
+  enviado el 2026-09-13 a las 19:24 UTC, Unlisted y publicación automática
+  desactivada. El 2026-09-17 Google mostró el borrador aceptado y **Listo para
+  publicar** antes del 15/10/2026. Sigue sin publicar ni ser instalable hasta
+  ejecutar el gesto manual de publicación.
   La aclaración de 86 está resuelta: el 2026-09-13 a las 20:21 UTC la persona
   eligió mantener el Member local durante esta revisión (2/2 respondidas,
   sin preguntas bloqueantes pendientes). No sustituirlo ni retirar su acceso;
-  Google de pruebas queda para el piloto. Dashboard reconsultado a las
-  20:23 UTC: sigue Pendiente de revisión. Evidencia en quick `260913-v4j`.
+  Google de pruebas queda para el piloto. La última evidencia de revisión
+  pendiente quedó en quick `260913-v4j`; el resultado posterior aprobado está
+  registrado en el ticket 112.
   [Operación Store](docs/chrome-store-operations.md) y
   [piloto pendiente](docs/chrome-store-pilot.md) delimitan los gates de 87/88.
 
