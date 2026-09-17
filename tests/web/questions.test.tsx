@@ -119,6 +119,130 @@ describe("automatic question navigation", () => {
     expect(heading).toHaveAttribute("tabindex", "-1");
   });
 
+  it("moves between tickets with unanswered questions in the same Epic", async () => {
+    const question: IssueQuestion = {
+      id: "question-current",
+      workspaceId: "workspace-1",
+      issueId: "issue-2",
+      prompt: "Current decision",
+      recommendation: "Answer it.",
+      options: [{ id: "option-current", label: "Proceed", description: "" }],
+      recommendedOptionId: "option-current",
+      blocking: true,
+      answerOptionId: null,
+      answerOtherText: null,
+      answeredByUserId: null,
+      answeredAt: null,
+      version: 1,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+    const currentIssue = {
+      id: "issue-2",
+      projectId: "project-1",
+      epicId: "epic-1",
+      key: "WEB-2",
+      number: 2,
+      title: "Current ticket",
+      description: "",
+      priority: "medium",
+      status: "backlog",
+      version: 1,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+      questionSummary: { total: 1, answered: 0, unansweredBlocking: 1 },
+    };
+    const sibling = (id: string, number: number, answered: number) => ({
+      ...currentIssue,
+      id,
+      number,
+      key: `WEB-${number}`,
+      title: `Ticket ${number}`,
+      questionSummary: {
+        total: 1,
+        answered,
+        unansweredBlocking: answered === 0 ? 1 : 0,
+      },
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const path = String(input);
+        if (path === "/api/v1/issues/issue-2")
+          return json({
+            issue: currentIssue,
+            epic: { id: "epic-1", projectId: "project-1", number: 1 },
+            codeLinks: [],
+            comments: [],
+            questions: [question],
+            questionSummary: currentIssue.questionSummary,
+          });
+        if (path === "/api/v1/issues/issue-2/activity")
+          return json({ activity: [] });
+        if (path === "/api/v1/projects/project-1")
+          return json({
+            project: { id: "project-1", name: "Web", key: "WEB" },
+          });
+        if (path === "/api/v1/epics/epic-1")
+          return json({
+            issues: [
+              sibling("issue-1", 1, 0),
+              currentIssue,
+              sibling("issue-3", 3, 0),
+              sibling("issue-4", 4, 1),
+            ],
+          });
+        if (
+          path === "/api/v1/issues/issue-2/questions/question-current/answer" &&
+          init?.method === "PATCH"
+        )
+          return json({
+            question: {
+              ...question,
+              answerOptionId: "option-current",
+              answeredByUserId: "owner-1",
+              answeredAt: timestamp,
+              version: 2,
+            },
+            questionSummary: {
+              total: 1,
+              answered: 1,
+              unansweredBlocking: 0,
+            },
+          });
+        throw new Error(`Unexpected request: ${path}`);
+      }),
+    );
+    window.history.replaceState({}, "", "/issues/issue-2");
+    const user = userEvent.setup();
+
+    render(<IssueDetailRoute issueId="issue-2" session={session} />);
+
+    const navigation = await screen.findByRole("navigation", {
+      name: "Tickets with unanswered questions in this Epic",
+    });
+    expect(navigation).toHaveTextContent(
+      "2 of 3 tickets with unanswered questions",
+    );
+    expect(
+      screen.getByRole("link", { name: "Previous ticket" }),
+    ).toHaveAttribute("href", "/issues/issue-1#questions-heading");
+    expect(screen.getByRole("link", { name: "Next ticket" })).toHaveAttribute(
+      "href",
+      "/issues/issue-3#questions-heading",
+    );
+
+    await user.click(screen.getByRole("radio", { name: /Proceed/ }));
+    await user.click(screen.getByRole("button", { name: "Save answer" }));
+
+    expect(
+      await screen.findByText("2 tickets still need answers in this Epic."),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("link", { name: "Next unanswered ticket" }),
+    ).toHaveAttribute("href", "/issues/issue-1#questions-heading");
+  });
+
   it.each([
     { kind: "option", order: [0, 2, 3] },
     { kind: "other", order: [3, 0, 2] },

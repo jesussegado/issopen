@@ -103,6 +103,7 @@ function newestFirst<T extends { id: string; createdAt: string }>(items: T[]) {
 type DetailSnapshot = {
   issue: Issue;
   epic: Epic | null;
+  epicIssues: Issue[];
   codeLinks: CodeLink[];
   comments: IssueComment[];
   questions: IssueQuestion[];
@@ -126,13 +127,22 @@ async function readDetailSnapshot(
       options,
     ),
   ]);
-  const { project } = await apiRequest<{ project: Project }>(
-    `/api/v1/projects/${detail.issue.projectId}`,
-    options,
-  );
+  const [{ project }, epicDetail] = await Promise.all([
+    apiRequest<{ project: Project }>(
+      `/api/v1/projects/${detail.issue.projectId}`,
+      options,
+    ),
+    detail.epic
+      ? apiRequest<{ issues: Issue[] }>(
+          `/api/v1/epics/${detail.epic.id}`,
+          options,
+        ).catch(() => ({ issues: [] }))
+      : Promise.resolve({ issues: [] as Issue[] }),
+  ]);
   return {
     issue: detail.issue,
     epic: detail.epic ?? null,
+    epicIssues: epicDetail.issues,
     codeLinks: detail.codeLinks ?? [],
     comments: detail.comments ?? [],
     questions: detail.questions ?? [],
@@ -151,6 +161,7 @@ export function IssueDetailRoute({
 }) {
   const [issue, setIssue] = useState<Issue | null>(null);
   const [epic, setEpic] = useState<Epic | null>(null);
+  const [epicIssues, setEpicIssues] = useState<Issue[]>([]);
   const [links, setLinks] = useState<CodeLink[]>([]);
   const [comments, setComments] = useState<IssueComment[]>([]);
   const [commentBody, setCommentBody] = useState("");
@@ -222,6 +233,7 @@ export function IssueDetailRoute({
     signature: JSON.stringify({
       issue,
       epic,
+      epicIssues,
       codeLinks: links,
       comments,
       questions,
@@ -252,6 +264,7 @@ export function IssueDetailRoute({
     setQuestionIndex(selected >= 0 ? selected : 0);
     setIssue(snapshot.issue);
     setEpic(snapshot.epic);
+    setEpicIssues(snapshot.epicIssues);
     setLinks(snapshot.codeLinks);
     setComments(snapshot.comments);
     setQuestions(snapshot.questions);
@@ -266,6 +279,7 @@ export function IssueDetailRoute({
   const clearAccess = useCallback(() => {
     setMissing(true);
     setIssue(null);
+    setEpicIssues([]);
     setQuestions([]);
     setComments([]);
     setLinks([]);
@@ -424,6 +438,35 @@ export function IssueDetailRoute({
   ]);
 
   const currentQuestion = questions[questionIndex] ?? null;
+  const pendingEpicIssues = useMemo(
+    () =>
+      epicIssues
+        .filter(
+          (item) =>
+            Math.max(
+              0,
+              (item.questionSummary?.total ?? 0) -
+                (item.questionSummary?.answered ?? 0),
+            ) > 0,
+        )
+        .sort(
+          (left, right) =>
+            left.number - right.number || left.id.localeCompare(right.id),
+        ),
+    [epicIssues],
+  );
+  const currentEpicQuestionIndex = pendingEpicIssues.findIndex(
+    (item) => item.id === issue?.id,
+  );
+  const previousEpicQuestionIssue =
+    currentEpicQuestionIndex > 0
+      ? pendingEpicIssues[currentEpicQuestionIndex - 1]
+      : null;
+  const nextEpicQuestionIssue =
+    currentEpicQuestionIndex >= 0 &&
+    currentEpicQuestionIndex < pendingEpicIssues.length - 1
+      ? pendingEpicIssues[currentEpicQuestionIndex + 1]
+      : null;
   useEffect(() => {
     if (!currentQuestion) return;
     if (preservedAnswerId.current === currentQuestion.id) {
@@ -539,6 +582,13 @@ export function IssueDetailRoute({
         );
       }
       setQuestionSummary(response.questionSummary);
+      setEpicIssues((current) =>
+        current.map((item) =>
+          item.id === issue.id
+            ? { ...item, questionSummary: response.questionSummary }
+            : item,
+        ),
+      );
       setIssue((current) =>
         current
           ? { ...current, questionSummary: response.questionSummary }
@@ -967,6 +1017,62 @@ export function IssueDetailRoute({
                 </span>
               ) : null}
             </div>
+            {epic && pendingEpicIssues.length > 0 ? (
+              <nav
+                className="epic-question-navigation"
+                aria-label="Tickets with unanswered questions in this Epic"
+              >
+                {currentEpicQuestionIndex >= 0 ? (
+                  <>
+                    {previousEpicQuestionIssue ? (
+                      <AppLink
+                        className="button button-secondary"
+                        href={`/issues/${previousEpicQuestionIssue.id}#questions-heading`}
+                      >
+                        Previous ticket
+                      </AppLink>
+                    ) : (
+                      <Button type="button" variant="secondary" disabled>
+                        Previous ticket
+                      </Button>
+                    )}
+                    <span className="metadata">
+                      {currentEpicQuestionIndex + 1} of{" "}
+                      {pendingEpicIssues.length} tickets with unanswered
+                      questions
+                    </span>
+                    {nextEpicQuestionIssue ? (
+                      <AppLink
+                        className="button button-secondary"
+                        href={`/issues/${nextEpicQuestionIssue.id}#questions-heading`}
+                      >
+                        Next ticket
+                      </AppLink>
+                    ) : (
+                      <Button type="button" variant="secondary" disabled>
+                        Next ticket
+                      </Button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <span className="metadata">
+                      {pendingEpicIssues.length}{" "}
+                      {pendingEpicIssues.length === 1
+                        ? "ticket still needs"
+                        : "tickets still need"}{" "}
+                      answers in this Epic.
+                    </span>
+                    <AppLink
+                      className="button button-secondary"
+                      href={`/issues/${pendingEpicIssues[0]?.id}#questions-heading`}
+                    >
+                      Next unanswered ticket
+                    </AppLink>
+                  </>
+                )}
+              </nav>
+            ) : null}
             {!currentQuestion ? (
               <p className="metadata">No questions on this ticket.</p>
             ) : (

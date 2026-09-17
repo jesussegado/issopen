@@ -1146,6 +1146,21 @@ progress {
   padding-bottom: 16px;
   border-bottom: 1px solid var(--color-border);
 }
+.epic-question-navigation {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin: 16px 0;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-subtle);
+}
+.epic-question-navigation .metadata {
+  margin: 0;
+  text-align: center;
+}
 .question-fieldset {
   display: grid;
   gap: 12px;
@@ -1459,6 +1474,14 @@ progress {
     grid-column: 1 / -1;
     grid-row: 1;
     text-align: center;
+  }
+  .epic-question-navigation {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .epic-question-navigation .metadata {
+    grid-column: 1 / -1;
+    grid-row: 1;
   }
 }
 
