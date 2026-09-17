@@ -66,7 +66,7 @@ test("owner completes the tracker loop with native keyboard controls", async ({
   await expect(
     page.getByText("Group the complete private MVP workflow."),
   ).toHaveCount(0);
-  await page.getByRole("link", { name: epicDisplayName }).click();
+  await page.getByRole("link", { name: epicDisplayName, exact: true }).click();
   await expect(
     page.getByRole("heading", { name: epicDisplayName }),
   ).toBeVisible();
@@ -161,7 +161,7 @@ test("owner completes the tracker loop with native keyboard controls", async ({
   }
   const epicOverview = page.getByRole("region", { name: "Epics" });
   await expect(
-    epicOverview.getByRole("link", { name: epicDisplayName }),
+    epicOverview.getByRole("link", { name: epicDisplayName, exact: true }),
   ).toBeVisible();
   if (!mobile) {
     const boardRegion = page.getByRole("region", {
@@ -327,8 +327,10 @@ test("owner completes the tracker loop with native keyboard controls", async ({
     page.getByRole("heading", { name: "No active Epics" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Show archived (1)" }).click();
-  await expect(page.getByRole("link", { name: epicDisplayName })).toBeVisible();
-  await page.getByRole("link", { name: epicDisplayName }).click();
+  await expect(
+    page.getByRole("link", { name: epicDisplayName, exact: true }),
+  ).toBeVisible();
+  await page.getByRole("link", { name: epicDisplayName, exact: true }).click();
   await page.getByRole("button", { name: "Restore Epic" }).click();
   await expect(page.getByText("Epic restored", { exact: true })).toBeVisible();
   await expect(
