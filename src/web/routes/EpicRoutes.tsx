@@ -530,11 +530,14 @@ export function EpicDetailRoute({ epicId }: { epicId: string }) {
                     <Badge>{statusLabels[issue.status]}</Badge>
                     <Badge>{priorityLabels[issue.priority]}</Badge>
                     {pendingQuestions > 0 ? (
-                      <span className="badge warning-badge">
+                      <AppLink
+                        className="badge warning-badge warning-link"
+                        href={`/issues/${issue.id}#questions-heading`}
+                      >
                         <span aria-hidden="true">⚠</span> {pendingQuestions}{" "}
                         unanswered{" "}
                         {pendingQuestions === 1 ? "question" : "questions"}
-                      </span>
+                      </AppLink>
                     ) : null}
                   </div>
                 </li>

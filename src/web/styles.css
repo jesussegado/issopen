@@ -744,6 +744,16 @@ progress {
   background: var(--color-warning-soft);
   color: var(--color-warning);
 }
+.warning-link {
+  text-decoration: none;
+}
+.warning-link:hover {
+  text-decoration: underline;
+}
+.warning-link:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-warning) 35%, transparent);
+  outline-offset: 2px;
+}
 .question-warning {
   display: flex;
   flex-wrap: wrap;

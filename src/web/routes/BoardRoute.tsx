@@ -617,20 +617,23 @@ export function BoardRoute({
                                   <AssigneeLabel issue={issue} />
                                   {(issue.questionSummary?.directedUnanswered ??
                                     0) > 0 ? (
-                                    <span className="badge warning-badge">
+                                    <AppLink
+                                      className="badge warning-badge warning-link"
+                                      href={`/issues/${issue.id}#questions-heading`}
+                                    >
                                       ⚠{" "}
                                       {
                                         issue.questionSummary
                                           ?.directedUnanswered
                                       }{" "}
                                       for you
-                                    </span>
+                                    </AppLink>
                                   ) : null}
                                   {(issue.questionSummary?.unansweredBlocking ??
                                     0) > 0 ? (
-                                    <span
-                                      className="badge warning-badge"
-                                      role="status"
+                                    <AppLink
+                                      className="badge warning-badge warning-link"
+                                      href={`/issues/${issue.id}#questions-heading`}
                                     >
                                       ⚠{" "}
                                       {
@@ -638,7 +641,7 @@ export function BoardRoute({
                                           ?.unansweredBlocking
                                       }{" "}
                                       unanswered
-                                    </span>
+                                    </AppLink>
                                   ) : null}
                                   <div
                                     id={`issue-preview-${issue.id}`}

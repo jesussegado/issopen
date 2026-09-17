@@ -108,6 +108,17 @@ afterEach(() => {
 });
 
 describe("automatic question navigation", () => {
+  it("focuses the questions heading when opened from a warning link", async () => {
+    mockQuestions();
+    window.history.replaceState({}, "", "/issues/issue-1#questions-heading");
+
+    render(<IssueDetailRoute issueId="issue-1" session={session} />);
+
+    const heading = await screen.findByRole("heading", { name: "Questions" });
+    await vi.waitFor(() => expect(heading).toHaveFocus());
+    expect(heading).toHaveAttribute("tabindex", "-1");
+  });
+
   it.each([
     { kind: "option", order: [0, 2, 3] },
     { kind: "other", order: [3, 0, 2] },

@@ -319,6 +319,17 @@ export function IssueDetailRoute({
     return () => controller.abort();
   }, [issueId, scope, applySnapshot, clearAccess]);
 
+  useEffect(() => {
+    if (loading || !issue || window.location.hash !== "#questions-heading")
+      return;
+    const frame = window.requestAnimationFrame(() => {
+      const heading = document.getElementById("questions-heading");
+      heading?.scrollIntoView?.({ block: "start" });
+      heading?.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [issue, loading]);
+
   const refreshLiveRef = useRef<() => void>(() => {});
   useEffect(() => {
     if (submitting === null && !loading) refreshLiveRef.current();
@@ -938,7 +949,9 @@ export function IssueDetailRoute({
           >
             <div className="question-heading">
               <div>
-                <h2 id="questions-heading">Questions</h2>
+                <h2 id="questions-heading" tabIndex={-1}>
+                  Questions
+                </h2>
                 {(questionSummary.directedUnanswered ?? 0) > 0 ? (
                   <p className="warning-badge">
                     ⚠ {questionSummary.directedUnanswered} unanswered for you

@@ -876,7 +876,20 @@ describe("tracker web routes", () => {
       vi.fn(async (input: RequestInfo | URL) => {
         const path = String(input);
         if (path === `/api/v1/epics/${epic.id}`)
-          return json({ epic, issues: [{ ...issue, epicId: epic.id }] });
+          return json({
+            epic,
+            issues: [
+              {
+                ...issue,
+                epicId: epic.id,
+                questionSummary: {
+                  total: 2,
+                  answered: 1,
+                  unansweredBlocking: 1,
+                },
+              },
+            ],
+          });
         if (path === `/api/v1/projects/${project.id}`) return json({ project });
         throw new Error(`Unexpected request: ${path}`);
       }),
@@ -888,6 +901,9 @@ describe("tracker web routes", () => {
     expect(
       screen.getByRole("link", { name: `1-${issue.title}` }),
     ).toHaveAttribute("href", `/issues/${issue.id}`);
+    expect(
+      screen.getByRole("link", { name: /1 unanswered question/ }),
+    ).toHaveAttribute("href", `/issues/${issue.id}#questions-heading`);
     expect(screen.getByRole("link", { name: "View on board" })).toHaveAttribute(
       "href",
       `/projects/${project.id}?epic=${epic.id}`,
@@ -1070,7 +1086,9 @@ describe("tracker web routes", () => {
     const user = userEvent.setup();
     render(<BoardRoute projectId={project.id} canManageProject />);
 
-    expect(await screen.findByText("⚠ 1 unanswered")).toBeInTheDocument();
+    expect(
+      await screen.findByRole("link", { name: "⚠ 1 unanswered" }),
+    ).toHaveAttribute("href", `/issues/${blocked.id}#questions-heading`);
     expect(screen.getByText(`2-${clear.title}`)).toBeInTheDocument();
     await user.click(
       screen.getByRole("button", { name: "Show details for 1" }),
