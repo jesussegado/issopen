@@ -394,6 +394,81 @@ export const workspace = pgTable(
   (table) => [index("workspace_owner_id_idx").on(table.ownerId)],
 );
 
+// The singleton instance operator can invite another verified person to own a
+// new, isolated workspace. The raw bearer token is never stored.
+export const ownerWorkspaceInvitation = pgTable(
+  "owner_workspace_invitation",
+  {
+    id: text("id").primaryKey(),
+    email: varchar("email", { length: 320 }).notNull(),
+    workspaceName: varchar("workspace_name", { length: 120 }).notNull(),
+    tokenHash: varchar("token_hash", { length: 64 }).notNull().unique(),
+    createdByUserId: text("created_by_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    claimedByUserId: text("claimed_by_user_id").references(() => user.id, {
+      onDelete: "restrict",
+    }),
+    provisionalSessionId: text("provisional_session_id").references(
+      () => session.id,
+      { onDelete: "set null" },
+    ),
+    createdWorkspaceId: text("created_workspace_id")
+      .unique()
+      .references(() => workspace.id, { onDelete: "restrict" }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    claimedAt: timestamp("claimed_at", { withTimezone: true }),
+    acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("owner_workspace_invitation_active_email_uidx")
+      .on(table.email)
+      .where(sql`${table.acceptedAt} IS NULL AND ${table.revokedAt} IS NULL`),
+    index("owner_workspace_invitation_created_idx").on(table.createdAt),
+    index("owner_workspace_invitation_expiry_idx").on(table.expiresAt),
+    index("owner_workspace_invitation_claimed_user_idx").on(
+      table.claimedByUserId,
+    ),
+    index("owner_workspace_invitation_provisional_session_idx").on(
+      table.provisionalSessionId,
+    ),
+    check(
+      "owner_workspace_invitation_token_hash_check",
+      sql`${table.tokenHash} ~ '^[0-9a-f]{64}$'`,
+    ),
+  ],
+);
+
+export const ownerWorkspaceInvitationEvent = pgTable(
+  "owner_workspace_invitation_event",
+  {
+    id: text("id").primaryKey(),
+    invitationId: text("invitation_id")
+      .notNull()
+      .references(() => ownerWorkspaceInvitation.id, { onDelete: "restrict" }),
+    actorUserId: text("actor_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    type: varchar("type", { length: 64 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("owner_workspace_invitation_event_created_idx").on(
+      table.invitationId,
+      table.createdAt,
+    ),
+  ],
+);
+
 export const ownershipTransfer = pgTable(
   "ownership_transfer",
   {

@@ -76,10 +76,12 @@ function Navigation({
   projects,
   pathname,
   role,
+  platformAdmin,
 }: {
   projects: Project[];
   pathname: string;
   role: "owner" | "member";
+  platformAdmin: boolean;
 }) {
   const link = (href: string, label: string) => (
     <AppLink
@@ -99,6 +101,7 @@ function Navigation({
       <div className="nav-divider" />
       {role === "owner" ? link("/agents", "Agents") : null}
       {role === "owner" ? link("/members", "Members") : null}
+      {platformAdmin ? link("/owners", "Owner workspaces") : null}
       {role === "owner" ? link("/audit", "Access audit") : null}
       {link("/ownership", "Workspace ownership")}
       {role === "owner" ? link("/connect", "Connect ChatGPT") : null}
@@ -135,6 +138,7 @@ export function AuthenticatedShell({
       projects={projects}
       pathname={pathname}
       role={session.workspace.role}
+      platformAdmin={session.platformAdmin === true}
     />
   );
   return (

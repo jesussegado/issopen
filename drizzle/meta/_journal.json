@@ -218,6 +218,13 @@
       "when": 1789463775669,
       "tag": "0030_invitation_delivery",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1789665136382,
+      "tag": "0031_thick_inertia",
+      "breakpoints": true
     }
   ]
 }

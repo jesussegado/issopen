@@ -14,6 +14,7 @@ export type IssuePriority = (typeof issuePriorities)[number];
 export type CodeLinkType = (typeof codeLinkTypes)[number];
 
 export type Session = {
+  platformAdmin?: boolean;
   workspaces?: {
     id: string;
     name: string;
@@ -49,6 +50,19 @@ export type WorkspaceInvitation = {
   role: "member";
   state: InvitationState;
   projectIds: string[];
+  expiresAt: string;
+  claimedAt: string | null;
+  acceptedAt: string | null;
+  revokedAt: string | null;
+  createdAt: string;
+};
+
+export type OwnerWorkspaceInvitation = {
+  id: string;
+  email: string;
+  workspaceName: string;
+  state: InvitationState;
+  createdWorkspaceId: string | null;
   expiresAt: string;
   claimedAt: string | null;
   acceptedAt: string | null;

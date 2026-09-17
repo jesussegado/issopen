@@ -12,6 +12,7 @@ import * as schema from "./db/schema.js";
 import { agentScopeValues } from "./db/schema.js";
 import { extensionResource, extensionScopes } from "./extensions.js";
 import { invitationAuthPlugin } from "./invitations.js";
+import { ownerInvitationAuthPlugin } from "./owner-invitations.js";
 
 export function createAuth(db: Database, config: AppConfig) {
   const oauthScopes = [...agentScopeValues, ...extensionScopes];
@@ -85,6 +86,7 @@ export function createAuth(db: Database, config: AppConfig) {
     plugins: [
       jwt(),
       invitationAuthPlugin(db),
+      ownerInvitationAuthPlugin(db),
       ...(config.googleOAuth
         ? [
             genericOAuth({

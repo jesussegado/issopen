@@ -26,6 +26,31 @@ const shell = (pathname: string, userId = "person") => (
   </AuthenticatedShell>
 );
 
+it("shows Owner provisioning only to the instance administrator", () => {
+  const ownerSession = {
+    ...session,
+    platformAdmin: true,
+    workspace: { ...session.workspace, role: "owner" as const },
+  };
+  const view = render(
+    <AuthenticatedShell
+      session={ownerSession}
+      projects={[]}
+      pathname="/"
+      onSignedOut={() => {}}
+    >
+      <h1>Page</h1>
+    </AuthenticatedShell>,
+  );
+  expect(
+    screen.getAllByRole("link", { name: "Owner workspaces" }),
+  ).not.toHaveLength(0);
+  view.rerender(shell("/"));
+  expect(
+    screen.queryByRole("link", { name: "Owner workspaces" }),
+  ).not.toBeInTheDocument();
+});
+
 it("closes the mobile overlay on route or identity change", async () => {
   const user = userEvent.setup();
   const result = render(shell("/projects/one"));

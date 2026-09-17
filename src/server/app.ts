@@ -28,6 +28,7 @@ import { createAccountRouter } from "./http/account.js";
 import {
   createAgentRouter,
   createInvitationRouter,
+  createOwnerInvitationRouter,
   createTrackerRouter,
   domainErrorResponse,
 } from "./http/index.js";
@@ -43,6 +44,10 @@ import {
 import { InvitationService } from "./invitations.js";
 import type { MailConfig } from "./mail-config.js";
 import { createIssopenMcpHandler } from "./mcp/index.js";
+import {
+  isInstanceOwner,
+  OwnerWorkspaceInvitationService,
+} from "./owner-invitations.js";
 
 type AppBindings = {
   Variables: {
@@ -110,7 +115,7 @@ export function createApp({
     await next();
     context.header("Referrer-Policy", "no-referrer");
     if (
-      /^\/(?:invite\/|invitations\/|sign-in(?:$|\/)|api\/auth\/|api\/v1\/(?:members|invitations|notifications|workspace\/(?:ownership|audit))(?:$|\/))/.test(
+      /^\/(?:invite\/|owner-invite\/|invitations\/|owner-invitations\/|sign-in(?:$|\/)|api\/auth\/|api\/public\/(?:invitations|owner-invitations)\/|api\/v1\/(?:members|invitations|owner-invitations|notifications|workspace\/(?:ownership|audit))(?:$|\/))/.test(
         context.req.path,
       )
     )
@@ -139,6 +144,16 @@ export function createApp({
     return invitation
       ? context.json({ invitation })
       : context.json({ error: "Invitation not found" }, 404);
+  });
+  app.get("/api/public/owner-invitations/:token", async (context) => {
+    context.header("Cache-Control", "no-store");
+    context.header("Referrer-Policy", "no-referrer");
+    const invitation = await new OwnerWorkspaceInvitationService(db).inspect(
+      context.req.param("token"),
+    );
+    return invitation
+      ? context.json({ invitation })
+      : context.json({ error: "Owner invitation not found" }, 404);
   });
 
   app.on(["GET", "POST"], "/api/auth/sign-up/*", (context) =>
@@ -255,6 +270,7 @@ export function createApp({
     const access = context.get("humanAccess");
 
     return context.json({
+      platformAdmin: await isInstanceOwner(db, ownerSession.user.id),
       user: {
         id: ownerSession.user.id,
         name: ownerSession.user.name,
@@ -395,6 +411,13 @@ export function createApp({
   app.route(
     "/api/v1",
     createInvitationRouter({ db, baseUrl: String(auth.options.baseURL), mail }),
+  );
+  app.route(
+    "/api/v1",
+    createOwnerInvitationRouter({
+      db,
+      baseUrl: String(auth.options.baseURL),
+    }),
   );
   app.route("/api/v1", createExtensionAccountRouter(db, auth));
   app.route("/api/v1", createEvidenceRouter(db, captureStorage));

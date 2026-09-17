@@ -21,6 +21,24 @@ type AuthErrorBody = {
   error?: string;
 };
 
+type InvitationKind = "member" | "owner";
+
+function invitationPaths(kind: InvitationKind) {
+  return kind === "owner"
+    ? {
+        publicApi: "/api/public/owner-invitations",
+        authApi: "/api/auth/owner-invitations",
+        publicPath: "/owner-invite",
+        privatePath: "/owner-invitations",
+      }
+    : {
+        publicApi: "/api/public/invitations",
+        authApi: "/api/auth/invitations",
+        publicPath: "/invite",
+        privatePath: "/invitations",
+      };
+}
+
 async function authPost<T>(path: string, body: Record<string, unknown>) {
   const response = await fetch(path, {
     method: "POST",
@@ -46,19 +64,27 @@ async function authPost<T>(path: string, body: Record<string, unknown>) {
 function invitationError(code: string | undefined, fallback: string) {
   switch (code) {
     case "INVITATION_EMAIL_MISMATCH":
+    case "OWNER_INVITATION_EMAIL_MISMATCH":
       return "This Issopen account does not match the invitation. Switch to the invited account; no project access has been granted.";
     case "EXISTING_ACCOUNT_REQUIRES_SIGN_IN":
       return "This email already has an Issopen account. Sign in with that account first, then return here to accept the invitation.";
     case "INVITATION_EXPIRED":
     case "INVITATION_REVOKED":
     case "INVITATION_UNAVAILABLE":
+    case "OWNER_INVITATION_EXPIRED":
+    case "OWNER_INVITATION_REVOKED":
+    case "OWNER_INVITATION_UNAVAILABLE":
       return "This invitation has expired or was revoked. Ask the workspace Owner for a new private link; retrying this one will not grant access.";
     case "INVITATION_NOT_FOUND":
+    case "OWNER_INVITATION_NOT_FOUND":
       return "This invitation is unavailable for this account. Use the account it was sent to, or ask the workspace Owner for a new private link.";
     case "INVITATION_USED":
+    case "OWNER_INVITATION_USED":
       return "This invitation cannot be resumed in this browser. Reopen its latest private link, or ask the Owner to revoke it and send a new one.";
     case "GOOGLE_REAUTH_REQUIRED":
       return "Verify this invitation with the matching Google account before continuing. Your workspace access is not active yet.";
+    case "OWNER_WORKSPACE_ALREADY_EXISTS":
+      return "This Issopen account already owns a workspace. Each account can own only one workspace.";
     default:
       return (
         fallback ||
@@ -110,11 +136,14 @@ export function InvitationRedeemRoute({
   token,
   authenticated,
   onRedeemed,
+  kind = "member",
 }: {
   token: string;
   authenticated: boolean;
   onRedeemed: (invitationId: string) => Promise<void>;
+  kind?: InvitationKind;
 }) {
+  const paths = invitationPaths(kind);
   const [invitation, setInvitation] = useState<PublicInvitation | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -132,7 +161,7 @@ export function InvitationRedeemRoute({
     setRequiresSignIn(false);
     setWrongAccount(false);
     setBusy(false);
-    fetch(`/api/public/invitations/${encodeURIComponent(token)}`, {
+    fetch(`${paths.publicApi}/${encodeURIComponent(token)}`, {
       cache: "no-store",
       referrerPolicy: "no-referrer",
       signal: controller.signal,
@@ -157,7 +186,7 @@ export function InvitationRedeemRoute({
       generation.current++;
       controller.abort();
     };
-  }, [token]);
+  }, [paths.publicApi, token]);
 
   async function redeem() {
     const requestGeneration = generation.current;
@@ -166,7 +195,7 @@ export function InvitationRedeemRoute({
     setRequiresSignIn(false);
     try {
       const response = await authPost<{ invitationId: string }>(
-        "/api/auth/invitations/redeem",
+        `${paths.authApi}/redeem`,
         { token },
       );
       if (requestGeneration === generation.current)
@@ -175,7 +204,12 @@ export function InvitationRedeemRoute({
       if (requestGeneration !== generation.current) return;
       const authError = caught as Error & { code?: string };
       setRequiresSignIn(authError.code === "EXISTING_ACCOUNT_REQUIRES_SIGN_IN");
-      setWrongAccount(authError.code === "INVITATION_EMAIL_MISMATCH");
+      setWrongAccount(
+        [
+          "INVITATION_EMAIL_MISMATCH",
+          "OWNER_INVITATION_EMAIL_MISMATCH",
+        ].includes(authError.code ?? ""),
+      );
       setError(invitationError(authError.code, authError.message));
       setBusy(false);
     }
@@ -186,7 +220,10 @@ export function InvitationRedeemRoute({
   return (
     <div className="form-stack invitation-page">
       <p className="eyebrow">Private workspace invitation</p>
-      <PageHeading>Join {invitation?.workspaceName ?? "Issopen"}</PageHeading>
+      <PageHeading>
+        {kind === "owner" ? "Own" : "Join"}{" "}
+        {invitation?.workspaceName ?? "Issopen"}
+      </PageHeading>
       {error ? (
         <StatusBanner error focus>
           {error}
@@ -215,8 +252,8 @@ export function InvitationRedeemRoute({
           ) : invitation.state === "accepted" ? (
             <StatusBanner>
               This invitation was already accepted. Sign in to the invited
-              account to open your projects; the link cannot be used for another
-              person.
+              account to open your {kind === "owner" ? "workspace" : "projects"}
+              ; the link cannot be used for another person.
             </StatusBanner>
           ) : (
             <StatusBanner error>
@@ -228,13 +265,15 @@ export function InvitationRedeemRoute({
           (!authenticated && invitation.state === "accepted") ? (
             <AppLink
               className="button button-secondary"
-              href={`/sign-in?returnTo=${encodeURIComponent(`/invite/${token}`)}`}
+              href={`/sign-in?returnTo=${encodeURIComponent(`${paths.publicPath}/${token}`)}`}
             >
               Sign in first
             </AppLink>
           ) : null}
           {wrongAccount && authenticated ? (
-            <SwitchInvitationAccount returnTo={`/invite/${token}`} />
+            <SwitchInvitationAccount
+              returnTo={`${paths.publicPath}/${token}`}
+            />
           ) : null}
           {invitation.state === "claimed" ? (
             <p className="helper-copy">
@@ -268,10 +307,13 @@ function useGoogleAvailability() {
 export function InvitationLinkRoute({
   invitationId,
   email,
+  kind = "member",
 }: {
   invitationId: string;
   email: string;
+  kind?: InvitationKind;
 }) {
+  const paths = invitationPaths(kind);
   const googleAvailable = useGoogleAvailability();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -282,8 +324,8 @@ export function InvitationLinkRoute({
     try {
       const result = await authPost<{ url: string }>("/api/auth/link-social", {
         provider: "google",
-        callbackURL: `/invitations/${invitationId}/complete`,
-        errorCallbackURL: `/invitations/${invitationId}/link?google=error`,
+        callbackURL: `${paths.privatePath}/${invitationId}/complete`,
+        errorCallbackURL: `${paths.privatePath}/${invitationId}/link?google=error`,
         loginHint: email,
       });
       const destination = new URL(result.url);
@@ -322,8 +364,9 @@ export function InvitationLinkRoute({
       ) : null}
       <section className="detail-panel form-stack">
         <p>
-          Continue with <strong>{email}</strong>. Issopen will only activate
-          this membership after Google confirms that exact verified address.
+          Continue with <strong>{email}</strong>. Issopen will only activate{" "}
+          {kind === "owner" ? "the new workspace" : "this membership"} after
+          Google confirms that exact verified address.
         </p>
         {googleAvailable === false ? (
           <StatusBanner error>
@@ -353,10 +396,13 @@ export function InvitationLinkRoute({
 export function InvitationCompleteRoute({
   invitationId,
   onAccepted,
+  kind = "member",
 }: {
   invitationId: string;
   onAccepted: (workspaceId: string) => Promise<void>;
+  kind?: InvitationKind;
 }) {
+  const paths = invitationPaths(kind);
   const [error, setError] = useState<string | null>(null);
   const [needsGoogle, setNeedsGoogle] = useState(false);
   const [unavailable, setUnavailable] = useState(false);
@@ -367,11 +413,15 @@ export function InvitationCompleteRoute({
     setError(null);
     setNeedsGoogle(false);
     try {
-      const result = await authPost<{ membership: { workspaceId: string } }>(
-        "/api/auth/invitations/accept",
-        { invitationId },
-      );
-      await onAccepted(result.membership.workspaceId);
+      const result = await authPost<{
+        membership?: { workspaceId: string };
+        workspace?: { workspaceId: string };
+      }>(`${paths.authApi}/accept`, { invitationId });
+      const workspaceId =
+        result.membership?.workspaceId ?? result.workspace?.workspaceId;
+      if (!workspaceId)
+        throw new Error("Invitation response did not include a workspace");
+      await onAccepted(workspaceId);
     } catch (caught) {
       const authError = caught as Error & { code?: string };
       setNeedsGoogle(authError.code === "GOOGLE_REAUTH_REQUIRED");
@@ -381,12 +431,16 @@ export function InvitationCompleteRoute({
           "INVITATION_UNAVAILABLE",
           "INVITATION_EXPIRED",
           "INVITATION_REVOKED",
+          "OWNER_INVITATION_NOT_FOUND",
+          "OWNER_INVITATION_UNAVAILABLE",
+          "OWNER_INVITATION_EXPIRED",
+          "OWNER_INVITATION_REVOKED",
         ].includes(authError.code ?? ""),
       );
       setError(invitationError(authError.code, authError.message));
       setBusy(false);
     }
-  }, [invitationId, onAccepted]);
+  }, [invitationId, onAccepted, paths.authApi]);
 
   useEffect(() => {
     void accept();
@@ -409,7 +463,7 @@ export function InvitationCompleteRoute({
           {needsGoogle ? (
             <AppLink
               className="button button-primary"
-              href={`/invitations/${invitationId}/link`}
+              href={`${paths.privatePath}/${invitationId}/link`}
             >
               Verify with Google again
             </AppLink>

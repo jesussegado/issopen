@@ -31,6 +31,8 @@ import {
   account,
   instanceOwner,
   membershipEvent,
+  ownerWorkspaceInvitation,
+  ownerWorkspaceInvitationEvent,
   project,
   session,
   user,
@@ -118,10 +120,13 @@ describe("private owner authentication", () => {
     const app = createTestApp();
     for (const path of [
       "/invite/synthetic-private-token",
+      "/owner-invite/synthetic-private-token",
       "/invitations/synthetic-id/link",
+      "/owner-invitations/synthetic-id/link",
       "/sign-in?returnTo=%2Finvite%2Fsynthetic-private-token",
       "/api/auth/get-session",
       "/api/public/invitations/synthetic-private-token",
+      "/api/public/owner-invitations/synthetic-private-token",
     ]) {
       const response = await app.request(path);
       expect(response.headers.get("cache-control"), path).toBe("no-store");
@@ -691,5 +696,174 @@ describe("private owner authentication", () => {
     expect(oldPassword.response.status).toBe(401);
     const newPassword = await signIn(app, "synthetic-owner-password-2");
     expect(newPassword.response.status).toBe(200);
+  });
+
+  it("lets only the instance owner provision an isolated Owner workspace", async () => {
+    const app = createTestApp();
+    await bootstrapOwner(connection.db, auth, ownerInput);
+    const signedIn = await signIn(app);
+    const mutationHeaders = {
+      "Content-Type": "application/json",
+      Cookie: signedIn.cookie,
+      Origin: baseUrl,
+    };
+    const firstWorkspace = await app.request("/api/v1/workspace", {
+      method: "POST",
+      headers: mutationHeaders,
+      body: JSON.stringify({ name: "Operator workspace" }),
+    });
+    expect(firstWorkspace.status).toBe(201);
+    const operatorSession = await app.request("/api/v1/session", {
+      headers: { Cookie: signedIn.cookie },
+    });
+    expect(await operatorSession.json()).toMatchObject({
+      platformAdmin: true,
+      workspace: { name: "Operator workspace", role: "owner" },
+    });
+
+    const invitationResponse = await app.request("/api/v1/owner-invitations", {
+      method: "POST",
+      headers: mutationHeaders,
+      body: JSON.stringify({
+        email: "new-owner@example.test",
+        workspaceName: "Independent workspace",
+      }),
+    });
+    expect(invitationResponse.status).toBe(201);
+    const invitationBody = (await invitationResponse.json()) as {
+      invitation: { id: string };
+      inviteUrl: string;
+    };
+    const rawToken = invitationBody.inviteUrl.split("/").at(-1);
+    if (!rawToken) throw new Error("Expected Owner invitation token");
+    const [storedInvitation] = await connection.db
+      .select()
+      .from(ownerWorkspaceInvitation)
+      .where(eq(ownerWorkspaceInvitation.id, invitationBody.invitation.id));
+    expect(storedInvitation?.tokenHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(storedInvitation?.tokenHash).not.toBe(rawToken);
+    expect(
+      await connection.db
+        .select()
+        .from(ownerWorkspaceInvitationEvent)
+        .where(
+          eq(
+            ownerWorkspaceInvitationEvent.invitationId,
+            invitationBody.invitation.id,
+          ),
+        ),
+    ).toHaveLength(1);
+
+    const publicInvitation = await app.request(
+      `/api/public/owner-invitations/${rawToken}`,
+    );
+    expect(publicInvitation.status).toBe(200);
+    expect(await publicInvitation.json()).toMatchObject({
+      invitation: {
+        workspaceName: "Independent workspace",
+        email: "ne*******@example.test",
+        state: "pending",
+      },
+    });
+
+    const redeemed = await app.request("/api/auth/owner-invitations/redeem", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Origin: baseUrl },
+      body: JSON.stringify({ token: rawToken }),
+    });
+    expect(redeemed.status).toBe(200);
+    const provisionalCookie =
+      redeemed.headers.get("set-cookie")?.split(";", 1)[0] ?? "";
+    expect(provisionalCookie).toContain("issopen.session_token=");
+    const [claimed] = await connection.db
+      .select()
+      .from(ownerWorkspaceInvitation)
+      .where(eq(ownerWorkspaceInvitation.id, invitationBody.invitation.id));
+    if (!claimed?.claimedByUserId || !claimed.claimedAt)
+      throw new Error("Expected claimed Owner invitation");
+    await connection.db.insert(account).values({
+      id: "synthetic-owner-google-account",
+      issuer: "https://accounts.google.com",
+      accountId: "synthetic-owner-google-subject",
+      providerId: "google",
+      userId: claimed.claimedByUserId,
+      createdAt: new Date(claimed.claimedAt.getTime() + 1_000),
+      updatedAt: new Date(claimed.claimedAt.getTime() + 1_000),
+    });
+
+    const accepted = await app.request("/api/auth/owner-invitations/accept", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Cookie: provisionalCookie,
+        Origin: baseUrl,
+      },
+      body: JSON.stringify({ invitationId: invitationBody.invitation.id }),
+    });
+    expect(accepted.status).toBe(200);
+    const ownerSetCookie = accepted.headers.get("set-cookie") ?? "";
+    const ownerTokens = [
+      ...ownerSetCookie.matchAll(/issopen\.session_token=([^;,]+)/g),
+    ];
+    const ownerCookie = `issopen.session_token=${ownerTokens.at(-1)?.[1] ?? ""}`;
+    expect(ownerCookie).toContain("issopen.session_token=");
+    const acceptedBody = (await accepted.json()) as {
+      workspace: { workspaceId: string };
+    };
+    const newOwnerSession = await app.request("/api/v1/session", {
+      headers: { Cookie: ownerCookie },
+    });
+    expect(await newOwnerSession.json()).toMatchObject({
+      platformAdmin: false,
+      workspace: {
+        id: acceptedBody.workspace.workspaceId,
+        name: "Independent workspace",
+        role: "owner",
+      },
+    });
+
+    const ownerHeaders = {
+      "Content-Type": "application/json",
+      Cookie: ownerCookie,
+      Origin: baseUrl,
+    };
+    const forbiddenOwnerProvisioning = await app.request(
+      "/api/v1/owner-invitations",
+      {
+        method: "POST",
+        headers: ownerHeaders,
+        body: JSON.stringify({
+          email: "third-owner@example.test",
+          workspaceName: "Forbidden workspace",
+        }),
+      },
+    );
+    expect(forbiddenOwnerProvisioning.status).toBe(403);
+
+    const createdProject = await app.request("/api/v1/projects", {
+      method: "POST",
+      headers: ownerHeaders,
+      body: JSON.stringify({ name: "Private project", key: "PRIVATE" }),
+    });
+    expect(createdProject.status).toBe(201);
+    const projectBody = (await createdProject.json()) as {
+      project: { id: string };
+    };
+    const memberInvitation = await app.request("/api/v1/invitations", {
+      method: "POST",
+      headers: ownerHeaders,
+      body: JSON.stringify({
+        email: "member@example.test",
+        projectIds: [projectBody.project.id],
+        delivery: "manual",
+      }),
+    });
+    expect(memberInvitation.status).toBe(201);
+    expect(
+      await connection.db
+        .select()
+        .from(workspace)
+        .where(eq(workspace.id, acceptedBody.workspace.workspaceId)),
+    ).toHaveLength(1);
   });
 });

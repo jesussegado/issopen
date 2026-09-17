@@ -29,6 +29,16 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+17/09 ticket114: nuevo flujo privado para ampliar la instancia con Owners de
+workspaces aislados. Sólo el singleton `instance_owner` crea/rota/revoca enlaces;
+un Owner normal nunca hereda administración global. Email exacto y Google
+posterior al claim, token sólo como hash, aceptación atómica, eventos append-only
+y un workspace propio por identidad. El nuevo Owner puede crear proyectos e
+invitar sus Members con el flujo existente; el operador no recibe acceso al
+nuevo workspace. Contrato y recuperación en
+[Owner workspaces](docs/owner-workspace-invitations.md). No habilitar signup
+público ni convertir el rol Owner de workspace en administrador de instancia.
+
 17/09 ticket98: la segunda causa del piloto Google era una identidad provisional
 abandonada por el intento anterior a la invitación. La adopción acotada sólo acepta
 identidades sin verificar, proveedor, membresía, ownership ni otra invitación activa,

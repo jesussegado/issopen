@@ -29,6 +29,7 @@ import {
   oauthAccessToken,
   oauthClient,
   oauthRefreshToken,
+  ownerWorkspaceInvitation,
   project,
   projectMembership,
   session,
@@ -784,10 +785,27 @@ async function redeemInvitation(
           .from(workspaceMembership)
           .where(eq(workspaceMembership.userId, invite.claimedByUserId))
           .limit(1);
+        const [ownerClaim] = await tx
+          .select({ id: ownerWorkspaceInvitation.id })
+          .from(ownerWorkspaceInvitation)
+          .where(
+            and(
+              eq(
+                ownerWorkspaceInvitation.claimedByUserId,
+                invite.claimedByUserId,
+              ),
+              isNotNull(ownerWorkspaceInvitation.claimedAt),
+              isNull(ownerWorkspaceInvitation.acceptedAt),
+              isNull(ownerWorkspaceInvitation.revokedAt),
+              gt(ownerWorkspaceInvitation.expiresAt, now),
+            ),
+          )
+          .limit(1);
         const resumableProvisionalIdentity =
           claimedUser?.emailVerified === false &&
           !linkedAccount &&
-          !existingMembership;
+          !existingMembership &&
+          !ownerClaim;
         if (
           claimedUser &&
           normalizedEmail(claimedUser.email) === invite.email &&
@@ -863,13 +881,27 @@ async function redeemInvitation(
             ),
           )
           .limit(1);
+        const [ownerActiveClaim] = await tx
+          .select({ id: ownerWorkspaceInvitation.id })
+          .from(ownerWorkspaceInvitation)
+          .where(
+            and(
+              eq(ownerWorkspaceInvitation.claimedByUserId, existingUser.id),
+              isNotNull(ownerWorkspaceInvitation.claimedAt),
+              isNull(ownerWorkspaceInvitation.acceptedAt),
+              isNull(ownerWorkspaceInvitation.revokedAt),
+              gt(ownerWorkspaceInvitation.expiresAt, now),
+            ),
+          )
+          .limit(1);
         const reusableAbandonedIdentity =
           existingUser.emailVerified === false &&
           !linkedAccount &&
           !existingMembership &&
           !ownedInstance &&
           !ownedWorkspace &&
-          !otherActiveClaim;
+          !otherActiveClaim &&
+          !ownerActiveClaim;
         if (!reusableAbandonedIdentity) {
           throw new APIError("CONFLICT", {
             code: "EXISTING_ACCOUNT_REQUIRES_SIGN_IN",

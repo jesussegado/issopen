@@ -33,6 +33,7 @@ import {
 import { IssueDetailRoute } from "./routes/IssueDetailRoute.js";
 import { MembersRoute } from "./routes/MembersRoute.js";
 import { NotificationsRoute } from "./routes/NotificationsRoute.js";
+import { OwnerInvitationsRoute } from "./routes/OwnerInvitationsRoute.js";
 import { OwnershipRoute } from "./routes/OwnershipRoute.js";
 import { PrivacyRoute } from "./routes/PrivacyRoute.js";
 import {
@@ -124,6 +125,22 @@ export function App() {
       </PublicShell>
     );
   const inviteMatch = pathname.match(/^\/invite\/([^/]+)$/);
+  const ownerInviteMatch = pathname.match(/^\/owner-invite\/([^/]+)$/);
+  if (ownerInviteMatch?.[1]) {
+    return (
+      <PublicShell>
+        <InvitationRedeemRoute
+          kind="owner"
+          token={ownerInviteMatch[1]}
+          authenticated={screen.kind === "authenticated"}
+          onRedeemed={async (invitationId) => {
+            await readSession();
+            navigate(`/owner-invitations/${invitationId}/link`, true);
+          }}
+        />
+      </PublicShell>
+    );
+  }
   if (inviteMatch?.[1]) {
     return (
       <PublicShell>
@@ -151,6 +168,36 @@ export function App() {
   const invitationCompleteMatch = pathname.match(
     /^\/invitations\/([^/]+)\/complete$/,
   );
+  const ownerInvitationLinkMatch = pathname.match(
+    /^\/owner-invitations\/([^/]+)\/link$/,
+  );
+  const ownerInvitationCompleteMatch = pathname.match(
+    /^\/owner-invitations\/([^/]+)\/complete$/,
+  );
+  if (ownerInvitationLinkMatch?.[1]) {
+    return (
+      <PublicShell>
+        <InvitationLinkRoute
+          kind="owner"
+          invitationId={ownerInvitationLinkMatch[1]}
+          email={screen.session.user.email}
+        />
+      </PublicShell>
+    );
+  }
+  if (ownerInvitationCompleteMatch?.[1]) {
+    return (
+      <PublicShell>
+        <InvitationCompleteRoute
+          kind="owner"
+          invitationId={ownerInvitationCompleteMatch[1]}
+          onAccepted={async (workspaceId) => {
+            switchWorkspace(workspaceId);
+          }}
+        />
+      </PublicShell>
+    );
+  }
   if (invitationLinkMatch?.[1]) {
     return (
       <PublicShell>
@@ -299,6 +346,8 @@ function AuthenticatedApp({
     route = <AgentsRoute projects={projects} />;
   else if (pathname === "/members" && session.workspace.role === "owner")
     route = <MembersRoute projects={projects} />;
+  else if (pathname === "/owners" && session.platformAdmin)
+    route = <OwnerInvitationsRoute />;
   else if (pathname === "/audit" && session.workspace.role === "owner")
     route = <AccessAuditRoute workspaceId={session.workspace.id} />;
   else if (pathname === "/notifications")

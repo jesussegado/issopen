@@ -61,7 +61,9 @@ it.each([
 it.each([
   "/projects/a?workspace=space",
   "/invite/private-token",
+  "/owner-invite/private-token",
   "/invitations/id/link",
+  "/owner-invitations/id/link",
   "/api/auth/oauth2/authorize?client_id=foo&redirect_uri=https%3A%2F%2Fexample.test%2Fcallback",
 ])("preserves internal authorized-flow destination %s", (path) =>
   expect(safeInternalPath(path)).toBe(path),
@@ -224,6 +226,53 @@ it("an unavailable acceptance directs to recovery instead of an endless retry", 
   expect(
     screen.queryByRole("button", { name: "Try again" }),
   ).not.toBeInTheDocument();
+});
+
+it("uses the dedicated Owner endpoints and activates the created workspace", async () => {
+  const accepted = vi.fn(async () => {});
+  const fetchMock = vi.fn(async (input: unknown, init?: RequestInit) => {
+    const path = String(input);
+    if (path === "/api/public/owner-invitations/private-token")
+      return json({ invitation });
+    if (path === "/api/auth/owner-invitations/redeem")
+      return json({ invitationId: "owner-invite-id" });
+    if (
+      path === "/api/auth/owner-invitations/accept" &&
+      init?.method === "POST"
+    )
+      return json({ workspace: { workspaceId: "new-workspace" } });
+    throw new Error(`Unexpected request ${path}`);
+  });
+  vi.stubGlobal("fetch", fetchMock);
+  const redeemed = vi.fn(async () => {});
+  const view = render(
+    <InvitationRedeemRoute
+      kind="owner"
+      token="private-token"
+      authenticated={false}
+      onRedeemed={redeemed}
+    />,
+  );
+  expect(
+    await screen.findByRole("heading", { name: "Own Invited space" }),
+  ).toBeVisible();
+  await userEvent.click(
+    screen.getByRole("button", { name: "Continue securely" }),
+  );
+  expect(redeemed).toHaveBeenCalledWith("owner-invite-id");
+  expect(fetchMock).toHaveBeenCalledWith(
+    "/api/auth/owner-invitations/redeem",
+    expect.objectContaining({ method: "POST" }),
+  );
+
+  view.rerender(
+    <InvitationCompleteRoute
+      kind="owner"
+      invitationId="owner-invite-id"
+      onAccepted={accepted}
+    />,
+  );
+  await waitFor(() => expect(accepted).toHaveBeenCalledWith("new-workspace"));
 });
 
 it("ignores a late redemption after switching to a different invitation", async () => {
