@@ -38,6 +38,10 @@ por fetch sin restricciones ni habilitar DCR como workaround. Diagnóstico y
 regresiones en `.planning/debug/chatgpt-authenticate.md`; operación en
 [onboarding](docs/agent-onboarding.md). El handshake con fixtures no sustituye
 la aceptación final dentro de la cuenta ChatGPT del propietario.
+Verificado17Sep: fuente381fdf3 incorporada por release20c4b30/GitOpsaf286bf0,
+ArgoSynced/Healthy/PVCsintactos. Metadatos/JWKS reales200 y navegador nuevo
+Owner→consentimientoChatGPT habilitado1440/360; sin otorgar un grant de prueba.
+El propietario debe reintentar Authenticate desde ChatGPT para aceptación final.
 
 ### Regla de sincronización del onboarding
 

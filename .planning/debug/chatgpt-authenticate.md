@@ -1,8 +1,8 @@
 ---
-status: verifying
+status: resolved
 trigger: "el error que da es al hacer authenticate"
 created: 2026-09-17T20:27:00Z
-updated: 2026-09-17T20:36:00Z
+updated: 2026-09-17T20:44:00Z
 ---
 
 ## Symptoms
@@ -18,7 +18,8 @@ and canonical /mcp resource. No user secret needed to reproduce.
 hypothesis: confirmed dependency lookup-shape mismatch, plus missing signed
 OAuth context on web sign-in. No separate debugger: continuing inline under
 the skill's no-automatic-spawn fallback, with symptoms already supplied/reproduced.
-next_action: complete gates and GitOps release, then production authorize smoke.
+next_action: Owner retries Authenticate from the actual ChatGPT account; no more
+technical blocker observed. Do not treat production consent smoke as final grant.
 tdd_checkpoint: transport test failed on scalar vs array before patch; eight
 transport tests and signed-login/CIMD token-exchange regression now pass.
 
@@ -47,7 +48,11 @@ transport tests and signed-login/CIMD token-exchange regression now pass.
 root_cause: dependency incompatibility plus lost login continuation.
 fix: version-pinned pnpm patch packaged in both Docker stages; web sends signed
 query to backend and follows successful server continuation; onboarding aligned.
-verification: local regressions pass; full gates/deployment pending.
+verification: full isolated pnpm validate/Compose pass; GitOpsaf286bf0 contains
+fix381fdf3 in source20c4b30, image103cd7d0. Synced/Healthy, Ready0restarts, same
+PVCs. Production official metadata/JWKS200. Isolated Playwright Owner login reaches
+ChatGPT consent with enabled Allow at1440/360/no overflow/no page errors. No grant
+created; test session signed out200. User's ChatGPT completion remains unverified.
 scope: ticket117, no database migration or credential/permission changes.
 tooling: gsd-sdk is not installed in this shell; STATE/config and the debug
 record are maintained directly as the documented fallback, without rerunning

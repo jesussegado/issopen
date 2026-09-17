@@ -22,8 +22,14 @@ User reports Authenticate failure. Confirmed CIMD1.7.2/Node24 pinned DNS callbac
 shape error before login, plus web sign-in losing the signed OAuth continuation.
 Plan derived from issue117v4/questions[] in quick/260917-oauth117; persistent
 debug evidence in debug/chatgpt-authenticate.md. Patched dependency, isolated
-regressions, updated onboarding; full gates/release ongoing. No credential,
-permission or schema changes. Do not infer actual ChatGPT account acceptance.
+regressions and updated onboarding. Full gate on isolated85c03e3 passes192unit/web,
+115integration,42webE2E+2skips,Chrome validation/reproducibility and secret scan441;
+Compose and140GitOps tests pass. Fix381fdf3 is included in concurrently released
+20c4b30/GitOpsaf286bf0/digest103cd7d0 (no older image overwrite). ArgoSynced/Healthy,
+podReady0restarts/PVCunchanged. Live official CIMD+JWKS200, fresh Owner browser login
+continues to enabled ChatGPT consent at1440/360, no overflow/page errors; isolated
+test session signed out. Consent not granted; final ChatGPT account acceptance
+still belongs to the user. No credential, permission or schema changes.
 
 ## Project Reference
 
