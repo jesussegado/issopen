@@ -1667,7 +1667,7 @@ progress {
   }
 }
 
-@media (max-width: 350px) {
+@media (max-width: 420px) {
   .authenticated-header .wordmark span {
     display: none;
   }
