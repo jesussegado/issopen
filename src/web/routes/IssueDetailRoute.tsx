@@ -781,6 +781,14 @@ export function IssueDetailRoute({
           </div>
         </div>
         <div className="page-actions">
+          {epic && !epic.archivedAt ? (
+            <AppLink
+              className="button button-secondary"
+              href={`/projects/${issue.projectId}?epic=${epic.id}`}
+            >
+              View Epic on board
+            </AppLink>
+          ) : null}
           {canEdit ? (
             <AppLink
               className="button button-secondary"

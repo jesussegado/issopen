@@ -815,6 +815,9 @@ describe("tracker web routes", () => {
       name: "Change status for 1",
     });
     expect(
+      screen.queryByRole("link", { name: "View Epic on board" }),
+    ).not.toBeInTheDocument();
+    expect(
       within(status).queryByRole("option", {
         name: "Ready for Human Review",
       }),
@@ -822,6 +825,38 @@ describe("tracker web routes", () => {
     expect(within(status).getByRole("option", { name: "Done" })).toBeVisible();
     await user.selectOptions(status, "done");
     expect(await screen.findByText("1 moved to Done")).toBeVisible();
+  });
+
+  it("links an active ticket Epic to its filtered board", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const path = String(input);
+        if (path === `/api/v1/issues/${issue.id}`)
+          return json({
+            issue: { ...issue, epicId: epic.id },
+            epic,
+            codeLinks: [],
+            comments: [],
+            questions: [],
+            questionSummary: { total: 0, answered: 0, unansweredBlocking: 0 },
+          });
+        if (path === `/api/v1/issues/${issue.id}/activity`)
+          return json({ activity: [] });
+        if (path === `/api/v1/issues/${issue.id}/evidence`)
+          return json({ evidence: [] });
+        if (path === `/api/v1/epics/${epic.id}`)
+          return json({ issues: [{ ...issue, epicId: epic.id }] });
+        if (path === `/api/v1/projects/${project.id}`) return json({ project });
+        throw new Error(`Unexpected request: ${path}`);
+      }),
+    );
+    window.history.replaceState({}, "", `/issues/${issue.id}`);
+    render(<IssueDetailRoute issueId={issue.id} session={ownerSession} />);
+
+    expect(
+      await screen.findByRole("link", { name: "View Epic on board" }),
+    ).toHaveAttribute("href", `/projects/${project.id}?epic=${epic.id}`);
   });
 
   it("filters the board by Epic and links the expanded card to its container", async () => {
