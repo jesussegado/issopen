@@ -3,18 +3,33 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Google invitation recovery deployed; Owner reopens the same private link and repeats exact-account verification for ticket98
-last_updated: "2026-09-16T16:00:00Z"
-last_activity: 2026-09-16
+stopped_at: Ticket 68 completion workflow deployed and delivered to human review
+last_updated: "2026-09-21T08:24:30Z"
+last_activity: 2026-09-21
 progress:
   total_phases: 9
   completed_phases: 0
-  total_plans: 5
-  completed_plans: 4
-  percent: 80
+  total_plans: 6
+  completed_plans: 5
+  percent: 83
 ---
 
 # Project State
+
+## Follow-up 21Sep — Project completion workflow (ticket68)
+
+Human decision v2: disabling Ready for Human Review makes verified agent work
+finish directly at Done. `showReviewColumn` now governs new completion
+transitions; historical review tickets remain readable and `showDoneColumn`
+stays visual-only. MCP exposes the effective policy through `get_project.workflow`;
+web selectors, skill0.2.1, all onboarding surfaces and AGENTS agree. Closing
+still requires independent `issues:close`; no grant or migration was added.
+Full gates pass:194unit/web,118integration,42webE2E+2skips,Chrome16+13,
+reproducible skill/build, Compose, scan443 and140GitOps tests/render. Source
+5ebb449/GitOps84c294b5/digest374c0345 observed Synced/Healthy, podReady0restarts,
+readinessOK and PVCs Bound. Live onboarding and MCP policy verified. Issopen's
+own project currently requires human review, so 68 is ReadyHumanReview v9 with
+evidence/commit linked and no claim. See quick260921-r68 summary.
 
 ## Follow-up 17Sep — ChatGPT Authenticate (ticket117)
 
