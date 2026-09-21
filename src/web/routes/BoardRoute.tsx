@@ -519,21 +519,40 @@ export function BoardRoute({
         />
       ) : (
         <>
-          <div className="board-toolbar">
-            <label className="field" htmlFor="assignee-filter">
-              <span>Human assignee</span>
+          <section
+            className="board-toolbar"
+            aria-labelledby="board-filters-heading"
+          >
+            <div className="board-toolbar-heading">
+              <h2 id="board-filters-heading">Filter tickets</h2>
+              <p className="metadata">
+                Narrow the board without changing ticket status.
+              </p>
+            </div>
+            <label
+              className="field board-filter board-filter-status"
+              htmlFor="status-filter"
+            >
+              <span>Show status</span>
               <Select
-                id="assignee-filter"
-                value={assigneeMode}
-                onChange={(event) => setAssigneeMode(event.currentTarget.value)}
+                id="status-filter"
+                value={filter}
+                onChange={(event) =>
+                  setFilter(event.currentTarget.value as "all" | IssueStatus)
+                }
               >
-                <option value="all">All people</option>
-                <option value="mine">My tickets</option>
-                <option value="unassigned">Unassigned</option>
-                <option value="person">Choose a person</option>
+                <option value="all">All statuses</option>
+                {columns.map((column) => (
+                  <option key={column.status} value={column.status}>
+                    {statusLabels[column.status]}
+                  </option>
+                ))}
               </Select>
             </label>
-            <label className="field" htmlFor="epic-filter">
+            <label
+              className="field board-filter board-filter-epic"
+              htmlFor="epic-filter"
+            >
               <span>Show Epic</span>
               <Select
                 id="epic-filter"
@@ -556,24 +575,10 @@ export function BoardRoute({
                 ))}
               </Select>
             </label>
-            <label className="field" htmlFor="status-filter">
-              <span>Show status</span>
-              <Select
-                id="status-filter"
-                value={filter}
-                onChange={(event) =>
-                  setFilter(event.currentTarget.value as "all" | IssueStatus)
-                }
-              >
-                <option value="all">All statuses</option>
-                {columns.map((column) => (
-                  <option key={column.status} value={column.status}>
-                    {statusLabels[column.status]}
-                  </option>
-                ))}
-              </Select>
-            </label>
-            <label className="field" htmlFor="warning-filter">
+            <label
+              className="field board-filter board-filter-questions"
+              htmlFor="warning-filter"
+            >
               <span>Show questions</span>
               <Select
                 id="warning-filter"
@@ -589,7 +594,23 @@ export function BoardRoute({
                 <option value="for_me">Questions for me</option>
               </Select>
             </label>
-          </div>
+            <label
+              className="field board-filter board-filter-assignee"
+              htmlFor="assignee-filter"
+            >
+              <span>Human assignee</span>
+              <Select
+                id="assignee-filter"
+                value={assigneeMode}
+                onChange={(event) => setAssigneeMode(event.currentTarget.value)}
+              >
+                <option value="all">All people</option>
+                <option value="mine">My tickets</option>
+                <option value="unassigned">Unassigned</option>
+                <option value="person">Choose a person</option>
+              </Select>
+            </label>
+          </section>
           {assigneeMode === "person" ? (
             <section className="detail-panel" aria-label="Filter by person">
               <p>
@@ -641,8 +662,13 @@ export function BoardRoute({
             >
               {canEdit ? (
                 <p className="drag-instructions">
-                  Drag tickets between columns, or expand a ticket and use its
-                  status selector.
+                  <span className="pointer-board-instructions">
+                    Drag tickets between columns, or expand a ticket and use its
+                    status selector.
+                  </span>
+                  <span className="touch-board-instructions">
+                    Expand a ticket and use its status selector to move it.
+                  </span>
                 </p>
               ) : null}
               <div className={`board board-columns-${columns.length}`}>
@@ -720,8 +746,20 @@ export function BoardRoute({
                                     <AppLink
                                       className="issue-card-title"
                                       href={`/issues/${issue.id}`}
+                                      aria-label={issueLabel(issue)}
                                     >
-                                      {issueLabel(issue)}
+                                      <span
+                                        className="issue-card-number"
+                                        aria-hidden="true"
+                                      >
+                                        {issue.number}-
+                                      </span>
+                                      <span
+                                        className="issue-card-title-text"
+                                        aria-hidden="true"
+                                      >
+                                        {issue.title}
+                                      </span>
                                     </AppLink>
                                     <button
                                       className="disclosure-button"
@@ -736,7 +774,12 @@ export function BoardRoute({
                                       </span>
                                     </button>
                                   </div>
-                                  <AssigneeLabel issue={issue} />
+                                  <div className="issue-card-compact-meta">
+                                    <Badge>
+                                      {priorityLabels[issue.priority]}
+                                    </Badge>
+                                    <AssigneeLabel issue={issue} />
+                                  </div>
                                   {(issue.questionSummary?.directedUnanswered ??
                                     0) > 0 ? (
                                     <AppLink
@@ -786,9 +829,6 @@ export function BoardRoute({
                                           ) : null}
                                         </>
                                       ) : null}
-                                      <Badge>
-                                        {priorityLabels[issue.priority]}
-                                      </Badge>
                                       {(issue.questionSummary?.total ?? 0) >
                                       0 ? (
                                         <Badge>

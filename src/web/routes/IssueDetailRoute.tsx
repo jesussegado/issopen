@@ -748,7 +748,7 @@ export function IssueDetailRoute({
   if (missing || !issue || !project) return <UnavailableRoute />;
   const canEdit = project.canEdit !== false;
   return (
-    <div className="detail-column">
+    <div className="detail-column issue-detail-page">
       <div className="page-header">
         <div>
           <div className="issue-metadata">
@@ -897,6 +897,7 @@ export function IssueDetailRoute({
       ) : null}
       <Button
         variant="secondary"
+        className="detail-refresh-button"
         disabled={refreshing || submitting !== null || !online}
         onClick={() => refreshLiveRef.current()}
       >

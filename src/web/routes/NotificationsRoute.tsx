@@ -55,7 +55,8 @@ export function NotificationLink({ workspaceId }: { workspaceId: string }) {
       href="/notifications"
       aria-label={`Notifications${unread === null ? ", count unavailable" : `, ${unread} unread`}`}
     >
-      <span aria-hidden="true">🔔</span> Notifications{" "}
+      <span aria-hidden="true">🔔</span>{" "}
+      <span className="notification-label">Notifications</span>{" "}
       {unread !== null ? <span className="badge">{unread}</span> : null}
     </AppLink>
   );

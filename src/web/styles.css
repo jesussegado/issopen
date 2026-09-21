@@ -808,13 +808,24 @@ progress {
 }
 
 .board-toolbar {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
-  margin-bottom: 16px;
+  margin-bottom: 24px;
+  padding: 20px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
 }
-.board-toolbar .field {
-  min-width: min(100%, 220px);
+.board-toolbar-heading {
+  grid-column: 1 / -1;
+}
+.board-toolbar-heading h2,
+.board-toolbar-heading p {
+  margin: 0;
+}
+.board-toolbar-heading p {
+  margin-top: 4px;
 }
 .project-epics {
   margin-bottom: 24px;
@@ -841,7 +852,7 @@ progress {
 }
 .project-epic-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 12px;
   margin: 0;
   padding: 0;
@@ -849,49 +860,71 @@ progress {
 }
 .project-epic-card {
   display: grid;
-  gap: 12px;
+  gap: 8px;
   min-width: 0;
-  padding: 16px;
+  padding: 12px;
   border: 1px solid var(--color-border);
   border-radius: 8px;
   background: var(--color-subtle);
+}
+.epic-card-title {
+  font-size: 18px;
+  font-weight: 600;
+}
+.project-epic-card .epic-card-title {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.project-epic-card .button {
+  min-height: 36px;
+  padding: 4px 12px;
+  font-size: 14px;
 }
 .epic-board-link {
   justify-self: start;
 }
 .board-region {
   overflow-x: auto;
-  padding: 4px;
+  padding: 4px 4px 16px;
+  scrollbar-color: var(--color-control-border) var(--color-subtle);
 }
 .drag-instructions {
   margin: 0 0 12px;
   color: var(--color-muted);
   font-size: 14px;
 }
+.touch-board-instructions {
+  display: none;
+}
 .board {
   display: grid;
-  grid-template-columns: repeat(5, minmax(208px, 1fr));
+  grid-template-columns: repeat(5, minmax(280px, 360px));
   gap: 16px;
-  min-width: 1120px;
+  min-width: 1464px;
+  align-items: start;
 }
 .board-columns-4 {
-  grid-template-columns: repeat(4, minmax(208px, 1fr));
-  min-width: 896px;
+  grid-template-columns: repeat(4, minmax(280px, 360px));
+  min-width: 1168px;
 }
 .board-columns-3 {
-  grid-template-columns: repeat(3, minmax(208px, 1fr));
-  min-width: 672px;
+  grid-template-columns: repeat(3, minmax(280px, 360px));
+  min-width: 872px;
 }
 .board-column {
   min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  transition:
-    background-color 120ms ease,
-    box-shadow 120ms ease;
+  background: var(--color-subtle);
+  transition: background-color 120ms ease;
 }
 .board-column.is-drop-target {
   background: var(--color-accent-soft);
-  box-shadow: 0 0 0 3px var(--color-accent);
+  outline: 3px solid var(--color-accent);
+  outline-offset: -3px;
 }
 .board-column-header {
   display: flex;
@@ -928,12 +961,11 @@ progress {
   line-height: 1;
 }
 .board-column.is-collapsed .board-column-header {
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 0;
 }
 .issue-list {
   display: grid;
-  gap: 16px;
+  gap: 12px;
   padding: 0;
   list-style: none;
 }
@@ -942,6 +974,11 @@ progress {
   border: 1px solid var(--color-border);
   border-radius: 8px;
   background: var(--color-surface);
+  transition: border-color 120ms ease;
+}
+.issue-card:has(.issue-card-title:hover),
+.issue-card:has(.issue-card-title:focus-visible) {
+  border-color: var(--color-control-border);
 }
 .issue-card[draggable="true"] {
   cursor: grab;
@@ -954,20 +991,48 @@ progress {
   justify-content: space-between;
 }
 .issue-card-title {
-  display: -webkit-box;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px;
   min-height: 40px;
   flex: 1;
-  align-content: center;
+  align-items: start;
   margin: 0;
-  overflow: hidden;
   color: var(--color-text);
   font-weight: 600;
   text-decoration: none;
+}
+.issue-card-number {
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--color-subtle);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.issue-card-title-text {
+  display: -webkit-box;
+  overflow: hidden;
+  overflow-wrap: anywhere;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
 }
-.issue-card-title:focus {
+.issue-card-title:focus .issue-card-title-text {
   -webkit-line-clamp: unset;
+}
+.assignee-label {
+  overflow-wrap: anywhere;
+}
+.issue-card-compact-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+.issue-card-compact-meta .assignee-label {
+  margin: 0;
 }
 .issue-card > .warning-badge {
   margin-top: 8px;
@@ -1013,6 +1078,7 @@ progress {
   background: var(--color-surface);
 }
 .empty-column {
+  margin: 16px 0 8px;
   color: var(--color-muted);
 }
 .epic-badge {
@@ -1060,10 +1126,6 @@ progress {
 }
 .archived-epics h3 {
   margin: 0;
-}
-.epic-card-title {
-  font-size: 18px;
-  font-weight: 700;
 }
 .project-epic-title-row .epic-card-title {
   min-width: 0;
@@ -1154,6 +1216,7 @@ progress {
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
   gap: 32px;
+  align-items: start;
 }
 .detail-panel,
 .activity-panel,
@@ -1163,6 +1226,27 @@ progress {
   border: 1px solid var(--color-border);
   border-radius: 12px;
   background: var(--color-surface);
+}
+.issue-detail-page > .page-header {
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--color-border);
+}
+.issue-detail-page > .page-header h1 {
+  max-width: 32ch;
+}
+.issue-detail-page > .page-header .page-actions {
+  max-width: 320px;
+  justify-content: flex-end;
+}
+.detail-refresh-button {
+  margin-bottom: 24px;
+}
+.activity-panel {
+  position: sticky;
+  top: calc(var(--authenticated-header-height, 64px) + 24px);
+  max-height: calc(100dvh - var(--authenticated-header-height, 64px) - 48px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .description {
   white-space: pre-wrap;
@@ -1207,7 +1291,7 @@ progress {
 .question-fieldset legend {
   margin-bottom: 16px;
   font-size: 20px;
-  font-weight: 700;
+  font-weight: 600;
 }
 .recommendation {
   padding: 16px;
@@ -1404,12 +1488,20 @@ progress {
   .main-content {
     padding: 24px;
   }
+  .board-toolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .detail-grid {
     grid-template-columns: 1fr;
   }
+  .activity-panel {
+    position: static;
+    max-height: none;
+    overflow-y: visible;
+  }
 }
 
-@media (max-width: 767px), (pointer: coarse) {
+@media (max-width: 767px) {
   .public-feature-grid {
     grid-template-columns: 1fr;
   }
@@ -1431,11 +1523,26 @@ progress {
     white-space: nowrap;
   }
   .authenticated-header {
+    flex-wrap: nowrap;
     gap: 8px;
+  }
+  .authenticated-header:has(.workspace-switcher) {
+    flex-wrap: wrap;
+  }
+  .authenticated-header > .metadata {
+    display: none;
+  }
+  .notification-label {
+    display: none;
+  }
+  .notification-link {
+    min-width: 44px;
+    gap: 4px;
+    padding: 8px;
   }
   .authenticated-header .owner-menu {
     min-width: 0;
-    flex: 1;
+    flex: 0 1 auto;
   }
   .centered-page {
     min-height: calc(100vh - 56px);
@@ -1479,8 +1586,16 @@ progress {
   .page-actions .button {
     flex: 1;
   }
-  .board-toolbar {
+  .board-page .page-actions {
     display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .board-page .page-actions .button {
+    width: 100%;
+  }
+  .board-toolbar {
+    grid-template-columns: 1fr;
+    padding: 16px;
   }
   .board-region {
     overflow: visible;
@@ -1495,6 +1610,12 @@ progress {
   .board-column {
     max-width: none;
   }
+  .pointer-board-instructions {
+    display: none;
+  }
+  .touch-board-instructions {
+    display: inline;
+  }
   .board-column[hidden] {
     display: none;
   }
@@ -1502,6 +1623,9 @@ progress {
   .activity-panel,
   .review-panel {
     padding: 16px;
+  }
+  .issue-detail-page > .page-header .page-actions {
+    max-width: none;
   }
   .epic-layout {
     grid-template-columns: 1fr;
@@ -1525,7 +1649,25 @@ progress {
   }
 }
 
-@media (max-width: 420px) {
+@media (pointer: coarse) {
+  .button,
+  .nav-link,
+  .disclosure-button,
+  .field input,
+  .field select,
+  .field textarea,
+  .card-status select {
+    min-height: 44px;
+  }
+  .pointer-board-instructions {
+    display: none;
+  }
+  .touch-board-instructions {
+    display: inline;
+  }
+}
+
+@media (max-width: 350px) {
   .authenticated-header .wordmark span {
     display: none;
   }
@@ -1599,10 +1741,6 @@ progress {
   width: 100%;
   overflow-wrap: anywhere;
   white-space: normal;
-}
-
-.assignee-label {
-  overflow-wrap: anywhere;
 }
 
 .recipient-panel {

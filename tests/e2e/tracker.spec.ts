@@ -163,6 +163,9 @@ test("owner completes the tracker loop with native keyboard controls", async ({
   await expect(
     epicOverview.getByRole("link", { name: epicDisplayName, exact: true }),
   ).toBeVisible();
+  const boardFilters = page.getByRole("region", { name: "Filter tickets" });
+  await expect(boardFilters).toBeVisible();
+  await expect(boardFilters).toHaveCSS("display", "grid");
   if (!mobile) {
     const boardRegion = page.getByRole("region", {
       name: `${projectName} issue board`,
@@ -170,11 +173,27 @@ test("owner completes the tracker loop with native keyboard controls", async ({
     await expect
       .poll(() =>
         boardRegion.evaluate(
-          (element) => element.scrollWidth <= element.clientWidth,
+          (element) => element.scrollWidth > element.clientWidth,
         ),
       )
       .toBe(true);
-    await expect(page.getByRole("heading", { name: "Done" })).toBeInViewport();
+    const firstColumnWidth = await boardRegion
+      .locator(".board-column")
+      .first()
+      .evaluate((element) => element.getBoundingClientRect().width);
+    expect(firstColumnWidth).toBeGreaterThanOrEqual(280);
+    expect(firstColumnWidth).toBeLessThanOrEqual(360);
+    await expect(
+      page.getByText("Drag tickets between columns", { exact: false }),
+    ).toBeVisible();
+    const doneHeading = page.getByRole("heading", { name: "Done" });
+    await doneHeading.scrollIntoViewIfNeeded();
+    await expect(doneHeading).toBeInViewport();
+  } else {
+    await expect(page.locator(".touch-board-instructions")).toBeVisible();
+    await expect(
+      page.getByText("Drag tickets between columns", { exact: false }),
+    ).toBeHidden();
   }
   await expect
     .poll(() =>

@@ -674,6 +674,12 @@ describe("tracker web routes", () => {
       name: `1-${issue.title}`,
     });
     expect(title).toBeVisible();
+    const card = title.closest("li");
+    if (!card) throw new Error("Expected issue card");
+    expect(within(card).getByText("1-")).toBeVisible();
+    expect(within(card).getByText(issue.title)).toBeVisible();
+    expect(within(card).getByText("Medium")).toBeVisible();
+    expect(within(card).getByText("Human: Unassigned")).toBeVisible();
     expect(screen.queryByText(issue.key)).not.toBeInTheDocument();
     expect(screen.queryByText(project.key)).not.toBeInTheDocument();
     const collapse = screen.getByRole("button", {
@@ -1244,7 +1250,9 @@ describe("tracker web routes", () => {
     expect(
       await screen.findByRole("link", { name: "⚠ 1 unanswered" }),
     ).toHaveAttribute("href", `/issues/${blocked.id}#questions-heading`);
-    expect(screen.getByText(`2-${clear.title}`)).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: `2-${clear.title}` }),
+    ).toBeInTheDocument();
     await user.click(
       screen.getByRole("button", { name: "Show details for 1" }),
     );
@@ -1284,8 +1292,12 @@ describe("tracker web routes", () => {
       screen.getByRole("combobox", { name: "Show questions" }),
       "warnings",
     );
-    expect(screen.getByText(`1-${blocked.title}`)).toBeInTheDocument();
-    expect(screen.queryByText(`2-${clear.title}`)).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: `1-${blocked.title}` }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: `2-${clear.title}` }),
+    ).not.toBeInTheDocument();
     expect(screen.getAllByText("No tickets with warnings").length).toBe(4);
   });
 
