@@ -9,7 +9,7 @@ test("public agent onboarding exposes a verified package without overflow", asyn
     page.getByRole("heading", { name: "De un enlace a trabajo trazable" }),
   ).toBeVisible();
   await expect(page.locator(".onboarding-release p").first()).toContainText(
-    "Skill publicada: 0.2.0",
+    "Skill publicada: 0.2.1",
   );
   await expect(page.getByText(/SHA-256:/)).toBeVisible();
   await expect(
@@ -36,7 +36,7 @@ test("public agent onboarding exposes a verified package without overflow", asyn
     maxActivePerIdentity: 10,
     legacyLabel: "Primary",
   });
-  const archive = await request.get("/downloads/issopen-skill-0.2.0.zip");
+  const archive = await request.get("/downloads/issopen-skill-0.2.1.zip");
   expect(archive.ok()).toBe(true);
   expect(archive.headers()["content-type"]).toMatch(
     /application\/(?:zip|octet-stream)/,

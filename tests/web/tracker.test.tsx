@@ -700,7 +700,7 @@ describe("tracker web routes", () => {
     ).toHaveAttribute("aria-expanded", "true");
   });
 
-  it("omits disabled completion columns while keeping their statuses available", async () => {
+  it("uses Done as the card completion target when human review is disabled", async () => {
     const fetchMock = vi.fn(
       async (input: RequestInfo | URL, init?: RequestInit) => {
         const path = String(input);
@@ -758,10 +758,10 @@ describe("tracker web routes", () => {
       name: "Change status for 1",
     });
     expect(
-      within(issueStatus).getByRole("option", {
+      within(issueStatus).queryByRole("option", {
         name: "Ready for Human Review",
       }),
-    ).toBeInTheDocument();
+    ).not.toBeInTheDocument();
     expect(
       within(issueStatus).getByRole("option", { name: "Done" }),
     ).toBeInTheDocument();
@@ -773,6 +773,55 @@ describe("tracker web routes", () => {
     expect(
       screen.getByRole("heading", { name: "Issues hidden from this board" }),
     ).toBeVisible();
+  });
+
+  it("uses Done as the detail completion target when human review is disabled", async () => {
+    const directProject = { ...project, showReviewColumn: false };
+    const fetchMock = vi.fn(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const path = String(input);
+        if (path === `/api/v1/issues/${issue.id}` && init?.method === "PATCH") {
+          expect(JSON.parse(String(init.body))).toEqual({
+            status: "done",
+            expectedVersion: issue.version,
+            questionVersions: [],
+          });
+          return json({ issue: { ...issue, status: "done", version: 2 } });
+        }
+        if (path === `/api/v1/issues/${issue.id}`)
+          return json({
+            issue,
+            epic: null,
+            codeLinks: [],
+            comments: [],
+            questions: [],
+            questionSummary: { total: 0, answered: 0, unansweredBlocking: 0 },
+          });
+        if (path === `/api/v1/issues/${issue.id}/activity`)
+          return json({ activity: [] });
+        if (path === `/api/v1/issues/${issue.id}/evidence`)
+          return json({ evidence: [] });
+        if (path === `/api/v1/projects/${project.id}`)
+          return json({ project: directProject });
+        throw new Error(`Unexpected request: ${path}`);
+      },
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    window.history.replaceState({}, "", `/issues/${issue.id}`);
+    const user = userEvent.setup();
+    render(<IssueDetailRoute issueId={issue.id} session={ownerSession} />);
+
+    const status = await screen.findByRole("combobox", {
+      name: "Change status for 1",
+    });
+    expect(
+      within(status).queryByRole("option", {
+        name: "Ready for Human Review",
+      }),
+    ).not.toBeInTheDocument();
+    expect(within(status).getByRole("option", { name: "Done" })).toBeVisible();
+    await user.selectOptions(status, "done");
+    expect(await screen.findByText("1 moved to Done")).toBeVisible();
   });
 
   it("filters the board by Epic and links the expanded card to its container", async () => {

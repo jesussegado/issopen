@@ -30,13 +30,16 @@ describe("public agent onboarding contract", () => {
     );
   });
 
-  it("teaches bootstrap, permission preflight and the human review boundary", () => {
+  it("teaches bootstrap, permission preflight and the project completion boundary", () => {
     const onboarding = createAgentOnboardingText(baseUrl);
     const llms = createLlmsText(baseUrl);
 
     expect(onboarding).toContain("codex mcp add issopen");
     expect(onboarding).toContain("get_agent_context");
+    expect(onboarding).toContain("get_project");
+    expect(onboarding).toContain("humanReviewRequired");
     expect(onboarding).toContain("Ready for Human Review");
+    expect(onboarding).toContain("issues:close");
     expect(onboarding).toContain("context, not authorization");
     expect(onboarding).toContain("ChatGPT uses the same MCP URL through OAuth");
     expect(onboarding).toContain("click Authenticate");
@@ -47,6 +50,8 @@ describe("public agent onboarding contract", () => {
       "CIMD",
     );
     expect(llms).toContain("OAuth with automatic CIMD discovery");
+    expect(llms).toContain("get_project");
+    expect(llms).toContain("issues:close");
     expect(onboarding).toContain("Multiple MCP API keys");
     expect(onboarding).toContain("up to 10 active named keys");
     expect(onboarding).toContain("Revoke key affects one consumer");

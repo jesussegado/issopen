@@ -950,19 +950,26 @@ export function IssueDetailRoute({
                     void updateStatus(event.currentTarget.value as IssueStatus)
                   }
                 >
-                  {issueStatuses.map((status) => (
-                    <option
-                      key={status}
-                      value={status}
-                      disabled={
-                        status === "ready_for_review" &&
-                        issue.status !== "ready_for_review" &&
-                        questionSummary.unansweredBlocking > 0
-                      }
-                    >
-                      {statusLabels[status]}
-                    </option>
-                  ))}
+                  {issueStatuses
+                    .filter(
+                      (status) =>
+                        status !== "ready_for_review" ||
+                        project?.showReviewColumn !== false ||
+                        issue.status === "ready_for_review",
+                    )
+                    .map((status) => (
+                      <option
+                        key={status}
+                        value={status}
+                        disabled={
+                          status === "ready_for_review" &&
+                          issue.status !== "ready_for_review" &&
+                          questionSummary.unansweredBlocking > 0
+                        }
+                      >
+                        {statusLabels[status]}
+                      </option>
+                    ))}
                 </Select>
               </Field>
             ) : (

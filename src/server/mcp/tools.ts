@@ -118,7 +118,7 @@ export function createIssopenMcpServer(
     "get_project",
     {
       description:
-        "Read an allowed project's repository URL, default branch and subdirectory. Missing or ambiguous associations need confirmation before execution.",
+        "Read an allowed project's repository context and effective completion workflow. Missing or ambiguous associations need confirmation before execution.",
       inputSchema: z.object({ projectId: z.uuid() }).strict(),
       annotations: { readOnlyHint: true },
     },
@@ -134,6 +134,8 @@ export function createIssopenMcpServer(
         repositoryUrl,
         defaultBranch,
         repositorySubdirectory,
+        showReviewColumn,
+        showDoneColumn,
         version,
         createdAt,
         updatedAt,
@@ -148,6 +150,15 @@ export function createIssopenMcpServer(
           repositoryUrl,
           defaultBranch,
           repositorySubdirectory,
+          showReviewColumn,
+          showDoneColumn,
+          workflow: {
+            humanReviewRequired: showReviewColumn,
+            completionStatus: showReviewColumn ? "ready_for_review" : "done",
+            completionRequiresScope: showReviewColumn
+              ? "issues:review"
+              : "issues:close",
+          },
           version,
           createdAt,
           updatedAt,
@@ -798,7 +809,7 @@ export function createIssopenMcpServer(
     "move_issue",
     {
       description:
-        "Move an allowed issue through the fixed workflow. Done requires issues:close.",
+        "Move an allowed issue through its project workflow. Read get_project.workflow first: projects that skip human review finish at Done, which requires issues:close.",
       inputSchema: z
         .object({
           idempotencyKey: idempotencyKeySchema,

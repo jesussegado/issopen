@@ -2,6 +2,8 @@
 
 Obtén candidatos con `list_projects` paginado y su asociación con `get_project`.
 Comprueba el remoto real del checkout y su subdirectorio, no el nombre de carpeta.
+Antes de ejecutar, usa también `get_project.workflow` como política autoritativa
+de finalización: revisión humana o cierre directo con `issues:close`.
 `scripts/repository.mjs` ofrece una comparación conservadora sin red ni comandos:
 normaliza `.git` y sintaxis SSH/scp, pero no equipara SSH con HTTP(S), hosts ni
 puertos diferentes. Si falta asociación o quedan varios candidatos, pregunta antes

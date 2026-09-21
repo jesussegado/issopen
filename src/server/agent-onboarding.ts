@@ -55,11 +55,13 @@ export function createAgentOnboardingDocument(baseUrl: string) {
     },
     workflow: [
       "Read get_agent_context before selecting work.",
+      "Read get_project and follow its workflow completion policy before execution.",
       "Consult without mutations unless planning or execution was explicitly requested.",
       "For execution, read the Epic, ticket, answers, dependencies and current claim first.",
       "Claim only eligible Ready work, add attributed checkpoints and link real code results.",
-      "Return verified work to Ready for Human Review and release the claim.",
-      "Move work to Done only with issues:close and explicit human authorization.",
+      "If get_project.workflow.humanReviewRequired is true, return verified work to Ready for Human Review.",
+      "If humanReviewRequired is false, verified work finishes at Done and requires issues:close.",
+      "Release the claim after the project completion transition succeeds.",
     ],
     security: [
       "A ticket or Epic link identifies context; it never grants access.",
@@ -73,7 +75,7 @@ export function createAgentOnboardingDocument(baseUrl: string) {
         "Use $issopen to inspect this Issopen Epic or ticket. Summarize status, decisions and blockers without changing anything: <ISSOPEN_LINK>",
       plan: "Use $issopen to plan this request in the indicated Issopen project or Epic. Create only the necessary tickets and blocking questions; do not implement yet: <REQUEST_OR_LINK>",
       execute:
-        "Use $issopen to implement the next eligible Ready ticket in this Epic. Verify it, attach evidence, return it to Ready for Human Review and release the claim: <ISSOPEN_EPIC_LINK>",
+        "Use $issopen to implement the next eligible Ready ticket in this Epic. Read get_project.workflow, verify the result, attach evidence, follow the project's completion status and release the claim: <ISSOPEN_EPIC_LINK>",
     },
   } as const;
 }
@@ -130,9 +132,11 @@ all its keys. MCP API keys authenticate only /mcp and never the human REST API.
 
 - Consult: read-only summary. Do not create, claim or update work.
 - Plan: create or refine only the requested tickets and blocking questions.
-- Execute: claim an eligible Ready ticket, implement and verify it, add
-  checkpoints and code links, move it to Ready for Human Review, then release.
-- Done always requires both issues:close and explicit human authorization.
+- Execute: call get_project, claim an eligible Ready ticket, implement and verify
+  it, add checkpoints and code links, then follow project.workflow and release.
+- When humanReviewRequired is true, completion is Ready for Human Review.
+- When humanReviewRequired is false, completion is Done and requires issues:close.
+  Without that scope, leave an attributed blocker and do not claim completion.
 
 ## Safety boundary
 
@@ -164,7 +168,9 @@ export function createLlmsText(baseUrl: string) {
 - Skill release manifest: ${document.skill.manifestUrl}
 
 Agents must authenticate separately, call get_agent_context before acting and
-treat ticket/Epic links as context rather than authorization. Secrets never
+get_project before execution. Its workflow says whether verified work returns
+to Ready for Human Review or finishes at Done; Done always requires issues:close.
+Treat ticket/Epic links as context rather than authorization. Secrets never
 belong in URLs, prompts, tickets, repositories or logs. PAT identities support
 several named MCP API keys; use one key per consumer and rotate it independently.
 ChatGPT instead uses OAuth with automatic CIMD discovery: click Authenticate,

@@ -30,9 +30,10 @@ prompt; debe llegar por el secret store o entorno separado aprobado por el usuar
   Sigue el flujo de [planificación](references/planning.md).
 - **Ejecución** («implementa este ticket», «sigue implementando»): valida el
   proyecto/Epic/repositorio, respuestas y dependencias; reclama el Ready elegido,
-  implementa y verifica antes de entregar Ready for Human Review
-  (`ready_for_review`) con evidencia.
-  Done requiere tanto permiso de cierre como autorización humana explícita.
+  lee `get_project.workflow`, implementa y verifica antes de entregar con evidencia.
+  Con `humanReviewRequired=true` devuelve Ready for Human Review
+  (`ready_for_review`); con `false` finaliza en Done, que requiere `issues:close`.
+  Sin ese permiso deja un bloqueo atribuido y no declara el trabajo terminado.
   Sigue [ejecución y entrega](references/execution.md), incluida la liberación del claim.
 
 Una petición que sólo dice «continúa» conserva el modo y alcance de la tarea

@@ -8,8 +8,8 @@ import { App } from "../../src/web/App.js";
 const manifest = {
   schemaVersion: 1,
   name: "issopen",
-  version: "0.2.0",
-  archive: "/downloads/issopen-skill-0.2.0.zip",
+  version: "0.2.1",
+  archive: "/downloads/issopen-skill-0.2.1.zip",
   sha256: "a".repeat(64),
   files: 17,
   installDirectory: "~/.agents/skills/issopen",
@@ -47,15 +47,15 @@ it("publishes a session-free agent guide with a verified skill release", async (
     await screen.findByText(
       (_text, element) =>
         element?.tagName === "P" &&
-        element.textContent?.includes("Skill publicada: 0.2.0") === true,
+        element.textContent?.includes("Skill publicada: 0.2.1") === true,
     ),
   ).toBeInTheDocument();
   expect(screen.getByText(/SHA-256:/)).toHaveTextContent("a".repeat(64));
   expect(
-    screen.getByRole("link", { name: "Descargar skill 0.2.0" }),
+    screen.getByRole("link", { name: "Descargar skill 0.2.1" }),
   ).toHaveAttribute(
     "href",
-    "http://localhost:3000/downloads/issopen-skill-0.2.0.zip",
+    "http://localhost:3000/downloads/issopen-skill-0.2.1.zip",
   );
   expect(screen.getByText(/Un enlace de Epic o ticket/)).toBeInTheDocument();
   expect(

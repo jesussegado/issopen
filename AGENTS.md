@@ -550,8 +550,8 @@ diferenciador es:
 crear y priorizar un issue desde el tablero o ChatGPT
   -> un agente de código externo lo reclama mediante MCP
   -> trabaja en el repositorio y enlaza branch, commit o PR
-  -> lo devuelve a Ready for Human Review (`ready_for_review`)
-  -> una persona revisa y decide el cierre
+  -> sigue la política del proyecto: Ready for Human Review o Done directo
+  -> cuando hay revisión humana, una persona revisa y decide el cierre
 ```
 
 Issopen debe usar este bucle para dirigir sus propias mejoras. La captura
@@ -855,10 +855,12 @@ Desde la raíz también es obligatorio:
 make validate
 ```
 
-Las preferencias `project.showReviewColumn` y `project.showDoneColumn` sólo
-controlan la visibilidad del board. Nunca deben mover, borrar ni ocultar de MCP
-los tickets; `ready_for_review` continúa siendo el valor estable del contrato y
-se presenta a personas como **Ready for Human Review**.
+`project.showReviewColumn` es también la política de finalización para nuevas
+transiciones: si está activa, el resultado se entrega a **Ready for Human
+Review** (`ready_for_review`); si está desactivada, termina en `done` y requiere
+`issues:close`. No reescribir ni ocultar de MCP tickets históricos que ya estén
+en revisión. `project.showDoneColumn` sólo controla la visibilidad del board y
+nunca cambia el contrato de cierre.
 
 Los cambios productivos deben seguir siendo GitOps. Argo consume
 `deploy/argocd.yaml` y `deploy/manifests`; `deploy/values.yaml` es un contrato de

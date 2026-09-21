@@ -32,6 +32,10 @@ required for every tool call.
    command, preflight and starter prompt. It never contains the PAT.
 5. Ask the agent to call `get_agent_context`; compare the returned identity,
    allowlist and scopes with the generated guide before assigning work.
+6. Before execution, call `get_project` and inspect `project.workflow`. When
+   `humanReviewRequired` is true, verified work returns to
+   `ready_for_review`. When false, it finishes at `done` and the identity must
+   have `issues:close`; otherwise the agent records the blocker and stops.
 
 Reducing or revoking permissions takes effect on the next MCP request. Generate
 the guide again after reducing access so its informational snapshot is current.
@@ -56,6 +60,11 @@ revoking the old key. **Revoke key** affects only that consumer. **Revoke
 access** disables the identity, all its keys and any associated OAuth access.
 The full operating and rollback contract is in
 [MCP API keys](agent-credentials.md).
+
+Project completion policy is authoritative for new transitions. Disabling the
+human-review column does not rewrite or hide historical tickets already in
+`ready_for_review`; it prevents new entries into that state. `showDoneColumn`
+continues to control board presentation only.
 
 ## Agent flow
 

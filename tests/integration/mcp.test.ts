@@ -550,6 +550,13 @@ describe("stateless Issopen MCP", () => {
           repositoryUrl: "https://git.example.test/team/repo.git",
           defaultBranch: "main",
           repositorySubdirectory: "apps/web",
+          showReviewColumn: true,
+          showDoneColumn: true,
+          workflow: {
+            humanReviewRequired: true,
+            completionStatus: "ready_for_review",
+            completionRequiresScope: "issues:review",
+          },
         },
       });
       const original = await expectIdempotentReplay(client, "create_epic", {
@@ -695,6 +702,75 @@ describe("stateless Issopen MCP", () => {
     } finally {
       await client.close();
       await limited.close();
+    }
+  });
+
+  it("exposes and enforces direct completion for projects without human review", async () => {
+    await tracker.updateProject(mutationContext(), projectId, {
+      showReviewColumn: false,
+    });
+    const directIssue = await tracker.createIssue(mutationContext(), {
+      projectId,
+      title: "Complete directly",
+      status: "in_progress",
+    });
+    const created = await new AgentService(connection.db).createAgent(
+      workspaceId,
+      {
+        name: "Direct completion agent",
+        projectIds: [projectId],
+        scopes: [
+          "issues:read",
+          "issues:write",
+          "issues:review",
+          "issues:close",
+        ],
+      },
+    );
+    const client = await mcpClient(created.token);
+    try {
+      expect(
+        (
+          await client.callTool({
+            name: "get_project",
+            arguments: { projectId },
+          })
+        ).structuredContent,
+      ).toMatchObject({
+        project: {
+          showReviewColumn: false,
+          showDoneColumn: true,
+          workflow: {
+            humanReviewRequired: false,
+            completionStatus: "done",
+            completionRequiresScope: "issues:close",
+          },
+        },
+      });
+
+      const skippedReview = await client.callTool({
+        name: "move_issue",
+        arguments: {
+          idempotencyKey: "direct-completion-review",
+          issueId: directIssue.id,
+          status: "ready_for_review",
+        },
+      });
+      expect(skippedReview.isError).toBe(true);
+      expect(JSON.stringify(skippedReview)).toContain(
+        "This project skips Ready for Human Review. Move the issue directly to Done.",
+      );
+
+      await expectIdempotentReplay(client, "move_issue", {
+        idempotencyKey: "direct-completion-done",
+        issueId: directIssue.id,
+        status: "done",
+      });
+      expect((await tracker.getIssue(workspaceId, directIssue.id)).status).toBe(
+        "done",
+      );
+    } finally {
+      await client.close();
     }
   });
 

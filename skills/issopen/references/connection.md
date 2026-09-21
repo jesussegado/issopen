@@ -25,7 +25,9 @@ Fuentes de instalación y conexión:
 3. Consulta necesita `issues:read`. Planificación necesita además `issues:create`,
    `issues:write` y `questions:write`; comentarios requieren `comments:write`.
    Ejecución requiere lectura, `issues:claim`, `issues:write`, `code:link`,
-   `comments:write` e `issues:review`. No hace falta `issues:close` para entregar.
+   `comments:write` e `issues:review`. Lee `get_project.workflow`: si el proyecto
+   omite revisión humana, entregar exige también `issues:close`; no lo concedas
+   automáticamente ni uses otra identidad si falta.
    Crear/editar Epics exige sus permisos específicos, nunca se infieren de issues.
 4. Confirma proyecto dentro de `projectIds`. Si falta un permiso, explica el nombre
    y la operación que no se puede hacer, conservando las consultas permitidas.

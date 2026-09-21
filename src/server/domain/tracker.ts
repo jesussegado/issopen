@@ -1320,6 +1320,25 @@ export class TrackerService {
         values.status === "ready_for_review" &&
         current.status !== "ready_for_review"
       ) {
+        const [currentProject] = await tx
+          .select({ showReviewColumn: project.showReviewColumn })
+          .from(project)
+          .where(
+            and(
+              eq(project.workspaceId, context.workspaceId),
+              eq(project.id, current.projectId),
+            ),
+          )
+          .limit(1)
+          .for("share");
+        if (!currentProject)
+          throw new DomainError("not_found", "Project not found");
+        if (!currentProject.showReviewColumn) {
+          throw new DomainError(
+            "conflict",
+            "This project skips Ready for Human Review. Move the issue directly to Done.",
+          );
+        }
         const [unansweredBlockingQuestion] = await tx
           .select({ id: issueQuestion.id })
           .from(issueQuestion)

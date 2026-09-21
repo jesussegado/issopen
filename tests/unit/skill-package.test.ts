@@ -16,8 +16,8 @@ describe("Issopen skill release package", () => {
     expect(a.manifest).toMatchObject({
       schemaVersion: 1,
       name: "issopen",
-      version: "0.2.0",
-      archive: "/downloads/issopen-skill-0.2.0.zip",
+      version: "0.2.1",
+      archive: "/downloads/issopen-skill-0.2.1.zip",
       sha256: sha256(a.archive),
       entrypoint: "SKILL.md",
     });
@@ -26,7 +26,7 @@ describe("Issopen skill release package", () => {
         await readFile(join(first, "issopen-skill-manifest.json"), "utf8"),
       ),
     ).toEqual(a.manifest);
-    expect(await readFile(join(first, "issopen-skill-0.2.0.zip"))).toEqual(
+    expect(await readFile(join(first, "issopen-skill-0.2.1.zip"))).toEqual(
       a.archive,
     );
   });

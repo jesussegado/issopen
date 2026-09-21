@@ -104,8 +104,8 @@ describe("agent management", () => {
           return json({
             schemaVersion: 1,
             name: "issopen",
-            version: "0.2.0",
-            archive: "/downloads/issopen-skill-0.2.0.zip",
+            version: "0.2.1",
+            archive: "/downloads/issopen-skill-0.2.1.zip",
             sha256: "b".repeat(64),
             files: 17,
             installDirectory: "~/.agents/skills/issopen",
@@ -253,7 +253,7 @@ describe("agent management", () => {
       await screen.findByRole("heading", { name: "Onboard Codex" }),
     ).toBeInTheDocument();
     expect(screen.getByText(/Allowed projects: Issopen/)).toBeInTheDocument();
-    expect(screen.getByText(/Skill release: 0.2.0/)).toBeInTheDocument();
+    expect(screen.getByText(/Skill release: 0.2.1/)).toBeInTheDocument();
     expect(screen.getByText(/get_agent_context/)).toBeInTheDocument();
     expect(document.body).not.toHaveTextContent(token);
     await user.click(

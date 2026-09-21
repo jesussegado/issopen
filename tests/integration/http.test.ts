@@ -2164,6 +2164,42 @@ describe("protected tracker REST API", () => {
     expect(allowed.status).toBe(200);
   });
 
+  it("routes completion directly to Done when human review is disabled", async () => {
+    const createdProject = await createProjectFixture();
+    const createdIssue = await createIssueFixture(createdProject.id);
+    const configured = await authenticatedRequest(
+      `/api/v1/projects/${createdProject.id}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ showReviewColumn: false }),
+      },
+    );
+    expect(configured.status).toBe(200);
+
+    const skippedReview = await authenticatedRequest(
+      `/api/v1/issues/${createdIssue.id}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ status: "ready_for_review" }),
+      },
+    );
+    expect(skippedReview.status).toBe(409);
+    expect(await body(skippedReview)).toEqual({
+      error:
+        "This project skips Ready for Human Review. Move the issue directly to Done.",
+    });
+
+    const done = await authenticatedRequest(
+      `/api/v1/issues/${createdIssue.id}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ status: "done" }),
+      },
+    );
+    expect(done.status).toBe(200);
+    expect(await body(done)).toMatchObject({ issue: { status: "done" } });
+  });
+
   it("rejects client-supplied audit identity, source, time and changes", async () => {
     const forgedProject = await authenticatedRequest("/api/v1/projects", {
       method: "POST",

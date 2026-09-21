@@ -27,12 +27,15 @@
    merge ni despliegue; sigue el encargo y las reglas del repo. Si están autorizados,
    ejecuta/verifica esos pasos, sin inventar referencias. Un resultado local puede
    documentarse como local sin enlace ficticio.
-8. Entrega Ready for Human Review (`ready_for_review`) y **libera explícitamente
-   tu claim**: `move_issue` no
+8. Lee `get_project.workflow` y aplica su destino. Si
+   `humanReviewRequired=true`, entrega Ready for Human Review
+   (`ready_for_review`). Si es `false`, entrega Done sólo con `issues:close`; si
+   falta ese scope, deja un comentario/pregunta de bloqueo y no declares la
+   finalización. Después **libera explícitamente tu claim**: `move_issue` no
    lo libera. Si falla liberar, informa de la propiedad residual y reintenta sólo
    conforme al contrato idempotente; no anuncies que está libre sin comprobarlo.
-   Done sólo con autorización humana explícita de cierre y `issues:close`; el
-   perfil base no lo tiene. Termina con enlace, evidencia, límites y siguiente paso.
+   El perfil base no incluye cierre. Termina con enlace, evidencia, límites y
+   siguiente paso.
 
 Al pausar, deja checkpoint y libera el claim propio tras guardar trabajo. Reanudar
 exige volver a leer estado actual; no recuperar por fuerza una propiedad ajena.

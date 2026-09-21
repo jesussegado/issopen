@@ -216,14 +216,17 @@ export function AgentOnboardingRoute() {
           <div>
             <dt>Ejecutar</dt>
             <dd>
-              Reclamar un Ready elegible, verificar, enlazar el resultado,
-              devolverlo a Ready for Human Review y liberar el claim.
+              Leer <code>get_project.workflow</code>, reclamar un Ready
+              elegible, verificar, enlazar el resultado, aplicar el destino de
+              finalización del proyecto y liberar el claim.
             </dd>
           </div>
         </dl>
         <p>
-          Pasar a Done exige el scope <code>issues:close</code> y autorización
-          humana explícita.
+          Con revisión humana, el resultado vuelve a Ready for Human Review. Si
+          el proyecto omite esa revisión, termina en Done, que exige el scope
+          <code> issues:close</code>. Sin ese permiso, el agente debe dejar el
+          bloqueo visible y no fingir que ha terminado.
         </p>
         <h3>Prompt inicial</h3>
         <pre>{starterPrompt}</pre>

@@ -845,23 +845,32 @@ export function BoardRoute({
                                               )
                                             }
                                           >
-                                            {issueStatuses.map((status) => (
-                                              <option
-                                                key={status}
-                                                value={status}
-                                                disabled={
-                                                  status ===
-                                                    "ready_for_review" &&
-                                                  issue.status !==
-                                                    "ready_for_review" &&
-                                                  (issue.questionSummary
-                                                    ?.unansweredBlocking ?? 0) >
-                                                    0
-                                                }
-                                              >
-                                                {statusLabels[status]}
-                                              </option>
-                                            ))}
+                                            {issueStatuses
+                                              .filter(
+                                                (status) =>
+                                                  status !==
+                                                    "ready_for_review" ||
+                                                  project.showReviewColumn ||
+                                                  issue.status ===
+                                                    "ready_for_review",
+                                              )
+                                              .map((status) => (
+                                                <option
+                                                  key={status}
+                                                  value={status}
+                                                  disabled={
+                                                    status ===
+                                                      "ready_for_review" &&
+                                                    issue.status !==
+                                                      "ready_for_review" &&
+                                                    (issue.questionSummary
+                                                      ?.unansweredBlocking ??
+                                                      0) > 0
+                                                  }
+                                                >
+                                                  {statusLabels[status]}
+                                                </option>
+                                              ))}
                                           </Select>
                                         </label>
                                         {(issue.questionSummary

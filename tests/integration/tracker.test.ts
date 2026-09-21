@@ -906,6 +906,55 @@ describe("transactional tracker domain", () => {
     ).toBe("ready_for_review");
   });
 
+  it("uses Done as the completion target when human review is disabled", async () => {
+    const createdProject = await tracker.createProject(ownerContext, {
+      name: "Direct completion",
+      key: "DIR",
+    });
+    await tracker.updateProject(ownerContext, createdProject.id, {
+      showReviewColumn: false,
+    });
+    const createdIssue = await tracker.createIssue(ownerContext, {
+      projectId: createdProject.id,
+      title: "Finish without human review",
+      status: "in_progress",
+    });
+
+    await expect(
+      tracker.updateIssue(ownerContext, createdIssue.id, {
+        status: "ready_for_review",
+      }),
+    ).rejects.toMatchObject({
+      code: "conflict",
+      message:
+        "This project skips Ready for Human Review. Move the issue directly to Done.",
+    });
+
+    const agentContext: MutationContext = {
+      workspaceId,
+      actor: { type: "agent", id: "direct-agent", displayName: "Codex" },
+      source: "mcp",
+    };
+    await expect(
+      tracker.updateIssue(agentContext, createdIssue.id, { status: "done" }),
+    ).rejects.toMatchObject({
+      code: "forbidden",
+      message: "Closing issues requires explicit permission",
+    });
+    expect(
+      (
+        await tracker.updateIssue(
+          {
+            ...agentContext,
+            authorization: { canCloseIssues: true },
+          },
+          createdIssue.id,
+          { status: "done" },
+        )
+      ).status,
+    ).toBe("done");
+  });
+
   it("scopes every lookup by workspace and never leaks foreign identifiers", async () => {
     const secondOwnerId = "33333333-3333-4333-8333-333333333333";
     const secondWorkspaceId = "44444444-4444-4444-8444-444444444444";

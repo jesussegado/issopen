@@ -11,12 +11,12 @@ describe("notify-only release checks", () => {
     const published = "b".repeat(40);
     const read = vi
       .fn()
-      .mockResolvedValue({ commit: published, version: "0.2.0" });
+      .mockResolvedValue({ commit: published, version: "0.2.1" });
     expect(await checkForUpdate(installed, read, 8000, "0.1.0")).toEqual({
       status: "update_available",
       installedCommit: installed,
       publishedCommit: published,
-      version: "0.2.0",
+      version: "0.2.1",
       automaticUpdate: false,
     });
     expect(read).toHaveBeenCalledTimes(1);
@@ -31,7 +31,7 @@ describe("notify-only release checks", () => {
   });
   it("does not present an older tag, equal-version candidate or unknown revision as newer", async () => {
     const read = async () => ({ commit: "b".repeat(40), version: "0.1.0" });
-    expect((await checkForUpdate(installed, read, 8000, "0.2.0")).status).toBe(
+    expect((await checkForUpdate(installed, read, 8000, "0.2.1")).status).toBe(
       "installed_ahead",
     );
     expect((await checkForUpdate(installed, read, 8000, "0.1.0")).status).toBe(
