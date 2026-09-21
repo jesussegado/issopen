@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Ticket 68 completion workflow deployed and delivered to human review
-last_updated: "2026-09-21T08:24:30Z"
+stopped_at: Epic 9 visual polish tickets 119-122 deployed and delivered to human review
+last_updated: "2026-09-21T19:11:05Z"
 last_activity: 2026-09-21
 progress:
   total_phases: 9
@@ -15,6 +15,18 @@ progress:
 ---
 
 # Project State
+
+## Follow-up 21Sep — Visual polish and stability v1 (Epic 9)
+
+Tickets119–122 are implemented, deployed and Ready for Human Review with claims
+released. Source8cf80bb/0d1001b and GitOps90a1da77 publish stable filter layout,
+280–360px board columns, compact ticket hierarchy, touch-specific guidance,
+mobile shell fixes and a bounded detail activity rail. Full gates pass:
+195unit/web,118integration,42webE2E+2skips,Chrome16+13,reproducible build,
+Compose, secret scan and140GitOps tests. Production is Synced/Healthy on exact
+digest ed79fcd8, podReady0restarts, readinessOK and PVCs unchanged. Read-only
+visual smoke at1440×1000 and390×844 reports no document overflow or console/page
+errors. Review findings in phase01 REVIEW.md are resolved.
 
 ## Follow-up 21Sep — Project completion workflow (ticket68)
 

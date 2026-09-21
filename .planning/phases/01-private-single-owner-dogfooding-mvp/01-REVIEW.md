@@ -1,5 +1,5 @@
 ---
-status: findings
+status: resolved
 phase: 01
 depth: standard
 files_reviewed: 7
@@ -9,6 +9,8 @@ findings:
   info: 2
   total: 8
 reviewed_at: 2026-09-21
+resolved_at: 2026-09-21
+open_findings: 0
 ---
 
 # Phase 01 visual and code review
@@ -77,3 +79,23 @@ authenticated routes.
 
 Tickets 119–122 in Epic 9 track the implementation, responsive verification,
 regression coverage and production validation for every finding above.
+
+## Resolution
+
+All eight findings are resolved by source commits `8cf80bb` and `0d1001b` and
+production GitOps commit `90a1da77`:
+
+- WR-01/02/03: bounded 280–360px board columns, a responsive filter grid and
+  compact number/title/priority/assignee card hierarchy are live.
+- WR-04/05: touch guidance, 44px targets and a non-truncated mobile shell are
+  live at 390px without document overflow.
+- WR-06: the activity rail is bounded and sticky on desktop, then returns to
+  normal document flow on tablet and mobile.
+- IN-01/02: typography/surfaces follow the approved tokens and authenticated
+  smoke evidence excludes the expected anonymous session probe.
+
+Validation: 195 unit/web tests, 118 integration tests, 42 web E2E scenarios,
+16 Chrome unit tests, 13 Chrome E2E scenarios, reproducible build, secret scan,
+Compose and 140 GitOps tests pass. Production is Synced/Healthy with the exact
+`0d1001b` image, readiness OK, zero web-pod restarts, unchanged PVCs and clean
+1440×1000 plus 390×844 visual smoke reports.
