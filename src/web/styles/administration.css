@@ -1,0 +1,82 @@
+/* Agent administration, destructive confirmations and connection steps. */
+.agent-list {
+  display: grid;
+  gap: 16px;
+}
+.agent-key-list {
+  display: grid;
+  gap: 12px;
+  margin: 16px 0 24px;
+}
+.agent-key-list .form-panel {
+  width: 100%;
+  padding: 20px;
+}
+
+.check-row {
+  display: block;
+  padding: 6px 0;
+}
+
+.check-row .field-helper {
+  display: block;
+  margin-left: 24px;
+}
+
+.secret-value {
+  width: 100%;
+  min-height: 88px;
+  font-family: var(--font-mono);
+  overflow-wrap: anywhere;
+}
+
+.delete-ticket-dialog,
+.archive-epic-dialog {
+  margin: auto;
+  width: min(32rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  padding: 24px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  color: var(--color-text);
+  background: var(--color-surface);
+}
+
+.delete-ticket-dialog::backdrop,
+.archive-epic-dialog::backdrop {
+  background: rgb(0 0 0 / 45%);
+}
+
+.delete-ticket-name,
+.archive-epic-name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.delete-ticket-actions,
+.archive-epic-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.archive-epic-control {
+  display: grid;
+  gap: 8px;
+}
+
+.confirmation-dialog {
+  padding: 24px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  background: var(--color-surface);
+}
+
+.connection-steps {
+  display: grid;
+  gap: 12px;
+  padding-left: 28px;
+}

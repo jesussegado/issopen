@@ -1,0 +1,101 @@
+/* Account sessions, profiles, collaborators and personal notifications. */
+.account-session-list {
+  display: grid;
+  gap: 1rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.account-session-card {
+  display: grid;
+  gap: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  min-width: 0;
+}
+
+.account-session-card .section-heading {
+  flex-wrap: wrap;
+}
+
+.profile-avatar {
+  width: 96px;
+  height: 96px;
+  object-fit: contain;
+  border: 1px solid var(--color-border);
+  border-radius: 1rem;
+}
+
+.collaborator-avatar {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.collaborator-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.collaborator-picker-list {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0;
+  list-style: none;
+}
+
+.collaborator-picker-list .button {
+  display: grid;
+  text-align: start;
+  width: 100%;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.recipient-panel {
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.notification-list,
+.mention-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.notification-item {
+  display: grid;
+  gap: 0.7rem;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  margin-bottom: 1rem;
+  overflow-wrap: anywhere;
+}
+.notification-item:not(.read) {
+  border-inline-start: 4px solid var(--color-accent);
+}
+.notification-item .button {
+  justify-self: start;
+}
+.notification-link {
+  flex-shrink: 0;
+}
+.mention-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.mention-list li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  overflow-wrap: anywhere;
+}

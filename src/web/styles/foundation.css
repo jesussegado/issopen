@@ -1,0 +1,30 @@
+/* Tailwind entrypoint and Issopen design tokens. */
+@import "tailwindcss";
+
+@theme {
+  --color-brand-forest: #027067;
+  --color-brand-mint: #6fd9b5;
+  --color-app: #f3faf7;
+  --color-surface: #ffffff;
+  --color-accent: var(--color-brand-forest);
+  --color-accent-hover: #01534c;
+  --color-accent-active: #01443e;
+  --color-accent-soft: #e3f7ee;
+  --color-on-accent: #ffffff;
+  --color-focus: #01534c;
+  --color-destructive: #b91c1c;
+  --color-destructive-soft: #fef2f2;
+  --color-warning: #9a3412;
+  --color-warning-border: #b45309;
+  --color-warning-soft: #fff7ed;
+  --color-text: #142f29;
+  --color-muted: #46635b;
+  --color-border: #c5d9d1;
+  --color-control-border: #6f8a80;
+  --color-subtle: #eef7f3;
+  --color-disabled: #dce9e3;
+  --radius-panel: 12px;
+  --font-sans:
+    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}

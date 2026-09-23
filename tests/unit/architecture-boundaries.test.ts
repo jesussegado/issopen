@@ -231,6 +231,45 @@ describe("modular monolith boundaries", () => {
     expect(violations).toEqual([]);
   });
 
+  it("keeps the web cascade split into ordered responsibility layers", () => {
+    const manifest = readFileSync(
+      join(repository, "src/web/styles.css"),
+      "utf8",
+    );
+    const layers = [
+      "foundation.css",
+      "evidence.css",
+      "base.css",
+      "shell-public.css",
+      "components.css",
+      "board.css",
+      "issue-detail.css",
+      "administration.css",
+      "responsive.css",
+      "account-collaboration.css",
+    ];
+    const importedLayers = [
+      ...manifest.matchAll(/@import\s+["']\.\/styles\/([^"']+)["'];/g),
+    ].map((match) => match[1]);
+    const violations: string[] = [];
+    if (manifest.includes("{"))
+      violations.push("styles.css owns rules instead of cascade order");
+    if (JSON.stringify(importedLayers) !== JSON.stringify(layers))
+      violations.push("styles.css changed its documented cascade order");
+    for (const layer of layers) {
+      const source = readFileSync(
+        join(repository, "src/web/styles", layer),
+        "utf8",
+      );
+      if (source.split("\n").length > 500)
+        violations.push(`${layer} mixes too many style responsibilities`);
+      if (source.includes("@import") && layer !== "foundation.css")
+        violations.push(`${layer} introduces a hidden cascade dependency`);
+    }
+
+    expect(violations).toEqual([]);
+  });
+
   it("keeps database writes out of HTTP and MCP adapters", () => {
     const writePattern =
       /\b(?:db|tx|database|connection\.db)\s*\.\s*(?:insert|update|delete)\s*\(/;

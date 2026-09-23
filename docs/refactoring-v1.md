@@ -163,6 +163,16 @@ responses, late Epic reads, read-only access and image limits. An extension
 architecture test prevents UI components from reaching browser persistence or
 transport directly.
 
+Ticket 135 turns `styles.css` from a 1,788-line mixed cascade into an eleven-line
+ordered manifest over ten responsibility layers: tokens, evidence, document
+defaults, shell/public pages, reusable components, board/Epics, issue detail,
+administration, responsive overrides and account/collaboration. The initial
+mechanical split produced byte-identical compiled CSS; the only subsequent
+change consolidates the previously repeated board-toolbar/project-Epic panel
+frame. All desktop and mobile E2E flows pass. An architecture test fixes import
+order, rejects rules in the manifest or hidden imports, and caps each layer at
+500 lines while the extension stylesheet remains independent.
+
 ## Confirmed duplication
 
 - Member and Owner invitations previously implemented email
@@ -185,6 +195,9 @@ transport directly.
 - The Chrome composer now has one persistence/transport model; its extracted
   presentation components deliberately remain local to the extension rather
   than importing the web frontend.
+- Shared web panels, actions, fields and feedback primitives retain grouped
+  selectors in the components layer; board, detail and administrative rules no
+  longer share an accidental global file.
 
 These are targets, not permission to create generic frameworks. An extraction
 must name a stable domain or transport concept, have multiple real consumers,

@@ -1,0 +1,401 @@
+/* Project board, cards, Epics, progress and web image attachments. */
+.board-toolbar,
+.project-epics {
+  margin-bottom: 24px;
+  padding: 20px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+}
+.board-toolbar {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+.board-toolbar-heading {
+  grid-column: 1 / -1;
+}
+.board-toolbar-heading h2,
+.board-toolbar-heading p {
+  margin: 0;
+}
+.board-toolbar-heading p {
+  margin-top: 4px;
+}
+.project-epics > .metadata {
+  margin: 0;
+}
+.project-epics-header,
+.project-epic-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.project-epics-header {
+  margin-bottom: 16px;
+}
+.project-epics-header h2 {
+  margin: 0;
+}
+.project-epic-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.project-epic-card {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-subtle);
+}
+.epic-card-title {
+  font-size: 18px;
+  font-weight: 600;
+}
+.project-epic-card .epic-card-title {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.project-epic-card .button {
+  min-height: 36px;
+  padding: 4px 12px;
+  font-size: 14px;
+}
+.epic-board-link {
+  justify-self: start;
+}
+.board-region {
+  overflow-x: auto;
+  padding: 4px 4px 16px;
+  scrollbar-color: var(--color-control-border) var(--color-subtle);
+}
+.drag-instructions {
+  margin: 0 0 12px;
+  color: var(--color-muted);
+  font-size: 14px;
+}
+.touch-board-instructions {
+  display: none;
+}
+.board {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(280px, 360px));
+  gap: 16px;
+  min-width: 1464px;
+  align-items: start;
+}
+.board-columns-4 {
+  grid-template-columns: repeat(4, minmax(280px, 360px));
+  min-width: 1168px;
+}
+.board-columns-3 {
+  grid-template-columns: repeat(3, minmax(280px, 360px));
+  min-width: 872px;
+}
+.board-column {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-subtle);
+  transition: background-color 120ms ease;
+}
+.board-column.is-drop-target {
+  background: var(--color-accent-soft);
+  outline: 3px solid var(--color-accent);
+  outline-offset: -3px;
+}
+.board-column-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.board-column-header h2 {
+  margin: 0;
+}
+.board-column-actions,
+.issue-card-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.board-column-actions {
+  flex: 0 0 auto;
+}
+.disclosure-button {
+  display: inline-grid;
+  width: 40px;
+  min-height: 40px;
+  flex: 0 0 40px;
+  cursor: pointer;
+  place-items: center;
+  border: 1px solid var(--color-control-border);
+  border-radius: 8px;
+  color: var(--color-text);
+  background: var(--color-surface);
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1;
+}
+.board-column.is-collapsed .board-column-header {
+  margin-bottom: 0;
+}
+.issue-list {
+  display: grid;
+  gap: 12px;
+  padding: 0;
+  list-style: none;
+}
+.issue-card {
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  transition: border-color 120ms ease;
+}
+.issue-card:has(.issue-card-title:hover),
+.issue-card:has(.issue-card-title:focus-visible) {
+  border-color: var(--color-control-border);
+}
+.issue-card[draggable="true"] {
+  cursor: grab;
+}
+.issue-card[draggable="true"]:active {
+  cursor: grabbing;
+}
+.issue-card-summary {
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.issue-card-title {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px;
+  min-height: 40px;
+  flex: 1;
+  align-items: start;
+  margin: 0;
+  color: var(--color-text);
+  font-weight: 600;
+  text-decoration: none;
+}
+.issue-card-number {
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--color-subtle);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.issue-card-title-text {
+  display: -webkit-box;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+.issue-card-title:focus .issue-card-title-text {
+  -webkit-line-clamp: unset;
+}
+.assignee-label {
+  overflow-wrap: anywhere;
+}
+.issue-card-compact-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+.issue-card-compact-meta .assignee-label {
+  margin: 0;
+}
+.issue-card > .warning-badge {
+  margin-top: 8px;
+}
+.issue-card-details {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+}
+.issue-card-details[hidden] {
+  display: none;
+}
+.issue-card-description {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+.issue-card-details > .metadata {
+  margin: 0;
+}
+.card-status {
+  margin-top: 4px;
+}
+.card-status label {
+  display: grid;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.card-status select {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px;
+  border: 1px solid var(--color-control-border);
+  border-radius: 8px;
+  color: var(--color-text);
+  background: var(--color-surface);
+}
+.empty-column {
+  margin: 16px 0 8px;
+  color: var(--color-muted);
+}
+.epic-badge {
+  text-decoration: none;
+}
+.epic-badge:hover {
+  color: var(--color-accent-hover);
+  background: var(--color-accent-soft);
+}
+.epic-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+.epic-list,
+.epic-issue-list {
+  display: grid;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.epic-card,
+.epic-issue-list li {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-subtle);
+}
+.epic-card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.archived-epics {
+  display: grid;
+  gap: 16px;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--color-border);
+}
+.archived-epics h3 {
+  margin: 0;
+}
+.project-epic-title-row .epic-card-title {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.web-image-attachments {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-subtle);
+}
+.web-image-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.web-image-heading h2,
+.web-image-attachments p {
+  margin: 0;
+}
+.web-image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.web-image-grid li {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  padding: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+}
+.web-image-grid img {
+  width: 100%;
+  height: 112px;
+  object-fit: contain;
+  border-radius: 4px;
+  background: var(--color-subtle);
+}
+.epic-progress {
+  display: grid;
+  gap: 8px;
+}
+.epic-progress-label,
+.epic-issue-heading,
+.epic-status-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.epic-progress-label {
+  justify-content: space-between;
+  color: var(--color-muted);
+  font-size: 14px;
+}
+.epic-progress progress {
+  width: 100%;
+  height: 12px;
+  accent-color: var(--color-accent);
+  overflow: hidden;
+  border: 1px solid var(--color-control-border);
+  border-radius: 999px;
+  background: var(--color-accent-soft);
+}
+.epic-progress progress::-webkit-progress-bar {
+  background: var(--color-accent-soft);
+}
+.epic-progress progress::-webkit-progress-value {
+  background: var(--color-accent);
+}
+.epic-progress progress::-moz-progress-bar {
+  background: var(--color-accent);
+}
+.epic-status-counts {
+  margin-top: 16px;
+}

@@ -1,0 +1,70 @@
+/* Document defaults, typography, controls and focus behavior. */
+:root {
+  color: var(--color-text);
+  background: var(--color-app);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-synthesis: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+html {
+  overflow-x: hidden;
+}
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background: var(--color-app);
+}
+a {
+  color: var(--color-accent);
+  text-underline-offset: 3px;
+}
+a:hover {
+  color: var(--color-accent-hover);
+}
+::selection {
+  color: var(--color-text);
+  background: var(--color-brand-mint);
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+h1:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+h1 {
+  margin: 0 0 16px;
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+h2,
+h3 {
+  margin: 0 0 16px;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+p {
+  margin: 0 0 24px;
+  line-height: 1.5;
+}
+ul,
+ol {
+  margin: 0;
+  padding-left: 24px;
+}

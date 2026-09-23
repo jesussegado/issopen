@@ -1,0 +1,232 @@
+/* Existing responsive, touch-target and reduced-motion overrides. */
+@media (max-width: 1023px) {
+  .authenticated-layout {
+    display: block;
+  }
+  .sidebar {
+    display: none;
+  }
+  .button.mobile-menu-trigger {
+    display: inline-flex;
+    margin-left: auto;
+  }
+  .button.desktop-menu-trigger {
+    display: none;
+  }
+  .mobile-navigation {
+    position: absolute;
+    z-index: 9;
+    top: 100%;
+    left: 0;
+    right: 0;
+    padding: 16px;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-surface);
+  }
+  .mobile-navigation.open {
+    display: block;
+  }
+  .owner-menu {
+    margin-left: 0;
+  }
+  .main-content {
+    padding: 24px;
+  }
+  .board-toolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+  .activity-panel {
+    position: static;
+    max-height: none;
+    overflow-y: visible;
+  }
+}
+
+@media (max-width: 767px) {
+  .public-feature-grid {
+    grid-template-columns: 1fr;
+  }
+  .app-header {
+    min-height: 56px;
+    padding: 0 16px;
+  }
+  .workspace-name {
+    display: none;
+  }
+  .mobile-navigation {
+    top: 100%;
+  }
+  .owner-menu summary {
+    min-height: 44px;
+    padding: 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .authenticated-header {
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+  .authenticated-header:has(.workspace-switcher) {
+    flex-wrap: wrap;
+  }
+  .authenticated-header > .metadata {
+    display: none;
+  }
+  .notification-label {
+    display: none;
+  }
+  .notification-link {
+    min-width: 44px;
+    gap: 4px;
+    padding: 8px;
+  }
+  .authenticated-header .owner-menu {
+    min-width: 0;
+    flex: 0 1 auto;
+  }
+  .centered-page {
+    min-height: calc(100vh - 56px);
+    padding: 24px 16px;
+  }
+  .page-panel,
+  .form-panel {
+    padding: 24px;
+  }
+  .main-content {
+    padding: 24px 16px;
+  }
+  .button,
+  .nav-link,
+  .disclosure-button,
+  .field input,
+  .field select,
+  .field textarea,
+  .card-status select {
+    min-height: 44px;
+  }
+  .page-header {
+    display: grid;
+    gap: 16px;
+  }
+  .access-list-item {
+    display: grid;
+  }
+  .access-actions,
+  .access-actions .button,
+  .button-row .button {
+    width: 100%;
+  }
+  .metadata-list div {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  .page-actions {
+    width: 100%;
+  }
+  .page-actions .button {
+    flex: 1;
+  }
+  .board-page .page-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .board-page .page-actions .button {
+    width: 100%;
+  }
+  .board-toolbar {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+  .board-region {
+    overflow: visible;
+  }
+  .board,
+  .board-columns-4,
+  .board-columns-3 {
+    display: grid;
+    min-width: 0;
+    grid-template-columns: 1fr;
+  }
+  .board-column {
+    max-width: none;
+  }
+  .pointer-board-instructions {
+    display: none;
+  }
+  .touch-board-instructions {
+    display: inline;
+  }
+  .board-column[hidden] {
+    display: none;
+  }
+  .detail-panel,
+  .activity-panel,
+  .review-panel {
+    padding: 16px;
+  }
+  .issue-detail-page > .page-header .page-actions {
+    max-width: none;
+  }
+  .epic-layout {
+    grid-template-columns: 1fr;
+  }
+  .question-navigation {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .question-navigation span {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    text-align: center;
+  }
+  .epic-question-navigation {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .epic-question-navigation .metadata {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+}
+
+@media (pointer: coarse) {
+  .button,
+  .nav-link,
+  .disclosure-button,
+  .field input,
+  .field select,
+  .field textarea,
+  .card-status select {
+    min-height: 44px;
+  }
+  .pointer-board-instructions {
+    display: none;
+  }
+  .touch-board-instructions {
+    display: inline;
+  }
+}
+
+@media (max-width: 420px) {
+  .authenticated-header .wordmark span {
+    display: none;
+  }
+  .authenticated-header .wordmark {
+    gap: 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .skip-link,
+  .button,
+  .nav-link {
+    transition:
+      color 120ms,
+      background-color 120ms,
+      transform 120ms;
+  }
+}
