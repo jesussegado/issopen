@@ -3,18 +3,31 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Epic 10 ticket 130 deployed and ready for human review; starting 131
-last_updated: "2026-09-23T15:12:00Z"
+stopped_at: Epic 10 ticket 131 deployed and ready for human review; starting 132
+last_updated: "2026-09-23T15:43:00Z"
 last_activity: 2026-09-23
 progress:
   total_phases: 9
   completed_phases: 0
-  total_plans: 12
-  completed_plans: 11
+  total_plans: 13
+  completed_plans: 12
   percent: 92
 ---
 
 # Project State
+
+## Follow-up 23Sep — Cohesive board (Epic 10 ticket 131)
+
+Ticket 131 reduces `BoardRoute` from 955 to 354 lines, composing a single data
+model, isolated DnD, toolbar, Epic overview, columns and cards. Presentation
+state survives live refresh; keyboard/touch retain the select alternative and
+an architecture test guards the boundary. Source `9ea56f4`; 222 fast, 118
+integration, 84 characterization, 42 web E2E and 16+13 Chrome tests pass with
+lint/types, zero schema drift, reproducible build and secret scan. GitOps
+`79295f9f`, digest `89a8124f`; 140 GitOps tests + 12 subtests, Argo
+Synced/Healthy, Ready/0-restart pod, exact image, HTTP and both unchanged PVCs
+pass. Ticket is Ready for Human Review without claim. No API, permission, SQL
+or deliberate UX change. See quick 260923-rf10; next ticket is 132.
 
 ## Follow-up 23Sep — Shared web request state (Epic 10 ticket 130)
 
