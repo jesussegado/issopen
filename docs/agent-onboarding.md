@@ -21,6 +21,12 @@ contract hash so internal refactors cannot silently change onboarding.
 | `/downloads/issopen-skill-manifest.json` | Skill version, archive path and SHA-256 |
 | `/downloads/issopen-skill-VERSION.zip` | Deterministic skill package rooted at `issopen/` |
 
+Authenticated users can also open the two human entry points directly from
+the workspace navigation. **Inicio rápido MCP** jumps to the operational setup
+steps and **Documentación MCP** jumps to the machine-readable resources. Both
+entries are available to Owners and members; they reveal no private project or
+credential data.
+
 These resources contain no workspace data, agent identity, PAT, OAuth token,
 cookie or password. The MCP URL is public metadata; authorization is still
 required for every tool call.
