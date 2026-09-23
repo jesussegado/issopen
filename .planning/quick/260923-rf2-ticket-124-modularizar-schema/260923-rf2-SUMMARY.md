@@ -27,6 +27,7 @@ key_files:
     - AGENTS.md
 commits:
   - 16d4df6
+  - gitops:b3ddcbf0
 metrics:
   tables_unchanged: 42
   tests_characterization: 78
@@ -67,7 +68,19 @@ The largest schema module is now the 529-line access boundary. Consumers keep
 their existing imports, SQL names/constraints/indexes are unchanged and no
 runtime, authorization or product contract was altered.
 
+## Production verification
+
+- Image `refactor-schema-16d4df6` published at immutable digest
+  `sha256:ed9e28239a98e801e61e28a86a0268072e81ae92890cf312b3b47dea4c02229f`.
+- GitOps commit `b3ddcbf0` reconciled automatically; Argo CD reports
+  `Synced/Healthy` at that exact revision.
+- Deployment has one updated/available replica; the pod is Ready with zero
+  restarts and the effective image ID matches the approved digest.
+- Public `/health/ready` returns `{"status":"ok"}` and `/` returns HTTP 200.
+- PostgreSQL and attachment PVCs remain Bound to their previous volume IDs.
+
 ## Self-check
 
 PASSED. Commit `16d4df6` contains the bounded refactor and its executable
-architecture rules. No migration was created.
+architecture rules. No migration was created; production runs the exact
+verified artifact.

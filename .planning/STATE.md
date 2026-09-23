@@ -20,7 +20,9 @@ progress:
 
 Ticket 124 splits the 1,681-line schema behind its unchanged public facade into
 identity, access, agents, tracker, notifications, captures and explicit
-cross-domain relations. Source `16d4df6`; exact exports match, Drizzle sees the
+cross-domain relations. Source `16d4df6`, GitOps `b3ddcbf0`, digest `ed9e2823`;
+Argo is Synced/Healthy, pod Ready/0 restarts, public readiness/root PASS and
+both PVC volume IDs unchanged. Exact exports match, Drizzle sees the
 same 42 tables and generates no migration. Gates pass: lint/types, 78 focused
 characterization, 201 fast tests, 118 integration tests on ephemeral PostgreSQL
 and production build. Deep imports and cyclic module dependencies now fail an
@@ -504,7 +506,7 @@ Decisions are logged in PROJECT.md Key Decisions table. Current roadmap-level st
 
 | ID | Description | Date | Commits | Status | Directory |
 | --- | --- | --- | --- | --- | --- |
-| 260923-rf2 | Ticket 124: esquema Drizzle modular sin cambio SQL | 2026-09-23 | Fuente `16d4df6` | 42 tablas sin drift; 78 caracterización, 201 fast, 118 integración y build PASS | [260923-rf2](./quick/260923-rf2-ticket-124-modularizar-schema/) |
+| 260923-rf2 | Ticket 124: esquema Drizzle modular sin cambio SQL | 2026-09-23 | Fuente `16d4df6`; GitOps `b3ddcbf0` | 42 tablas sin drift; gates y despliegue Synced/Healthy PASS | [260923-rf2](./quick/260923-rf2-ticket-124-modularizar-schema/) |
 | 260923-rf1 | Ticket 123: red de seguridad y mapa de refactor | 2026-09-23 | Fuente `d695272` | Lint/types, 76 caracterización, 199 fast tests y schema drift PASS; sin cambio runtime | [260923-rf1](./quick/260923-rf1-ticket-123-red-seguridad-refactor/) |
 | 260917-onb | Onboarding autocontenido para agentes, MCP y skill | 2026-09-17 | Fuente `5131c64`; GitOps `cbf58075` | Gates/Compose/Argo/smoke responsive PASS; ticket 115 Ready for Human Review | [260917-onb](./quick/260917-onb-onboarding-agentes-mcp-skill/) |
 | 260916-llb | Gmail de Gremiox, privacidad y guía de piloto Google | 2026-09-16 | 6005ace, f5dbbc4; GitOps33a99f6e, a3704a4a | Desplegado, SMTP/gates/restore/smoke PASS; recepción y Google pendientes del Owner | [260916-llb](./quick/260916-llb-epic-3-reutilizar-correo-de-gremiox-y-gu/) |
