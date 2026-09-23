@@ -17,7 +17,7 @@
 
 ## Evidencia local
 
-- Código: `e4e7499`.
+- Código: `e4e7499`; canonicalización del hash: `9c66447`.
 - Arquitectura + MCP: 26 tests: PASS.
 - Integración completa: 22 ficheros, 118 tests: PASS.
 - Unit/web: 46 ficheros, 215 tests: PASS.
@@ -26,4 +26,14 @@
 
 ## Producción
 
-Pendiente de publicar y verificar tras el commit documental.
+- Imagen `refactor-mcp-registry-7c3d838`, digest
+  `sha256:c484ca8c070ae38e813dd11ad411c58f3d523c1845553b405b0a29a9dd718bfd`.
+- GitOps `4004f73208ca75e93919978c6e3fb5bfa3150dd0`; Kustomize y 140 tests
+  PASS.
+- Argo CD está en la revisión exacta, Synced y Healthy; pod Ready, 0 reinicios
+  y digest exacto; readiness/root y ambos PVC pasan sin cambios.
+- Smoke MCP productivo: 18 tools, `get_agent_context` PASS y hash canónico
+  `cf1b9bf298ddb60dea3313e84d40b3d2c0167f7dc41e039d8b07d96b8f482a35`,
+  idéntico al local.
+- Ticket 129 queda Ready for Human Review, versión 7, sin claim, con comentario
+  y enlace al commit publicados mediante MCP.
