@@ -63,6 +63,19 @@ const workspaceId = "22222222-2222-4222-8222-222222222222";
 const oauthClientId = "chatgpt-work-integration";
 const oauthRedirectUri = "https://chatgpt.example.test/oauth/callback";
 
+function canonicalJson(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => canonicalJson(item)).join(",")}]`;
+  }
+  if (value && typeof value === "object") {
+    return `{${Object.entries(value)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, item]) => `${JSON.stringify(key)}:${canonicalJson(item)}`)
+      .join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
 let database: IntegrationDatabase;
 let connection: DatabaseConnection;
 let httpServer: ReturnType<typeof serve>;
@@ -1295,7 +1308,7 @@ describe("stateless Issopen MCP", () => {
     const tools = await client.listTools();
     const toolContractHash = createHash("sha256")
       .update(
-        JSON.stringify(
+        canonicalJson(
           tools.tools
             .map(({ name, description, inputSchema, annotations }) => ({
               name,
@@ -1308,7 +1321,7 @@ describe("stateless Issopen MCP", () => {
       )
       .digest("hex");
     expect(toolContractHash).toBe(
-      "904fe23215f9e7efde7f6ca845696783ad77ea8f075b443d66598bdd1c29eb47",
+      "cf1b9bf298ddb60dea3313e84d40b3d2c0167f7dc41e039d8b07d96b8f482a35",
     );
     expect(tools.tools.map((tool) => tool.name).sort()).toEqual(
       [
