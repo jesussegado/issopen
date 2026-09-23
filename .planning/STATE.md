@@ -3,18 +3,28 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Epic 10 ticket 126 deployed and ready for human review; starting 127
-last_updated: "2026-09-23T14:17:00Z"
+stopped_at: Epic 10 ticket 127 capability split validated locally
+last_updated: "2026-09-23T14:35:00Z"
 last_activity: 2026-09-23
 progress:
   total_phases: 9
   completed_phases: 0
-  total_plans: 9
-  completed_plans: 8
-  percent: 89
+  total_plans: 10
+  completed_plans: 9
+  percent: 90
 ---
 
 # Project State
+
+## Follow-up 23Sep — Tracker capability split (Epic 10 ticket 127)
+
+Ticket 127 reduces `TrackerService` to a 213-line compatible facade over five
+non-importing domain capabilities. All 30 moved operations compare unchanged;
+the architecture gate prevents sibling imports and REST/MCP bypasses. Source
+`c99686e`; 73 focused, 118 integration, 214 fast and 81 characterization tests
+pass, along with 16 Chrome unit tests, 13 Chrome E2E, reproducible extension,
+lint/types, zero schema drift, build and secret scan. No schema or public
+contract change. See quick 260923-rf7; deployment is next, followed by 129.
 
 ## Follow-up 23Sep — Tracker transaction invariants (Epic 10 ticket 126)
 
@@ -553,6 +563,7 @@ Decisions are logged in PROJECT.md Key Decisions table. Current roadmap-level st
 
 | ID | Description | Date | Commits | Status | Directory |
 | --- | --- | --- | --- | --- | --- |
+| 260923-rf7 | Ticket 127: dividir TrackerService por capacidades | 2026-09-23 | Fuente `c99686e` | Gates completos, incluidas 13 E2E Chrome y comparación de 30 operaciones; despliegue pendiente | [260923-rf7](./quick/260923-rf7-ticket-127-dividir-tracker-capacidades/) |
 | 260923-rf6 | Ticket 126: invariantes transaccionales compartidas del tracker | 2026-09-23 | Fuente `d5bba0d`; GitOps `165cda3e` | Gates completos y despliegue Synced/Healthy PASS; ticket Ready for Human Review v6 sin claim | [260923-rf6](./quick/260923-rf6-ticket-126-invariantes-transaccionales/) |
 | 260923-rf3 | Ticket 125: primitivas seguras compartidas de invitación | 2026-09-23 | Fuente `4779b8d`; GitOps `b0e77964` | Gates completos y despliegue Synced/Healthy PASS; sin cambio de contrato | [260923-rf3](./quick/260923-rf3-ticket-125-unificar-invitaciones/) |
 | 260923-rf2 | Ticket 124: esquema Drizzle modular sin cambio SQL | 2026-09-23 | Fuente `16d4df6`; GitOps `b3ddcbf0` | 42 tablas sin drift; gates y despliegue Synced/Healthy PASS | [260923-rf2](./quick/260923-rf2-ticket-124-modularizar-schema/) |

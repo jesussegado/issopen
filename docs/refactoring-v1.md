@@ -105,6 +105,13 @@ attribution share one implementation. Transactions, business queries and
 operation-specific guards remain explicit. Soft deletion deliberately keeps a
 separate tombstone-aware lock so a lost successful response can be retried.
 
+Ticket 127 keeps the public `TrackerService` facade while moving its internal
+implementation into five non-importing capabilities: projects/Epics, issues,
+discussion, workflow/review and activity. Cross-capability detail assembly stays
+visible in the 213-line facade. A structural test prevents sibling capability
+imports and REST/MCP bypasses; a mechanical comparison confirmed all 30 moved
+operations are unchanged before running the consumer suites.
+
 ## Confirmed duplication
 
 - Member and Owner invitations previously implemented email
@@ -113,8 +120,7 @@ separate tombstone-aware lock so a lost successful response can be retried.
   unique-violation handling remains local to the only invitation flow that
   currently consumes it; the controller-error seam is handled by ticket 128.
 - Tracker mutation invariants are centralized by ticket 126. Capability
-  ownership remains concentrated in the compatible service facade until
-  ticket 127 splits it into cohesive modules.
+  ownership is split by ticket 127 behind the compatible service facade.
 - HTTP transport parsing and `DomainError` serialization are centralized by
   ticket 128; the remaining schema validation in services represents business
   rules rather than a competing controller implementation.
