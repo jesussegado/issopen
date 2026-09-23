@@ -29,6 +29,15 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+23/09 ticket139: `AgentService` es la fachada pública y compone identidad,
+credenciales, grants y autenticación desde `src/server/domain/agents/`. REST,
+MCP y tests consumidores no deben importar esas capabilities directamente. En
+web, `AgentsRoute` sólo compone el controlador `useAgentManagement` y componentes
+de `components/agents/`; los componentes no poseen transporte. Conserva revelado
+único, máximo de claves, reducción de permisos, allowlists, scopes, OAuth,
+revocación y forma de los contratos. Los límites ejecutables viven en
+`architecture-boundaries.test.ts`.
+
 23/09 ticket138: `src/server/invitations.ts` es una fachada compatible; contratos,
 owner locking, enlaces/delivery, permisos de miembros, claim/accept transaccional
 y el adaptador Better Auth viven en `src/server/member-invitations/`. No importes

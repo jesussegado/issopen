@@ -435,6 +435,84 @@ describe("modular monolith boundaries", () => {
     expect(violations).toEqual([]);
   });
 
+  it("keeps agent administration split behind stable composition boundaries", () => {
+    const serviceFacade = readFileSync(
+      join(repository, "src/server/domain/agents/service.ts"),
+      "utf8",
+    );
+    const serverCapabilities = [
+      "./authentication.js",
+      "./credentials.js",
+      "./grants.js",
+      "./identities.js",
+    ];
+    const violations = serverCapabilities
+      .filter((specifier) => !imports(serviceFacade).includes(specifier))
+      .map((specifier) => `AgentService does not compose ${specifier}`);
+    if (serviceFacade.split("\n").length > 160)
+      violations.push("AgentService grew beyond its compatible facade");
+
+    const serverLimits: Record<string, number> = {
+      "authentication.ts": 400,
+      "credentials.ts": 300,
+      "grants.ts": 220,
+      "identities.ts": 450,
+      "support.ts": 100,
+    };
+    for (const [file, limit] of Object.entries(serverLimits)) {
+      const source = readFileSync(
+        join(repository, "src/server/domain/agents", file),
+        "utf8",
+      );
+      if (source.split("\n").length > limit)
+        violations.push(`${file} grew beyond its agent responsibility`);
+    }
+    const internalCapability =
+      /\/agents\/(?:authentication|credentials|grants|identities|support)\.js$/;
+    for (const file of sourceFiles("src/server")) {
+      if (file.includes("/domain/agents/")) continue;
+      for (const specifier of imports(readFileSync(file, "utf8"))) {
+        if (internalCapability.test(specifier)) {
+          violations.push(
+            `${relative(repository, file)} bypasses AgentService via ${specifier}`,
+          );
+        }
+      }
+    }
+
+    const route = readFileSync(
+      join(repository, "src/web/routes/AgentsRoute.tsx"),
+      "utf8",
+    );
+    const webBoundaries = [
+      "../components/agents/AgentCard.js",
+      "../components/agents/AgentCreationForm.js",
+      "../components/agents/AgentDialogs.js",
+      "../components/agents/TokenReveal.js",
+      "../lib/use-agent-management.js",
+    ];
+    for (const specifier of webBoundaries) {
+      if (!imports(route).includes(specifier))
+        violations.push(`AgentsRoute does not compose ${specifier}`);
+    }
+    if (route.split("\n").length > 260)
+      violations.push("AgentsRoute grew beyond orchestration concerns");
+    for (const file of sourceFiles("src/web/components/agents")) {
+      for (const specifier of imports(readFileSync(file, "utf8"))) {
+        if (specifier.includes("/routes/"))
+          violations.push(
+            `${relative(repository, file)} imports route ${specifier}`,
+          );
+        if (specifier.includes("/lib/api"))
+          violations.push(
+            `${relative(repository, file)} owns transport through ${specifier}`,
+          );
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
   it("keeps the large integration suites on explicit boundary fixtures", () => {
     const suites = [
       "tests/integration/http.test.ts",

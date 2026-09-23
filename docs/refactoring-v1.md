@@ -203,10 +203,19 @@ exercise token rotation, single use, abandoned identity recovery, exact Google
 proof, mail delivery, CAS grants, revocation and multi-workspace isolation. The
 architecture gate fixes these boundaries and size limits.
 
-Two pre-existing concerns remain intentionally separate: agent administration
-and the slightly-over-threshold initial web bundle. Their project backlog
-tickets (`ISSOPEN-139` and `ISSOPEN-140`) require characterization of their own
-UX and measured loading cost rather than hidden changes inside ticket 138.
+Ticket 139 keeps `AgentService` as the stable public API while separating agent
+identity lifecycle, API credentials, reducible grants and PAT/OAuth
+authentication. Each capability retains its original transaction and security
+checks; REST and MCP continue to consume only the facade. The Agents route is
+now a 45-line composition boundary over one transport-owning controller and
+transport-free creation, dialog, card, credential, onboarding and token-reveal
+components. Characterization tests preserve scope defaults, one-time reveal,
+credential lifecycle, permission reduction, onboarding and revocation, while
+the architecture gate prevents adapter bypasses and oversized facades.
+
+The slightly-over-threshold initial web bundle remains intentionally separate.
+Ticket `ISSOPEN-140` requires measured loading cost and route-level evidence
+rather than speculative splitting inside the agent refactor.
 
 ## Confirmed duplication
 
