@@ -73,6 +73,57 @@ describe("modular monolith boundaries", () => {
     expect(violations).toEqual([]);
   });
 
+  it("keeps tracker capabilities cohesive behind the compatible facade", () => {
+    const capabilityFiles = [
+      "tracker-activity.ts",
+      "tracker-discussion.ts",
+      "tracker-issues.ts",
+      "tracker-projects.ts",
+      "tracker-workflow.ts",
+    ];
+    const capabilitySpecifier =
+      /^\.\/tracker-(?:activity|discussion|issues|projects|workflow)\.js$/;
+    const violations = capabilityFiles.flatMap((file) => {
+      const source = readFileSync(
+        join(repository, "src/server/domain", file),
+        "utf8",
+      );
+      return [
+        ...imports(source)
+          .filter((specifier) => capabilitySpecifier.test(specifier))
+          .map(
+            (specifier) => `${file} imports sibling capability ${specifier}`,
+          ),
+        ...(source.split("\n").length > 650
+          ? [`${file} grew beyond its cohesive capability boundary`]
+          : []),
+      ];
+    });
+    const facade = readFileSync(
+      join(repository, "src/server/domain/tracker.ts"),
+      "utf8",
+    );
+    for (const file of capabilityFiles) {
+      const specifier = `./${file.replace(/\.ts$/, ".js")}`;
+      if (!imports(facade).includes(specifier)) {
+        violations.push(`tracker.ts does not compose ${specifier}`);
+      }
+    }
+    for (const directory of ["src/server/http", "src/server/mcp"]) {
+      for (const file of sourceFiles(directory)) {
+        for (const specifier of imports(readFileSync(file, "utf8"))) {
+          if (capabilitySpecifier.test(specifier)) {
+            violations.push(
+              `${relative(repository, file)} bypasses TrackerService via ${specifier}`,
+            );
+          }
+        }
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
   it("keeps database writes out of HTTP and MCP adapters", () => {
     const writePattern =
       /\b(?:db|tx|database|connection\.db)\s*\.\s*(?:insert|update|delete)\s*\(/;
