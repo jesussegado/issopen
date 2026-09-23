@@ -1,51 +1,26 @@
+import { useEffect, useRef, useState } from "react";
+import { BoardColumn } from "../components/board/BoardColumn.js";
+import { BoardEpicOverview } from "../components/board/BoardEpicOverview.js";
 import {
-  type DragEvent,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-import { AssigneeLabel } from "../components/AssigneeEditor.js";
-import { CollaboratorPicker } from "../components/CollaboratorPicker.js";
+  BoardToolbar,
+  type BoardWarningFilter,
+} from "../components/board/BoardToolbar.js";
 import {
   AppLink,
-  Badge,
   EmptyState,
   OfflineBanner,
   PageHeading,
   RouteLoadError,
-  Select,
   Skeleton,
   StatusBanner,
 } from "../components/ui.js";
-import {
-  apiFailureKind,
-  apiRequest,
-  mutationFailureMessage,
-} from "../lib/api.js";
-import { useLatestRequest } from "../lib/latest-request.js";
-import { navigate, useLocation } from "../lib/navigation.js";
+import { useBoardDrag } from "../lib/board-drag.js";
+import { useBoardModel } from "../lib/board-model.js";
+import { useLocation } from "../lib/navigation.js";
 import { useOnlineStatus } from "../lib/online.js";
-import { subscribeToProjectChanges } from "../lib/project-live.js";
-import type { Epic, Issue, IssueStatus, Project } from "../types.js";
-import {
-  epicLabel,
-  issueLabel,
-  issueReference,
-  issueStatuses,
-  priorityLabels,
-  statusLabels,
-} from "../types.js";
+import type { Issue, IssueStatus } from "../types.js";
+import { issueReference, statusLabels } from "../types.js";
 import { UnavailableRoute } from "./TrackerForms.js";
-
-type BoardColumn = { status: IssueStatus; issues: Issue[] };
-type BoardResponse = {
-  project: Project;
-  columns: BoardColumn[];
-  epics: Epic[];
-  totalIssueCount?: number;
-  hiddenIssueCount?: number;
-};
 
 function repositoryLabel(repositoryUrl: string | null) {
   if (!repositoryUrl) return null;
@@ -57,66 +32,6 @@ function repositoryLabel(repositoryUrl: string | null) {
   }
 }
 
-function EpicOverview({ epics }: { epics: Epic[] }) {
-  return (
-    <section className="project-epics" aria-labelledby="project-epics-heading">
-      <div className="project-epics-header">
-        <h2 id="project-epics-heading">Epics</h2>
-        <Badge>{epics.length}</Badge>
-      </div>
-      {epics.length === 0 ? (
-        <p className="metadata">No Epics yet.</p>
-      ) : (
-        <ul className="project-epic-list">
-          {epics.map((epic) => {
-            const { doneIssues, totalIssues } = epic.summary;
-            return (
-              <li className="project-epic-card" key={epic.id}>
-                <div className="project-epic-title-row">
-                  <AppLink
-                    className="epic-card-title"
-                    href={`/epics/${epic.id}`}
-                  >
-                    {epicLabel(epic)}
-                  </AppLink>
-                  <Badge>
-                    {totalIssues} {totalIssues === 1 ? "ticket" : "tickets"}
-                  </Badge>
-                </div>
-                <div className="epic-progress">
-                  <div className="epic-progress-label">
-                    <span>
-                      {doneIssues}/{totalIssues} done
-                    </span>
-                    <span>
-                      {totalIssues === 0
-                        ? 0
-                        : Math.round((doneIssues / totalIssues) * 100)}
-                      %
-                    </span>
-                  </div>
-                  <progress
-                    max={Math.max(totalIssues, 1)}
-                    value={doneIssues}
-                    aria-label={`${epicLabel(epic)}: ${doneIssues} of ${totalIssues} tickets done`}
-                  />
-                </div>
-                <AppLink
-                  className="button button-secondary epic-board-link"
-                  href={`/projects/${epic.projectId}?epic=${epic.id}`}
-                  aria-label={`View tickets for ${epicLabel(epic)}`}
-                >
-                  View tickets
-                </AppLink>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </section>
-  );
-}
-
 export function BoardRoute({
   projectId,
   canManageProject,
@@ -125,108 +40,68 @@ export function BoardRoute({
   canManageProject: boolean;
 }) {
   const location = useLocation();
-  const epicParameter = new URLSearchParams(location.split("?")[1] ?? "").get(
-    "epic",
-  );
-  const epicFilter = epicParameter ?? "all";
-  const [project, setProject] = useState<Project | null>(null);
-  const [epics, setEpics] = useState<Epic[]>([]);
-  const [columns, setColumns] = useState<BoardColumn[]>([]);
-  const [totalIssueCount, setTotalIssueCount] = useState(0);
-  const [hiddenIssueCount, setHiddenIssueCount] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [missing, setMissing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [savingIssue, setSavingIssue] = useState<string | null>(null);
-  const [filter, setFilter] = useState<"all" | IssueStatus>("all");
+  const epicFilter =
+    new URLSearchParams(location.split("?")[1] ?? "").get("epic") ?? "all";
+  const [statusFilter, setStatusFilter] = useState<"all" | IssueStatus>("all");
   const [assigneeMode, setAssigneeMode] = useState("all");
   const [selectedPerson, setSelectedPerson] = useState<{
     id: string;
     name: string;
   } | null>(null);
-  const assigneeFilter =
-    assigneeMode === "person"
-      ? selectedPerson?.id
-      : assigneeMode === "all"
-        ? undefined
-        : assigneeMode;
-  const [warningFilter, setWarningFilter] = useState<
-    "all" | "warnings" | "for_me"
-  >("all");
-  const questionsForMe = warningFilter === "for_me";
+  const [warningFilter, setWarningFilter] = useState<BoardWarningFilter>("all");
   const [collapsedColumns, setCollapsedColumns] = useState<Set<IssueStatus>>(
     () => new Set(),
   );
   const [expandedIssues, setExpandedIssues] = useState<Set<string>>(
     () => new Set(),
   );
-  const [draggedIssueId, setDraggedIssueId] = useState<string | null>(null);
-  const [dragOverStatus, setDragOverStatus] = useState<IssueStatus | null>(
-    null,
-  );
   const [announcement, setAnnouncement] = useState("");
   const [focusIssueId, setFocusIssueId] = useState<string | null>(null);
   const statusControls = useRef(new Map<string, HTMLSelectElement>());
-  const boardRouteKey = `${projectId}:${epicFilter}:${assigneeFilter ?? "all"}:${questionsForMe}`;
-  const latestBoardRequest = useLatestRequest(boardRouteKey);
   const online = useOnlineStatus();
+  const assigneeFilter =
+    assigneeMode === "person"
+      ? selectedPerson?.id
+      : assigneeMode === "all"
+        ? undefined
+        : assigneeMode;
+  const questionsForMe = warningFilter === "for_me";
+  const board = useBoardModel({
+    projectId,
+    epicFilter,
+    assigneeFilter,
+    questionsForMe,
+  });
+  const canEdit = board.project?.canEdit !== false;
 
-  const refreshBoard = useCallback(
-    async (initial = false) => {
-      const request = latestBoardRequest.begin();
-      if (initial) {
-        setLoading(true);
-        setError(null);
-      }
-      const params = new URLSearchParams();
-      if (epicFilter !== "all") params.set("epicId", epicFilter);
-      if (assigneeFilter) params.set("assignee", assigneeFilter);
-      if (questionsForMe) params.set("questionsFor", "mine");
-      const query = params.size ? `?${params}` : "";
-      try {
-        const board = await apiRequest<BoardResponse>(
-          `/api/v1/projects/${projectId}/board${query}`,
-        );
-        if (!latestBoardRequest.accept(request)) return;
-        const visibleIssueCount = board.columns.reduce(
-          (total, column) => total + column.issues.length,
-          0,
-        );
-        setProject(board.project);
-        setColumns(board.columns);
-        setEpics(board.epics ?? []);
-        setTotalIssueCount(board.totalIssueCount ?? visibleIssueCount);
-        setHiddenIssueCount(board.hiddenIssueCount ?? 0);
-        setMissing(false);
-        setError(null);
-        setLoading(false);
-      } catch (caught) {
-        if (!latestBoardRequest.accept(request)) return;
-        if (apiFailureKind(caught) === "unavailable") setMissing(true);
-        else if (initial)
-          setError(
-            "We couldn't load this board. Check your connection and try again.",
-          );
-        setLoading(false);
-      }
-    },
-    [epicFilter, projectId, assigneeFilter, questionsForMe, latestBoardRequest],
-  );
-
-  useEffect(() => {
-    void refreshBoard(true);
-  }, [refreshBoard]);
-
-  useEffect(() => {
-    return subscribeToProjectChanges(
-      projectId,
-      () => void refreshBoard(),
-      () => {
-        setMissing(true);
-        void refreshBoard(true);
-      },
+  async function moveIssue(issue: Issue, status: IssueStatus) {
+    setAnnouncement("");
+    const moved = await board.moveIssue(issue, status);
+    if (!moved) {
+      setFocusIssueId(issue.id);
+      return;
+    }
+    if (moved.targetIsVisible)
+      setCollapsedColumns((current) => {
+        if (!current.has(moved.issue.status)) return current;
+        const next = new Set(current);
+        next.delete(moved.issue.status);
+        return next;
+      });
+    setAnnouncement(
+      `${issueReference(moved.issue)} moved to ${statusLabels[moved.issue.status]}`,
     );
-  }, [projectId, refreshBoard]);
+    setFocusIssueId(moved.targetIsVisible ? moved.issue.id : null);
+  }
+
+  const drag = useBoardDrag({
+    columns: board.columns,
+    canEdit,
+    online,
+    savingIssue: board.savingIssue,
+    moveIssue: (issue, status) => void moveIssue(issue, status),
+    announce: setAnnouncement,
+  });
 
   useEffect(() => {
     if (!focusIssueId) return;
@@ -235,154 +110,6 @@ export function BoardRoute({
     control.focus();
     setFocusIssueId(null);
   }, [focusIssueId]);
-
-  async function moveIssue(issue: Issue, status: IssueStatus) {
-    if (status === issue.status) return;
-    setSavingIssue(issue.id);
-    setError(null);
-    setAnnouncement("");
-    try {
-      const response = await apiRequest<{ issue: Issue }>(
-        `/api/v1/issues/${issue.id}`,
-        {
-          method: "PATCH",
-          body: JSON.stringify({ status, expectedVersion: issue.version }),
-        },
-      );
-      const updatedIssue: Issue = issue.questionSummary
-        ? {
-            ...issue,
-            ...response.issue,
-            questionSummary: issue.questionSummary,
-          }
-        : { ...issue, ...response.issue };
-      const targetIsVisible = columns.some(
-        (column) => column.status === updatedIssue.status,
-      );
-      setColumns((current) =>
-        current.map((column) => ({
-          ...column,
-          issues:
-            column.status === updatedIssue.status
-              ? [
-                  ...column.issues.filter(
-                    (item) => item.id !== updatedIssue.id,
-                  ),
-                  updatedIssue,
-                ].sort((a, b) => a.number - b.number)
-              : column.issues.filter((item) => item.id !== updatedIssue.id),
-        })),
-      );
-      if (targetIsVisible) {
-        setCollapsedColumns((current) => {
-          if (!current.has(updatedIssue.status)) return current;
-          const next = new Set(current);
-          next.delete(updatedIssue.status);
-          return next;
-        });
-      } else {
-        setHiddenIssueCount((current) => current + 1);
-      }
-      setAnnouncement(
-        `${issueReference(updatedIssue)} moved to ${statusLabels[updatedIssue.status]}`,
-      );
-      setFocusIssueId(targetIsVisible ? response.issue.id : null);
-    } catch (caught) {
-      setError(
-        mutationFailureMessage(
-          caught,
-          "We couldn't save your changes. Check your connection and try again.",
-        ),
-      );
-      setFocusIssueId(issue.id);
-    } finally {
-      setSavingIssue(null);
-    }
-  }
-
-  function findIssue(issueId: string) {
-    return columns
-      .flatMap((column) => column.issues)
-      .find((issue) => issue.id === issueId);
-  }
-
-  function canDropIssue(issue: Issue, status: IssueStatus) {
-    return (
-      canEdit &&
-      online &&
-      savingIssue === null &&
-      status !== issue.status &&
-      !(
-        status === "ready_for_review" &&
-        (issue.questionSummary?.unansweredBlocking ?? 0) > 0
-      )
-    );
-  }
-
-  function issueFromDrag(event: DragEvent<HTMLElement>) {
-    const issueId = draggedIssueId || event.dataTransfer.getData("text/plain");
-    return issueId ? findIssue(issueId) : undefined;
-  }
-
-  function startDragging(event: DragEvent<HTMLLIElement>, issue: Issue) {
-    if (!canEdit || !online || savingIssue !== null) {
-      event.preventDefault();
-      return;
-    }
-    event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("text/plain", issue.id);
-    setDraggedIssueId(issue.id);
-    setDragOverStatus(null);
-    setAnnouncement(
-      `Dragging ${issueReference(issue)}. Choose a destination column.`,
-    );
-  }
-
-  function dragOverColumn(event: DragEvent<HTMLElement>, status: IssueStatus) {
-    const issue = issueFromDrag(event);
-    if (!issue || !canDropIssue(issue, status)) {
-      event.dataTransfer.dropEffect = "none";
-      if (dragOverStatus === status) setDragOverStatus(null);
-      return;
-    }
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "move";
-    setDragOverStatus(status);
-  }
-
-  function leaveColumn(event: DragEvent<HTMLElement>, status: IssueStatus) {
-    if (
-      event.relatedTarget instanceof Node &&
-      event.currentTarget.contains(event.relatedTarget)
-    )
-      return;
-    setDragOverStatus((current) => (current === status ? null : current));
-  }
-
-  function dropOnColumn(event: DragEvent<HTMLElement>, status: IssueStatus) {
-    event.preventDefault();
-    const issue = issueFromDrag(event);
-    setDraggedIssueId(null);
-    setDragOverStatus(null);
-    if (!issue) return;
-    if (!canDropIssue(issue, status)) {
-      if (
-        status === "ready_for_review" &&
-        (issue.questionSummary?.unansweredBlocking ?? 0) > 0
-      ) {
-        setAnnouncement(
-          `Answer blocking questions before moving ${issueReference(issue)} to ${statusLabels[status]}.`,
-        );
-      }
-      return;
-    }
-    void moveIssue(issue, status);
-  }
-
-  function finishDragging() {
-    setDraggedIssueId(null);
-    setDragOverStatus(null);
-  }
 
   function toggleColumn(status: IssueStatus) {
     setCollapsedColumns((current) => {
@@ -402,25 +129,26 @@ export function BoardRoute({
     });
   }
 
-  if (loading) return <Skeleton label="Loading project board…" />;
-  if (missing) return <UnavailableRoute />;
-  if (!project && error)
+  if (board.loading) return <Skeleton label="Loading project board…" />;
+  if (board.missing) return <UnavailableRoute />;
+  if (!board.project && board.error)
     return (
       <RouteLoadError
-        message={error}
-        retrying={loading}
+        message={board.error}
+        retrying={board.loading}
         online={online}
-        onRetry={() => void refreshBoard(true)}
+        onRetry={() => void board.refresh(true)}
       />
     );
-  if (!project) return <UnavailableRoute />;
-  const issueCount = columns.reduce(
+  if (!board.project) return <UnavailableRoute />;
+
+  const project = board.project;
+  const issueCount = board.columns.reduce(
     (total, column) => total + column.issues.length,
     0,
   );
   const repository = repositoryLabel(project.repositoryUrl);
-  const canEdit = project.canEdit !== false;
-  const activeEpics = epics.filter((epic) => !epic.archivedAt);
+  const activeEpics = board.epics.filter((epic) => !epic.archivedAt);
   return (
     <div className="detail-column board-page">
       <div className="page-header">
@@ -467,29 +195,29 @@ export function BoardRoute({
         </StatusBanner>
       ) : null}
       {!online ? <OfflineBanner /> : null}
-      {error ? (
+      {board.error ? (
         <StatusBanner error focus>
-          {error}
+          {board.error}
         </StatusBanner>
       ) : null}
-      <EpicOverview epics={activeEpics} />
+      <BoardEpicOverview epics={activeEpics} />
       {!canEdit ? (
         <StatusBanner>
           Read-only project. Ask the workspace owner for edit access.
         </StatusBanner>
       ) : null}
-      {hiddenIssueCount > 0 ? (
+      {board.hiddenIssueCount > 0 ? (
         <StatusBanner>
-          {hiddenIssueCount} hidden{" "}
-          {hiddenIssueCount === 1 ? "ticket" : "tickets"}{" "}
-          {hiddenIssueCount === 1 ? "is" : "are"} in columns disabled by{" "}
+          {board.hiddenIssueCount} hidden{" "}
+          {board.hiddenIssueCount === 1 ? "ticket" : "tickets"}{" "}
+          {board.hiddenIssueCount === 1 ? "is" : "are"} in columns disabled by{" "}
           <AppLink href={`/projects/${project.id}/settings`}>
             project settings
           </AppLink>
           .
         </StatusBanner>
       ) : null}
-      {totalIssueCount === 0 &&
+      {board.totalIssueCount === 0 &&
       epicFilter === "all" &&
       assigneeMode === "all" &&
       !questionsForMe ? (
@@ -513,126 +241,34 @@ export function BoardRoute({
         />
       ) : (
         <>
-          <section
-            className="board-toolbar"
-            aria-labelledby="board-filters-heading"
-          >
-            <div className="board-toolbar-heading">
-              <h2 id="board-filters-heading">Filter tickets</h2>
-              <p className="metadata">
-                Narrow the board without changing ticket status.
-              </p>
-            </div>
-            <label
-              className="field board-filter board-filter-status"
-              htmlFor="status-filter"
-            >
-              <span>Show status</span>
-              <Select
-                id="status-filter"
-                value={filter}
-                onChange={(event) =>
-                  setFilter(event.currentTarget.value as "all" | IssueStatus)
-                }
-              >
-                <option value="all">All statuses</option>
-                {columns.map((column) => (
-                  <option key={column.status} value={column.status}>
-                    {statusLabels[column.status]}
-                  </option>
-                ))}
-              </Select>
-            </label>
-            <label
-              className="field board-filter board-filter-epic"
-              htmlFor="epic-filter"
-            >
-              <span>Show Epic</span>
-              <Select
-                id="epic-filter"
-                value={epicFilter}
-                onChange={(event) => {
-                  const value = event.currentTarget.value;
-                  navigate(
-                    value === "all"
-                      ? `/projects/${project.id}`
-                      : `/projects/${project.id}?epic=${encodeURIComponent(value)}`,
-                  );
-                }}
-              >
-                <option value="all">All Epics</option>
-                <option value="unassigned">No Epic</option>
-                {activeEpics.map((epic) => (
-                  <option key={epic.id} value={epic.id}>
-                    {epicLabel(epic)}
-                  </option>
-                ))}
-              </Select>
-            </label>
-            <label
-              className="field board-filter board-filter-questions"
-              htmlFor="warning-filter"
-            >
-              <span>Show questions</span>
-              <Select
-                id="warning-filter"
-                value={warningFilter}
-                onChange={(event) =>
-                  setWarningFilter(
-                    event.currentTarget.value as "all" | "warnings" | "for_me",
-                  )
-                }
-              >
-                <option value="all">All tickets</option>
-                <option value="warnings">Warnings only</option>
-                <option value="for_me">Questions for me</option>
-              </Select>
-            </label>
-            <label
-              className="field board-filter board-filter-assignee"
-              htmlFor="assignee-filter"
-            >
-              <span>Human assignee</span>
-              <Select
-                id="assignee-filter"
-                value={assigneeMode}
-                onChange={(event) => setAssigneeMode(event.currentTarget.value)}
-              >
-                <option value="all">All people</option>
-                <option value="mine">My tickets</option>
-                <option value="unassigned">Unassigned</option>
-                <option value="person">Choose a person</option>
-              </Select>
-            </label>
-          </section>
-          {assigneeMode === "person" ? (
-            <section className="detail-panel" aria-label="Filter by person">
-              <p>
-                {selectedPerson
-                  ? `Showing tickets for ${selectedPerson.name}`
-                  : "Choose a person below. All people are shown until you select someone."}
-              </p>
-              <CollaboratorPicker
-                key={projectId}
-                projectId={projectId}
-                onChoose={(person) => setSelectedPerson(person)}
-              />
-            </section>
-          ) : null}
+          <BoardToolbar
+            project={project}
+            columns={board.columns}
+            epics={activeEpics}
+            status={statusFilter}
+            epic={epicFilter}
+            warning={warningFilter}
+            assigneeMode={assigneeMode}
+            selectedPerson={selectedPerson}
+            onStatusChange={setStatusFilter}
+            onWarningChange={setWarningFilter}
+            onAssigneeModeChange={setAssigneeMode}
+            onPersonChange={setSelectedPerson}
+          />
           {issueCount === 0 ? (
             <EmptyState
               heading={
-                hiddenIssueCount > 0
+                board.hiddenIssueCount > 0
                   ? "Issues hidden from this board"
                   : "No matching issues"
               }
               body={
-                hiddenIssueCount > 0
+                board.hiddenIssueCount > 0
                   ? "The matching tickets keep their status and can be shown again from project settings."
                   : "No tickets match the selected Epic and human assignee filters."
               }
               action={
-                hiddenIssueCount > 0 ? (
+                board.hiddenIssueCount > 0 ? (
                   <AppLink
                     className="button button-secondary"
                     href={`/projects/${project.id}/settings`}
@@ -665,283 +301,46 @@ export function BoardRoute({
                   </span>
                 </p>
               ) : null}
-              <div className={`board board-columns-${columns.length}`}>
-                {columns.map((column) => {
-                  const visibleIssues = column.issues.filter(
-                    (issue) =>
-                      warningFilter !== "warnings" ||
-                      (issue.questionSummary?.unansweredBlocking ?? 0) > 0,
-                  );
-                  const columnCollapsed = collapsedColumns.has(column.status);
-                  return (
-                    <section
-                      className={`board-column${columnCollapsed ? " is-collapsed" : ""}${dragOverStatus === column.status ? " is-drop-target" : ""}`}
-                      key={column.status}
-                      aria-labelledby={`column-${column.status}`}
-                      hidden={filter !== "all" && filter !== column.status}
-                      onDragOver={(event) =>
-                        dragOverColumn(event, column.status)
-                      }
-                      onDragLeave={(event) => leaveColumn(event, column.status)}
-                      onDrop={(event) => dropOnColumn(event, column.status)}
-                    >
-                      <div className="board-column-header">
-                        <h2 id={`column-${column.status}`}>
-                          {statusLabels[column.status]}
-                        </h2>
-                        <div className="board-column-actions">
-                          <Badge>{visibleIssues.length}</Badge>
-                          <button
-                            className="disclosure-button"
-                            type="button"
-                            aria-expanded={!columnCollapsed}
-                            aria-controls={`column-content-${column.status}`}
-                            aria-label={`${columnCollapsed ? "Expand" : "Collapse"} ${statusLabels[column.status]} column`}
-                            onClick={() => toggleColumn(column.status)}
-                          >
-                            <span aria-hidden="true">
-                              {columnCollapsed ? "+" : "−"}
-                            </span>
-                          </button>
-                        </div>
-                      </div>
-                      <div
-                        id={`column-content-${column.status}`}
-                        hidden={columnCollapsed}
-                      >
-                        {visibleIssues.length === 0 ? (
-                          <p className="empty-column">
-                            {warningFilter === "warnings"
-                              ? "No tickets with warnings"
-                              : "No issues"}
-                          </p>
-                        ) : (
-                          <ul className="issue-list">
-                            {visibleIssues.map((issue) => {
-                              const issueEpic = epics.find(
-                                (epic) => epic.id === issue.epicId,
-                              );
-                              const issueExpanded = expandedIssues.has(
-                                issue.id,
-                              );
-                              return (
-                                <li
-                                  className="issue-card"
-                                  key={issue.id}
-                                  draggable={
-                                    canEdit && online && savingIssue === null
-                                  }
-                                  onDragStart={(event) =>
-                                    startDragging(event, issue)
-                                  }
-                                  onDragEnd={finishDragging}
-                                >
-                                  <div className="issue-card-summary">
-                                    <AppLink
-                                      className="issue-card-title"
-                                      href={`/issues/${issue.id}`}
-                                      aria-label={issueLabel(issue)}
-                                    >
-                                      <span
-                                        className="issue-card-number"
-                                        aria-hidden="true"
-                                      >
-                                        {issue.number}-
-                                      </span>
-                                      <span
-                                        className="issue-card-title-text"
-                                        aria-hidden="true"
-                                      >
-                                        {issue.title}
-                                      </span>
-                                    </AppLink>
-                                    <button
-                                      className="disclosure-button"
-                                      type="button"
-                                      aria-expanded={issueExpanded}
-                                      aria-controls={`issue-preview-${issue.id}`}
-                                      aria-label={`${issueExpanded ? "Hide" : "Show"} details for ${issueReference(issue)}`}
-                                      onClick={() => toggleIssue(issue.id)}
-                                    >
-                                      <span aria-hidden="true">
-                                        {issueExpanded ? "−" : "+"}
-                                      </span>
-                                    </button>
-                                  </div>
-                                  <div className="issue-card-compact-meta">
-                                    <Badge>
-                                      {priorityLabels[issue.priority]}
-                                    </Badge>
-                                    <AssigneeLabel issue={issue} />
-                                  </div>
-                                  {(issue.questionSummary?.directedUnanswered ??
-                                    0) > 0 ? (
-                                    <AppLink
-                                      className="badge warning-badge warning-link"
-                                      href={`/issues/${issue.id}#questions-heading`}
-                                    >
-                                      ⚠{" "}
-                                      {
-                                        issue.questionSummary
-                                          ?.directedUnanswered
-                                      }{" "}
-                                      for you
-                                    </AppLink>
-                                  ) : null}
-                                  {(issue.questionSummary?.unansweredBlocking ??
-                                    0) > 0 ? (
-                                    <AppLink
-                                      className="badge warning-badge warning-link"
-                                      href={`/issues/${issue.id}#questions-heading`}
-                                    >
-                                      ⚠{" "}
-                                      {
-                                        issue.questionSummary
-                                          ?.unansweredBlocking
-                                      }{" "}
-                                      unanswered
-                                    </AppLink>
-                                  ) : null}
-                                  <div
-                                    id={`issue-preview-${issue.id}`}
-                                    className="issue-card-details"
-                                    hidden={!issueExpanded}
-                                  >
-                                    <div className="issue-metadata">
-                                      {issue.epicId ? (
-                                        <>
-                                          <AppLink
-                                            className="badge epic-badge"
-                                            href={`/epics/${issue.epicId}`}
-                                          >
-                                            {issueEpic
-                                              ? epicLabel(issueEpic)
-                                              : "Epic"}
-                                          </AppLink>
-                                          {issueEpic?.archivedAt ? (
-                                            <Badge>Archived Epic</Badge>
-                                          ) : null}
-                                        </>
-                                      ) : null}
-                                      {(issue.questionSummary?.total ?? 0) >
-                                      0 ? (
-                                        <Badge>
-                                          {issue.questionSummary?.answered}/
-                                          {issue.questionSummary?.total} answers
-                                        </Badge>
-                                      ) : null}
-                                    </div>
-                                    <p className="issue-card-description">
-                                      {issue.description || "No description"}
-                                    </p>
-                                    {issue.claimedByAgentId ? (
-                                      <p className="metadata">
-                                        Agent: {issue.claimedByAgentId}
-                                      </p>
-                                    ) : null}
-                                    {canEdit ? (
-                                      <div className="card-status">
-                                        <label htmlFor={`status-${issue.id}`}>
-                                          <span>Status</span>
-                                          <Select
-                                            id={`status-${issue.id}`}
-                                            ref={(control) => {
-                                              if (control)
-                                                statusControls.current.set(
-                                                  issue.id,
-                                                  control,
-                                                );
-                                              else
-                                                statusControls.current.delete(
-                                                  issue.id,
-                                                );
-                                            }}
-                                            aria-label={`Change status for ${issueReference(issue)}`}
-                                            aria-describedby={
-                                              (issue.questionSummary
-                                                ?.unansweredBlocking ?? 0) >
-                                                0 &&
-                                              issue.status !==
-                                                "ready_for_review"
-                                                ? `review-block-${issue.id}`
-                                                : undefined
-                                            }
-                                            value={issue.status}
-                                            disabled={
-                                              !online ||
-                                              savingIssue === issue.id
-                                            }
-                                            onChange={(event) =>
-                                              void moveIssue(
-                                                issue,
-                                                event.currentTarget
-                                                  .value as IssueStatus,
-                                              )
-                                            }
-                                          >
-                                            {issueStatuses
-                                              .filter(
-                                                (status) =>
-                                                  status !==
-                                                    "ready_for_review" ||
-                                                  project.showReviewColumn ||
-                                                  issue.status ===
-                                                    "ready_for_review",
-                                              )
-                                              .map((status) => (
-                                                <option
-                                                  key={status}
-                                                  value={status}
-                                                  disabled={
-                                                    status ===
-                                                      "ready_for_review" &&
-                                                    issue.status !==
-                                                      "ready_for_review" &&
-                                                    (issue.questionSummary
-                                                      ?.unansweredBlocking ??
-                                                      0) > 0
-                                                  }
-                                                >
-                                                  {statusLabels[status]}
-                                                </option>
-                                              ))}
-                                          </Select>
-                                        </label>
-                                        {(issue.questionSummary
-                                          ?.unansweredBlocking ?? 0) > 0 &&
-                                        issue.status !== "ready_for_review" ? (
-                                          <span
-                                            id={`review-block-${issue.id}`}
-                                            className="metadata"
-                                          >
-                                            Answer blocking questions before
-                                            review.
-                                          </span>
-                                        ) : null}
-                                        {savingIssue === issue.id ? (
-                                          <span
-                                            role="status"
-                                            className="metadata"
-                                          >
-                                            Saving…
-                                          </span>
-                                        ) : null}
-                                      </div>
-                                    ) : (
-                                      <p className="metadata">
-                                        {statusLabels[issue.status]}
-                                      </p>
-                                    )}
-                                  </div>
-                                </li>
-                              );
-                            })}
-                          </ul>
-                        )}
-                      </div>
-                    </section>
-                  );
-                })}
+              <div className={`board board-columns-${board.columns.length}`}>
+                {board.columns.map((column) => (
+                  <BoardColumn
+                    key={column.status}
+                    column={column}
+                    epics={board.epics}
+                    view={{
+                      warningFilter,
+                      collapsed: collapsedColumns.has(column.status),
+                      dropTarget: drag.dragOverStatus === column.status,
+                      canEdit,
+                      online,
+                      savingIssue: board.savingIssue,
+                      expandedIssues,
+                      showReviewColumn: project.showReviewColumn,
+                      hidden:
+                        statusFilter !== "all" &&
+                        statusFilter !== column.status,
+                    }}
+                    actions={{
+                      statusRef: (issueId, control) => {
+                        if (control)
+                          statusControls.current.set(issueId, control);
+                        else statusControls.current.delete(issueId);
+                      },
+                      onToggleColumn: () => toggleColumn(column.status),
+                      onToggleIssue: toggleIssue,
+                      onMoveIssue: (issue, status) =>
+                        void moveIssue(issue, status),
+                      onDragStart: drag.startDragging,
+                      onDragEnd: drag.finishDragging,
+                      onDragOver: (event) =>
+                        drag.dragOverColumn(event, column.status),
+                      onDragLeave: (event) =>
+                        drag.leaveColumn(event, column.status),
+                      onDrop: (event) =>
+                        drag.dropOnColumn(event, column.status),
+                    }}
+                  />
+                ))}
               </div>
             </section>
           )}

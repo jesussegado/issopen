@@ -167,6 +167,35 @@ describe("modular monolith boundaries", () => {
     expect(violations).toEqual([]);
   });
 
+  it("keeps the board route as a composition boundary", () => {
+    const route = readFileSync(
+      join(repository, "src/web/routes/BoardRoute.tsx"),
+      "utf8",
+    );
+    const required = [
+      "../components/board/BoardColumn.js",
+      "../components/board/BoardEpicOverview.js",
+      "../components/board/BoardToolbar.js",
+      "../lib/board-drag.js",
+      "../lib/board-model.js",
+    ];
+    const violations = required
+      .filter((specifier) => !imports(route).includes(specifier))
+      .map((specifier) => `BoardRoute does not compose ${specifier}`);
+    if (route.split("\n").length > 400)
+      violations.push("BoardRoute grew beyond high-level composition");
+    for (const file of sourceFiles("src/web/components/board")) {
+      for (const specifier of imports(readFileSync(file, "utf8"))) {
+        if (specifier.includes("/routes/"))
+          violations.push(
+            `${relative(repository, file)} imports route ${specifier}`,
+          );
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
   it("keeps database writes out of HTTP and MCP adapters", () => {
     const writePattern =
       /\b(?:db|tx|database|connection\.db)\s*\.\s*(?:insert|update|delete)\s*\(/;

@@ -129,6 +129,16 @@ of presenting them as missing resources. Mutation failures continue to keep
 local drafts, and the existing project event subscription remains the single
 live invalidation transport.
 
+Ticket 131 reduces `BoardRoute` from 955 to 354 lines of page composition and
+coordination. `useBoardModel` owns authorized reads, live invalidation and the
+single authoritative issue collection; `useBoardDrag` owns pointer movement
+without replacing the select control used by keyboard and touch. Toolbar, Epic
+overview, columns and cards are independent components with compact view/action
+contracts and focused tests. Presentation state (filters, collapsed columns and
+expanded cards) remains in the route and survives live data refreshes. An
+architecture check keeps the route below its composition boundary and prevents
+board components from importing routes.
+
 ## Confirmed duplication
 
 - Member and Owner invitations previously implemented email
