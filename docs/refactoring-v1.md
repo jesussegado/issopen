@@ -74,10 +74,18 @@ Ticket 124 resolved the schema hotspot without changing its public facade: the
 largest cohesive module is now access at 529 lines, cross-domain relations are
 isolated and documented, and an executable boundary prevents deep imports.
 
+Ticket 125 removes the shared invitation duplication without merging the two
+domain flows. `invitation-primitives.ts` owns only the common email, token,
+lifetime and lifecycle-state operations; member and Owner services retain
+their policies, transactions, errors, summaries and authentication paths.
+
 ## Confirmed duplication
 
-- Member and Owner invitations each implement email normalization/masking,
-  token generation/hash, invitation state and unique-violation traversal.
+- Member and Owner invitations previously implemented email
+  normalization/masking, token generation/hash, lifetime and lifecycle state
+  independently. Those primitives now have one implementation. PostgreSQL
+  unique-violation handling remains local to the only invitation flow that
+  currently consumes it; the controller-error seam is handled by ticket 128.
 - Tracker mutations repeatedly load and lock a ticket, enforce workspace and
   tombstone predicates, compare versions/question snapshots, bump versions and
   append activity.

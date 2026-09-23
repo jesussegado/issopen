@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Epic 10 ticket 124 modular Drizzle schema ready for human review
-last_updated: "2026-09-23T12:31:30Z"
+stopped_at: Epic 10 ticket 125 invitation primitives ready for human review
+last_updated: "2026-09-23T13:07:21Z"
 last_activity: 2026-09-23
 progress:
   total_phases: 9
@@ -15,6 +15,17 @@ progress:
 ---
 
 # Project State
+
+## Follow-up 23Sep — Shared invitation security primitives (Epic 10 ticket 125)
+
+Ticket 125 centralizes actual common email, token, lifetime and lifecycle-state
+primitives while member and Owner services retain their separate policies,
+transactions, errors and OAuth paths. Source `4779b8d`, GitOps `b0e77964`,
+digest `d34e85db`; Argo is Synced/Healthy, pod Ready/0 restarts, public
+readiness/root PASS and both PVC IDs unchanged. Gates pass: 35 focused,
+205 fast, 118 integration and 78 characterization tests, zero schema drift,
+build, secret scan and 140 GitOps tests. No SQL, HTTP, permission or visible
+product change. See quick 260923-rf3; next dependency-safe ticket is 128.
 
 ## Follow-up 23Sep — Modular Drizzle schema (Epic 10 ticket 124)
 
@@ -506,6 +517,7 @@ Decisions are logged in PROJECT.md Key Decisions table. Current roadmap-level st
 
 | ID | Description | Date | Commits | Status | Directory |
 | --- | --- | --- | --- | --- | --- |
+| 260923-rf3 | Ticket 125: primitivas seguras compartidas de invitación | 2026-09-23 | Fuente `4779b8d`; GitOps `b0e77964` | Gates completos y despliegue Synced/Healthy PASS; sin cambio de contrato | [260923-rf3](./quick/260923-rf3-ticket-125-unificar-invitaciones/) |
 | 260923-rf2 | Ticket 124: esquema Drizzle modular sin cambio SQL | 2026-09-23 | Fuente `16d4df6`; GitOps `b3ddcbf0` | 42 tablas sin drift; gates y despliegue Synced/Healthy PASS | [260923-rf2](./quick/260923-rf2-ticket-124-modularizar-schema/) |
 | 260923-rf1 | Ticket 123: red de seguridad y mapa de refactor | 2026-09-23 | Fuente `d695272` | Lint/types, 76 caracterización, 199 fast tests y schema drift PASS; sin cambio runtime | [260923-rf1](./quick/260923-rf1-ticket-123-red-seguridad-refactor/) |
 | 260917-onb | Onboarding autocontenido para agentes, MCP y skill | 2026-09-17 | Fuente `5131c64`; GitOps `cbf58075` | Gates/Compose/Argo/smoke responsive PASS; ticket 115 Ready for Human Review | [260917-onb](./quick/260917-onb-onboarding-agentes-mcp-skill/) |

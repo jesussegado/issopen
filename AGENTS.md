@@ -330,6 +330,15 @@ están en revisión humana sin claims; seguir con108→95 y repetir integración
   la aceptación externa cerrada hasta probarla con una segunda cuenta Google
   real después de configurar 79.
 
+- Member y Owner mantienen flujos de invitación distintos, pero sus primitivas
+  seguras comunes viven exclusivamente en `src/server/invitation-primitives.ts`:
+  normalización/máscara de email, token de 256 bits, hash SHA-256, formato,
+  duración y estado de ciclo de vida. No dupliques esas operaciones ni conviertas
+  los dos servicios en uno genérico; políticas, transacciones, errores, eventos y
+  redención OAuth siguen perteneciendo a `invitations.ts` y
+  `owner-invitations.ts`. Cualquier cambio debe conservar las pruebas de token
+  inválido/expirado/usado, rotación, carrera y email normalizado.
+
 - Ticket 66 añade archivado reversible de Epics. Sus tickets heredan el
   archivado sin cambiar de estado: desaparecen del board, de la colección REST
   activa y de `list_issues`, pero conservan acceso directo, datos y actividad;
