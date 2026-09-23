@@ -1,8 +1,6 @@
 import { Hono } from "hono";
-import { z } from "zod";
 import type { OwnerSession } from "../auth.js";
 import type { Database } from "../db/client.js";
-import { DomainError } from "../domain/errors.js";
 import { type HumanAccess, requireHumanAccess } from "../human-access.js";
 import {
   OwnershipService,
@@ -11,21 +9,23 @@ import {
   ownershipPeopleSchema,
   ownershipStartSchema,
 } from "../ownership.js";
+import {
+  parseHttpInput,
+  parseIdentifier,
+  readJsonInput,
+} from "./validation.js";
+
+const ownershipValidation = {
+  message:
+    "Invalid ownership request. Refresh and review all confirmation fields.",
+  fields: false as const,
+};
 
 export function createOwnershipRouter(db: Database) {
   const router = new Hono<{
     Variables: { ownerSession: OwnerSession; humanAccess: HumanAccess | null };
   }>();
   const service = new OwnershipService(db);
-  const parse = <T>(schema: z.ZodType<T>, value: unknown): T => {
-    const result = schema.safeParse(value);
-    if (!result.success)
-      throw new DomainError(
-        "invalid",
-        "Invalid ownership request. Refresh and review all confirmation fields.",
-      );
-    return result.data;
-  };
   router.get("/workspace/ownership", async (c) =>
     c.json(
       await service.snapshot(
@@ -38,7 +38,11 @@ export function createOwnershipRouter(db: Database) {
     c.json(
       await service.people(
         requireHumanAccess(c.get("humanAccess")),
-        parse(ownershipPeopleSchema, c.req.query()),
+        parseHttpInput(
+          ownershipPeopleSchema,
+          c.req.query(),
+          ownershipValidation,
+        ),
       ),
     ),
   );
@@ -47,7 +51,11 @@ export function createOwnershipRouter(db: Database) {
       transfer: await service.propose(
         requireHumanAccess(c.get("humanAccess")),
         c.get("ownerSession"),
-        parse(ownershipStartSchema, await c.req.json().catch(() => null)),
+        parseHttpInput(
+          ownershipStartSchema,
+          await readJsonInput(c),
+          ownershipValidation,
+        ),
       ),
     }),
   );
@@ -56,8 +64,12 @@ export function createOwnershipRouter(db: Database) {
       transfer: await service.accept(
         requireHumanAccess(c.get("humanAccess")),
         c.get("ownerSession"),
-        parse(z.uuid(), c.req.param("id")),
-        parse(ownershipFinishSchema, await c.req.json().catch(() => null)),
+        parseIdentifier(c.req.param("id"), "id", ownershipValidation),
+        parseHttpInput(
+          ownershipFinishSchema,
+          await readJsonInput(c),
+          ownershipValidation,
+        ),
       ),
     }),
   );
@@ -65,8 +77,12 @@ export function createOwnershipRouter(db: Database) {
     c.json({
       transfer: await service.cancel(
         requireHumanAccess(c.get("humanAccess")),
-        parse(z.uuid(), c.req.param("id")),
-        parse(ownershipCancelSchema, await c.req.json().catch(() => null)),
+        parseIdentifier(c.req.param("id"), "id", ownershipValidation),
+        parseHttpInput(
+          ownershipCancelSchema,
+          await readJsonInput(c),
+          ownershipValidation,
+        ),
       ),
     }),
   );

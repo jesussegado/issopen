@@ -87,6 +87,26 @@ describe("modular monolith boundaries", () => {
     expect(violations).toEqual([]);
   });
 
+  it("keeps transport validation and domain error serialization centralized", () => {
+    const allowed = new Set([
+      "src/server/http/errors.ts",
+      "src/server/http/validation.ts",
+    ]);
+    const duplicatePattern =
+      /\.safeParse\(|\.req\.json\(\)\.catch\(|function\s+domainErrorResponse\b/;
+    const violations = sourceFiles("src/server/http")
+      .map((file) => ({
+        file: relative(repository, file),
+        source: readFileSync(file, "utf8"),
+      }))
+      .filter(({ file, source }) =>
+        allowed.has(file) ? false : duplicatePattern.test(source),
+      )
+      .map(({ file }) => `${file} duplicates HTTP transport validation`);
+
+    expect(violations).toEqual([]);
+  });
+
   it("keeps schema consumers on the stable facade", () => {
     const violations = sourceFiles("src")
       .filter((file) => !file.includes("/server/db/schema/"))

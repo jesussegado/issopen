@@ -4,9 +4,9 @@ import type { OwnerSession } from "../auth.js";
 import { boundedJson } from "../capture-api.js";
 import { CaptureError } from "../capture-storage.js";
 import type { Database } from "../db/client.js";
-import { DomainError } from "../domain/index.js";
 import { type HumanAccess, requireHumanAccess } from "../human-access.js";
 import { CollaboratorService, ProfileService } from "../profiles.js";
+import { parseHttpInput, parseIdentifier } from "./validation.js";
 
 export function createProfileRouter(db: Database) {
   const router = new Hono<{
@@ -38,17 +38,13 @@ export function createProfileRouter(db: Database) {
         );
       throw error;
     }
-    const parsed = updateProfileSchema.safeParse(input);
-    if (!parsed.success)
-      throw new DomainError(
-        "invalid",
+    const profile = parseHttpInput(updateProfileSchema, input, {
+      message:
         "Use a display name of 1–120 characters and a valid prepared avatar. Reload to obtain a current profile version.",
-      );
+      fields: false,
+    });
     return c.json({
-      profile: await profiles.update(
-        c.get("ownerSession").user.id,
-        parsed.data,
-      ),
+      profile: await profiles.update(c.get("ownerSession").user.id, profile),
     });
   });
   router.get("/projects/:projectId/collaborators", async (c) => {
@@ -56,7 +52,10 @@ export function createProfileRouter(db: Database) {
     return c.json(
       await people.list(
         requireHumanAccess(c.get("humanAccess")),
-        c.req.param("projectId"),
+        parseIdentifier(c.req.param("projectId"), "projectId", {
+          message: "Invalid project identifier",
+          fields: false,
+        }),
         c.req.query(),
       ),
     );
@@ -64,7 +63,10 @@ export function createProfileRouter(db: Database) {
   router.get("/projects/:projectId/collaborators/:userId/avatar", async (c) => {
     const bytes = await people.avatar(
       requireHumanAccess(c.get("humanAccess")),
-      c.req.param("projectId"),
+      parseIdentifier(c.req.param("projectId"), "projectId", {
+        message: "Invalid project identifier",
+        fields: false,
+      }),
       c.req.param("userId"),
     );
     return new Response(new Uint8Array(bytes), {

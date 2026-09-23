@@ -36,6 +36,8 @@ import {
   createOwnerInvitationRouter,
   createTrackerRouter,
   domainErrorResponse,
+  parseHttpInput,
+  readJsonInput,
 } from "./http/index.js";
 import { createOwnershipRouter } from "./http/ownership.js";
 import { createProfileRouter } from "./http/profiles.js";
@@ -75,16 +77,6 @@ type AppDependencies = {
 const workspaceInputSchema = z.object({
   name: z.string().trim().min(1, "Workspace name is required").max(120),
 });
-
-function validationError(issues: z.core.$ZodIssue[]) {
-  return {
-    error: "Invalid request",
-    fields: issues.map((issue) => ({
-      field: issue.path.join("."),
-      message: issue.message,
-    })),
-  };
-}
 
 function isUniqueViolation(error: unknown): boolean {
   if (typeof error !== "object" || error === null) {
@@ -319,11 +311,11 @@ export function createApp({
   });
 
   app.post("/api/v1/workspace", async (context) => {
-    const input = await context.req.json().catch(() => null);
-    const parsed = workspaceInputSchema.safeParse(input);
-    if (!parsed.success) {
-      return context.json(validationError(parsed.error.issues), 400);
-    }
+    const input = parseHttpInput(
+      workspaceInputSchema,
+      await readJsonInput(context),
+      { fallbackField: "" },
+    );
 
     const ownerSession = context.get("ownerSession");
     if ((await listHumanWorkspaces(db, ownerSession.user.id)).length > 0) {
@@ -347,7 +339,7 @@ export function createApp({
           .values({
             id: randomUUID(),
             ownerId: ownerSession.user.id,
-            name: parsed.data.name,
+            name: input.name,
           })
           .returning({
             id: workspace.id,
@@ -387,11 +379,11 @@ export function createApp({
   });
 
   app.patch("/api/v1/workspace", async (context) => {
-    const input = await context.req.json().catch(() => null);
-    const parsed = workspaceInputSchema.safeParse(input);
-    if (!parsed.success) {
-      return context.json(validationError(parsed.error.issues), 400);
-    }
+    const input = parseHttpInput(
+      workspaceInputSchema,
+      await readJsonInput(context),
+      { fallbackField: "" },
+    );
 
     const access = context.get("humanAccess");
     if (!access) {
@@ -401,7 +393,7 @@ export function createApp({
     const [updatedWorkspace] = await db
       .update(workspace)
       .set({
-        name: parsed.data.name,
+        name: input.name,
         version: sql`${workspace.version} + 1`,
         updatedAt: new Date(),
       })

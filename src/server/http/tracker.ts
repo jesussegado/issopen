@@ -46,6 +46,11 @@ import {
   QuestionRecipientService,
   recipientSchema,
 } from "../question-recipients.js";
+import {
+  parseHttpInput,
+  parseIdentifier,
+  parseJsonBody,
+} from "./validation.js";
 
 type TrackerBindings = {
   Variables: {
@@ -59,86 +64,46 @@ type TrackerRouterDependencies = {
   auth: IssopenAuth;
 };
 
-const identifierSchema = z.uuid();
 const createEpicBodySchema = createEpicSchema.omit({ projectId: true });
 const createIssueBodySchema = createIssueSchema.omit({ projectId: true });
 const epicFilterSchema = z.union([z.uuid(), z.literal("unassigned")]);
 
-function fieldsFromZod(error: z.ZodError) {
-  return error.issues.map((issue) => ({
-    field: issue.path.join(".") || "request",
-    message: issue.message,
-  }));
-}
-
-async function parseBody<T>(
-  context: Context,
-  schema: z.ZodType<T>,
-): Promise<T> {
-  const rawText = await context.req.text();
-  let input: unknown = {};
-  if (rawText.trim() !== "") {
-    try {
-      input = JSON.parse(rawText);
-    } catch {
-      throw new DomainError("invalid", "Request body must be valid JSON", [
-        { field: "request", message: "Request body must be valid JSON" },
-      ]);
-    }
-  }
-
-  const parsed = schema.safeParse(input);
-  if (!parsed.success) {
-    throw new DomainError(
-      "invalid",
-      "Invalid request",
-      fieldsFromZod(parsed.error),
-    );
-  }
-  return parsed.data;
-}
-
-function parseIdentifier(value: string, field: string): string {
-  const parsed = identifierSchema.safeParse(value);
-  if (!parsed.success) {
-    throw new DomainError("invalid", "Invalid request", [
-      { field, message: "Must be a valid identifier" },
-    ]);
-  }
-  return parsed.data;
-}
+const parseBody = <T>(context: Context, schema: z.ZodType<T>) =>
+  parseJsonBody(context, schema, {
+    emptyValue: {},
+    malformedMessage: "Request body must be valid JSON",
+    malformedFields: [
+      { field: "request", message: "Request body must be valid JSON" },
+    ],
+  });
 
 function parseOptionalEpicFilter(value: string | undefined) {
   if (value === undefined) return undefined;
-  const parsed = epicFilterSchema.safeParse(value);
-  if (!parsed.success) {
-    throw new DomainError("invalid", "Invalid request", [
+  return parseHttpInput(epicFilterSchema, value, {
+    fields: [
       { field: "epicId", message: "Must be an Epic identifier or unassigned" },
-    ]);
-  }
-  return parsed.data;
+    ],
+  });
 }
 
 function parseEpicArchiveFilter(value: string | undefined) {
-  const parsed = epicArchiveFilterSchema.safeParse(value ?? "active");
-  if (!parsed.success) {
-    throw new DomainError("invalid", "Invalid request", [
+  return parseHttpInput(epicArchiveFilterSchema, value ?? "active", {
+    fields: [
       {
         field: "archived",
         message: "Must be active, archived or all",
       },
-    ]);
-  }
-  return parsed.data;
+    ],
+  });
 }
 
 function parseAssigneeFilter(value: string | undefined, viewerId: string) {
   if (value === undefined) return undefined;
   if (value === "mine") return viewerId;
-  const parsed = assigneeFilterSchema.safeParse(value);
-  if (!parsed.success)
-    throw new DomainError("invalid", "Invalid human assignee filter");
-  return parsed.data;
+  return parseHttpInput(assigneeFilterSchema, value, {
+    message: "Invalid human assignee filter",
+    fields: false,
+  });
 }
 
 async function projectActivityCursor(
@@ -161,25 +126,6 @@ async function projectActivityCursor(
   return `${latest?.events ?? 0}:${latest?.createdAt?.getTime() ?? 0}`;
 }
 
-export function domainErrorResponse(context: Context, error: DomainError) {
-  switch (error.code) {
-    case "invalid":
-      return context.json(
-        {
-          error: error.message,
-          fields: error.fields ?? [],
-        },
-        400,
-      );
-    case "forbidden":
-      return context.json({ error: "Action is not allowed" }, 403);
-    case "not_found":
-      return context.json({ error: "This page isn't available" }, 404);
-    case "conflict":
-      return context.json({ error: error.message }, 409);
-  }
-}
-
 function humanContext(
   accessInput: HumanAccess | null,
 ): MutationContext & { access: HumanAccess } {
@@ -191,25 +137,13 @@ export function createTrackerRouter({ db, auth }: TrackerRouterDependencies) {
   const router = new Hono<TrackerBindings>();
   const tracker = new TrackerService(db);
 
-  router.use("*", async (context, next) => {
-    try {
-      await next();
-    } catch (error) {
-      if (error instanceof DomainError) {
-        return domainErrorResponse(context, error);
-      }
-      throw error;
-    }
-  });
-
   router.get("/notifications", async (context) => {
     const access = requireHumanAccess(context.get("humanAccess"));
-    const parsed = inboxQuerySchema.safeParse(context.req.query());
-    if (!parsed.success)
-      throw new DomainError("invalid", "Invalid inbox query");
-    return context.json(
-      await new NotificationService(db).list(access, parsed.data),
-    );
+    const input = parseHttpInput(inboxQuerySchema, context.req.query(), {
+      message: "Invalid inbox query",
+      fields: false,
+    });
+    return context.json(await new NotificationService(db).list(access, input));
   });
   router.put("/notifications/:notificationId/read", async (context) => {
     const access = requireHumanAccess(context.get("humanAccess"));

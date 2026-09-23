@@ -2,7 +2,6 @@ import { Hono } from "hono";
 import { z } from "zod";
 import type { OwnerSession } from "../auth.js";
 import type { Database } from "../db/client.js";
-import { DomainError } from "../domain/index.js";
 import {
   type HumanAccess,
   requireHumanAccess,
@@ -15,6 +14,12 @@ import {
   updateMemberSchema,
 } from "../invitations.js";
 import type { MailConfig } from "../mail-config.js";
+import {
+  parseHttpInput,
+  parseIdentifier,
+  parseJsonBody,
+  readJsonInput,
+} from "./validation.js";
 
 type InvitationBindings = {
   Variables: {
@@ -29,15 +34,9 @@ function owner(context: HumanAccess | null) {
   return { workspaceId: access.workspaceId, userId: access.user.id };
 }
 
-function identifier(value: string, field: string) {
-  const parsed = z.uuid().safeParse(value);
-  if (!parsed.success) {
-    throw new DomainError("invalid", "Invalid request", [
-      { field, message: "Must be a valid identifier" },
-    ]);
-  }
-  return parsed.data;
-}
+const invitationDeliverySchema = z
+  .object({ delivery: z.enum(["manual", "email"]).optional() })
+  .strict();
 
 export function createInvitationRouter({
   db,
@@ -63,42 +62,27 @@ export function createInvitationRouter({
   );
 
   router.post("/invitations", async (context) => {
-    const input = createInvitationSchema.safeParse(
-      await context.req.json().catch(() => null),
+    const input = parseHttpInput(
+      createInvitationSchema,
+      await readJsonInput(context),
+      { message: "Invalid invitation", fallbackField: "" },
     );
-    if (!input.success) {
-      throw new DomainError(
-        "invalid",
-        "Invalid invitation",
-        input.error.issues.map((issue) => ({
-          field: issue.path.join("."),
-          message: issue.message,
-        })),
-      );
-    }
     return context.json(
       response(
-        await invitations.create(owner(context.get("humanAccess")), input.data),
+        await invitations.create(owner(context.get("humanAccess")), input),
       ),
       201,
     );
   });
 
   router.post("/invitations/:invitationId/resend", async (context) => {
-    const text = await context.req.text();
-    let raw: unknown = {};
-    try {
-      raw = text ? JSON.parse(text) : {};
-    } catch {
-      throw new DomainError("invalid", "Invalid invitation delivery request");
-    }
-    const input = z
-      .object({ delivery: z.enum(["manual", "email"]).optional() })
-      .strict()
-      .safeParse(raw);
-    if (!input.success)
-      throw new DomainError("invalid", "Invalid invitation delivery request");
-    const invitationId = identifier(
+    const input = await parseJsonBody(context, invitationDeliverySchema, {
+      emptyValue: {},
+      message: "Invalid invitation delivery request",
+      malformedMessage: "Invalid invitation delivery request",
+      fields: false,
+    });
+    const invitationId = parseIdentifier(
       context.req.param("invitationId"),
       "invitationId",
     );
@@ -107,14 +91,14 @@ export function createInvitationRouter({
         await invitations.resend(
           owner(context.get("humanAccess")),
           invitationId,
-          input.data.delivery,
+          input.delivery,
         ),
       ),
     );
   });
 
   router.post("/invitations/:invitationId/revoke", async (context) => {
-    const invitationId = identifier(
+    const invitationId = parseIdentifier(
       context.req.param("invitationId"),
       "invitationId",
     );
@@ -125,31 +109,33 @@ export function createInvitationRouter({
 
   router.delete("/members/:userId", async (context) => {
     const actor = owner(context.get("humanAccess"));
-    const userId = identifier(context.req.param("userId"), "userId");
-    const input = memberVersionSchema.safeParse(
-      await context.req.json().catch(() => null),
+    const userId = parseIdentifier(context.req.param("userId"), "userId");
+    const input = parseHttpInput(
+      memberVersionSchema,
+      await readJsonInput(context),
+      {
+        message:
+          "Reload members before removing access: a current version is required.",
+        fields: false,
+      },
     );
-    if (!input.success)
-      throw new DomainError(
-        "invalid",
-        "Reload members before removing access: a current version is required.",
-      );
     return context.json(
-      await invitations.removeMember(actor, userId, input.data.expectedVersion),
+      await invitations.removeMember(actor, userId, input.expectedVersion),
     );
   });
 
   router.patch("/members/:userId", async (context) => {
     const actor = owner(context.get("humanAccess"));
-    const userId = identifier(context.req.param("userId"), "userId");
-    const input = updateMemberSchema.safeParse(
-      await context.req.json().catch(() => null),
+    const userId = parseIdentifier(context.req.param("userId"), "userId");
+    const input = parseHttpInput(
+      updateMemberSchema,
+      await readJsonInput(context),
+      {
+        message: "Invalid member permissions or version",
+        fields: false,
+      },
     );
-    if (!input.success)
-      throw new DomainError("invalid", "Invalid member permissions or version");
-    return context.json(
-      await invitations.updateMember(actor, userId, input.data),
-    );
+    return context.json(await invitations.updateMember(actor, userId, input));
   });
 
   return router;

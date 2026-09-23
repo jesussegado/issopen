@@ -1,25 +1,21 @@
 import { Hono } from "hono";
-import { z } from "zod";
 import type { OwnerSession } from "../auth.js";
 import type { Database } from "../db/client.js";
-import { DomainError } from "../domain/index.js";
 import {
   createOwnerWorkspaceInvitationSchema,
   OwnerWorkspaceInvitationService,
 } from "../owner-invitations.js";
+import {
+  parseHttpInput,
+  parseIdentifier,
+  readJsonInput,
+} from "./validation.js";
 
 type Bindings = {
   Variables: {
     ownerSession: OwnerSession;
   };
 };
-
-function identifier(value: string) {
-  const parsed = z.uuid().safeParse(value);
-  if (!parsed.success)
-    throw new DomainError("invalid", "Invalid Owner invitation identifier");
-  return parsed.data;
-}
 
 export function createOwnerInvitationRouter({
   db,
@@ -46,24 +42,14 @@ export function createOwnerInvitationRouter({
   );
 
   router.post("/owner-invitations", async (context) => {
-    const input = createOwnerWorkspaceInvitationSchema.safeParse(
-      await context.req.json().catch(() => null),
+    const input = parseHttpInput(
+      createOwnerWorkspaceInvitationSchema,
+      await readJsonInput(context),
+      { message: "Invalid Owner invitation", fallbackField: "" },
     );
-    if (!input.success)
-      throw new DomainError(
-        "invalid",
-        "Invalid Owner invitation",
-        input.error.issues.map((issue) => ({
-          field: issue.path.join("."),
-          message: issue.message,
-        })),
-      );
     return context.json(
       response(
-        await invitations.create(
-          context.get("ownerSession").user.id,
-          input.data,
-        ),
+        await invitations.create(context.get("ownerSession").user.id, input),
       ),
       201,
     );
@@ -74,7 +60,10 @@ export function createOwnerInvitationRouter({
       response(
         await invitations.resend(
           context.get("ownerSession").user.id,
-          identifier(context.req.param("invitationId")),
+          parseIdentifier(context.req.param("invitationId"), "invitationId", {
+            message: "Invalid Owner invitation identifier",
+            fields: false,
+          }),
         ),
       ),
     ),
@@ -84,7 +73,10 @@ export function createOwnerInvitationRouter({
     context.json(
       await invitations.revoke(
         context.get("ownerSession").user.id,
-        identifier(context.req.param("invitationId")),
+        parseIdentifier(context.req.param("invitationId"), "invitationId", {
+          message: "Invalid Owner invitation identifier",
+          fields: false,
+        }),
       ),
     ),
   );

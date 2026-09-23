@@ -5,6 +5,13 @@ import type { IssopenAuth, OwnerSession } from "../auth.js";
 import type { Database } from "../db/client.js";
 import { session } from "../db/schema.js";
 import { DomainError } from "../domain/index.js";
+import { parseHttpInput } from "./validation.js";
+
+const sessionIdentifierSchema = z
+  .string()
+  .min(1)
+  .max(256)
+  .regex(/^[a-zA-Z0-9_-]+$/);
 
 // Labels are approximate and untrusted User-Agent text is never returned.
 export function sessionDeviceLabel(userAgent: string | null): string {
@@ -89,25 +96,22 @@ export function createAccountRouter(db: Database, auth: IssopenAuth) {
   });
 
   router.post("/account/sessions/:sessionId/revoke", async (context) => {
-    const parsed = z
-      .string()
-      .min(1)
-      .max(256)
-      .regex(/^[a-zA-Z0-9_-]+$/)
-      .safeParse(context.req.param("sessionId"));
-    if (!parsed.success)
-      throw new DomainError("invalid", "Invalid session identifier");
+    const sessionId = parseHttpInput(
+      sessionIdentifierSchema,
+      context.req.param("sessionId"),
+      { message: "Invalid session identifier", fields: false },
+    );
     const current = context.get("ownerSession");
     const [target] = await db
       .select({ token: session.token })
       .from(session)
       .where(
-        and(eq(session.id, parsed.data), eq(session.userId, current.user.id)),
+        and(eq(session.id, sessionId), eq(session.userId, current.user.id)),
       )
       .limit(1);
     if (!target) throw new DomainError("not_found", "Session not found");
 
-    const isCurrent = parsed.data === current.session.id;
+    const isCurrent = sessionId === current.session.id;
     const response = isCurrent
       ? await auth.api.signOut({
           headers: context.req.raw.headers,
