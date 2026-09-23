@@ -398,6 +398,43 @@ describe("modular monolith boundaries", () => {
     expect(violations).toEqual([]);
   });
 
+  it("keeps member invitation policies behind the stable facade", () => {
+    const facade = readFileSync(
+      join(repository, "src/server/invitations.ts"),
+      "utf8",
+    );
+    const required = [
+      "./member-invitations/auth-plugin.js",
+      "./member-invitations/contracts.js",
+      "./member-invitations/lifecycle.js",
+      "./member-invitations/members.js",
+    ];
+    const violations = required
+      .filter((specifier) => !imports(facade).includes(specifier))
+      .map((specifier) => `invitations.ts does not compose ${specifier}`);
+    if (facade.split("\n").length > 120)
+      violations.push("invitations.ts grew beyond its compatible facade");
+
+    const limits: Record<string, number> = {
+      "auth-flow.ts": 500,
+      "auth-plugin.ts": 180,
+      "contracts.ts": 80,
+      "lifecycle.ts": 500,
+      "members.ts": 300,
+      "owner-access.ts": 80,
+    };
+    for (const [file, limit] of Object.entries(limits)) {
+      const source = readFileSync(
+        join(repository, "src/server/member-invitations", file),
+        "utf8",
+      );
+      if (source.split("\n").length > limit)
+        violations.push(`${file} grew beyond its invitation responsibility`);
+    }
+
+    expect(violations).toEqual([]);
+  });
+
   it("keeps the large integration suites on explicit boundary fixtures", () => {
     const suites = [
       "tests/integration/http.test.ts",

@@ -29,6 +29,14 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+23/09 ticket138: `src/server/invitations.ts` es una fachada compatible; contratos,
+owner locking, enlaces/delivery, permisos de miembros, claim/accept transaccional
+y el adaptador Better Auth viven en `src/server/member-invitations/`. No importes
+capabilities internas desde HTTP/auth/tests: usa siempre la fachada. Mantén el
+claim y accept en una sola transacción con advisory lock, Google exacto,
+single-use y auditoría; el plugin sólo adapta sesión/cookies. La frontera y los
+límites de tamaño están en `architecture-boundaries.test.ts`.
+
 23/09 ticket136 cierra el refactor v1 con límites ejecutables, no con una nueva
 capa genérica. `tsconfig.json` y la extensión rechazan locales/parámetros sin
 uso; `architecture-boundaries.test.ts` recorre imports runtime de servidor, web

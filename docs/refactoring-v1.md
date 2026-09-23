@@ -45,7 +45,7 @@ The executable form of the import/write boundaries lives in
 | Tracker | `src/server/domain/tracker.ts`, `src/server/domain/contracts.ts` | `src/server/http/tracker.ts`, `src/server/mcp/tools.ts`, capture API, web |
 | Human access | `src/server/human-access.ts`, membership/project services | REST session and routers, Chrome account/capture |
 | Agents | `src/server/domain/agents/` | MCP handler/tools, agent web routes |
-| Invitations | `src/server/invitations.ts`, `src/server/owner-invitations.ts` | invitation routers, auth plugins and web onboarding |
+| Invitations | stable `src/server/invitations.ts` facade over `src/server/member-invitations/`, plus `src/server/owner-invitations.ts` | invitation routers, auth plugins and web onboarding |
 | Persistence | stable `src/server/db/schema.ts` facade over cohesive `src/server/db/schema/` modules, plus `drizzle/` | domain services and bounded read projections |
 | Web state | route components plus `src/web/lib/` | browser UI and project live stream |
 | Chrome | `extensions/chrome/lib/` and side-panel entrypoints | extension background, OAuth and capture API |
@@ -194,12 +194,19 @@ remain because they still have real consumers or external contracts.
 | Security boundaries | Domain-only writes, MCP scopes/allowlists/idempotency, HTTP validation and browser/server separation remain executable tests |
 | Performance | No new runtime dependency or request path; component/state splits preserve the existing fetch and live-event model. The 501.45 kB initial JS warning is tracked in `ISSOPEN-140` for measurement-led code splitting |
 
-Three pre-existing concerns are intentionally not mixed into this closure: the
-member invitation lifecycle, the agent administration service/UI and the
-slightly-over-threshold initial web bundle. Each has a separate project backlog
-ticket (`ISSOPEN-138`, `ISSOPEN-139` and `ISSOPEN-140`) so a later change can
-first characterize its own policy, UX or measured loading cost rather than
-hiding risk inside this refactor.
+Ticket 138 resolves the member-invitation hotspot behind the unchanged
+`InvitationService` and `invitationAuthPlugin` API. Contracts, owner checks,
+link lifecycle and delivery, member grants, transactional claim/accept policy
+and the Better Auth adapter now have explicit modules. The facade is 73 lines;
+no capability exceeds 431 lines. Existing integration scenarios continue to
+exercise token rotation, single use, abandoned identity recovery, exact Google
+proof, mail delivery, CAS grants, revocation and multi-workspace isolation. The
+architecture gate fixes these boundaries and size limits.
+
+Two pre-existing concerns remain intentionally separate: agent administration
+and the slightly-over-threshold initial web bundle. Their project backlog
+tickets (`ISSOPEN-139` and `ISSOPEN-140`) require characterization of their own
+UX and measured loading cost rather than hidden changes inside ticket 138.
 
 ## Confirmed duplication
 
