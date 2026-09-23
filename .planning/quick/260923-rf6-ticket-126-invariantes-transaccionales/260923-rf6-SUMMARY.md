@@ -21,4 +21,14 @@
 
 ## Producción
 
-Pendiente de publicar y verificar tras el commit documental.
+- Imagen `refactor-tracker-invariants-8e921ef`, digest
+  `sha256:3fc86465cb849bfa51a769c2aadf2eee912bd71d08b83ba4be8affa4d688db75`.
+- GitOps `165cda3e6d2096a1801af351958d361733b2da0d`; Kustomize y 140 tests
+  PASS.
+- Argo CD: revisión exacta, Synced y Healthy.
+- Pod de aplicación Ready, 0 reinicios y digest exacto.
+- `/health/ready` devuelve `{"status":"ok"}` y `/` devuelve 200.
+- PVC PostgreSQL `cf93e0a7-b978-46c2-9c03-c77f902742b9` y attachments
+  `c40b0035-0433-436f-91c4-feff7a20e754` siguen Bound y conservan volumen.
+- Ticket 126 queda Ready for Human Review, versión 6, sin claim, con comentario
+  y enlace al commit publicados mediante MCP.
