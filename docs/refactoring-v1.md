@@ -46,7 +46,7 @@ The executable form of the import/write boundaries lives in
 | Human access | `src/server/human-access.ts`, membership/project services | REST session and routers, Chrome account/capture |
 | Agents | `src/server/domain/agents/` | MCP handler/tools, agent web routes |
 | Invitations | `src/server/invitations.ts`, `src/server/owner-invitations.ts` | invitation routers, auth plugins and web onboarding |
-| Persistence | `src/server/db/schema.ts`, `drizzle/` | domain services and bounded read projections |
+| Persistence | stable `src/server/db/schema.ts` facade over cohesive `src/server/db/schema/` modules, plus `drizzle/` | domain services and bounded read projections |
 | Web state | route components plus `src/web/lib/` | browser UI and project live stream |
 | Chrome | `extensions/chrome/lib/` and side-panel entrypoints | extension background, OAuth and capture API |
 
@@ -69,6 +69,10 @@ when it contains independent responsibilities or repeated invariants.
 | `src/web/styles.css` | 1,788 lines | Foundation, components, features and responsive rules share one cascade | 135 |
 | Large integration/web suites | 1,100–2,380 lines each | Repeated identities, sessions, database setup and tracker factories | 134 |
 | Remaining large services/routes | 470–886 lines | Size alone is not sufficient evidence; review after primary extractions | 136 |
+
+Ticket 124 resolved the schema hotspot without changing its public facade: the
+largest cohesive module is now access at 529 lines, cross-domain relations are
+isolated and documented, and an executable boundary prevents deep imports.
 
 ## Confirmed duplication
 

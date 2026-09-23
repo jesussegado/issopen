@@ -86,4 +86,46 @@ describe("modular monolith boundaries", () => {
     );
     expect(violations).toEqual([]);
   });
+
+  it("keeps schema consumers on the stable facade", () => {
+    const violations = sourceFiles("src")
+      .filter((file) => !file.includes("/server/db/schema/"))
+      .flatMap((file) =>
+        imports(readFileSync(file, "utf8"))
+          .filter((specifier) => specifier.includes("/db/schema/"))
+          .map(
+            (specifier) =>
+              `${relative(repository, file)} imports internal schema module ${specifier}`,
+          ),
+      );
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps the schema module dependency graph acyclic", () => {
+    const allowedDependencies: Record<string, string[]> = {
+      "identity.ts": [],
+      "access.ts": ["identity"],
+      "agents.ts": ["access"],
+      "tracker.ts": ["access", "agents", "identity"],
+      "notifications.ts": ["access", "identity", "tracker"],
+      "captures.ts": ["access", "identity", "tracker"],
+      "relations.ts": ["access", "agents", "identity", "tracker"],
+    };
+
+    const violations = Object.entries(allowedDependencies).flatMap(
+      ([file, allowed]) =>
+        imports(
+          readFileSync(join(repository, "src/server/db/schema", file), "utf8"),
+        )
+          .filter((specifier) => specifier.startsWith("./"))
+          .map((specifier) =>
+            specifier.replace(/^\.\//, "").replace(/\.js$/, ""),
+          )
+          .filter((dependency) => !allowed.includes(dependency))
+          .map((dependency) => `${file} imports forbidden ${dependency}`),
+    );
+
+    expect(violations).toEqual([]);
+  });
 });

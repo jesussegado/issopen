@@ -631,6 +631,13 @@ denegación por defecto; las operaciones administrativas son Owner-only. MCP y a
 llegan en planes posteriores y deben reutilizar esos servicios, no duplicar
 reglas de dominio ni aceptar actor, origen, fecha o diff desde el cliente.
 
+El esquema Drizzle mantiene `src/server/db/schema.ts` como fachada pública
+estable. Sus tablas se organizan internamente en `src/server/db/schema/` por
+identidad, acceso, agentes, tracker, notificaciones y capturas; las relaciones
+cruzadas viven de forma explícita en `relations.ts`. El resto del código nunca
+importa esos módulos internos directamente. Antes y después de reorganizar el
+esquema ejecuta `pnpm schema:check`: debe generar cero artefactos de migración.
+
 El plan `01-03` implementa la SPA de `src/web/` sin router ni biblioteca de
 componentes externa: `components/` contiene primitivas semánticas locales,
 `routes/` monta formularios, tablero, detalle, revisión y actividad, y `lib/`
