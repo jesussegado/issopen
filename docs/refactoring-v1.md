@@ -112,6 +112,13 @@ visible in the 213-line facade. A structural test prevents sibling capability
 imports and REST/MCP bypasses; a mechanical comparison confirmed all 30 moved
 operations are unchanged before running the consumer suites.
 
+Ticket 129 keeps `createIssopenMcpServer` as a 21-line registry facade while
+grouping the 18 registrations into projects/Epics, issues/activity,
+discussion and workflow/code-result families. Scope checks, allowlists, cursor
+fingerprints and idempotency remain explicit inside each handler. The exact
+catalog (names, descriptions, schemas and annotations) is hashed by integration
+tests, and all moved registrations compare structurally with their prior form.
+
 ## Confirmed duplication
 
 - Member and Owner invitations previously implemented email
@@ -124,8 +131,8 @@ operations are unchanged before running the consumer suites.
 - HTTP transport parsing and `DomainError` serialization are centralized by
   ticket 128; the remaining schema validation in services represents business
   rules rather than a competing controller implementation.
-- MCP mutations repeat scope/resource checks, idempotency envelopes and
-  structured results; list tools repeat cursor/fingerprint/page assembly.
+- MCP registration ownership is split by ticket 129; common context and resource
+  lookup are shared while security and pagination decisions remain at call sites.
 - React routes repeat loading/missing/network/conflict state and protection
   against stale responses.
 - Integration suites repeat owner/workspace/project/session construction.

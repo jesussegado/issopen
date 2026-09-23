@@ -4,6 +4,12 @@ Issopen publishes a secret-free entry point for new agents at
 `/agent-onboarding`. It is deliberately useful before authentication while all
 project data and MCP tools remain private.
 
+The MCP tool registry may be organized internally by resource family, but that
+layout is not part of the agent contract. Consumers discover the live catalog
+and depend on tool names, descriptions, schemas, annotations, scopes and
+structured responses. Issopen protects that complete observable catalog with a
+contract hash so internal refactors cannot silently change onboarding.
+
 ## Public surfaces
 
 | Surface | Purpose |

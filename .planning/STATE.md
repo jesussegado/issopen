@@ -3,18 +3,30 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Epic 10 ticket 127 deployed and ready for human review; starting 129
-last_updated: "2026-09-23T14:39:00Z"
+stopped_at: Epic 10 ticket 129 MCP registry split validated locally
+last_updated: "2026-09-23T14:51:00Z"
 last_activity: 2026-09-23
 progress:
   total_phases: 9
   completed_phases: 0
-  total_plans: 10
-  completed_plans: 9
-  percent: 90
+  total_plans: 11
+  completed_plans: 10
+  percent: 91
 ---
 
 # Project State
+
+## Follow-up 23Sep — MCP registry families (Epic 10 ticket 129)
+
+Ticket 129 reduces `tools.ts` to a 21-line facade over four independent tool
+families. All 18 registrations compare unchanged and a contract hash protects
+names, descriptions, schemas and annotations; scope, allowlist, cursor and
+idempotency checks remain visible in handlers. Source `e4e7499`; 26 focused,
+118 integration, 215 fast and 82 characterization tests pass with lint/types,
+zero schema drift, build and secret scan. Public onboarding surfaces were
+reviewed; the documentary guide now states that internal module layout is not
+part of the MCP contract. No observable contract changed. See quick
+260923-rf8; deployment is next, followed by 130.
 
 ## Follow-up 23Sep — Tracker capability split (Epic 10 ticket 127)
 
@@ -566,6 +578,7 @@ Decisions are logged in PROJECT.md Key Decisions table. Current roadmap-level st
 
 | ID | Description | Date | Commits | Status | Directory |
 | --- | --- | --- | --- | --- | --- |
+| 260923-rf8 | Ticket 129: modularizar registro MCP por familias | 2026-09-23 | Fuente `e4e7499` | Catálogo exacto y 18 registros sin cambios; gates completos, despliegue pendiente | [260923-rf8](./quick/260923-rf8-ticket-129-modularizar-registro-mcp/) |
 | 260923-rf7 | Ticket 127: dividir TrackerService por capacidades | 2026-09-23 | Fuente `c99686e`; GitOps `f77145cd` | Gates completos y despliegue Synced/Healthy PASS; ticket Ready for Human Review v7 sin claim | [260923-rf7](./quick/260923-rf7-ticket-127-dividir-tracker-capacidades/) |
 | 260923-rf6 | Ticket 126: invariantes transaccionales compartidas del tracker | 2026-09-23 | Fuente `d5bba0d`; GitOps `165cda3e` | Gates completos y despliegue Synced/Healthy PASS; ticket Ready for Human Review v6 sin claim | [260923-rf6](./quick/260923-rf6-ticket-126-invariantes-transaccionales/) |
 | 260923-rf3 | Ticket 125: primitivas seguras compartidas de invitación | 2026-09-23 | Fuente `4779b8d`; GitOps `b0e77964` | Gates completos y despliegue Synced/Healthy PASS; sin cambio de contrato | [260923-rf3](./quick/260923-rf3-ticket-125-unificar-invitaciones/) |
