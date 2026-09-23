@@ -114,9 +114,6 @@ function Navigation({
       {role === "owner" ? link("/connect", "Connect ChatGPT") : null}
       {link("/extensions", "Extensiones Chrome")}
       {link("/privacy", "Privacy and data")}
-      <a className="nav-link" href="/agent-onboarding#agent-start">
-        Inicio rápido MCP
-      </a>
       <a className="nav-link" href="/agent-onboarding#agent-machine">
         Documentación MCP
       </a>

@@ -54,19 +54,16 @@ it("shows Owner provisioning only to the instance administrator", () => {
   ).not.toBeInTheDocument();
 });
 
-it("links both MCP onboarding entry points from desktop and mobile menus", () => {
+it("links the MCP documentation from desktop and mobile menus", () => {
   render(shell("/projects/one"));
 
-  const quickStart = screen.getAllByRole("link", {
-    name: "Inicio rápido MCP",
-  });
   const documentation = screen.getAllByRole("link", {
     name: "Documentación MCP",
   });
-  expect(quickStart).toHaveLength(2);
+  expect(
+    screen.queryByRole("link", { name: "Inicio rápido MCP" }),
+  ).not.toBeInTheDocument();
   expect(documentation).toHaveLength(2);
-  for (const link of quickStart)
-    expect(link).toHaveAttribute("href", "/agent-onboarding#agent-start");
   for (const link of documentation)
     expect(link).toHaveAttribute("href", "/agent-onboarding#agent-machine");
 });
