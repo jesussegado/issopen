@@ -347,6 +347,24 @@ describe("transactional tracker domain", () => {
     expect((await tracker.getEpic(workspaceId, e.id)).version).toBe(
       e.version + 1,
     );
+    const issueUpdateEvents = (
+      await connection.db.select().from(activityEvent)
+    ).filter(
+      (event) => event.issueId === i.id && event.type === "issue.updated",
+    );
+    expect(issueUpdateEvents).toHaveLength(1);
+    expect(issueUpdateEvents[0]).toMatchObject({
+      actorType: ownerContext.actor.type,
+      actorId: ownerContext.actor.id,
+      actorDisplayName: ownerContext.actor.displayName,
+      source: ownerContext.source,
+      summary: `Updated ${i.key}`,
+    });
+    const finalDescription = (await tracker.getIssue(workspaceId, i.id))
+      .description;
+    expect(issueUpdateEvents[0]?.changes).toMatchObject({
+      description: { from: "", to: finalDescription },
+    });
   });
 
   it("detects changed and newly added questions even when issue.version stays unchanged", async () => {

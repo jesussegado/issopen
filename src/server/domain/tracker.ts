@@ -27,7 +27,6 @@ import {
   project,
   workspace,
 } from "../db/schema.js";
-import { emitDirectedNotification } from "../notification-events.js";
 import { recipientColumns } from "../question-recipients.js";
 import {
   type AddCodeLinkInput,
@@ -60,10 +59,18 @@ import {
   updateProjectSchema,
 } from "./contracts.js";
 import { DomainError } from "./errors.js";
+import {
+  type ActivityChanges,
+  activeIssueMutationPredicate,
+  assertExpectedVersion,
+  assertIssueQuestionSnapshot,
+  issueMutationStamp,
+  lockActiveIssue,
+  recordActivity,
+  type TrackerTransaction,
+} from "./tracker-mutations.js";
 
-type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
-type TrackerDatabase = Database | Transaction;
-type ActivityChanges = Record<string, unknown>;
+type TrackerDatabase = Database | TrackerTransaction;
 
 export type ProjectPageCursor = {
   createdAt: Date;
@@ -109,10 +116,6 @@ function isUniqueViolation(error: unknown): boolean {
   return "cause" in error && isUniqueViolation(error.cause);
 }
 
-function boundedSummary(value: string): string {
-  return value.length <= 500 ? value : `${value.slice(0, 497)}...`;
-}
-
 function changedFields(
   previousInput: object,
   nextInput: object,
@@ -127,36 +130,6 @@ function changedFields(
         { from: previous[field] ?? null, to: value ?? null },
       ]),
   );
-}
-
-async function recordActivity(
-  tx: Transaction,
-  context: MutationContext,
-  values: {
-    projectId: string;
-    issueId?: string;
-    type: string;
-    summary: string;
-    changes: ActivityChanges;
-  },
-) {
-  const [event] = await tx
-    .insert(activityEvent)
-    .values({
-      id: randomUUID(),
-      workspaceId: context.workspaceId,
-      projectId: values.projectId,
-      issueId: values.issueId,
-      type: values.type,
-      actorType: context.actor.type,
-      actorId: context.actor.id,
-      actorDisplayName: context.actor.displayName,
-      source: context.source,
-      summary: boundedSummary(values.summary),
-      changes: values.changes,
-    })
-    .returning();
-  if (event) await emitDirectedNotification(tx, event);
 }
 
 function requireHuman(context: MutationContext) {
@@ -200,7 +173,7 @@ function emptyEpicSummary() {
 export class TrackerService {
   constructor(private readonly db: TrackerDatabase) {}
 
-  private transaction<T>(callback: (tx: Transaction) => Promise<T>) {
+  private transaction<T>(callback: (tx: TrackerTransaction) => Promise<T>) {
     if ("transaction" in this.db) return this.db.transaction(callback);
     return callback(this.db);
   }
@@ -578,11 +551,11 @@ export class TrackerService {
         .limit(1)
         .for("update");
       if (!current) throw new DomainError("not_found", "Epic not found");
-      if (expectedVersion !== undefined && current.version !== expectedVersion)
-        throw new DomainError(
-          "conflict",
-          "This Epic changed. Your draft is preserved; read the latest version before merging and retrying.",
-        );
+      assertExpectedVersion(
+        current.version,
+        expectedVersion,
+        "This Epic changed. Your draft is preserved; read the latest version before merging and retrying.",
+      );
       const archiveChanged =
         archived !== undefined && archived !== (current.archivedAt !== null);
       const changes = changedFields(current, editableValues);
@@ -998,19 +971,11 @@ export class TrackerService {
     const values = parseInput(addIssueCommentSchema, input);
 
     return this.transaction(async (tx) => {
-      const [currentIssue] = await tx
-        .select()
-        .from(issue)
-        .where(
-          and(
-            isNull(issue.deletedAt),
-            eq(issue.workspaceId, context.workspaceId),
-            eq(issue.id, issueId),
-          ),
-        )
-        .limit(1)
-        .for("update");
-      if (!currentIssue) throw new DomainError("not_found", "Issue not found");
+      const currentIssue = await lockActiveIssue(
+        tx,
+        context.workspaceId,
+        issueId,
+      );
 
       const [created] = await tx
         .insert(issueComment)
@@ -1061,19 +1026,11 @@ export class TrackerService {
     const values = parseInput(createIssueQuestionSchema, input);
 
     return this.transaction(async (tx) => {
-      const [currentIssue] = await tx
-        .select()
-        .from(issue)
-        .where(
-          and(
-            isNull(issue.deletedAt),
-            eq(issue.workspaceId, context.workspaceId),
-            eq(issue.id, issueId),
-          ),
-        )
-        .limit(1)
-        .for("update");
-      if (!currentIssue) throw new DomainError("not_found", "Issue not found");
+      const currentIssue = await lockActiveIssue(
+        tx,
+        context.workspaceId,
+        issueId,
+      );
 
       const options = values.options.map((option) => ({
         id: randomUUID(),
@@ -1125,19 +1082,11 @@ export class TrackerService {
     const answer = parseInput(answerIssueQuestionSchema, input);
 
     return this.transaction(async (tx) => {
-      const [currentIssue] = await tx
-        .select()
-        .from(issue)
-        .where(
-          and(
-            isNull(issue.deletedAt),
-            eq(issue.workspaceId, context.workspaceId),
-            eq(issue.id, issueId),
-          ),
-        )
-        .limit(1)
-        .for("update");
-      if (!currentIssue) throw new DomainError("not_found", "Issue not found");
+      const currentIssue = await lockActiveIssue(
+        tx,
+        context.workspaceId,
+        issueId,
+      );
 
       const [current] = await tx
         .select()
@@ -1152,15 +1101,11 @@ export class TrackerService {
         .limit(1);
       if (!current) throw new DomainError("not_found", "Question not found");
 
-      if (
-        answer.expectedVersion !== undefined &&
-        current.version !== answer.expectedVersion
-      ) {
-        throw new DomainError(
-          "conflict",
-          "This answer changed. Compare the latest response before saving your draft.",
-        );
-      }
+      assertExpectedVersion(
+        current.version,
+        answer.expectedVersion,
+        "This answer changed. Compare the latest response before saving your draft.",
+      );
 
       if (
         answer.kind === "option" &&
@@ -1254,46 +1199,19 @@ export class TrackerService {
     }
 
     return this.transaction(async (tx) => {
-      const [current] = await tx
-        .select()
-        .from(issue)
-        .where(
-          and(
-            isNull(issue.deletedAt),
-            eq(issue.workspaceId, context.workspaceId),
-            eq(issue.id, issueId),
-          ),
-        )
-        .limit(1)
-        .for("update");
-      if (!current) throw new DomainError("not_found", "Issue not found");
-      if (expectedVersion !== undefined && current.version !== expectedVersion)
-        throw new DomainError(
-          "conflict",
-          "This issue changed. Your draft is preserved; read the latest version before merging and retrying.",
-        );
-      if (questionVersions !== undefined) {
-        const actual = await tx
-          .select({ id: issueQuestion.id, version: issueQuestion.version })
-          .from(issueQuestion)
-          .where(
-            and(
-              eq(issueQuestion.workspaceId, context.workspaceId),
-              eq(issueQuestion.issueId, issueId),
-            ),
-          );
-        const versions = new Map(
-          questionVersions.map((item) => [item.id, item.version]),
-        );
-        if (
-          actual.length !== questionVersions.length ||
-          actual.some((item) => versions.get(item.id) !== item.version)
-        )
-          throw new DomainError(
-            "conflict",
-            "Questions or answers changed. Your draft is preserved; read the current answers before merging and retrying.",
-          );
-      }
+      const current = await lockActiveIssue(tx, context.workspaceId, issueId);
+      assertExpectedVersion(
+        current.version,
+        expectedVersion,
+        "This issue changed. Your draft is preserved; read the latest version before merging and retrying.",
+      );
+      await assertIssueQuestionSnapshot(tx, {
+        workspaceId: context.workspaceId,
+        issueId,
+        expected: questionVersions,
+        conflictMessage:
+          "Questions or answers changed. Your draft is preserved; read the current answers before merging and retrying.",
+      });
 
       if (values.epicId && values.epicId !== current.epicId) {
         const [foundEpic] = await tx
@@ -1366,14 +1284,12 @@ export class TrackerService {
         .update(issue)
         .set({
           ...values,
-          version: sql`${issue.version} + 1`,
-          updatedAt: new Date(),
+          ...issueMutationStamp(),
         })
         .where(
-          and(
-            isNull(issue.deletedAt),
-            eq(issue.workspaceId, context.workspaceId),
-            eq(issue.id, issueId),
+          activeIssueMutationPredicate(
+            context.workspaceId,
+            issueId,
             eq(issue.version, expectedVersion ?? current.version),
           ),
         )
@@ -1436,38 +1352,24 @@ export class TrackerService {
       if (!current) throw new DomainError("not_found", "Issue not found");
       const result = { deleted: true, issueId, projectId: current.projectId };
       if (current.deletedAt) return result;
-      if (current.version !== values.expectedVersion)
-        throw new DomainError(
-          "conflict",
-          "This ticket changed. Reload and review it before deleting.",
-        );
-      const actual = await tx
-        .select({ id: issueQuestion.id, version: issueQuestion.version })
-        .from(issueQuestion)
-        .where(
-          and(
-            eq(issueQuestion.workspaceId, context.workspaceId),
-            eq(issueQuestion.issueId, issueId),
-          ),
-        );
-      const versions = new Map(
-        values.questionVersions.map(({ id, version }) => [id, version]),
+      assertExpectedVersion(
+        current.version,
+        values.expectedVersion,
+        "This ticket changed. Reload and review it before deleting.",
       );
-      if (
-        actual.length !== versions.size ||
-        actual.some(({ id, version }) => versions.get(id) !== version)
-      )
-        throw new DomainError(
-          "conflict",
+      await assertIssueQuestionSnapshot(tx, {
+        workspaceId: context.workspaceId,
+        issueId,
+        expected: values.questionVersions,
+        conflictMessage:
           "Questions or answers changed. Reload and review them before deleting.",
-        );
+      });
       const now = new Date();
       await tx
         .update(issue)
         .set({
           deletedAt: now,
-          updatedAt: now,
-          version: sql`${issue.version} + 1`,
+          ...issueMutationStamp(now),
           claimedAt: null,
           claimedByAgentId: null,
         })
@@ -1503,19 +1405,7 @@ export class TrackerService {
     );
 
     return this.transaction(async (tx) => {
-      const [current] = await tx
-        .select()
-        .from(issue)
-        .where(
-          and(
-            isNull(issue.deletedAt),
-            eq(issue.workspaceId, context.workspaceId),
-            eq(issue.id, issueId),
-          ),
-        )
-        .limit(1)
-        .for("update");
-      if (!current) throw new DomainError("not_found", "Issue not found");
+      const current = await lockActiveIssue(tx, context.workspaceId, issueId);
       if (current.claimedByAgentId === normalizedAgentId) return current;
       if (current.claimedByAgentId) {
         throw new DomainError("conflict", "Issue is already claimed");
@@ -1527,14 +1417,12 @@ export class TrackerService {
         .set({
           claimedByAgentId: normalizedAgentId,
           claimedAt,
-          version: sql`${issue.version} + 1`,
-          updatedAt: claimedAt,
+          ...issueMutationStamp(claimedAt),
         })
         .where(
-          and(
-            isNull(issue.deletedAt),
-            eq(issue.workspaceId, context.workspaceId),
-            eq(issue.id, issueId),
+          activeIssueMutationPredicate(
+            context.workspaceId,
+            issueId,
             sql`${issue.claimedByAgentId} is null`,
           ),
         )
@@ -1559,19 +1447,7 @@ export class TrackerService {
     const context = parseInput(mutationContextSchema, contextInput);
 
     return this.transaction(async (tx) => {
-      const [current] = await tx
-        .select()
-        .from(issue)
-        .where(
-          and(
-            isNull(issue.deletedAt),
-            eq(issue.workspaceId, context.workspaceId),
-            eq(issue.id, issueId),
-          ),
-        )
-        .limit(1)
-        .for("update");
-      if (!current) throw new DomainError("not_found", "Issue not found");
+      const current = await lockActiveIssue(tx, context.workspaceId, issueId);
       if (!current.claimedByAgentId) return current;
       if (
         context.actor.type === "agent" &&
@@ -1585,16 +1461,9 @@ export class TrackerService {
         .set({
           claimedByAgentId: null,
           claimedAt: null,
-          version: sql`${issue.version} + 1`,
-          updatedAt: new Date(),
+          ...issueMutationStamp(),
         })
-        .where(
-          and(
-            isNull(issue.deletedAt),
-            eq(issue.workspaceId, context.workspaceId),
-            eq(issue.id, issueId),
-          ),
-        )
+        .where(activeIssueMutationPredicate(context.workspaceId, issueId))
         .returning();
       if (!updated) throw new DomainError("not_found", "Issue not found");
 
@@ -1620,19 +1489,7 @@ export class TrackerService {
     const values = parseInput(addCodeLinkSchema, input);
 
     return this.transaction(async (tx) => {
-      const [current] = await tx
-        .select()
-        .from(issue)
-        .where(
-          and(
-            isNull(issue.deletedAt),
-            eq(issue.workspaceId, context.workspaceId),
-            eq(issue.id, issueId),
-          ),
-        )
-        .limit(1)
-        .for("update");
-      if (!current) throw new DomainError("not_found", "Issue not found");
+      const current = await lockActiveIssue(tx, context.workspaceId, issueId);
 
       const [createdLink] = await tx
         .insert(codeLink)
@@ -1647,14 +1504,8 @@ export class TrackerService {
 
       const [updatedIssue] = await tx
         .update(issue)
-        .set({ version: sql`${issue.version} + 1`, updatedAt: new Date() })
-        .where(
-          and(
-            isNull(issue.deletedAt),
-            eq(issue.workspaceId, context.workspaceId),
-            eq(issue.id, issueId),
-          ),
-        )
+        .set(issueMutationStamp())
+        .where(activeIssueMutationPredicate(context.workspaceId, issueId))
         .returning();
       if (!updatedIssue) throw new DomainError("not_found", "Issue not found");
 
@@ -1762,19 +1613,7 @@ export class TrackerService {
     guard: ReviewIssueInput = {},
   ) {
     return this.transaction(async (tx) => {
-      const [current] = await tx
-        .select()
-        .from(issue)
-        .where(
-          and(
-            isNull(issue.deletedAt),
-            eq(issue.workspaceId, context.workspaceId),
-            eq(issue.id, issueId),
-          ),
-        )
-        .limit(1)
-        .for("update");
-      if (!current) throw new DomainError("not_found", "Issue not found");
+      const current = await lockActiveIssue(tx, context.workspaceId, issueId);
       if (current.status !== "ready_for_review") {
         throw new DomainError(
           "conflict",
@@ -1782,52 +1621,30 @@ export class TrackerService {
         );
       }
 
-      if (
-        guard.expectedVersion !== undefined &&
-        current.version !== guard.expectedVersion
-      ) {
-        throw new DomainError(
-          "conflict",
-          "This ticket changed. Compare the latest version before reviewing.",
-        );
-      }
-      if (guard.questionVersions !== undefined) {
-        const actual = await tx
-          .select({ id: issueQuestion.id, version: issueQuestion.version })
-          .from(issueQuestion)
-          .where(
-            and(
-              eq(issueQuestion.workspaceId, context.workspaceId),
-              eq(issueQuestion.issueId, issueId),
-            ),
-          );
-        const expected = new Map(
-          guard.questionVersions.map((item) => [item.id, item.version]),
-        );
-        if (
-          actual.length !== expected.size ||
-          actual.some((item) => expected.get(item.id) !== item.version)
-        ) {
-          throw new DomainError(
-            "conflict",
-            "This ticket's questions changed. Compare the latest decisions before reviewing.",
-          );
-        }
-      }
+      assertExpectedVersion(
+        current.version,
+        guard.expectedVersion,
+        "This ticket changed. Compare the latest version before reviewing.",
+      );
+      await assertIssueQuestionSnapshot(tx, {
+        workspaceId: context.workspaceId,
+        issueId,
+        expected: guard.questionVersions,
+        conflictMessage:
+          "This ticket's questions changed. Compare the latest decisions before reviewing.",
+      });
 
       const status = outcome === "accepted" ? "done" : "in_progress";
       const [updated] = await tx
         .update(issue)
         .set({
           status,
-          version: sql`${issue.version} + 1`,
-          updatedAt: new Date(),
+          ...issueMutationStamp(),
         })
         .where(
-          and(
-            isNull(issue.deletedAt),
-            eq(issue.workspaceId, context.workspaceId),
-            eq(issue.id, issueId),
+          activeIssueMutationPredicate(
+            context.workspaceId,
+            issueId,
             eq(issue.status, "ready_for_review"),
           ),
         )
