@@ -3,18 +3,28 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Epic 10 ticket 125 invitation primitives ready for human review
-last_updated: "2026-09-23T13:07:21Z"
+stopped_at: Epic 10 ticket 128 centralized HTTP validation ready for deployment
+last_updated: "2026-09-23T13:25:28Z"
 last_activity: 2026-09-23
 progress:
   total_phases: 9
   completed_phases: 0
-  total_plans: 6
-  completed_plans: 5
-  percent: 83
+  total_plans: 7
+  completed_plans: 6
+  percent: 86
 ---
 
 # Project State
+
+## Follow-up 23Sep — Central HTTP validation (Epic 10 ticket 128)
+
+Ticket 128 replaces controller-local Zod/UUID/JSON/error copies with small
+transport primitives and one `DomainError` serializer while domain services
+retain business rules. Source `c716d6e`; 13 focused HTTP/architecture tests,
+211 fast tests, 118 integration tests and 78 characterization tests pass,
+along with lint/types, zero schema drift, production build and secret scan.
+No SQL, authorization, public payload or visible product change. Deployment
+evidence is recorded in quick 260923-rf4; next dependency-safe ticket is 134.
 
 ## Follow-up 23Sep — Shared invitation security primitives (Epic 10 ticket 125)
 

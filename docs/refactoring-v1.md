@@ -79,6 +79,15 @@ domain flows. `invitation-primitives.ts` owns only the common email, token,
 lifetime and lifecycle-state operations; member and Owner services retain
 their policies, transactions, errors, summaries and authentication paths.
 
+Ticket 128 centralizes transport-only parsing in
+`src/server/http/validation.ts` and maps every `DomainError` through
+`src/server/http/errors.ts`. Tracker, agents, invitations, Owner invitations,
+ownership, profiles, account and workspace handlers now share the same body,
+query and identifier primitives while their domain services continue to own
+business validation. An architecture test rejects new router-local
+`safeParse`, JSON catch or error-serializer copies, and exact response tests
+protect validation fields, malformed JSON and all domain status mappings.
+
 ## Confirmed duplication
 
 - Member and Owner invitations previously implemented email
@@ -89,7 +98,9 @@ their policies, transactions, errors, summaries and authentication paths.
 - Tracker mutations repeatedly load and lock a ticket, enforce workspace and
   tombstone predicates, compare versions/question snapshots, bump versions and
   append activity.
-- HTTP routers repeat Zod parsing, UUID errors and `DomainError` serialization.
+- HTTP transport parsing and `DomainError` serialization are centralized by
+  ticket 128; the remaining schema validation in services represents business
+  rules rather than a competing controller implementation.
 - MCP mutations repeat scope/resource checks, idempotency envelopes and
   structured results; list tools repeat cursor/fingerprint/page assembly.
 - React routes repeat loading/missing/network/conflict state and protection

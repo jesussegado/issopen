@@ -29,6 +29,16 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+23/09 ticket128: la validación de transporte REST vive en
+`src/server/http/validation.ts` y la única serialización de `DomainError` en
+`src/server/http/errors.ts`. Los routers deben usar `parseHttpInput`,
+`parseJsonBody`, `readJsonInput` y `parseIdentifier`; no volver a crear
+`safeParse`, UUID parsers, `req.json().catch` ni boundaries de error locales.
+Las reglas de negocio permanecen en los servicios de dominio. El test de
+arquitectura hace ejecutable esta frontera y los contratos HTTP fijan cuerpos,
+campos y status exactos. Implementación `c716d6e`; evidencia en quick
+`260923-rf4`.
+
 Ticket117 corrige Authenticate de ChatGPT: parche versionado de
 `@better-auth/cimd@1.7.2` para el contrato DNS `all:true` de Node24, conservando
 pinning/TLS/rechazo de IPs privadas; ambos stages Docker deben copiar `patches/`.
