@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Epic 9 visual polish tickets 119-122 deployed and delivered to human review
-last_updated: "2026-09-21T19:11:05Z"
-last_activity: 2026-09-21
+stopped_at: Epic 10 ticket 123 refactor safety baseline ready for human review
+last_updated: "2026-09-23T12:21:39Z"
+last_activity: 2026-09-23
 progress:
   total_phases: 9
   completed_phases: 0
@@ -15,6 +15,16 @@ progress:
 ---
 
 # Project State
+
+## Follow-up 23Sep — Refactor safety baseline (Epic 10 ticket 123)
+
+Ticket 123 establishes the non-regression baseline before moving production
+code. Source `d695272` documents hotspots and dependency order for 123–136,
+adds executable modular-monolith boundaries, runs Drizzle generation against a
+temporary migration copy and exposes one `refactor:check` command. Gates pass:
+lint/types, 76 focused characterization tests, 199 fast unit/web tests and zero
+schema drift. No runtime, schema, migration, permission or deployment change.
+See quick 260923-rf1; next dependency-safe ticket is 124.
 
 ## Follow-up 21Sep — Visual polish and stability v1 (Epic 9)
 
@@ -483,6 +493,7 @@ Decisions are logged in PROJECT.md Key Decisions table. Current roadmap-level st
 
 | ID | Description | Date | Commits | Status | Directory |
 | --- | --- | --- | --- | --- | --- |
+| 260923-rf1 | Ticket 123: red de seguridad y mapa de refactor | 2026-09-23 | Fuente `d695272` | Lint/types, 76 caracterización, 199 fast tests y schema drift PASS; sin cambio runtime | [260923-rf1](./quick/260923-rf1-ticket-123-red-seguridad-refactor/) |
 | 260917-onb | Onboarding autocontenido para agentes, MCP y skill | 2026-09-17 | Fuente `5131c64`; GitOps `cbf58075` | Gates/Compose/Argo/smoke responsive PASS; ticket 115 Ready for Human Review | [260917-onb](./quick/260917-onb-onboarding-agentes-mcp-skill/) |
 | 260916-llb | Gmail de Gremiox, privacidad y guía de piloto Google | 2026-09-16 | 6005ace, f5dbbc4; GitOps33a99f6e, a3704a4a | Desplegado, SMTP/gates/restore/smoke PASS; recepción y Google pendientes del Owner | [260916-llb](./quick/260916-llb-epic-3-reutilizar-correo-de-gremiox-y-gu/) |
 | 260914-koj |96 gestión versionada de miembros/proyectos |2026-09-14|3156b31; GitOps7f6d9515|Gates/restore/smoke PASS; revisión humana|[260914-koj](./quick/260914-koj-epic-3-ticket96-gestionar-miembros-y-per/) |
