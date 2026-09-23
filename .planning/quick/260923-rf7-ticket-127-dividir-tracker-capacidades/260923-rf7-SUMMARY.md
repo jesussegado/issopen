@@ -24,4 +24,13 @@
 
 ## Producción
 
-Pendiente de publicar y verificar tras el commit documental.
+- Imagen `refactor-tracker-capabilities-57bc4ca`, digest
+  `sha256:d3415d478c001e146739ca096a3a666c36df645c4b4599dcac5f984da182c4d3`.
+- GitOps `f77145cd9c63c7b7e9624759966123776cd4e913`; Kustomize y 140 tests
+  PASS.
+- Argo CD: revisión exacta, Synced y Healthy.
+- Pod de aplicación Ready, 0 reinicios y digest exacto.
+- `/health/ready` devuelve `{"status":"ok"}` y `/` devuelve 200.
+- Los dos PVC siguen Bound con los volúmenes anteriores.
+- Ticket 127 queda Ready for Human Review, versión 7, sin claim, con comentario
+  y enlace al commit publicados mediante MCP.
