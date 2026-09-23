@@ -151,6 +151,18 @@ tests protect next-unanswered navigation, stale answer drafts, comparison before
 applying remote data and comment/activity ordering; an architecture check keeps
 transport out of the extracted panels.
 
+Ticket 133 reduces the Chrome `Workspace` from 730 lines to a small composition
+boundary. `useComposer` is the only side-panel owner of draft restoration,
+debounced persistence, owner/workspace matching, destination reads and
+idempotent ticket/container submission. Destination selection, inline project
+and Epic creation, ticket fields and the success result are transport-free
+components; the runtime message parser lives in the extension client boundary.
+The retry payload and its idempotency key remain persisted before every remote
+mutation, and the existing real-extension suite covers reload, uncertain
+responses, late Epic reads, read-only access and image limits. An extension
+architecture test prevents UI components from reaching browser persistence or
+transport directly.
+
 ## Confirmed duplication
 
 - Member and Owner invitations previously implemented email
@@ -170,6 +182,9 @@ transport out of the extracted panels.
   live refresh decisions intentionally remain local; ticket 132 exposes those
   decisions through a pure detail state machine and transport-free panels.
 - Integration suites repeat owner/workspace/project/session construction.
+- The Chrome composer now has one persistence/transport model; its extracted
+  presentation components deliberately remain local to the extension rather
+  than importing the web frontend.
 
 These are targets, not permission to create generic frameworks. An extraction
 must name a stable domain or transport concept, have multiple real consumers,
