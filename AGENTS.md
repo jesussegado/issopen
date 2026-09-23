@@ -29,6 +29,16 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+23/09 ticket134: las suites grandes reutilizan drivers explícitos de test en
+`tests/fixtures/`: `IntegrationDatabase` para contenedor/migración/reset,
+`http-driver` para runtime/sesión/Member, `mcp-driver` para Streamable HTTP y
+`extension-driver` para OAuth Chrome. Mantener actores, grants, tablas y datos
+del escenario visibles en cada test; no introducir defaults mágicos. Las cuatro
+suites deben conservar su contenedor aislado y poder ejecutarse en paralelo.
+La frontera está comprobada en `architecture-boundaries.test.ts`. Los fallos
+Git esperados deben capturar stderr para no ensuciar ejecuciones correctas.
+Implementación `81ed567`; evidencia quick `260923-rf5`.
+
 23/09 ticket128: la validación de transporte REST vive en
 `src/server/http/validation.ts` y la única serialización de `DomainError` en
 `src/server/http/errors.ts`. Los routers deben usar `parseHttpInput`,

@@ -3,18 +3,29 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Epic 10 ticket 128 centralized HTTP validation ready for human review
-last_updated: "2026-09-23T13:30:00Z"
+stopped_at: Epic 10 ticket 134 shared integration fixtures ready for deployment
+last_updated: "2026-09-23T13:51:22Z"
 last_activity: 2026-09-23
 progress:
   total_phases: 9
   completed_phases: 0
-  total_plans: 7
-  completed_plans: 6
-  percent: 86
+  total_plans: 8
+  completed_plans: 7
+  percent: 88
 ---
 
 # Project State
+
+## Follow-up 23Sep — Integration boundary fixtures (Epic 10 ticket 134)
+
+Ticket 134 centralizes isolated PostgreSQL lifecycle/reset, HTTP runtime and
+Member identities, MCP transport and Chrome OAuth setup without hiding actors,
+permissions or scenario data. Source `81ed567`; the four suites pass together
+with 64 scenarios, the complete 118-test integration run remains green and 76
+characterization tests pass in parallel-safe containers. The fast suite has
+212 tests and no longer prints expected Git fatal noise. Lint/types, zero
+schema drift, build and secret scan pass. No runtime, SQL, permission or product
+change. Deployment evidence is in quick 260923-rf5; next ticket is 126.
 
 ## Follow-up 23Sep — Central HTTP validation (Epic 10 ticket 128)
 

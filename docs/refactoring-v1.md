@@ -88,6 +88,15 @@ business validation. An architecture test rejects new router-local
 `safeParse`, JSON catch or error-serializer copies, and exact response tests
 protect validation fields, malformed JSON and all domain status mappings.
 
+Ticket 134 gives the four largest integration suites explicit fixtures for
+their real boundaries: an isolated PostgreSQL lifecycle/reset driver, a test
+HTTP runtime and password-member builder, a Streamable HTTP MCP client and a
+Chrome OAuth installation driver. Actors, table reset lists, project grants
+and scenario inputs remain visible in each suite. The suites still own separate
+containers and run safely in parallel; an architecture assertion prevents the
+large suites from returning to copied lifecycle SQL. Expected invalid-revision
+tests also keep Git stderr captured, so a passing run is quiet.
+
 ## Confirmed duplication
 
 - Member and Owner invitations previously implemented email
@@ -124,6 +133,7 @@ and leave the business rule visible at its call site.
 | Board/detail live refresh and stale-response reconciliation | `tests/web/tracker.test.tsx`, `tests/web/detail-live.test.tsx`, board/detail live E2E suites |
 | Versioned, owner-scoped Chrome drafts | `extensions/chrome/tests/unit/draft.test.ts`, protocol tests and composer/selectors E2E suites |
 | Adapter/domain dependency direction | `tests/unit/architecture-boundaries.test.ts` |
+| Independent, reusable integration setup by adapter boundary | `tests/fixtures/integration-database.ts`, `http-driver.ts`, `mcp-driver.ts`, `extension-driver.ts`; enforced for the four large suites by the architecture test |
 | SQL schema unchanged by an internal move | `pnpm schema:check` against a temporary copy of committed Drizzle history |
 
 `pnpm test:characterization` runs the focused server, web and Chrome suites
