@@ -3,18 +3,31 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Epic 10 ticket 129 deployed and ready for human review; starting 130
-last_updated: "2026-09-23T14:58:00Z"
+stopped_at: Epic 10 ticket 130 deployed and ready for human review; starting 131
+last_updated: "2026-09-23T15:12:00Z"
 last_activity: 2026-09-23
 progress:
   total_phases: 9
   completed_phases: 0
-  total_plans: 11
-  completed_plans: 10
-  percent: 91
+  total_plans: 12
+  completed_plans: 11
+  percent: 92
 ---
 
 # Project State
+
+## Follow-up 23Sep — Shared web request state (Epic 10 ticket 130)
+
+Ticket 130 gives board/detail a scoped latest-request guard, consistent access,
+conflict and transient failure classification, mutation messages and an
+accessible first-load retry without creating a generic data framework. A real
+bug where 5xx/network loads appeared as missing resources is fixed. Source
+`c132ea7`; 218 fast, 118 integration, 83 characterization, 42 web E2E and
+16+13 Chrome tests pass with lint/types, zero schema drift, reproducible build
+and secret scan. GitOps `936643be`, digest `9da614c3`; 140 GitOps tests + 12
+subtests, Argo Synced/Healthy, Ready/0-restart pod, exact image, HTTP and both
+unchanged PVCs pass. Ticket is Ready for Human Review without claim. No API,
+permission or SQL contract changed. See quick 260923-rf9; next ticket is 131.
 
 ## Follow-up 23Sep — MCP registry families (Epic 10 ticket 129)
 
