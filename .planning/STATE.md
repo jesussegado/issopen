@@ -3,18 +3,28 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Epic 10 ticket 134 shared integration fixtures ready for human review
-last_updated: "2026-09-23T13:55:00Z"
+stopped_at: Epic 10 ticket 126 tracker transaction invariants validated locally
+last_updated: "2026-09-23T14:08:00Z"
 last_activity: 2026-09-23
 progress:
   total_phases: 9
   completed_phases: 0
-  total_plans: 8
-  completed_plans: 7
-  percent: 88
+  total_plans: 9
+  completed_plans: 8
+  percent: 89
 ---
 
 # Project State
+
+## Follow-up 23Sep — Tracker transaction invariants (Epic 10 ticket 126)
+
+Ticket 126 centralizes active issue locks/predicates, expected-version CAS,
+question snapshots, issue version stamps and fully attributed activity while
+keeping transactions and business SQL explicit. Source `d5bba0d`; 52 focused,
+118 integration, 213 fast and 80 characterization tests pass with lint/types,
+zero schema drift, build and secret scan. The concurrent stale-draft test now
+also proves exactly one attributed audit event. No schema or public contract
+change. See quick 260923-rf6; deployment is the next step, followed by 127.
 
 ## Follow-up 23Sep — Integration boundary fixtures (Epic 10 ticket 134)
 
@@ -541,6 +551,7 @@ Decisions are logged in PROJECT.md Key Decisions table. Current roadmap-level st
 
 | ID | Description | Date | Commits | Status | Directory |
 | --- | --- | --- | --- | --- | --- |
+| 260923-rf6 | Ticket 126: invariantes transaccionales compartidas del tracker | 2026-09-23 | Fuente `d5bba0d` | 52 focused, 118 integration, 213 fast y 80 caracterización PASS; despliegue pendiente | [260923-rf6](./quick/260923-rf6-ticket-126-invariantes-transaccionales/) |
 | 260923-rf3 | Ticket 125: primitivas seguras compartidas de invitación | 2026-09-23 | Fuente `4779b8d`; GitOps `b0e77964` | Gates completos y despliegue Synced/Healthy PASS; sin cambio de contrato | [260923-rf3](./quick/260923-rf3-ticket-125-unificar-invitaciones/) |
 | 260923-rf2 | Ticket 124: esquema Drizzle modular sin cambio SQL | 2026-09-23 | Fuente `16d4df6`; GitOps `b3ddcbf0` | 42 tablas sin drift; gates y despliegue Synced/Healthy PASS | [260923-rf2](./quick/260923-rf2-ticket-124-modularizar-schema/) |
 | 260923-rf1 | Ticket 123: red de seguridad y mapa de refactor | 2026-09-23 | Fuente `d695272` | Lint/types, 76 caracterización, 199 fast tests y schema drift PASS; sin cambio runtime | [260923-rf1](./quick/260923-rf1-ticket-123-red-seguridad-refactor/) |

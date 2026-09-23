@@ -97,6 +97,14 @@ containers and run safely in parallel; an architecture assertion prevents the
 large suites from returning to copied lifecycle SQL. Expected invalid-revision
 tests also keep Git stderr captured, so a passing run is quiet.
 
+Ticket 126 moves the tracker mutation invariants to
+`src/server/domain/tracker-mutations.ts`. Active issue locks and mutation
+predicates now have one workspace/id/tombstone scope; expected versions and
+question snapshots share conflict detection; issue version stamps and activity
+attribution share one implementation. Transactions, business queries and
+operation-specific guards remain explicit. Soft deletion deliberately keeps a
+separate tombstone-aware lock so a lost successful response can be retried.
+
 ## Confirmed duplication
 
 - Member and Owner invitations previously implemented email
@@ -104,9 +112,9 @@ tests also keep Git stderr captured, so a passing run is quiet.
   independently. Those primitives now have one implementation. PostgreSQL
   unique-violation handling remains local to the only invitation flow that
   currently consumes it; the controller-error seam is handled by ticket 128.
-- Tracker mutations repeatedly load and lock a ticket, enforce workspace and
-  tombstone predicates, compare versions/question snapshots, bump versions and
-  append activity.
+- Tracker mutation invariants are centralized by ticket 126. Capability
+  ownership remains concentrated in the compatible service facade until
+  ticket 127 splits it into cohesive modules.
 - HTTP transport parsing and `DomainError` serialization are centralized by
   ticket 128; the remaining schema validation in services represents business
   rules rather than a competing controller implementation.
