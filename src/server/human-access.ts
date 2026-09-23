@@ -7,7 +7,8 @@ import {
   workspaceMembership,
   type workspaceRoleValues,
 } from "./db/schema.js";
-import { DomainError, type MutationContext } from "./domain/index.js";
+import type { MutationContext } from "./domain/contracts.js";
+import { DomainError } from "./domain/errors.js";
 
 export type WorkspaceRole = (typeof workspaceRoleValues)[number];
 export type HumanIdentity = Pick<OwnerSession["user"], "id" | "name" | "email">;

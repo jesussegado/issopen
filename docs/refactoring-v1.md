@@ -173,6 +173,34 @@ frame. All desktop and mobile E2E flows pass. An architecture test fixes import
 order, rejects rules in the manifest or hidden imports, and caps each layer at
 500 lines while the extension stylesheet remains independent.
 
+Ticket 136 removes the one exported Chrome composer state shape left without a
+consumer and makes unused locals/parameters compiler errors in both TypeScript
+projects. The final dependency audit found four runtime cycles that were already
+present at the baseline; importing errors, contracts and tracker from their
+owning modules removes them without changing a public export. An executable
+graph check now covers all runtime imports under `src` and the Chrome source.
+The final search has no unfinished-work markers in product, extension, test or
+refactor documentation, and the schema/REST/MCP/Chrome compatibility facades
+remain because they still have real consumers or external contracts.
+
+## Final audit and consciously deferred hotspots
+
+| Review | Result |
+|---|---|
+| Dead locals and parameters | Enforced by both TypeScript configurations |
+| Export introduced without a consumer | Removed `ComposerDraftState`; schema tables/relations remain public Drizzle inputs through the stable facade |
+| Runtime dependency cycles | Zero, checked across server, web, shared and Chrome source |
+| Temporary adapters or refactor markers | None found; compatibility facades are documented product contracts |
+| Security boundaries | Domain-only writes, MCP scopes/allowlists/idempotency, HTTP validation and browser/server separation remain executable tests |
+| Performance | No new runtime dependency or request path; component/state splits preserve the existing fetch and live-event model. The 501.45 kB initial JS warning is tracked in `ISSOPEN-140` for measurement-led code splitting |
+
+Three pre-existing concerns are intentionally not mixed into this closure: the
+member invitation lifecycle, the agent administration service/UI and the
+slightly-over-threshold initial web bundle. Each has a separate project backlog
+ticket (`ISSOPEN-138`, `ISSOPEN-139` and `ISSOPEN-140`) so a later change can
+first characterize its own policy, UX or measured loading cost rather than
+hiding risk inside this refactor.
+
 ## Confirmed duplication
 
 - Member and Owner invitations previously implemented email

@@ -29,6 +29,16 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+23/09 ticket136 cierra el refactor v1 con límites ejecutables, no con una nueva
+capa genérica. `tsconfig.json` y la extensión rechazan locales/parámetros sin
+uso; `architecture-boundaries.test.ts` recorre imports runtime de servidor, web
+y extensión y no permite ciclos. Los servicios internos importan contratos,
+errores y tracker desde su módulo propietario; el barrel `domain/index.ts` queda
+para consumidores y no debe usarse para crear ciclos internos. La arquitectura,
+hotspots aplazados y comandos de cierre viven en
+[refactor v1](docs/refactoring-v1.md). Un export nuevo necesita un consumidor
+real; elimina adaptadores temporales al terminar una extracción.
+
 23/09 ticket134: las suites grandes reutilizan drivers explícitos de test en
 `tests/fixtures/`: `IntegrationDatabase` para contenedor/migración/reset,
 `http-driver` para runtime/sesión/Member, `mcp-driver` para Streamable HTTP y
@@ -849,7 +859,9 @@ documentada y revisada.
 
 La [decisión de diseño 0001](docs/design/0001-brand-identity.md), aprobada por el
 propietario el 2026-09-07, fija la apertura de seis piezas (variante 07), verde
-bosque `#027067` y menta `#6FD9B5`. La fuente de tokens es `src/web/styles.css`;
+bosque `#027067` y menta `#6FD9B5`. La fuente de tokens es
+`src/web/styles/foundation.css`; `src/web/styles.css` sólo fija el orden público
+de las capas;
 las cabeceras reutilizan `Brand` con `issopen-icon-v1.png`; el touch icon usa
 ese mismo asset transparente.
 El favicon usa `issopen-favicon-v2-white.png`, con fondo blanco opaco aprobado

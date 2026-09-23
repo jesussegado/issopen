@@ -9,6 +9,8 @@
     "exactOptionalPropertyTypes": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "useUnknownInCatchVariables": true,
     "verbatimModuleSyntax": true,
     "esModuleInterop": true,

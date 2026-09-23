@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { and, asc, eq, getTableColumns, sql } from "drizzle-orm";
 import { commentColumns, publicComment } from "../comment-projection.js";
 import { issueComment, issueQuestion } from "../db/schema.js";
-import { recipientColumns } from "../question-recipients.js";
+import { recipientColumns } from "../question-recipient-projection.js";
 import {
   type AddIssueCommentInput,
   type AnswerIssueQuestionInput,

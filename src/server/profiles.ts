@@ -18,7 +18,7 @@ import {
   workspace,
   workspaceMembership,
 } from "./db/schema.js";
-import { DomainError } from "./domain/index.js";
+import { DomainError } from "./domain/errors.js";
 import { type HumanAccess, requireProjectAccess } from "./human-access.js";
 
 export async function normalizeAvatar(

@@ -1,7 +1,13 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-const css = readFileSync("src/web/styles.css", "utf8");
+const manifest = readFileSync("src/web/styles.css", "utf8");
+const css = [
+  manifest,
+  ...[...manifest.matchAll(/@import\s+["']\.\/styles\/([^"']+)["'];/g)].map(
+    (match) => readFileSync(`src/web/styles/${match[1]}`, "utf8"),
+  ),
+].join("\n");
 const tokens = Object.fromEntries(
   [...css.matchAll(/--color-([\w-]+):\s*([^;]+);/g)].map((match) => [
     match[1],

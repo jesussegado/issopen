@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync } from "node:fs";
-import { join, relative, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
+import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
 const repository = resolve(import.meta.dirname, "../..");
@@ -24,6 +25,57 @@ function imports(source: string): string[] {
   );
 }
 
+function runtimeImports(source: string): string[] {
+  const file = ts.createSourceFile(
+    "architecture.ts",
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+  );
+  return file.statements.flatMap((statement) => {
+    if (
+      !ts.isImportDeclaration(statement) &&
+      !ts.isExportDeclaration(statement)
+    )
+      return [];
+    if (
+      !statement.moduleSpecifier ||
+      !ts.isStringLiteral(statement.moduleSpecifier)
+    )
+      return [];
+    if (ts.isExportDeclaration(statement) && statement.isTypeOnly) return [];
+    if (ts.isImportDeclaration(statement)) {
+      const clause = statement.importClause;
+      if (clause?.isTypeOnly) return [];
+      if (
+        clause?.namedBindings &&
+        ts.isNamedImports(clause.namedBindings) &&
+        clause.namedBindings.elements.length > 0 &&
+        clause.namedBindings.elements.every((element) => element.isTypeOnly)
+      )
+        return [];
+    }
+    return [statement.moduleSpecifier.text];
+  });
+}
+
+function localImportTarget(
+  files: Set<string>,
+  file: string,
+  specifier: string,
+) {
+  if (!specifier.startsWith(".")) return null;
+  const base = resolve(dirname(file), specifier.replace(/\.js$/, ""));
+  return (
+    [
+      `${base}.ts`,
+      `${base}.tsx`,
+      join(base, "index.ts"),
+      join(base, "index.tsx"),
+    ].find((candidate) => files.has(candidate)) ?? null
+  );
+}
+
 function importViolations(
   directories: string[],
   forbidden: (specifier: string) => boolean,
@@ -41,6 +93,48 @@ function importViolations(
 }
 
 describe("modular monolith boundaries", () => {
+  it("keeps the runtime source dependency graph acyclic", () => {
+    const files = [
+      ...sourceFiles("src"),
+      ...sourceFiles("extensions/chrome/entrypoints"),
+      ...sourceFiles("extensions/chrome/lib"),
+    ];
+    const fileSet = new Set(files);
+    const graph = new Map(
+      files.map((file) => [
+        file,
+        runtimeImports(readFileSync(file, "utf8"))
+          .map((specifier) => localImportTarget(fileSet, file, specifier))
+          .filter((target): target is string => target !== null),
+      ]),
+    );
+    const active = new Set<string>();
+    const complete = new Set<string>();
+    const stack: string[] = [];
+    const cycles: string[] = [];
+    const visit = (file: string) => {
+      if (active.has(file)) {
+        const start = stack.indexOf(file);
+        cycles.push(
+          [...stack.slice(start), file]
+            .map((entry) => relative(repository, entry))
+            .join(" -> "),
+        );
+        return;
+      }
+      if (complete.has(file)) return;
+      active.add(file);
+      stack.push(file);
+      for (const dependency of graph.get(file) ?? []) visit(dependency);
+      stack.pop();
+      active.delete(file);
+      complete.add(file);
+    };
+    for (const file of files) visit(file);
+
+    expect(cycles).toEqual([]);
+  });
+
   it("keeps browser code independent from server internals", () => {
     const violations = importViolations(
       ["src/web", "extensions/chrome"],
