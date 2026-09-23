@@ -1,4 +1,4 @@
-import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import type { BetterAuthPlugin } from "better-auth";
 import {
   APIError,
@@ -46,11 +46,18 @@ import {
   invitationMailSummaries,
   queueInvitationMail,
 } from "./invitation-mail.js";
+import {
+  createInvitationToken,
+  hashInvitationToken,
+  invitationLifetimeMs,
+  invitationState,
+  invitationTokenSchema,
+  maskInvitationEmail,
+  normalizeInvitationEmail,
+} from "./invitation-primitives.js";
 import type { MailConfig } from "./mail-config.js";
 
-const invitationLifetimeMs = 7 * 24 * 60 * 60 * 1000;
 const provisionalSessionMs = 15 * 60 * 1000;
-const invitationTokenSchema = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
 export const createInvitationSchema = z
   .object({
     email: z.string().trim().toLowerCase().pipe(z.email().max(320)),
@@ -110,26 +117,6 @@ export type InvitationActor = {
   userId: string;
 };
 
-function normalizedEmail(email: string) {
-  return email.trim().toLowerCase();
-}
-
-function invitationToken() {
-  return randomBytes(32).toString("base64url");
-}
-
-function tokenHash(token: string) {
-  return createHash("sha256").update(token).digest("hex");
-}
-
-function invitationState(row: typeof workspaceInvitation.$inferSelect) {
-  if (row.acceptedAt) return "accepted" as const;
-  if (row.revokedAt) return "revoked" as const;
-  if (row.expiresAt.getTime() <= Date.now()) return "expired" as const;
-  if (row.claimedAt) return "claimed" as const;
-  return "pending" as const;
-}
-
 function inviteSummary(
   row: typeof workspaceInvitation.$inferSelect,
   projectIds: string[],
@@ -146,12 +133,6 @@ function inviteSummary(
     revokedAt: row.revokedAt,
     createdAt: row.createdAt,
   };
-}
-
-function maskEmail(email: string) {
-  const [local = "", domain = ""] = email.split("@");
-  const visible = local.slice(0, Math.min(2, local.length));
-  return `${visible}${"*".repeat(Math.max(2, local.length - visible.length))}@${domain}`;
 }
 
 async function invitationProjects(db: Database, invitationIds: string[]) {
@@ -202,13 +183,15 @@ export class InvitationService {
       })
       .from(workspaceInvitation)
       .innerJoin(workspace, eq(workspace.id, workspaceInvitation.workspaceId))
-      .where(eq(workspaceInvitation.tokenHash, tokenHash(parsed.data)))
+      .where(
+        eq(workspaceInvitation.tokenHash, hashInvitationToken(parsed.data)),
+      )
       .limit(1);
     if (!row) return null;
     return {
       id: row.invitation.id,
       workspaceName: row.workspaceName,
-      email: maskEmail(row.invitation.email),
+      email: maskInvitationEmail(row.invitation.email),
       state: invitationState(row.invitation),
       expiresAt: row.invitation.expiresAt,
     };
@@ -301,12 +284,12 @@ export class InvitationService {
     input: z.infer<typeof createInvitationSchema>,
   ) {
     const key = this.emailKey(input.delivery);
-    const email = normalizedEmail(input.email);
+    const email = normalizeInvitationEmail(input.email);
     const projectIds = [...new Set(input.projectIds)];
     if (projectIds.length !== input.projectIds.length) {
       throw new DomainError("invalid", "Project assignments must be unique");
     }
-    const rawToken = invitationToken();
+    const rawToken = createInvitationToken();
     const now = new Date();
     const expiresAt = new Date(now.getTime() + invitationLifetimeMs);
     const created = await this.db.transaction(async (tx) => {
@@ -374,7 +357,7 @@ export class InvitationService {
           workspaceId: actor.workspaceId,
           email,
           role: "member",
-          tokenHash: tokenHash(rawToken),
+          tokenHash: hashInvitationToken(rawToken),
           createdByUserId: actor.userId,
           expiresAt,
           createdAt: now,
@@ -408,7 +391,7 @@ export class InvitationService {
     mode: "manual" | "email" = "manual",
   ) {
     const key = this.emailKey(mode);
-    const rawToken = invitationToken();
+    const rawToken = createInvitationToken();
     const now = new Date();
     const expiresAt = new Date(now.getTime() + invitationLifetimeMs);
     const updated = await this.db.transaction(async (tx) => {
@@ -416,7 +399,7 @@ export class InvitationService {
       const [row] = await tx
         .update(workspaceInvitation)
         .set({
-          tokenHash: tokenHash(rawToken),
+          tokenHash: hashInvitationToken(rawToken),
           expiresAt,
           updatedAt: now,
         })
@@ -711,7 +694,7 @@ async function redeemInvitation(
   authenticatedUser: { id: string; email: string } | null,
 ) {
   const parsedToken = invitationTokenSchema.parse(rawToken);
-  const hash = tokenHash(parsedToken);
+  const hash = hashInvitationToken(parsedToken);
   const now = new Date();
   return db.transaction(async (tx) => {
     await tx.execute(
@@ -749,7 +732,7 @@ async function redeemInvitation(
     if (invite.claimedAt) {
       if (
         authenticatedUser?.id === invite.claimedByUserId &&
-        normalizedEmail(authenticatedUser.email) === invite.email
+        normalizeInvitationEmail(authenticatedUser.email) === invite.email
       ) {
         return {
           invitationId: invite.id,
@@ -808,7 +791,7 @@ async function redeemInvitation(
           !ownerClaim;
         if (
           claimedUser &&
-          normalizedEmail(claimedUser.email) === invite.email &&
+          normalizeInvitationEmail(claimedUser.email) === invite.email &&
           resumableProvisionalIdentity
         ) {
           return {
@@ -912,7 +895,7 @@ async function redeemInvitation(
         provisional = true;
       } else if (
         authenticatedUser.id !== existingUser.id ||
-        normalizedEmail(authenticatedUser.email) !== invite.email
+        normalizeInvitationEmail(authenticatedUser.email) !== invite.email
       ) {
         throw new APIError("FORBIDDEN", {
           code: "INVITATION_EMAIL_MISMATCH",
@@ -922,7 +905,7 @@ async function redeemInvitation(
     } else {
       if (
         authenticatedUser &&
-        normalizedEmail(authenticatedUser.email) !== invite.email
+        normalizeInvitationEmail(authenticatedUser.email) !== invite.email
       ) {
         throw new APIError("FORBIDDEN", {
           code: "INVITATION_EMAIL_MISMATCH",
@@ -1011,7 +994,7 @@ async function acceptInvitation(
       });
     }
     if (
-      normalizedEmail(authenticatedUser.email) !== invite.email ||
+      normalizeInvitationEmail(authenticatedUser.email) !== invite.email ||
       invite.revokedAt ||
       invite.expiresAt <= now ||
       !invite.claimedAt
