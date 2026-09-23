@@ -124,6 +124,49 @@ describe("modular monolith boundaries", () => {
     expect(violations).toEqual([]);
   });
 
+  it("keeps MCP tool families independent behind one registry", () => {
+    const familyFiles = [
+      "tools-discussion.ts",
+      "tools-issues.ts",
+      "tools-projects.ts",
+      "tools-workflow.ts",
+    ];
+    const familySpecifier =
+      /^\.\/tools-(?:discussion|issues|projects|workflow)\.js$/;
+    const violations = familyFiles.flatMap((file) => {
+      const source = readFileSync(
+        join(repository, "src/server/mcp", file),
+        "utf8",
+      );
+      return [
+        ...imports(source)
+          .filter((specifier) => familySpecifier.test(specifier))
+          .map((specifier) => `${file} imports sibling family ${specifier}`),
+        ...(source.split("\n").length > 400
+          ? [`${file} grew beyond its tool family boundary`]
+          : []),
+        ...(!source.includes("requireScope(")
+          ? [`${file} does not keep scope checks beside its tools`]
+          : []),
+      ];
+    });
+    const registry = readFileSync(
+      join(repository, "src/server/mcp/tools.ts"),
+      "utf8",
+    );
+    for (const file of familyFiles) {
+      const specifier = `./${file.replace(/\.ts$/, ".js")}`;
+      if (!imports(registry).includes(specifier)) {
+        violations.push(`tools.ts does not compose ${specifier}`);
+      }
+    }
+    if (registry.includes("registerTool(")) {
+      violations.push("tools.ts owns a tool instead of composing families");
+    }
+
+    expect(violations).toEqual([]);
+  });
+
   it("keeps database writes out of HTTP and MCP adapters", () => {
     const writePattern =
       /\b(?:db|tx|database|connection\.db)\s*\.\s*(?:insert|update|delete)\s*\(/;

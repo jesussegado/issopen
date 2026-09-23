@@ -1293,6 +1293,23 @@ describe("stateless Issopen MCP", () => {
     });
     const client = await mcpClient(created.token);
     const tools = await client.listTools();
+    const toolContractHash = createHash("sha256")
+      .update(
+        JSON.stringify(
+          tools.tools
+            .map(({ name, description, inputSchema, annotations }) => ({
+              name,
+              description,
+              inputSchema,
+              annotations: annotations ?? null,
+            }))
+            .sort((left, right) => left.name.localeCompare(right.name)),
+        ),
+      )
+      .digest("hex");
+    expect(toolContractHash).toBe(
+      "904fe23215f9e7efde7f6ca845696783ad77ea8f075b443d66598bdd1c29eb47",
+    );
     expect(tools.tools.map((tool) => tool.name).sort()).toEqual(
       [
         "add_comment",
