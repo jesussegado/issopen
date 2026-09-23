@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Epic 10 ticket 128 centralized HTTP validation ready for deployment
-last_updated: "2026-09-23T13:25:28Z"
+stopped_at: Epic 10 ticket 128 centralized HTTP validation ready for human review
+last_updated: "2026-09-23T13:30:00Z"
 last_activity: 2026-09-23
 progress:
   total_phases: 9
@@ -20,11 +20,12 @@ progress:
 
 Ticket 128 replaces controller-local Zod/UUID/JSON/error copies with small
 transport primitives and one `DomainError` serializer while domain services
-retain business rules. Source `c716d6e`; 13 focused HTTP/architecture tests,
-211 fast tests, 118 integration tests and 78 characterization tests pass,
-along with lint/types, zero schema drift, production build and secret scan.
-No SQL, authorization, public payload or visible product change. Deployment
-evidence is recorded in quick 260923-rf4; next dependency-safe ticket is 134.
+retain business rules. Source `c716d6e`, GitOps `b9d0ea90`, digest `e352101d`;
+Argo is Synced/Healthy, app pod Ready/0 restarts, public readiness/root PASS and
+both PVC IDs unchanged. Gates pass: 13 focused HTTP/architecture, 211 fast,
+118 integration, 78 characterization and 140 GitOps tests, plus lint/types,
+zero schema drift, build and secret scan. No SQL, authorization, public payload
+or visible product change. See quick 260923-rf4; next ticket is 134.
 
 ## Follow-up 23Sep — Shared invitation security primitives (Epic 10 ticket 125)
 
