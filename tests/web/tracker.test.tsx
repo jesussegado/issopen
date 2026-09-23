@@ -110,6 +110,37 @@ afterEach(() => {
 });
 
 describe("tracker web routes", () => {
+  it("keeps a transient board load failure visible and retryable", async () => {
+    let reads = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        if (!String(input).endsWith("/board"))
+          throw new Error(`Unexpected request: ${String(input)}`);
+        reads += 1;
+        if (reads === 1) return json({ error: "Temporary failure" }, 503);
+        return json({
+          project,
+          columns: issueStatuses.map((status) => ({ status, issues: [] })),
+          epics: [],
+        });
+      }),
+    );
+    const user = userEvent.setup();
+    render(<BoardRoute projectId={project.id} canManageProject />);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "We couldn't load this board",
+    );
+    expect(screen.queryByText("This page is not available")).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Try again" }));
+    expect(
+      await screen.findByRole("heading", { name: project.name }),
+    ).toBeVisible();
+    expect(reads).toBe(2);
+  });
+
   it.each([
     "board",
     "epics",

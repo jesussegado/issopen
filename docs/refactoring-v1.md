@@ -119,6 +119,16 @@ fingerprints and idempotency remain explicit inside each handler. The exact
 catalog (names, descriptions, schemas and annotations) is hashed by integration
 tests, and all moved registrations compare structurally with their prior form.
 
+Ticket 130 gives board and issue detail two concrete shared seams instead of a
+configurable data-fetching framework. `useLatestRequest` rejects replies after
+unmount, route-scope changes and newer accepted reads while each route still
+owns its request and reconciliation policy. `apiFailureKind` keeps access loss,
+optimistic conflicts, cancelled requests and transient failures distinct;
+`RouteLoadError` makes first-load network failures visible and retryable instead
+of presenting them as missing resources. Mutation failures continue to keep
+local drafts, and the existing project event subscription remains the single
+live invalidation transport.
+
 ## Confirmed duplication
 
 - Member and Owner invitations previously implemented email
@@ -133,8 +143,9 @@ tests, and all moved registrations compare structurally with their prior form.
   rules rather than a competing controller implementation.
 - MCP registration ownership is split by ticket 129; common context and resource
   lookup are shared while security and pagination decisions remain at call sites.
-- React routes repeat loading/missing/network/conflict state and protection
-  against stale responses.
+- Board and issue detail now share failure classification, initial-load recovery
+  and latest-request protection. Their domain-specific draft reconciliation and
+  live refresh decisions intentionally remain local for tickets 131 and 132.
 - Integration suites repeat owner/workspace/project/session construction.
 
 These are targets, not permission to create generic frameworks. An extraction
@@ -151,7 +162,7 @@ and leave the business rule visible at its call site.
 | Transactional audit attribution and immutable history | `tests/integration/tracker.test.ts`, `tests/integration/http.test.ts` |
 | Issue/Epic optimistic concurrency and question-version snapshots | tracker/HTTP/MCP integration suites, `tests/web/detail-live.test.tsx`, `tests/e2e/conflicts.spec.ts` |
 | Epic archive visibility and mutation rules | tracker/HTTP/MCP integration suites, `tests/e2e/tracker.spec.ts` |
-| Board/detail live refresh and stale-response reconciliation | `tests/web/tracker.test.tsx`, `tests/web/detail-live.test.tsx`, board/detail live E2E suites |
+| Board/detail load retry, live refresh and stale-response reconciliation | `tests/web/tracker.test.tsx`, `tests/web/detail-live.test.tsx`, `tests/web/latest-request.test.tsx`, board/detail live E2E suites |
 | Versioned, owner-scoped Chrome drafts | `extensions/chrome/tests/unit/draft.test.ts`, protocol tests and composer/selectors E2E suites |
 | Adapter/domain dependency direction | `tests/unit/architecture-boundaries.test.ts` |
 | Independent, reusable integration setup by adapter boundary | `tests/fixtures/integration-database.ts`, `http-driver.ts`, `mcp-driver.ts`, `extension-driver.ts`; enforced for the four large suites by the architecture test |

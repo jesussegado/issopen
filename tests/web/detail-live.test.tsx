@@ -267,3 +267,21 @@ it("retains drafts across a network failure and reconciles on reconnect", async 
   rendered.unmount();
   expect(FakeStream.instances.at(-1)?.close).toHaveBeenCalled();
 });
+
+it("keeps a transient first-load failure retryable instead of treating it as lost access", async () => {
+  const { setStatus } = fixture();
+  const user = userEvent.setup();
+  setStatus(503);
+  render(<IssueDetailRoute issueId="issue" session={viewer} />);
+
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "We couldn't load this issue",
+  );
+  expect(screen.queryByText("This page is not available")).toBeNull();
+
+  setStatus(200);
+  await user.click(screen.getByRole("button", { name: "Try again" }));
+  expect(
+    await screen.findByRole("heading", { name: "1-Original" }),
+  ).toBeVisible();
+});

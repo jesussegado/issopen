@@ -13,11 +13,17 @@ import {
   EmptyState,
   OfflineBanner,
   PageHeading,
+  RouteLoadError,
   Select,
   Skeleton,
   StatusBanner,
 } from "../components/ui.js";
-import { ApiError, apiRequest, unavailable } from "../lib/api.js";
+import {
+  apiFailureKind,
+  apiRequest,
+  mutationFailureMessage,
+} from "../lib/api.js";
+import { useLatestRequest } from "../lib/latest-request.js";
 import { navigate, useLocation } from "../lib/navigation.js";
 import { useOnlineStatus } from "../lib/online.js";
 import { subscribeToProjectChanges } from "../lib/project-live.js";
@@ -161,18 +167,13 @@ export function BoardRoute({
   const [announcement, setAnnouncement] = useState("");
   const [focusIssueId, setFocusIssueId] = useState<string | null>(null);
   const statusControls = useRef(new Map<string, HTMLSelectElement>());
-  const boardRequest = useRef(0);
-  const lastAppliedBoardRequest = useRef(0);
-  const mounted = useRef(true);
   const boardRouteKey = `${projectId}:${epicFilter}:${assigneeFilter ?? "all"}:${questionsForMe}`;
-  const activeBoardRoute = useRef(boardRouteKey);
-  activeBoardRoute.current = boardRouteKey;
+  const latestBoardRequest = useLatestRequest(boardRouteKey);
   const online = useOnlineStatus();
 
   const refreshBoard = useCallback(
     async (initial = false) => {
-      const request = ++boardRequest.current;
-      const requestRoute = boardRouteKey;
+      const request = latestBoardRequest.begin();
       if (initial) {
         setLoading(true);
         setError(null);
@@ -186,13 +187,7 @@ export function BoardRoute({
         const board = await apiRequest<BoardResponse>(
           `/api/v1/projects/${projectId}/board${query}`,
         );
-        if (
-          !mounted.current ||
-          requestRoute !== activeBoardRoute.current ||
-          request < lastAppliedBoardRequest.current
-        )
-          return;
-        lastAppliedBoardRequest.current = request;
+        if (!latestBoardRequest.accept(request)) return;
         const visibleIssueCount = board.columns.reduce(
           (total, column) => total + column.issues.length,
           0,
@@ -206,13 +201,8 @@ export function BoardRoute({
         setError(null);
         setLoading(false);
       } catch (caught) {
-        if (
-          !mounted.current ||
-          requestRoute !== activeBoardRoute.current ||
-          request < lastAppliedBoardRequest.current
-        )
-          return;
-        if (unavailable(caught)) setMissing(true);
+        if (!latestBoardRequest.accept(request)) return;
+        if (apiFailureKind(caught) === "unavailable") setMissing(true);
         else if (initial)
           setError(
             "We couldn't load this board. Check your connection and try again.",
@@ -220,19 +210,12 @@ export function BoardRoute({
         setLoading(false);
       }
     },
-    [boardRouteKey, epicFilter, projectId, assigneeFilter, questionsForMe],
+    [epicFilter, projectId, assigneeFilter, questionsForMe, latestBoardRequest],
   );
 
   useEffect(() => {
     void refreshBoard(true);
   }, [refreshBoard]);
-
-  useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
-  }, []);
 
   useEffect(() => {
     return subscribeToProjectChanges(
@@ -306,9 +289,10 @@ export function BoardRoute({
       setFocusIssueId(targetIsVisible ? response.issue.id : null);
     } catch (caught) {
       setError(
-        caught instanceof ApiError && caught.status === 409
-          ? caught.message
-          : "We couldn't save your changes. Check your connection and try again.",
+        mutationFailureMessage(
+          caught,
+          "We couldn't save your changes. Check your connection and try again.",
+        ),
       );
       setFocusIssueId(issue.id);
     } finally {
@@ -419,7 +403,17 @@ export function BoardRoute({
   }
 
   if (loading) return <Skeleton label="Loading project board…" />;
-  if (missing || !project) return <UnavailableRoute />;
+  if (missing) return <UnavailableRoute />;
+  if (!project && error)
+    return (
+      <RouteLoadError
+        message={error}
+        retrying={loading}
+        online={online}
+        onRetry={() => void refreshBoard(true)}
+      />
+    );
+  if (!project) return <UnavailableRoute />;
   const issueCount = columns.reduce(
     (total, column) => total + column.issues.length,
     0,

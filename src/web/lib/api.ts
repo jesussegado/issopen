@@ -12,6 +12,13 @@ export class ApiError extends Error {
   }
 }
 
+export type ApiFailureKind =
+  | "cancelled"
+  | "unavailable"
+  | "conflict"
+  | "transient"
+  | "request";
+
 export async function apiRequest<T>(
   path: string,
   init: RequestInit = {},
@@ -48,7 +55,28 @@ export async function apiRequest<T>(
 }
 
 export function unavailable(error: unknown): boolean {
-  return (
-    error instanceof ApiError && (error.status === 403 || error.status === 404)
-  );
+  return apiFailureKind(error) === "unavailable";
+}
+
+export function apiFailureKind(error: unknown): ApiFailureKind {
+  if (error instanceof DOMException && error.name === "AbortError")
+    return "cancelled";
+  if (error instanceof ApiError) {
+    if (error.status === 403 || error.status === 404) return "unavailable";
+    if (error.status === 409) return "conflict";
+    if (error.status >= 500) return "transient";
+    return "request";
+  }
+  if (
+    error instanceof TypeError ||
+    (typeof navigator !== "undefined" && !navigator.onLine)
+  )
+    return "transient";
+  return "request";
+}
+
+export function mutationFailureMessage(error: unknown, fallback: string) {
+  if (!(error instanceof ApiError)) return fallback;
+  if (apiFailureKind(error) === "conflict") return error.message;
+  return error.fields[0]?.message ?? fallback;
 }

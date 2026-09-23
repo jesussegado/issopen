@@ -18,13 +18,21 @@ import {
   Field,
   OfflineBanner,
   PageHeading,
+  RouteLoadError,
   Select,
   Skeleton,
   StatusBanner,
   TextArea,
   TextInput,
 } from "../components/ui.js";
-import { ApiError, apiRequest, unavailable } from "../lib/api.js";
+import {
+  ApiError,
+  apiFailureKind,
+  apiRequest,
+  mutationFailureMessage,
+  unavailable,
+} from "../lib/api.js";
+import { useLatestRequest } from "../lib/latest-request.js";
 import { useOnlineStatus } from "../lib/online.js";
 import { subscribeToProjectChanges } from "../lib/project-live.js";
 import type {
@@ -208,6 +216,7 @@ export function IssueDetailRoute({
   const scope = `${session.user.id}:${session.workspace?.id}:${issueId}`;
   const scopeRef = useRef(scope);
   scopeRef.current = scope;
+  const latestDetailRequest = useLatestRequest(scope);
   const state = useRef({
     dirty: false,
     submitting: false,
@@ -294,10 +303,12 @@ export function IssueDetailRoute({
     setReason("");
   }, []);
 
-  useEffect(() => {
+  const loadDetail = useCallback(() => {
     const controller = new AbortController();
+    const request = latestDetailRequest.begin();
     setLoading(true);
     setMissing(false);
+    setError(null);
     setCommentBody("");
     setMentions([]);
     commentRequest.current = null;
@@ -308,7 +319,7 @@ export function IssueDetailRoute({
     setPendingSnapshot(null);
     void readDetailSnapshot(issueId, controller.signal)
       .then((snapshot) => {
-        if (!controller.signal.aborted && scopeRef.current === scope) {
+        if (!controller.signal.aborted && latestDetailRequest.accept(request)) {
           applySnapshot(snapshot);
           const directed = new URLSearchParams(window.location.search).get(
             "question",
@@ -320,18 +331,28 @@ export function IssueDetailRoute({
         }
       })
       .catch((caught) => {
-        if (controller.signal.aborted || scopeRef.current !== scope) return;
-        if (unavailable(caught)) clearAccess();
+        if (controller.signal.aborted || !latestDetailRequest.accept(request))
+          return;
+        if (apiFailureKind(caught) === "unavailable") clearAccess();
         else
           setError(
             "We couldn't load this issue. Check your connection and try again.",
           );
       })
       .finally(() => {
-        if (!controller.signal.aborted) setLoading(false);
+        if (
+          !controller.signal.aborted &&
+          latestDetailRequest.isCurrent(request)
+        )
+          setLoading(false);
       });
+    return controller;
+  }, [issueId, applySnapshot, clearAccess, latestDetailRequest]);
+
+  useEffect(() => {
+    const controller = loadDetail();
     return () => controller.abort();
-  }, [issueId, scope, applySnapshot, clearAccess]);
+  }, [loadDetail]);
 
   useEffect(() => {
     if (loading || !issue || window.location.hash !== "#questions-heading")
@@ -731,11 +752,10 @@ export function IssueDetailRoute({
       await refreshActivity();
     } catch (caught) {
       setError(
-        caught instanceof ApiError && caught.status === 409
-          ? caught.message
-          : caught instanceof ApiError && caught.fields[0]?.message
-            ? caught.fields[0].message
-            : "We couldn't save your changes. Check your connection and try again.",
+        mutationFailureMessage(
+          caught,
+          "We couldn't save your changes. Check your connection and try again.",
+        ),
       );
     } finally {
       mutationEpoch.current += 1;
@@ -745,7 +765,17 @@ export function IssueDetailRoute({
 
   if (loading || (issue && issue.id !== issueId))
     return <Skeleton label="Loading issue…" />;
-  if (missing || !issue || !project) return <UnavailableRoute />;
+  if (missing) return <UnavailableRoute />;
+  if ((!issue || !project) && error)
+    return (
+      <RouteLoadError
+        message={error}
+        retrying={loading}
+        online={online}
+        onRetry={() => loadDetail()}
+      />
+    );
+  if (!issue || !project) return <UnavailableRoute />;
   const canEdit = project.canEdit !== false;
   return (
     <div className="detail-column issue-detail-page">

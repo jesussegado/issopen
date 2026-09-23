@@ -154,6 +154,35 @@ export function Skeleton({ label = "Loading page…" }: { label?: string }) {
   );
 }
 
+export function RouteLoadError({
+  message,
+  retrying,
+  online,
+  onRetry,
+}: {
+  message: string;
+  retrying: boolean;
+  online: boolean;
+  onRetry: () => void;
+}) {
+  return (
+    <div className="reading-column form-stack">
+      {!online ? <OfflineBanner /> : null}
+      <StatusBanner error focus>
+        {message}
+      </StatusBanner>
+      <Button
+        type="button"
+        variant="secondary"
+        disabled={retrying || !online}
+        onClick={onRetry}
+      >
+        {retrying ? "Trying again…" : "Try again"}
+      </Button>
+    </div>
+  );
+}
+
 export function PageHeading({ children }: { children: ReactNode }) {
   const ref = useRef<HTMLHeadingElement>(null);
   useEffect(() => ref.current?.focus(), []);
