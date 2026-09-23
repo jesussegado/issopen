@@ -3,26 +3,19 @@ import { createHash, randomUUID } from "node:crypto";
 import { access, copyFile, mkdtemp, utimes } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import {
-  PostgreSqlContainer,
-  type StartedPostgreSqlContainer,
-} from "@testcontainers/postgresql";
+import { PostgreSqlContainer } from "@testcontainers/postgresql";
 import { eq } from "drizzle-orm";
-import pino from "pino";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { bootstrapOwner } from "../../scripts/owner.js";
-import { createApp } from "../../src/server/app.js";
-import { createAuth, type IssopenAuth } from "../../src/server/auth.js";
+import type { createApp } from "../../src/server/app.js";
+import type { IssopenAuth } from "../../src/server/auth.js";
 import { auditCaptures } from "../../src/server/capture-maintenance.js";
 import { CaptureStorage } from "../../src/server/capture-storage.js";
-import { loadConfig } from "../../src/server/config.js";
 import {
   createDatabase,
   type DatabaseConnection,
 } from "../../src/server/db/client.js";
-import { migrateDatabase } from "../../src/server/db/migrate.js";
 import {
-  account,
   activityEvent,
   agentIdentity,
   captureEvidence,
@@ -30,12 +23,21 @@ import {
   issue,
   oauthClient,
   project,
-  projectMembership,
   user,
   workspace,
   workspaceMembership,
 } from "../../src/server/db/schema.js";
 import { InvitationService } from "../../src/server/invitations.js";
+import {
+  ExtensionTestDriver,
+  type ExtensionTokens as Tokens,
+} from "../fixtures/extension-driver.js";
+import {
+  createMemberFixture,
+  createTestRuntime,
+  signInWithPassword,
+} from "../fixtures/http-driver.js";
+import { IntegrationDatabase } from "../fixtures/integration-database.js";
 import { syntheticPng } from "../fixtures/png.js";
 
 const base = "http://localhost:8080";
@@ -49,216 +51,108 @@ const owner = {
   email: "extension@example.test",
   password: "synthetic-extension-owner-password",
 };
-let container: StartedPostgreSqlContainer;
+let database: IntegrationDatabase;
 let connection: DatabaseConnection;
 let auth: IssopenAuth;
 let app: ReturnType<typeof createApp>;
 let cookie: string;
+let workspaceId: string;
 let storage: CaptureStorage;
-const headers = (sessionCookie = cookie) => ({
-  Cookie: sessionCookie,
-  Origin: base,
-  "Content-Type": "application/json",
-});
-const resource = `${base}/api/extension/v1`;
+let extension: ExtensionTestDriver;
+const headers = (sessionCookie = cookie) => extension.headers(sessionCookie);
 const redirect = `https://${extensionId}.chromiumapp.org/oauth`;
-type Tokens = {
-  access_token: string;
-  refresh_token: string;
-  expires_in: number;
-};
 
 beforeAll(async () => {
-  container = await new PostgreSqlContainer("postgres:18.6-alpine").start();
-  await migrateDatabase(container.getConnectionUri());
-  connection = createDatabase(container.getConnectionUri());
+  database = await IntegrationDatabase.start();
+  connection = database.connection;
 }, 120000);
 beforeEach(async () => {
-  await connection.client.unsafe(
-    'TRUNCATE "oauth_client_resource", "oauth_consent", "oauth_access_token", "oauth_refresh_token", "oauth_client", "oauth_resource", "jwks", "verification", "session", "account", "workspace", "instance_owner", "user" CASCADE',
-  );
-  const config = loadConfig({
-    NODE_ENV: "test",
-    DATABASE_URL: container.getConnectionUri(),
-    ISSOPEN_BASE_URL: base,
-    BETTER_AUTH_SECRET: "synthetic-extension-auth-secret-tests",
-  });
-  auth = createAuth(connection.db, config);
+  await database.reset([
+    "oauth_client_resource",
+    "oauth_consent",
+    "oauth_access_token",
+    "oauth_refresh_token",
+    "oauth_client",
+    "oauth_resource",
+    "jwks",
+    "verification",
+    "session",
+    "account",
+    "workspace",
+    "instance_owner",
+    "user",
+  ]);
   storage = new CaptureStorage(
     await mkdtemp(join(tmpdir(), "issopen-api-capture-")),
   );
-  app = createApp({
+  ({ app, auth } = createTestRuntime({
+    database: connection.db,
+    databaseUrl: database.url,
+    baseUrl: base,
+    authSecret: "synthetic-extension-auth-secret-tests",
     captureStorage: storage,
-    db: connection.db,
-    auth,
-    logger: pino({ level: "silent" }),
-    trustedOrigins: config.trustedOrigins,
-  });
+  }));
   await bootstrapOwner(connection.db, auth, owner);
-  const response = await app.request("/api/auth/sign-in/email", {
-    method: "POST",
-    headers: { Origin: base, "Content-Type": "application/json" },
-    body: JSON.stringify(owner),
+  cookie = await signInWithPassword(app, base, owner);
+  extension = new ExtensionTestDriver({
+    app,
+    baseUrl: base,
+    origin,
+    ownerCookie: cookie,
+    extensionId,
+    verifier,
+    challenge,
+    state,
   });
-  expect(response.status).toBe(200);
-  cookie = response.headers.get("set-cookie")?.split(";", 1)[0] ?? "";
-  expect(
-    (
-      await app.request("/api/v1/workspace", {
-        method: "POST",
-        headers: headers(),
-        body: JSON.stringify({ name: "Extension workspace" }),
-      })
-    ).status,
-  ).toBe(201);
+  const workspaceResponse = await app.request("/api/v1/workspace", {
+    method: "POST",
+    headers: headers(),
+    body: JSON.stringify({ name: "Extension workspace" }),
+  });
+  expect(workspaceResponse.status).toBe(201);
+  workspaceId = (
+    (await workspaceResponse.json()) as { workspace: { id: string } }
+  ).workspace.id;
 });
 afterAll(async () => {
-  await connection?.close();
-  await container?.stop();
+  await database?.stop();
 });
-async function link(sessionCookie = cookie, workspaceId?: string) {
-  const installationId = randomUUID();
-  const response = await app.request("/api/v1/extensions/link", {
-    method: "POST",
-    headers: {
-      ...headers(sessionCookie),
-      ...(workspaceId ? { "X-Issopen-Workspace": workspaceId } : {}),
-    },
-    body: JSON.stringify({
-      installationId,
-      extensionId,
-      name: "Test Chrome",
-      challenge,
-      state,
-    }),
-  });
-  expect(response.status).toBe(200);
-  return {
-    clientId: `issopen-chrome-${installationId}`,
-    authorizeUrl: ((await response.json()) as { authorizeUrl: string })
-      .authorizeUrl,
-  };
-}
 async function grant(
   accept = true,
   write = false,
   sessionCookie = cookie,
   workspaceId?: string,
 ) {
-  const linked = await link(sessionCookie, workspaceId);
-  const authorization = await app.request(linked.authorizeUrl, {
-    headers: { Cookie: sessionCookie },
-  });
-  expect(authorization.status).toBe(302);
-  const consentUrl = new URL(authorization.headers.get("location") ?? "", base);
-  expect(consentUrl.pathname).toBe("/consent");
-  const response = await app.request("/api/auth/oauth2/consent", {
-    method: "POST",
-    headers: headers(sessionCookie),
-    body: JSON.stringify({
-      accept,
-      scope: write
-        ? "extension:read extension:write offline_access"
-        : "extension:read offline_access",
-      oauth_query: consentUrl.search.slice(1),
-    }),
-  });
-  expect(response.status).toBe(200);
-  const body = (await response.json()) as {
-    url?: string;
-    redirect_uri?: string;
-  };
-  const callback = new URL(body.url ?? body.redirect_uri ?? "");
-  expect(callback.origin + callback.pathname).toBe(redirect);
-  expect(callback.searchParams.get("state")).toBe(state);
-  return { ...linked, callback };
+  return extension.grant(accept, write, sessionCookie, workspaceId);
 }
 function token(params: Record<string, string>) {
-  return app.request("/api/auth/oauth2/token", {
-    method: "POST",
-    headers: {
-      Origin: origin,
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: new URLSearchParams({ ...params, resource }),
-  });
+  return extension.token(params);
 }
 async function connect(
   write = false,
   sessionCookie = cookie,
   workspaceId?: string,
 ) {
-  const grant_ = await grant(true, write, sessionCookie, workspaceId);
-  const response = await token({
-    grant_type: "authorization_code",
-    client_id: grant_.clientId,
-    redirect_uri: redirect,
-    code: grant_.callback.searchParams.get("code") ?? "",
-    code_verifier: verifier,
-  });
-  expect(response.status).toBe(200);
-  return {
-    clientId: grant_.clientId,
-    tokens: (await response.json()) as Tokens,
-  };
+  return extension.connect(write, sessionCookie, workspaceId);
 }
 function readSession(tokens: Tokens) {
-  return app.request("/api/extension/v1/session", {
-    headers: { Authorization: `Bearer ${tokens.access_token}`, Origin: origin },
-  });
+  return extension.readSession(tokens);
 }
 
 async function createMemberSession(projectIds: string[]) {
-  const [personalWorkspace] = await connection.db
-    .select({ id: workspace.id })
-    .from(workspace)
-    .limit(1);
-  if (!personalWorkspace) throw new Error("Expected workspace fixture");
-  const member = {
-    id: randomUUID(),
-    email: "extension-member@example.test",
-    password: "synthetic-extension-member-password",
-    name: "Extension Member",
-  };
-  const password = await (await auth.$context).password.hash(member.password);
-  await connection.db.transaction(async (tx) => {
-    await tx.insert(user).values({
-      id: member.id,
-      email: member.email,
-      name: member.name,
-      emailVerified: true,
-    });
-    await tx.insert(account).values({
-      id: randomUUID(),
-      issuer: "local:credential",
-      accountId: member.id,
-      providerId: "credential",
-      userId: member.id,
-      password,
-    });
-    await tx.insert(workspaceMembership).values({
-      workspaceId: personalWorkspace.id,
-      userId: member.id,
-      role: "member",
-    });
-    if (projectIds.length)
-      await tx.insert(projectMembership).values(
-        projectIds.map((projectId) => ({
-          workspaceId: personalWorkspace.id,
-          projectId,
-          userId: member.id,
-        })),
-      );
+  return createMemberFixture({
+    database: connection.db,
+    auth,
+    app,
+    origin: base,
+    workspaceId,
+    identity: {
+      email: "extension-member@example.test",
+      password: "synthetic-extension-member-password",
+      name: "Extension Member",
+    },
+    projectGrants: projectIds.map((projectId) => ({ projectId })),
   });
-  const signedIn = await app.request("/api/auth/sign-in/email", {
-    method: "POST",
-    headers: { Origin: base, "Content-Type": "application/json" },
-    body: JSON.stringify(member),
-  });
-  expect(signedIn.status).toBe(200);
-  const memberCookie = signedIn.headers.get("set-cookie")?.split(";", 1)[0];
-  if (!memberCookie) throw new Error("Expected member session cookie");
-  return { ...member, cookie: memberCookie };
 }
 
 describe("human Chrome OAuth", () => {
@@ -1061,12 +955,12 @@ describe("human Chrome OAuth", () => {
     expect(await connection.db.select().from(captureEvidence)).toHaveLength(1);
     // Restore the complete synthetic database into a separate PostgreSQL and
     // copy the immutable volume files: no production database is touched.
-    const backup = await container.exec([
+    const backup = await database.exec([
       "pg_dump",
       "-U",
-      container.getUsername(),
+      database.username,
       "-d",
-      container.getDatabase(),
+      database.databaseName,
     ]);
     expect(backup.exitCode).toBe(0);
     const restoredContainer = await new PostgreSqlContainer(

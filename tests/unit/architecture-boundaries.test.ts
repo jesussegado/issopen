@@ -107,6 +107,38 @@ describe("modular monolith boundaries", () => {
     expect(violations).toEqual([]);
   });
 
+  it("keeps the large integration suites on explicit boundary fixtures", () => {
+    const suites = [
+      "tests/integration/http.test.ts",
+      "tests/integration/mcp.test.ts",
+      "tests/integration/extensions.test.ts",
+      "tests/integration/tracker.test.ts",
+    ];
+    const violations = suites.flatMap((file) => {
+      const source = readFileSync(join(repository, file), "utf8");
+      return [
+        source.includes("IntegrationDatabase")
+          ? null
+          : `${file} does not use the shared database fixture`,
+        /TRUNCATE\s+(?:TABLE\s+)?["']/.test(source)
+          ? `${file} duplicates database reset SQL`
+          : null,
+      ].filter((entry): entry is string => entry !== null);
+    });
+    const adapterFixtures = {
+      "tests/integration/http.test.ts": "createTestRuntime",
+      "tests/integration/mcp.test.ts": "createMcpTestClient",
+      "tests/integration/extensions.test.ts": "ExtensionTestDriver",
+    };
+    for (const [file, fixture] of Object.entries(adapterFixtures)) {
+      if (!readFileSync(join(repository, file), "utf8").includes(fixture)) {
+        violations.push(`${file} does not use ${fixture}`);
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
   it("keeps schema consumers on the stable facade", () => {
     const violations = sourceFiles("src")
       .filter((file) => !file.includes("/server/db/schema/"))

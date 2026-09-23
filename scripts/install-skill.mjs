@@ -40,7 +40,10 @@ const same = (a, b) =>
 
 export function readPackage(repo, revision) {
   const git = (...args) =>
-    execFileSync("git", ["-C", repo, ...args], { maxBuffer: 8 * 1024 * 1024 });
+    execFileSync("git", ["-C", repo, ...args], {
+      maxBuffer: 8 * 1024 * 1024,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
   const commit = git(
     "rev-parse",
     "--verify",

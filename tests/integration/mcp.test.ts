@@ -4,13 +4,8 @@ import {
   Client,
   StreamableHTTPClientTransport,
 } from "@modelcontextprotocol/client";
-import {
-  PostgreSqlContainer,
-  type StartedPostgreSqlContainer,
-} from "@testcontainers/postgresql";
 import { eq } from "drizzle-orm";
 import { exportJWK, generateKeyPair, SignJWT } from "jose";
-import pino from "pino";
 import {
   afterAll,
   beforeAll,
@@ -21,14 +16,9 @@ import {
   vi,
 } from "vitest";
 import { bootstrapOwner } from "../../scripts/owner.js";
-import { createApp } from "../../src/server/app.js";
-import { createAuth, type IssopenAuth } from "../../src/server/auth.js";
-import { loadConfig } from "../../src/server/config.js";
-import {
-  createDatabase,
-  type DatabaseConnection,
-} from "../../src/server/db/client.js";
-import { migrateDatabase } from "../../src/server/db/migrate.js";
+import type { createApp } from "../../src/server/app.js";
+import type { IssopenAuth } from "../../src/server/auth.js";
+import type { DatabaseConnection } from "../../src/server/db/client.js";
 import {
   activityEvent,
   issue,
@@ -45,6 +35,16 @@ import {
   type MutationContext,
   TrackerService,
 } from "../../src/server/domain/index.js";
+import {
+  createTestRuntime,
+  responseRedirect,
+  signInWithPassword,
+} from "../fixtures/http-driver.js";
+import { IntegrationDatabase } from "../fixtures/integration-database.js";
+import {
+  createMcpTestClient,
+  expectIdempotentReplay,
+} from "../fixtures/mcp-driver.js";
 
 let baseUrl: string;
 // Isolate discovery from the public internet; the actual DNS/HTTPS transport
@@ -63,7 +63,7 @@ const workspaceId = "22222222-2222-4222-8222-222222222222";
 const oauthClientId = "chatgpt-work-integration";
 const oauthRedirectUri = "https://chatgpt.example.test/oauth/callback";
 
-let container: StartedPostgreSqlContainer;
+let database: IntegrationDatabase;
 let connection: DatabaseConnection;
 let httpServer: ReturnType<typeof serve>;
 let auth: IssopenAuth;
@@ -73,16 +73,6 @@ let ownerId: string;
 let projectId: string;
 let epicId: string;
 let issueId: string;
-
-function config(databaseUrl: string) {
-  return loadConfig({
-    NODE_ENV: "test",
-    PORT: new URL(baseUrl).port,
-    DATABASE_URL: databaseUrl,
-    ISSOPEN_BASE_URL: baseUrl,
-    BETTER_AUTH_SECRET: "synthetic-mcp-better-auth-secret-for-tests",
-  });
-}
 
 function mutationContext(): MutationContext {
   return {
@@ -98,41 +88,11 @@ async function appFetch(input: string | URL | Request, init?: RequestInit) {
 }
 
 async function mcpClient(token: string) {
-  const client = new Client(
-    { name: "issopen-integration", version: "1.0.0" },
-    { versionNegotiation: { mode: "auto" } },
-  );
-  const transport = new StreamableHTTPClientTransport(new URL(resource), {
-    fetch: appFetch,
-    authProvider: { token: async () => token },
-  });
-  await client.connect(transport);
-  return client;
-}
-
-async function expectIdempotentReplay(
-  client: Client,
-  name: string,
-  arguments_: Record<string, unknown>,
-) {
-  const first = await client.callTool({ name, arguments: arguments_ });
-  expect(first.isError).not.toBe(true);
-  const replay = await client.callTool({ name, arguments: arguments_ });
-  expect(replay.isError).not.toBe(true);
-  expect(replay.structuredContent).toEqual(first.structuredContent);
-  return first;
+  return createMcpTestClient({ app, resource, token });
 }
 
 async function signInOwner() {
-  const response = await app.request("/api/auth/sign-in/email", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Origin: baseUrl },
-    body: JSON.stringify({ email: owner.email, password: owner.password }),
-  });
-  expect(response.status).toBe(200);
-  const cookie = response.headers.get("set-cookie")?.split(";", 1)[0];
-  if (!cookie) throw new Error("Expected owner session cookie");
-  return cookie;
+  return signInWithPassword(app, baseUrl, owner);
 }
 
 async function seedOAuthClient() {
@@ -179,20 +139,9 @@ async function seedOAuthClient() {
   });
 }
 
-async function responseRedirect(response: Response) {
-  const location = response.headers.get("location");
-  if (location) return location;
-  const body = (await response.json()) as {
-    url?: string;
-    redirect_uri?: string;
-  };
-  return body.url ?? body.redirect_uri ?? "";
-}
-
 beforeAll(async () => {
-  container = await new PostgreSqlContainer("postgres:18.6-alpine").start();
-  await migrateDatabase(container.getConnectionUri());
-  connection = createDatabase(container.getConnectionUri());
+  database = await IntegrationDatabase.start();
+  connection = database.connection;
   await new Promise<void>((resolve) => {
     httpServer = serve(
       {
@@ -212,17 +161,35 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   cimdFetch.mockReset();
-  await connection.client.unsafe(
-    'TRUNCATE TABLE "activity_event", "code_link", "issue", "agent_project", "agent_scope", "agent_credential", "agent_identity", "project", "oauth_client_resource", "oauth_consent", "oauth_access_token", "oauth_refresh_token", "oauth_client", "oauth_resource", "jwks", "verification", "session", "account", "workspace", "instance_owner", "user" CASCADE',
-  );
-  const appConfig = config(container.getConnectionUri());
-  auth = createAuth(connection.db, appConfig);
-  app = createApp({
-    logger: pino({ level: "silent" }),
-    db: connection.db,
-    auth,
-    trustedOrigins: appConfig.trustedOrigins,
-  });
+  await database.reset([
+    "activity_event",
+    "code_link",
+    "issue",
+    "agent_project",
+    "agent_scope",
+    "agent_credential",
+    "agent_identity",
+    "project",
+    "oauth_client_resource",
+    "oauth_consent",
+    "oauth_access_token",
+    "oauth_refresh_token",
+    "oauth_client",
+    "oauth_resource",
+    "jwks",
+    "verification",
+    "session",
+    "account",
+    "workspace",
+    "instance_owner",
+    "user",
+  ]);
+  ({ app, auth } = createTestRuntime({
+    database: connection.db,
+    databaseUrl: database.url,
+    baseUrl,
+    authSecret: "synthetic-mcp-better-auth-secret-for-tests",
+  }));
   await bootstrapOwner(connection.db, auth, owner);
   const [ownerRecord] = await connection.db
     .select({ id: user.id })
@@ -264,8 +231,7 @@ beforeEach(async () => {
 
 afterAll(async () => {
   httpServer?.close();
-  await connection?.close();
-  await container?.stop();
+  await database?.stop();
 });
 
 describe("stateless Issopen MCP", () => {

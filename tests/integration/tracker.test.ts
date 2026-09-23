@@ -1,14 +1,6 @@
-import {
-  PostgreSqlContainer,
-  type StartedPostgreSqlContainer,
-} from "@testcontainers/postgresql";
 import { count, eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import {
-  createDatabase,
-  type DatabaseConnection,
-} from "../../src/server/db/client.js";
-import { migrateDatabase } from "../../src/server/db/migrate.js";
+import type { DatabaseConnection } from "../../src/server/db/client.js";
 import {
   activityEvent,
   agentIdentity,
@@ -22,8 +14,9 @@ import {
   type MutationContext,
   TrackerService,
 } from "../../src/server/domain/index.js";
+import { IntegrationDatabase } from "../fixtures/integration-database.js";
 
-let container: StartedPostgreSqlContainer;
+let database: IntegrationDatabase;
 let connection: DatabaseConnection;
 let tracker: TrackerService;
 
@@ -52,22 +45,29 @@ async function createFixtureWorkspace(
 }
 
 beforeAll(async () => {
-  container = await new PostgreSqlContainer("postgres:18.6-alpine").start();
-  await migrateDatabase(container.getConnectionUri());
-  connection = createDatabase(container.getConnectionUri());
+  database = await IntegrationDatabase.start();
+  connection = database.connection;
   tracker = new TrackerService(connection.db);
 }, 120_000);
 
 beforeEach(async () => {
-  await connection.client.unsafe(
-    'TRUNCATE TABLE "activity_event", "code_link", "issue", "project", "verification", "session", "account", "workspace", "instance_owner", "user" CASCADE',
-  );
+  await database.reset([
+    "activity_event",
+    "code_link",
+    "issue",
+    "project",
+    "verification",
+    "session",
+    "account",
+    "workspace",
+    "instance_owner",
+    "user",
+  ]);
   await createFixtureWorkspace();
 });
 
 afterAll(async () => {
-  await connection?.close();
-  await container?.stop();
+  await database?.stop();
 });
 
 describe("transactional tracker domain", () => {

@@ -1,20 +1,10 @@
 import { randomUUID } from "node:crypto";
-import {
-  PostgreSqlContainer,
-  type StartedPostgreSqlContainer,
-} from "@testcontainers/postgresql";
 import { count, eq } from "drizzle-orm";
-import pino from "pino";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { bootstrapOwner } from "../../scripts/owner.js";
-import { createApp } from "../../src/server/app.js";
-import { createAuth, type IssopenAuth } from "../../src/server/auth.js";
-import { loadConfig } from "../../src/server/config.js";
-import {
-  createDatabase,
-  type DatabaseConnection,
-} from "../../src/server/db/client.js";
-import { migrateDatabase } from "../../src/server/db/migrate.js";
+import type { createApp } from "../../src/server/app.js";
+import type { IssopenAuth } from "../../src/server/auth.js";
+import type { DatabaseConnection } from "../../src/server/db/client.js";
 import {
   account,
   activityEvent,
@@ -35,6 +25,14 @@ import {
   type MutationContext,
   TrackerService,
 } from "../../src/server/domain/index.js";
+import {
+  responseJson as body,
+  createMemberFixture,
+  createTestRuntime,
+  requestWithSession,
+  signInWithPassword,
+} from "../fixtures/http-driver.js";
+import { IntegrationDatabase } from "../fixtures/integration-database.js";
 
 const baseUrl = "http://localhost:8080";
 const ownerInput = {
@@ -43,32 +41,15 @@ const ownerInput = {
   name: "HTTP Owner",
 };
 
-let container: StartedPostgreSqlContainer;
+let database: IntegrationDatabase;
 let connection: DatabaseConnection;
 let auth: IssopenAuth;
 let app: ReturnType<typeof createApp>;
 let cookie: string;
-
-function testConfig(databaseUrl: string) {
-  return loadConfig({
-    NODE_ENV: "test",
-    PORT: "8080",
-    DATABASE_URL: databaseUrl,
-    ISSOPEN_BASE_URL: baseUrl,
-    BETTER_AUTH_SECRET: "synthetic-http-better-auth-secret-for-tests",
-  });
-}
-
-async function body<T>(response: Response): Promise<T> {
-  return (await response.json()) as T;
-}
+let workspaceId: string;
 
 async function authenticatedRequest(path: string, init: RequestInit = {}) {
-  const headers = new Headers(init.headers);
-  headers.set("Cookie", cookie);
-  headers.set("Origin", baseUrl);
-  if (init.body !== undefined) headers.set("Content-Type", "application/json");
-  return app.request(path, { ...init, headers });
+  return requestWithSession(app, baseUrl, cookie, path, init);
 }
 
 async function requestWithCookie(
@@ -76,65 +57,25 @@ async function requestWithCookie(
   path: string,
   init: RequestInit = {},
 ) {
-  const headers = new Headers(init.headers);
-  headers.set("Cookie", sessionCookie);
-  headers.set("Origin", baseUrl);
-  if (init.body !== undefined) headers.set("Content-Type", "application/json");
-  return app.request(path, { ...init, headers });
+  return requestWithSession(app, baseUrl, sessionCookie, path, init);
 }
 
 async function createMemberSession(projectIds: string[], suffix = "member") {
-  const [personalWorkspace] = await connection.db
-    .select({ id: workspace.id })
-    .from(workspace)
-    .limit(1);
-  if (!personalWorkspace) throw new Error("Expected workspace fixture");
-  const member = {
-    id: randomUUID(),
-    email: `${suffix}-http@example.test`,
-    password: "synthetic-http-member-password-1",
-    name: `HTTP ${suffix}`,
-  };
-  const password = await (await auth.$context).password.hash(member.password);
-  await connection.db.transaction(async (tx) => {
-    await tx.insert(user).values({
-      id: member.id,
-      email: member.email,
-      name: member.name,
-      emailVerified: true,
-    });
-    await tx.insert(account).values({
-      id: randomUUID(),
-      issuer: "local:credential",
-      accountId: member.id,
-      providerId: "credential",
-      userId: member.id,
-      password,
-    });
-    await tx.insert(workspaceMembership).values({
-      workspaceId: personalWorkspace.id,
-      userId: member.id,
-      role: "member",
-    });
-    if (projectIds.length > 0) {
-      await tx.insert(projectMembership).values(
-        projectIds.map((projectId) => ({
-          workspaceId: personalWorkspace.id,
-          projectId,
-          userId: member.id,
-        })),
-      );
-    }
-  });
-  const signedIn = await app.request("/api/auth/sign-in/email", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Origin: baseUrl },
-    body: JSON.stringify(member),
-  });
-  expect(signedIn.status).toBe(200);
-  const memberCookie = signedIn.headers.get("set-cookie")?.split(";", 1)[0];
-  if (!memberCookie) throw new Error("Expected member session cookie");
-  return memberCookie;
+  return (
+    await createMemberFixture({
+      database: connection.db,
+      auth,
+      app,
+      origin: baseUrl,
+      workspaceId,
+      identity: {
+        email: `${suffix}-http@example.test`,
+        password: "synthetic-http-member-password-1",
+        name: `HTTP ${suffix}`,
+      },
+      projectGrants: projectIds.map((projectId) => ({ projectId })),
+    })
+  ).cookie;
 }
 
 async function createProjectFixture(name = "Issopen", key = "iss") {
@@ -227,46 +168,43 @@ async function createIssueFixture(
 }
 
 beforeAll(async () => {
-  container = await new PostgreSqlContainer("postgres:18.6-alpine").start();
-  await migrateDatabase(container.getConnectionUri());
-  connection = createDatabase(container.getConnectionUri());
+  database = await IntegrationDatabase.start();
+  connection = database.connection;
 }, 120_000);
 
 beforeEach(async () => {
-  await connection.client.unsafe(
-    'TRUNCATE TABLE "activity_event", "code_link", "issue", "project", "verification", "session", "account", "workspace", "instance_owner", "user" CASCADE',
-  );
-  const config = testConfig(container.getConnectionUri());
-  auth = createAuth(connection.db, config);
-  app = createApp({
-    logger: pino({ level: "silent" }),
-    db: connection.db,
-    auth,
-    trustedOrigins: config.trustedOrigins,
-  });
+  await database.reset([
+    "activity_event",
+    "code_link",
+    "issue",
+    "project",
+    "verification",
+    "session",
+    "account",
+    "workspace",
+    "instance_owner",
+    "user",
+  ]);
+  ({ app, auth } = createTestRuntime({
+    database: connection.db,
+    databaseUrl: database.url,
+    baseUrl,
+    authSecret: "synthetic-http-better-auth-secret-for-tests",
+  }));
   await bootstrapOwner(connection.db, auth, ownerInput);
-  const signedIn = await app.request("/api/auth/sign-in/email", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Origin: baseUrl },
-    body: JSON.stringify({
-      email: ownerInput.email,
-      password: ownerInput.password,
-    }),
-  });
-  expect(signedIn.status).toBe(200);
-  cookie = signedIn.headers.get("set-cookie")?.split(";", 1)[0] ?? "";
-  if (!cookie) throw new Error("Expected owner session cookie");
+  cookie = await signInWithPassword(app, baseUrl, ownerInput);
 
   const workspaceResponse = await authenticatedRequest("/api/v1/workspace", {
     method: "POST",
     body: JSON.stringify({ name: "HTTP workspace" }),
   });
   expect(workspaceResponse.status).toBe(201);
+  workspaceId = (await body<{ workspace: { id: string } }>(workspaceResponse))
+    .workspace.id;
 });
 
 afterAll(async () => {
-  await connection?.close();
-  await container?.stop();
+  await database?.stop();
 });
 
 describe("protected tracker REST API", () => {
