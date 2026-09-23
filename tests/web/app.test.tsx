@@ -41,15 +41,20 @@ describe("owner web entry", () => {
   it.each([
     ["/chrome", "Issopen para Chrome"],
     ["/support", "Ayuda para la extensión de Chrome"],
-  ])("publishes %s without reading a private session", (path, heading) => {
-    const fetchMock = vi.fn();
-    vi.stubGlobal("fetch", fetchMock);
-    window.history.replaceState({}, "", path);
-    render(<App />);
+  ])(
+    "publishes %s without reading a private session",
+    async (path, heading) => {
+      const fetchMock = vi.fn();
+      vi.stubGlobal("fetch", fetchMock);
+      window.history.replaceState({}, "", path);
+      render(<App />);
 
-    expect(screen.getByRole("heading", { name: heading })).toBeInTheDocument();
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
+      expect(
+        await screen.findByRole("heading", { name: heading }),
+      ).toBeInTheDocument();
+      expect(fetchMock).not.toHaveBeenCalled();
+    },
+  );
 
   it("publishes the privacy inventory without reading a private session", async () => {
     const fetchMock = vi.fn();
@@ -58,7 +63,9 @@ describe("owner web entry", () => {
     render(<App />);
 
     expect(
-      screen.getByRole("heading", { name: "Privacidad y datos de Issopen" }),
+      await screen.findByRole("heading", {
+        name: "Privacidad y datos de Issopen",
+      }),
     ).toBeInTheDocument();
     expect(screen.getAllByText(/Limited Use/)).toHaveLength(2);
     expect(
@@ -426,9 +433,11 @@ describe("owner web entry", () => {
         name: "Verify your Google account",
       }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Verify with Google" }),
-    ).toBeEnabled();
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Verify with Google" }),
+      ).toBeEnabled(),
+    );
     expect(window.location.pathname).toBe(
       "/invitations/11111111-1111-4111-8111-111111111111/link",
     );

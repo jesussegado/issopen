@@ -11,7 +11,7 @@
   "scripts": {
     "dev": "tsx watch src/server/index.ts",
     "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
-    "build": "pnpm clean && vite build && tsc -p tsconfig.build.json && pnpm skill:package",
+    "build": "pnpm clean && vite build && pnpm web:bundle-check && tsc -p tsconfig.build.json && pnpm skill:package",
     "start": "node dist/runtime/src/server/index.js",
     "lint": "biome check --files-ignore-unknown=true --indent-style=space --css-parse-tailwind-directives=true package.json pnpm-workspace.yaml tsconfig.json tsconfig.build.json vite.config.ts drizzle.config.ts src scripts skills tests",
     "typecheck": "tsc --noEmit",
@@ -23,6 +23,7 @@
     "test:compose": "vitest run --root . tests/compose --exclude 'dist/**' --passWithNoTests",
     "test:characterization": "vitest run --root . tests/unit/architecture-boundaries.test.ts tests/integration/tracker.test.ts tests/integration/http.test.ts tests/integration/mcp.test.ts tests/integration/extensions.test.ts tests/web/detail-live.test.tsx --exclude 'dist/**' --passWithNoTests && pnpm --dir extensions/chrome exec vitest run tests/unit/draft.test.ts tests/unit/protocol.test.ts",
     "schema:check": "tsx scripts/check-schema-drift.ts",
+    "web:bundle-check": "tsx scripts/check-web-bundle.ts",
     "refactor:check": "pnpm lint && pnpm typecheck && pnpm test:characterization && pnpm schema:check",
     "test:secrets": "tsx scripts/check-secrets.ts",
     "validate": "pnpm lint && pnpm typecheck && pnpm test && pnpm test:integration && pnpm test:e2e && pnpm extension:validate && pnpm test:secrets",

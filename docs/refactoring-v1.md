@@ -192,7 +192,7 @@ remain because they still have real consumers or external contracts.
 | Runtime dependency cycles | Zero, checked across server, web, shared and Chrome source |
 | Temporary adapters or refactor markers | None found; compatibility facades are documented product contracts |
 | Security boundaries | Domain-only writes, MCP scopes/allowlists/idempotency, HTTP validation and browser/server separation remain executable tests |
-| Performance | No new runtime dependency or request path; component/state splits preserve the existing fetch and live-event model. The 501.45 kB initial JS warning is tracked in `ISSOPEN-140` for measurement-led code splitting |
+| Performance | Route-level lazy loading reduces initial JavaScript from 503.76 kB / 144.73 kB gzip to 223.06 kB / 69.23 kB gzip; every production build enforces a 240 kB / 80 kB budget from the Vite manifest |
 
 Ticket 138 resolves the member-invitation hotspot behind the unchanged
 `InvitationService` and `invitationAuthPlugin` API. Contracts, owner checks,
@@ -213,9 +213,17 @@ components. Characterization tests preserve scope defaults, one-time reveal,
 credential lifecycle, permission reduction, onboarding and revocation, while
 the architecture gate prevents adapter bypasses and oversized facades.
 
-The slightly-over-threshold initial web bundle remains intentionally separate.
-Ticket `ISSOPEN-140` requires measured loading cost and route-level evidence
-rather than speculative splitting inside the agent refactor.
+Ticket 140 replaces the single 503.76 kB route graph with nineteen measured
+route chunks. `App.tsx` loads screens through `React.lazy`; a public fallback
+covers entry routes and a nested authenticated fallback preserves navigation
+while a page arrives. Moving the notification badge out of its route removes
+the last accidental eager route dependency. Sign-in, status and initial
+workspace creation deliberately remain in the entry because they are the
+critical access path. The resulting initial graph is 223.06 kB (69.23 kB
+gzip), a 56% raw-byte reduction, and `check-web-bundle.ts` reads Vite's manifest
+on every production build to enforce 240 kB / 80 kB budgets plus at least ten
+real route entries. OAuth, invitation, draft and navigation flows remain
+covered by web and E2E tests.
 
 ## Confirmed duplication
 

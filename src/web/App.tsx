@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { AuthenticatedShell, PublicShell } from "./components/Shell.js";
 import { Skeleton, StatusBanner } from "./components/ui.js";
 import { apiRequest } from "./lib/api.js";
@@ -9,47 +9,101 @@ import {
   switchWorkspace,
   workspaceHeaders,
 } from "./lib/workspace-context.js";
-import { AccessAuditRoute } from "./routes/AccessAuditRoute.js";
-import { AccountRoute } from "./routes/AccountRoute.js";
-import { AgentOnboardingRoute } from "./routes/AgentOnboardingRoute.js";
-import { AgentsRoute } from "./routes/AgentsRoute.js";
-import { BoardRoute } from "./routes/BoardRoute.js";
-import { CollaboratorsRoute } from "./routes/CollaboratorsRoute.js";
-import { ConnectRoute, ConsentRoute } from "./routes/ConnectRoute.js";
-import {
-  EpicDetailRoute,
-  EpicFormRoute,
-  EpicsRoute,
-} from "./routes/EpicRoutes.js";
-import {
-  ChromeExtensionRoute,
-  SupportRoute,
-} from "./routes/ExtensionPublicRoutes.js";
-import { ExtensionsRoute } from "./routes/ExtensionsRoute.js";
-import {
-  InvitationCompleteRoute,
-  InvitationLinkRoute,
-  InvitationRedeemRoute,
-} from "./routes/InvitationRoutes.js";
-import { IssueDetailRoute } from "./routes/IssueDetailRoute.js";
-import { MembersRoute } from "./routes/MembersRoute.js";
-import { NotificationsRoute } from "./routes/NotificationsRoute.js";
-import { OwnerInvitationsRoute } from "./routes/OwnerInvitationsRoute.js";
-import { OwnershipRoute } from "./routes/OwnershipRoute.js";
-import { PrivacyRoute } from "./routes/PrivacyRoute.js";
 import {
   SignInRoute,
   StatusRoute,
   WorkspaceCreateRoute,
 } from "./routes/PublicRoutes.js";
-import {
-  HomeRoute,
-  IssueFormRoute,
-  ProjectFormRoute,
-  UnavailableRoute,
-  WorkspaceSettingsRoute,
-} from "./routes/TrackerForms.js";
 import type { Project, Session } from "./types.js";
+
+const AccessAuditRoute = lazy(async () => ({
+  default: (await import("./routes/AccessAuditRoute.js")).AccessAuditRoute,
+}));
+const AccountRoute = lazy(async () => ({
+  default: (await import("./routes/AccountRoute.js")).AccountRoute,
+}));
+const AgentOnboardingRoute = lazy(async () => ({
+  default: (await import("./routes/AgentOnboardingRoute.js"))
+    .AgentOnboardingRoute,
+}));
+const AgentsRoute = lazy(async () => ({
+  default: (await import("./routes/AgentsRoute.js")).AgentsRoute,
+}));
+const BoardRoute = lazy(async () => ({
+  default: (await import("./routes/BoardRoute.js")).BoardRoute,
+}));
+const CollaboratorsRoute = lazy(async () => ({
+  default: (await import("./routes/CollaboratorsRoute.js")).CollaboratorsRoute,
+}));
+const ConnectRoute = lazy(async () => ({
+  default: (await import("./routes/ConnectRoute.js")).ConnectRoute,
+}));
+const ConsentRoute = lazy(async () => ({
+  default: (await import("./routes/ConnectRoute.js")).ConsentRoute,
+}));
+const EpicDetailRoute = lazy(async () => ({
+  default: (await import("./routes/EpicRoutes.js")).EpicDetailRoute,
+}));
+const EpicFormRoute = lazy(async () => ({
+  default: (await import("./routes/EpicRoutes.js")).EpicFormRoute,
+}));
+const EpicsRoute = lazy(async () => ({
+  default: (await import("./routes/EpicRoutes.js")).EpicsRoute,
+}));
+const ChromeExtensionRoute = lazy(async () => ({
+  default: (await import("./routes/ExtensionPublicRoutes.js"))
+    .ChromeExtensionRoute,
+}));
+const SupportRoute = lazy(async () => ({
+  default: (await import("./routes/ExtensionPublicRoutes.js")).SupportRoute,
+}));
+const ExtensionsRoute = lazy(async () => ({
+  default: (await import("./routes/ExtensionsRoute.js")).ExtensionsRoute,
+}));
+const InvitationCompleteRoute = lazy(async () => ({
+  default: (await import("./routes/InvitationRoutes.js"))
+    .InvitationCompleteRoute,
+}));
+const InvitationLinkRoute = lazy(async () => ({
+  default: (await import("./routes/InvitationRoutes.js")).InvitationLinkRoute,
+}));
+const InvitationRedeemRoute = lazy(async () => ({
+  default: (await import("./routes/InvitationRoutes.js")).InvitationRedeemRoute,
+}));
+const IssueDetailRoute = lazy(async () => ({
+  default: (await import("./routes/IssueDetailRoute.js")).IssueDetailRoute,
+}));
+const MembersRoute = lazy(async () => ({
+  default: (await import("./routes/MembersRoute.js")).MembersRoute,
+}));
+const NotificationsRoute = lazy(async () => ({
+  default: (await import("./routes/NotificationsRoute.js")).NotificationsRoute,
+}));
+const OwnerInvitationsRoute = lazy(async () => ({
+  default: (await import("./routes/OwnerInvitationsRoute.js"))
+    .OwnerInvitationsRoute,
+}));
+const OwnershipRoute = lazy(async () => ({
+  default: (await import("./routes/OwnershipRoute.js")).OwnershipRoute,
+}));
+const PrivacyRoute = lazy(async () => ({
+  default: (await import("./routes/PrivacyRoute.js")).PrivacyRoute,
+}));
+const HomeRoute = lazy(async () => ({
+  default: (await import("./routes/TrackerForms.js")).HomeRoute,
+}));
+const IssueFormRoute = lazy(async () => ({
+  default: (await import("./routes/TrackerForms.js")).IssueFormRoute,
+}));
+const ProjectFormRoute = lazy(async () => ({
+  default: (await import("./routes/TrackerForms.js")).ProjectFormRoute,
+}));
+const UnavailableRoute = lazy(async () => ({
+  default: (await import("./routes/TrackerForms.js")).UnavailableRoute,
+}));
+const WorkspaceSettingsRoute = lazy(async () => ({
+  default: (await import("./routes/TrackerForms.js")).WorkspaceSettingsRoute,
+}));
 
 type Screen =
   | { kind: "loading" }
@@ -58,6 +112,20 @@ type Screen =
   | { kind: "error" };
 
 export function App() {
+  return (
+    <Suspense
+      fallback={
+        <PublicShell>
+          <Skeleton label="Loading Issopen…" />
+        </PublicShell>
+      }
+    >
+      <AppRouter />
+    </Suspense>
+  );
+}
+
+function AppRouter() {
   const location = useLocation();
   const pathname = location.split("?")[0] ?? "/";
   const workspaceContext = selectedWorkspace();
@@ -443,7 +511,7 @@ function AuthenticatedApp({
         navigate("/sign-in", true);
       }}
     >
-      {route}
+      <Suspense fallback={<Skeleton label="Loading page…" />}>{route}</Suspense>
     </AuthenticatedShell>
   );
 }

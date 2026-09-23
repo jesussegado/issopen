@@ -41,7 +41,9 @@ it("publishes a session-free agent guide with a verified skill release", async (
   render(<App />);
 
   expect(
-    screen.getByRole("heading", { name: "De un enlace a trabajo trazable" }),
+    await screen.findByRole("heading", {
+      name: "De un enlace a trabajo trazable",
+    }),
   ).toBeInTheDocument();
   expect(
     await screen.findByText(

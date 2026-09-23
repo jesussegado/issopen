@@ -29,6 +29,16 @@ haya conflicto, usa este orden:
 
 ## Estado actual
 
+23/09 ticket140: todas las pantallas de `App.tsx` se cargan con `React.lazy` y
+`Suspense`; el shell autenticado permanece visible mientras llega el chunk. No
+añadas imports estáticos desde `App.tsx` a `routes/`. `NotificationLink` vive en
+components para no arrastrar la pantalla de notificaciones al arranque. Cada
+`pnpm build` genera el manifest y ejecuta `web:bundle-check`: presupuesto inicial
+240 kB/80 kB gzip; el grafo medido queda en 223,06 kB/69,23 kB frente a
+503,76 kB/144,73 kB antes del corte. Login, estado y creación del primer
+workspace siguen eager para que el flujo crítico de acceso no parpadee. Los
+tests web deben esperar la resolución asíncrona de las demás rutas.
+
 23/09 ticket139: `AgentService` es la fachada pública y compone identidad,
 credenciales, grants y autenticación desde `src/server/domain/agents/`. REST,
 MCP y tests consumidores no deben importar esas capabilities directamente. En

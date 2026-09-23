@@ -25,6 +25,21 @@ function imports(source: string): string[] {
   );
 }
 
+function staticImports(source: string): string[] {
+  const file = ts.createSourceFile(
+    "architecture.ts",
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+  );
+  return file.statements.flatMap((statement) =>
+    ts.isImportDeclaration(statement) &&
+    ts.isStringLiteral(statement.moduleSpecifier)
+      ? [statement.moduleSpecifier.text]
+      : [],
+  );
+}
+
 function runtimeImports(source: string): string[] {
   const file = ts.createSourceFile(
     "architecture.ts",
@@ -509,6 +524,23 @@ describe("modular monolith boundaries", () => {
           );
       }
     }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps web routes out of the initial application bundle", () => {
+    const app = readFileSync(join(repository, "src/web/App.tsx"), "utf8");
+    const violations = staticImports(app)
+      .filter(
+        (specifier) =>
+          specifier.startsWith("./routes/") &&
+          specifier !== "./routes/PublicRoutes.js",
+      )
+      .map((specifier) => `App has a static route import: ${specifier}`);
+    if (!app.includes("lazy("))
+      violations.push("App does not lazy-load route modules");
+    if (!app.includes("<Suspense"))
+      violations.push("App has no loading boundary for lazy routes");
 
     expect(violations).toEqual([]);
   });

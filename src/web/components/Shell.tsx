@@ -10,9 +10,9 @@ import {
   rememberWorkspace,
   switchWorkspace,
 } from "../lib/workspace-context.js";
-import { NotificationLink } from "../routes/NotificationsRoute.js";
 import type { Project, Session } from "../types.js";
 import { Brand } from "./Brand.js";
+import { NotificationLink } from "./NotificationLink.js";
 import { AppLink, Button } from "./ui.js";
 
 export function PublicShell({ children }: { children: ReactNode }) {
