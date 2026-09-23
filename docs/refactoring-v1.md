@@ -139,6 +139,18 @@ expanded cards) remains in the route and survives live data refreshes. An
 architecture check keeps the route below its composition boundary and prevents
 board components from importing routes.
 
+Ticket 132 reduces `IssueDetailRoute` from 1,526 to fewer than 1,000 lines of
+orchestration. Snapshot reads, draft detection and the load/live/mutation state
+machine now have pure, unit-tested modules; submitting, conflict, transient
+failure and pending remote snapshots are explicit states. Questions, comments,
+activity, review, repository context, code results, header and remote comparison
+render through transport-free panels. The route retains operation-specific API
+commands and reconciliation so optimistic concurrency and draft preservation
+remain visible instead of disappearing behind a generic framework. Existing web
+tests protect next-unanswered navigation, stale answer drafts, comparison before
+applying remote data and comment/activity ordering; an architecture check keeps
+transport out of the extracted panels.
+
 ## Confirmed duplication
 
 - Member and Owner invitations previously implemented email
@@ -155,7 +167,8 @@ board components from importing routes.
   lookup are shared while security and pagination decisions remain at call sites.
 - Board and issue detail now share failure classification, initial-load recovery
   and latest-request protection. Their domain-specific draft reconciliation and
-  live refresh decisions intentionally remain local for tickets 131 and 132.
+  live refresh decisions intentionally remain local; ticket 132 exposes those
+  decisions through a pure detail state machine and transport-free panels.
 - Integration suites repeat owner/workspace/project/session construction.
 
 These are targets, not permission to create generic frameworks. An extraction

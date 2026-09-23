@@ -196,6 +196,41 @@ describe("modular monolith boundaries", () => {
     expect(violations).toEqual([]);
   });
 
+  it("keeps issue detail state and panels behind composition boundaries", () => {
+    const route = readFileSync(
+      join(repository, "src/web/routes/IssueDetailRoute.tsx"),
+      "utf8",
+    );
+    const required = [
+      "../components/issue-detail/ActivityPanel.js",
+      "../components/issue-detail/CommentsPanel.js",
+      "../components/issue-detail/QuestionsPanel.js",
+      "../components/issue-detail/RemoteChangesPanel.js",
+      "../lib/issue-detail-machine.js",
+      "../lib/issue-detail-snapshot.js",
+    ];
+    const violations = required
+      .filter((specifier) => !imports(route).includes(specifier))
+      .map((specifier) => `IssueDetailRoute does not compose ${specifier}`);
+    if (route.split("\n").length > 1_000)
+      violations.push("IssueDetailRoute grew beyond orchestration concerns");
+    for (const file of sourceFiles("src/web/components/issue-detail")) {
+      const source = readFileSync(file, "utf8");
+      for (const specifier of imports(source)) {
+        if (specifier.includes("/routes/"))
+          violations.push(
+            `${relative(repository, file)} imports route ${specifier}`,
+          );
+        if (specifier.includes("/lib/api"))
+          violations.push(
+            `${relative(repository, file)} owns transport through ${specifier}`,
+          );
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
   it("keeps database writes out of HTTP and MCP adapters", () => {
     const writePattern =
       /\b(?:db|tx|database|connection\.db)\s*\.\s*(?:insert|update|delete)\s*\(/;

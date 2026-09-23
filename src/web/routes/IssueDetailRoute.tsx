@@ -3,27 +3,29 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useReducer,
   useRef,
   useState,
 } from "react";
 import { AssigneeEditor } from "../components/AssigneeEditor.js";
 import { CaptureEvidence } from "../components/CaptureEvidence.js";
-import { CollaboratorPicker } from "../components/CollaboratorPicker.js";
-import { DeleteIssueButton } from "../components/DeleteIssueButton.js";
-import { QuestionRecipientEditor } from "../components/QuestionRecipientEditor.js";
+import { ActivityPanel } from "../components/issue-detail/ActivityPanel.js";
+import { CodeResultsPanel } from "../components/issue-detail/CodeResultsPanel.js";
+import { CommentsPanel } from "../components/issue-detail/CommentsPanel.js";
+import { IssueDetailHeader } from "../components/issue-detail/IssueDetailHeader.js";
+import { commentAuthorLabel } from "../components/issue-detail/presentation.js";
+import { QuestionsPanel } from "../components/issue-detail/QuestionsPanel.js";
+import { RemoteChangesPanel } from "../components/issue-detail/RemoteChangesPanel.js";
+import { RepositoryPanel } from "../components/issue-detail/RepositoryPanel.js";
+import { ReviewPanel } from "../components/issue-detail/ReviewPanel.js";
 import {
-  AppLink,
-  Badge,
   Button,
   Field,
   OfflineBanner,
-  PageHeading,
   RouteLoadError,
   Select,
   Skeleton,
   StatusBanner,
-  TextArea,
-  TextInput,
 } from "../components/ui.js";
 import {
   ApiError,
@@ -32,6 +34,15 @@ import {
   mutationFailureMessage,
   unavailable,
 } from "../lib/api.js";
+import {
+  initialIssueDetailSyncState,
+  issueDetailDraftPhase,
+  issueDetailSyncReducer,
+} from "../lib/issue-detail-machine.js";
+import {
+  type IssueDetailSnapshot,
+  readIssueDetailSnapshot,
+} from "../lib/issue-detail-snapshot.js";
 import { useLatestRequest } from "../lib/latest-request.js";
 import { useOnlineStatus } from "../lib/online.js";
 import { subscribeToProjectChanges } from "../lib/project-live.js";
@@ -48,117 +59,8 @@ import type {
   QuestionSummary,
   Session,
 } from "../types.js";
-import {
-  codeLinkLabels,
-  codeLinkTypes,
-  epicLabel,
-  issueActivitySummary,
-  issueLabel,
-  issueReference,
-  issueStatuses,
-  priorityLabels,
-  statusLabels,
-} from "../types.js";
+import { issueReference, issueStatuses, statusLabels } from "../types.js";
 import { UnavailableRoute } from "./TrackerForms.js";
-
-function formatTimestamp(value: string) {
-  return new Intl.DateTimeFormat("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(new Date(value));
-}
-
-function actorLabel(activity: Activity, viewerId: string) {
-  if (activity.actorType === "human")
-    return activity.actorId === viewerId
-      ? "You"
-      : activity.actorDisplayName || "Workspace member";
-  if (activity.actorType === "agent")
-    return `Agent · ${activity.actorDisplayName}`;
-  return "System";
-}
-
-function commentAuthorLabel(comment: IssueComment, viewerId: string) {
-  if (comment.authorType === "human")
-    return comment.authorId === viewerId
-      ? "You"
-      : comment.authorDisplayName || "Workspace member";
-  if (comment.authorType === "agent")
-    return `Agent · ${comment.authorDisplayName}`;
-  return "System";
-}
-
-const sourceLabels: Record<Activity["source"], string> = {
-  chrome_extension: "Chrome extension",
-  rest: "Web",
-  mcp: "MCP",
-  system: "System",
-  operator: "Operator",
-};
-
-function newestFirst<T extends { id: string; createdAt: string }>(items: T[]) {
-  return [...items].sort(
-    (left, right) =>
-      right.createdAt.localeCompare(left.createdAt) ||
-      right.id.localeCompare(left.id),
-  );
-}
-
-type DetailSnapshot = {
-  issue: Issue;
-  epic: Epic | null;
-  epicIssues: Issue[];
-  codeLinks: CodeLink[];
-  comments: IssueComment[];
-  questions: IssueQuestion[];
-  questionSummary: QuestionSummary;
-  activity: Activity[];
-  project: Project;
-};
-
-async function readDetailSnapshot(
-  issueId: string,
-  signal?: AbortSignal,
-): Promise<DetailSnapshot> {
-  const options = { cache: "no-store" as const, ...(signal ? { signal } : {}) };
-  const [detail, activity] = await Promise.all([
-    apiRequest<Omit<DetailSnapshot, "activity" | "project">>(
-      `/api/v1/issues/${issueId}`,
-      options,
-    ),
-    apiRequest<{ activity: Activity[] }>(
-      `/api/v1/issues/${issueId}/activity`,
-      options,
-    ),
-  ]);
-  const [{ project }, epicDetail] = await Promise.all([
-    apiRequest<{ project: Project }>(
-      `/api/v1/projects/${detail.issue.projectId}`,
-      options,
-    ),
-    detail.epic
-      ? apiRequest<{ issues: Issue[] }>(
-          `/api/v1/epics/${detail.epic.id}`,
-          options,
-        ).catch(() => ({ issues: [] }))
-      : Promise.resolve({ issues: [] as Issue[] }),
-  ]);
-  return {
-    issue: detail.issue,
-    epic: detail.epic ?? null,
-    epicIssues: epicDetail.issues,
-    codeLinks: detail.codeLinks ?? [],
-    comments: detail.comments ?? [],
-    questions: detail.questions ?? [],
-    questionSummary: detail.questionSummary,
-    activity: activity.activity,
-    project,
-  };
-}
 
 export function IssueDetailRoute({
   issueId,
@@ -190,13 +92,21 @@ export function IssueDetailRoute({
   const [questionError, setQuestionError] = useState<string | null>(null);
   const [activity, setActivity] = useState<Activity[]>([]);
   const [project, setProject] = useState<Project | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [missing, setMissing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [sync, dispatchSync] = useReducer(
+    issueDetailSyncReducer,
+    initialIssueDetailSyncState,
+  );
+  const loading = sync.phase === "loading";
+  const missing = sync.phase === "missing";
+  const error = sync.error;
+  const pendingSnapshot = sync.pendingSnapshot;
+  const liveError = sync.live === "failed";
+  const refreshing = sync.live === "refreshing";
+  const submitting =
+    sync.mutation.phase === "submitting" ? sync.mutation.operation : null;
   const [notice, setNotice] = useState(() =>
     new URLSearchParams(window.location.search).get("notice"),
   );
-  const [submitting, setSubmitting] = useState<string | null>(null);
   const [linkType, setLinkType] = useState<CodeLinkType>("branch");
   const [linkUrl, setLinkUrl] = useState("");
   const [requestingChanges, setRequestingChanges] = useState(false);
@@ -205,12 +115,7 @@ export function IssueDetailRoute({
   const [answerDirty, setAnswerDirty] = useState(false);
   const [assigneeDirty, setAssigneeDirty] = useState(false);
   const [recipientDirty, setRecipientDirty] = useState(false);
-  const [pendingSnapshot, setPendingSnapshot] = useState<DetailSnapshot | null>(
-    null,
-  );
-  const [liveError, setLiveError] = useState(false);
   const [comparing, setComparing] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
   const mutationEpoch = useRef(0);
   const preservedAnswerId = useRef<string | null>(null);
   const scope = `${session.user.id}:${session.workspace?.id}:${issueId}`;
@@ -229,14 +134,16 @@ export function IssueDetailRoute({
   });
   state.current = {
     dirty:
-      answerDirty ||
-      assigneeDirty ||
-      recipientDirty ||
-      commentBody !== "" ||
-      mentions.length > 0 ||
-      linkUrl !== "" ||
-      reason !== "" ||
-      requestingChanges,
+      issueDetailDraftPhase({
+        answer: answerDirty,
+        assignee: assigneeDirty,
+        recipient: recipientDirty,
+        comment: commentBody,
+        mentionCount: mentions.length,
+        linkUrl,
+        reviewReason: reason,
+        requestingChanges,
+      }) === "dirty",
     submitting: submitting !== null,
     questionId: questions[questionIndex]?.id ?? "",
     signature: JSON.stringify({
@@ -256,8 +163,6 @@ export function IssueDetailRoute({
     linkIds: links.map((item) => item.id),
   };
   const online = useOnlineStatus();
-  const newestActivityFirst = useMemo(() => newestFirst(activity), [activity]);
-  const newestCommentsFirst = useMemo(() => newestFirst(comments), [comments]);
 
   const refreshActivity = useCallback(async () => {
     const response = await apiRequest<{ activity: Activity[] }>(
@@ -266,7 +171,7 @@ export function IssueDetailRoute({
     setActivity(response.activity);
   }, [issueId]);
 
-  const applySnapshot = useCallback((snapshot: DetailSnapshot) => {
+  const applySnapshot = useCallback((snapshot: IssueDetailSnapshot) => {
     const selected = snapshot.questions.findIndex(
       (q) => q.id === state.current.questionId,
     );
@@ -280,20 +185,17 @@ export function IssueDetailRoute({
     setQuestionSummary(snapshot.questionSummary);
     setActivity(snapshot.activity);
     setProject(snapshot.project);
-    setPendingSnapshot(null);
     setComparing(false);
-    setLiveError(false);
   }, []);
 
   const clearAccess = useCallback(() => {
-    setMissing(true);
+    dispatchSync({ type: "access_lost" });
     setIssue(null);
     setEpicIssues([]);
     setQuestions([]);
     setComments([]);
     setLinks([]);
     setActivity([]);
-    setPendingSnapshot(null);
     setCommentBody("");
     setMentions([]);
     commentRequest.current = null;
@@ -306,9 +208,7 @@ export function IssueDetailRoute({
   const loadDetail = useCallback(() => {
     const controller = new AbortController();
     const request = latestDetailRequest.begin();
-    setLoading(true);
-    setMissing(false);
-    setError(null);
+    dispatchSync({ type: "load_started" });
     setCommentBody("");
     setMentions([]);
     commentRequest.current = null;
@@ -316,11 +216,11 @@ export function IssueDetailRoute({
     setReason("");
     setRequestingChanges(false);
     setAnswerDirty(false);
-    setPendingSnapshot(null);
-    void readDetailSnapshot(issueId, controller.signal)
+    void readIssueDetailSnapshot(issueId, controller.signal)
       .then((snapshot) => {
         if (!controller.signal.aborted && latestDetailRequest.accept(request)) {
           applySnapshot(snapshot);
+          dispatchSync({ type: "load_succeeded" });
           const directed = new URLSearchParams(window.location.search).get(
             "question",
           );
@@ -335,16 +235,11 @@ export function IssueDetailRoute({
           return;
         if (apiFailureKind(caught) === "unavailable") clearAccess();
         else
-          setError(
-            "We couldn't load this issue. Check your connection and try again.",
-          );
-      })
-      .finally(() => {
-        if (
-          !controller.signal.aborted &&
-          latestDetailRequest.isCurrent(request)
-        )
-          setLoading(false);
+          dispatchSync({
+            type: "load_failed",
+            message:
+              "We couldn't load this issue. Check your connection and try again.",
+          });
       });
     return controller;
   }, [issueId, applySnapshot, clearAccess, latestDetailRequest]);
@@ -378,9 +273,9 @@ export function IssueDetailRoute({
       if (stopped || inFlight || state.current.submitting) return;
       inFlight = true;
       const epoch = mutationEpoch.current;
-      setRefreshing(true);
+      dispatchSync({ type: "live_started" });
       try {
-        const next = await readDetailSnapshot(issueId, controller.signal);
+        const next = await readIssueDetailSnapshot(issueId, controller.signal);
         if (
           stopped ||
           scopeRef.current !== scope ||
@@ -388,7 +283,6 @@ export function IssueDetailRoute({
           state.current.submitting
         )
           return;
-        setLiveError(false);
         // Effective permissions update even while a content draft is preserved.
         const effectiveEdit = next.project.canEdit;
         if (effectiveEdit !== undefined)
@@ -418,19 +312,22 @@ export function IssueDetailRoute({
         )
           return;
         if (JSON.stringify(next) === state.current.signature) {
-          setPendingSnapshot(null);
+          dispatchSync({ type: "live_unchanged" });
           return;
         }
         if (state.current.dirty || document.querySelector("dialog[open]"))
-          setPendingSnapshot(next);
-        else applySnapshot(next);
+          dispatchSync({ type: "live_pending", snapshot: next });
+        else {
+          applySnapshot(next);
+          dispatchSync({ type: "live_applied" });
+        }
       } catch (caught) {
         if (stopped || scopeRef.current !== scope) return;
         if (unavailable(caught)) clearAccess();
-        else setLiveError(true);
+        else dispatchSync({ type: "live_failed" });
       } finally {
         inFlight = false;
-        if (!stopped) setRefreshing(false);
+        if (!stopped) dispatchSync({ type: "live_finished" });
       }
     };
     refreshLiveRef.current = () => void refresh();
@@ -514,8 +411,7 @@ export function IssueDetailRoute({
   async function updateStatus(status: IssueStatus) {
     if (!issue || issue.status === status) return;
     mutationEpoch.current += 1;
-    setSubmitting("status");
-    setError(null);
+    dispatchSync({ type: "mutation_started", operation: "status" });
     setNotice(null);
     setAnnouncement("");
     try {
@@ -540,14 +436,20 @@ export function IssueDetailRoute({
       );
       await refreshActivity();
     } catch (caught) {
-      setError(
-        caught instanceof ApiError && caught.status === 409
-          ? caught.message
-          : "We couldn't save your changes. Check your connection and try again.",
-      );
+      dispatchSync({
+        type: "mutation_failed",
+        kind:
+          caught instanceof ApiError && caught.status === 409
+            ? "conflict"
+            : "failed",
+        message:
+          caught instanceof ApiError && caught.status === 409
+            ? caught.message
+            : "We couldn't save your changes. Check your connection and try again.",
+      });
     } finally {
       mutationEpoch.current += 1;
-      setSubmitting(null);
+      dispatchSync({ type: "mutation_finished" });
     }
   }
 
@@ -564,7 +466,7 @@ export function IssueDetailRoute({
     }
 
     mutationEpoch.current += 1;
-    setSubmitting("question");
+    dispatchSync({ type: "mutation_started", operation: "question" });
     setQuestionError(null);
     setNotice(null);
     try {
@@ -623,16 +525,25 @@ export function IssueDetailRoute({
       );
       await refreshActivity();
     } catch (caught) {
-      setQuestionError(
+      const message =
         caught instanceof ApiError && caught.status === 409
           ? caught.message
           : caught instanceof ApiError && caught.fields[0]?.message
             ? caught.fields[0].message
-            : "We couldn't save this answer. Check your connection and try again.",
-      );
+            : "We couldn't save this answer. Check your connection and try again.";
+      setQuestionError(message);
+      dispatchSync({
+        type: "mutation_failed",
+        kind:
+          caught instanceof ApiError && caught.status === 409
+            ? "conflict"
+            : "failed",
+        message,
+        display: "panel",
+      });
     } finally {
       mutationEpoch.current += 1;
-      setSubmitting(null);
+      dispatchSync({ type: "mutation_finished" });
     }
   }
 
@@ -640,8 +551,7 @@ export function IssueDetailRoute({
     event.preventDefault();
     if (!issue) return;
     mutationEpoch.current += 1;
-    setSubmitting("link");
-    setError(null);
+    dispatchSync({ type: "mutation_started", operation: "link" });
     setNotice(null);
     try {
       const response = await apiRequest<{ issue: Issue; codeLink: CodeLink }>(
@@ -657,14 +567,20 @@ export function IssueDetailRoute({
       setNotice("Code link added");
       await refreshActivity();
     } catch (caught) {
-      setError(
-        caught instanceof ApiError && caught.fields[0]?.message
-          ? caught.fields[0].message
-          : "We couldn't save your changes. Check your connection and try again.",
-      );
+      dispatchSync({
+        type: "mutation_failed",
+        kind:
+          caught instanceof ApiError && caught.status === 409
+            ? "conflict"
+            : "failed",
+        message:
+          caught instanceof ApiError && caught.fields[0]?.message
+            ? caught.fields[0].message
+            : "We couldn't save your changes. Check your connection and try again.",
+      });
     } finally {
       mutationEpoch.current += 1;
-      setSubmitting(null);
+      dispatchSync({ type: "mutation_finished" });
     }
   }
 
@@ -681,8 +597,7 @@ export function IssueDetailRoute({
     if (commentRequest.current?.payload !== payload)
       commentRequest.current = { payload, id: crypto.randomUUID() };
     mutationEpoch.current += 1;
-    setSubmitting("comment");
-    setError(null);
+    dispatchSync({ type: "mutation_started", operation: "comment" });
     setNotice(null);
     try {
       const response = await apiRequest<{ comment: IssueComment }>(
@@ -710,22 +625,27 @@ export function IssueDetailRoute({
       );
       await refreshActivity();
     } catch (caught) {
-      setError(
-        caught instanceof ApiError && caught.fields[0]?.message
-          ? caught.fields[0].message
-          : "We couldn't add this comment. Check your connection and try again.",
-      );
+      dispatchSync({
+        type: "mutation_failed",
+        kind:
+          caught instanceof ApiError && caught.status === 409
+            ? "conflict"
+            : "failed",
+        message:
+          caught instanceof ApiError && caught.fields[0]?.message
+            ? caught.fields[0].message
+            : "We couldn't add this comment. Check your connection and try again.",
+      });
     } finally {
       mutationEpoch.current += 1;
-      setSubmitting(null);
+      dispatchSync({ type: "mutation_finished" });
     }
   }
 
   async function review(outcome: "accept" | "request") {
     if (!issue) return;
     mutationEpoch.current += 1;
-    setSubmitting(outcome);
-    setError(null);
+    dispatchSync({ type: "mutation_started", operation: outcome });
     setNotice(null);
     try {
       const response = await apiRequest<{ issue: Issue }>(
@@ -751,15 +671,20 @@ export function IssueDetailRoute({
       );
       await refreshActivity();
     } catch (caught) {
-      setError(
-        mutationFailureMessage(
+      dispatchSync({
+        type: "mutation_failed",
+        kind:
+          caught instanceof ApiError && caught.status === 409
+            ? "conflict"
+            : "failed",
+        message: mutationFailureMessage(
           caught,
           "We couldn't save your changes. Check your connection and try again.",
         ),
-      );
+      });
     } finally {
       mutationEpoch.current += 1;
-      setSubmitting(null);
+      dispatchSync({ type: "mutation_finished" });
     }
   }
 
@@ -779,145 +704,37 @@ export function IssueDetailRoute({
   const canEdit = project.canEdit !== false;
   return (
     <div className="detail-column issue-detail-page">
-      <div className="page-header">
-        <div>
-          <div className="issue-metadata">
-            <Badge>{priorityLabels[issue.priority]}</Badge>
-          </div>
-          <PageHeading>{issueLabel(issue)}</PageHeading>
-          <div className="issue-metadata">
-            <span>
-              Owner:{" "}
-              {issue.humanOwnerId === session.user.id
-                ? "You"
-                : "Workspace owner"}
-            </span>
-            {epic ? (
-              <>
-                <AppLink
-                  className="badge epic-badge"
-                  href={`/epics/${epic.id}`}
-                >
-                  Epic: {epicLabel(epic)}
-                </AppLink>
-                {epic.archivedAt ? <Badge>Archived Epic</Badge> : null}
-              </>
-            ) : null}
-            {issue.claimedByAgentId ? (
-              <Badge>Agent: {issue.claimedByAgentId}</Badge>
-            ) : (
-              <Badge>Not claimed by an agent</Badge>
-            )}
-          </div>
-        </div>
-        <div className="page-actions">
-          {epic && !epic.archivedAt ? (
-            <AppLink
-              className="button button-secondary"
-              href={`/projects/${issue.projectId}?epic=${epic.id}`}
-            >
-              View Epic on board
-            </AppLink>
-          ) : null}
-          {canEdit ? (
-            <AppLink
-              className="button button-secondary"
-              href={`/issues/${issue.id}/edit`}
-            >
-              Edit issue
-            </AppLink>
-          ) : (
-            <Badge>Read-only</Badge>
-          )}
-          {session.workspace?.role === "owner" &&
-          session.workspace.id === issue.workspaceId ? (
-            <DeleteIssueButton
-              key={issue.id}
-              issue={issue}
-              questions={questions}
-              disabled={submitting !== null}
-            />
-          ) : null}
-        </div>
-      </div>
+      <IssueDetailHeader
+        issue={issue}
+        epic={epic}
+        questions={questions}
+        session={session}
+        canEdit={canEdit}
+        busy={submitting !== null}
+      />
       {notice ? <StatusBanner>{notice}</StatusBanner> : null}
       {!online ? <OfflineBanner /> : null}
       {pendingSnapshot ? (
-        <section
-          className="detail-panel form-stack"
-          aria-label="Remote changes"
-        >
-          <StatusBanner>
-            New changes are available. Your unsaved drafts have been kept.
-          </StatusBanner>
-          <Button
-            variant="secondary"
-            disabled={submitting !== null}
-            onClick={() => setComparing((value) => !value)}
-          >
-            {comparing ? "Hide comparison" : "Compare latest changes"}
-          </Button>
-          {comparing ? (
-            <div className="form-stack">
-              <h2>Latest saved version</h2>
-              <p>
-                {issueLabel(pendingSnapshot.issue)} ·{" "}
-                {statusLabels[pendingSnapshot.issue.status]}
-              </p>
-              <p className="description">
-                {pendingSnapshot.issue.description || "No description"}
-              </p>
-              <p>
-                {pendingSnapshot.comments.length} comments ·{" "}
-                {pendingSnapshot.questionSummary.answered} of{" "}
-                {pendingSnapshot.questionSummary.total} questions answered
-              </p>
-              {currentQuestion ? (
-                <p className="description">
-                  Saved answer: {(() => {
-                    const q = pendingSnapshot.questions.find(
-                      (item) => item.id === currentQuestion.id,
-                    );
-                    return q
-                      ? (q.answerOtherText ??
-                          q.options.find(
-                            (option) => option.id === q.answerOptionId,
-                          )?.label ??
-                          "Not answered")
-                      : "Question no longer available";
-                  })()}
-                </p>
-              ) : null}
-            </div>
-          ) : null}
-          {answerDirty &&
-          currentQuestion &&
-          !pendingSnapshot.questions.some(
-            (q) => q.id === currentQuestion.id,
-          ) ? (
-            <StatusBanner error>
-              This question is no longer available. Copy your draft before
-              reloading this page.
-            </StatusBanner>
-          ) : (
-            <Button
-              disabled={submitting !== null || !comparing}
-              onClick={() => {
-                preservedAnswerId.current = answerDirty
-                  ? (currentQuestion?.id ?? null)
-                  : null;
-                applySnapshot(pendingSnapshot);
-                setError(null);
-                setQuestionError(null);
-                setAnnouncement(
-                  "Latest changes loaded. Drafts preserved; review them before saving.",
-                );
-              }}
-            >
-              Load latest changes and keep my drafts
-            </Button>
-          )}
-        </section>
+        <RemoteChangesPanel
+          snapshot={pendingSnapshot}
+          currentQuestion={currentQuestion}
+          comparing={comparing}
+          answerDirty={answerDirty}
+          busy={submitting !== null}
+          onToggleComparison={() => setComparing((value) => !value)}
+          onApply={() => {
+            preservedAnswerId.current = answerDirty
+              ? (currentQuestion?.id ?? null)
+              : null;
+            applySnapshot(pendingSnapshot);
+            dispatchSync({ type: "live_applied" });
+            dispatchSync({ type: "clear_error" });
+            setQuestionError(null);
+            setAnnouncement(
+              "Latest changes loaded. Drafts preserved; review them before saving.",
+            );
+          }}
+        />
       ) : null}
       {liveError ? (
         <StatusBanner error>
@@ -1039,514 +856,104 @@ export function IssueDetailRoute({
             )}
           </section>
           <CaptureEvidence issueId={issue.id} canEdit={canEdit} />
-          <section
-            className="detail-panel question-panel"
-            aria-labelledby="questions-heading"
-          >
-            <div className="question-heading">
-              <div>
-                <h2 id="questions-heading" tabIndex={-1}>
-                  Questions
-                </h2>
-                {(questionSummary.directedUnanswered ?? 0) > 0 ? (
-                  <p className="warning-badge">
-                    ⚠ {questionSummary.directedUnanswered} unanswered for you
-                  </p>
-                ) : null}
-                <p className="metadata" aria-live="polite">
-                  {questionSummary.answered} of {questionSummary.total} answered
-                </p>
-              </div>
-              {questionSummary.unansweredBlocking > 0 ? (
-                <span className="badge warning-badge">
-                  ⚠ {questionSummary.unansweredBlocking} blocking
-                </span>
-              ) : null}
-            </div>
-            {epic && pendingEpicIssues.length > 0 ? (
-              <nav
-                className="epic-question-navigation"
-                aria-label="Tickets with unanswered questions in this Epic"
-              >
-                {currentEpicQuestionIndex >= 0 ? (
-                  <>
-                    {previousEpicQuestionIssue ? (
-                      <AppLink
-                        className="button button-secondary"
-                        href={`/issues/${previousEpicQuestionIssue.id}#questions-heading`}
-                      >
-                        Previous ticket
-                      </AppLink>
-                    ) : (
-                      <Button type="button" variant="secondary" disabled>
-                        Previous ticket
-                      </Button>
-                    )}
-                    <span className="metadata">
-                      {currentEpicQuestionIndex + 1} of{" "}
-                      {pendingEpicIssues.length} tickets with unanswered
-                      questions
-                    </span>
-                    {nextEpicQuestionIssue ? (
-                      <AppLink
-                        className="button button-secondary"
-                        href={`/issues/${nextEpicQuestionIssue.id}#questions-heading`}
-                      >
-                        Next ticket
-                      </AppLink>
-                    ) : (
-                      <Button type="button" variant="secondary" disabled>
-                        Next ticket
-                      </Button>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <span className="metadata">
-                      {pendingEpicIssues.length}{" "}
-                      {pendingEpicIssues.length === 1
-                        ? "ticket still needs"
-                        : "tickets still need"}{" "}
-                      answers in this Epic.
-                    </span>
-                    <AppLink
-                      className="button button-secondary"
-                      href={`/issues/${pendingEpicIssues[0]?.id}#questions-heading`}
-                    >
-                      Next unanswered ticket
-                    </AppLink>
-                  </>
-                )}
-              </nav>
-            ) : null}
-            {!currentQuestion ? (
-              <p className="metadata">No questions on this ticket.</p>
-            ) : (
-              <form className="form-stack" onSubmit={saveQuestionAnswer}>
-                <div className="question-navigation">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    disabled={
-                      questionIndex === 0 ||
-                      submitting === "question" ||
-                      recipientDirty
-                    }
-                    onClick={() => setQuestionIndex((current) => current - 1)}
-                  >
-                    Previous
-                  </Button>
-                  <span>
-                    Question {questionIndex + 1} of {questions.length}
-                  </span>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    disabled={
-                      questionIndex === questions.length - 1 ||
-                      recipientDirty ||
-                      submitting === "question"
-                    }
-                    onClick={() => setQuestionIndex((current) => current + 1)}
-                  >
-                    Next
-                  </Button>
-                </div>
-                <QuestionRecipientEditor
-                  key={currentQuestion.id}
-                  issue={issue}
-                  question={currentQuestion}
-                  questions={questions}
-                  canEdit={canEdit && !epic?.archivedAt}
-                  onDirty={setRecipientDirty}
-                  onSaved={(snapshot) => {
-                    mutationEpoch.current += 1;
-                    preservedAnswerId.current = answerDirty
-                      ? currentQuestion.id
-                      : null;
-                    setIssue(snapshot.issue);
-                    setQuestions(snapshot.questions);
-                    setQuestionSummary(snapshot.questionSummary);
-                    setNotice("Question recipient updated");
-                    void refreshActivity();
-                  }}
-                />
-                <fieldset
-                  className="question-fieldset"
-                  disabled={!canEdit || submitting !== null || recipientDirty}
-                >
-                  <legend>{currentQuestion.prompt}</legend>
-                  <div className="recommendation">
-                    <strong>Recommendation</strong>
-                    <p>{currentQuestion.recommendation}</p>
-                  </div>
-                  {currentQuestion.options.map((option) => (
-                    <label className="answer-option" key={option.id}>
-                      <input
-                        type="radio"
-                        name={`answer-${currentQuestion.id}`}
-                        value={option.id}
-                        checked={
-                          answerKind === "option" &&
-                          answerOptionId === option.id
-                        }
-                        onChange={() => {
-                          setAnswerDirty(true);
-                          setAnswerKind("option");
-                          setAnswerOptionId(option.id);
-                        }}
-                      />
-                      <span>
-                        <strong>{option.label}</strong>{" "}
-                        {option.id === currentQuestion.recommendedOptionId ? (
-                          <span className="badge">Recommended</span>
-                        ) : null}
-                        {option.description ? (
-                          <span className="option-description">
-                            {option.description}
-                          </span>
-                        ) : null}
-                      </span>
-                    </label>
-                  ))}
-                  <label className="answer-option">
-                    <input
-                      type="radio"
-                      name={`answer-${currentQuestion.id}`}
-                      value="other"
-                      checked={answerKind === "other"}
-                      onChange={() => {
-                        setAnswerDirty(true);
-                        setAnswerKind("other");
-                      }}
-                    />
-                    <span>
-                      <strong>Other</strong>
-                    </span>
-                  </label>
-                  {answerKind === "other" ? (
-                    <Field label="Your answer" htmlFor="other-answer" required>
-                      <TextArea
-                        id="other-answer"
-                        required
-                        maxLength={5000}
-                        value={answerOtherText}
-                        onChange={(event) => {
-                          setAnswerDirty(true);
-                          setAnswerOtherText(event.currentTarget.value);
-                        }}
-                      />
-                    </Field>
-                  ) : null}
-                </fieldset>
-                {questionError ? (
-                  <StatusBanner error focus>
-                    {questionError}
-                  </StatusBanner>
-                ) : null}
-                <div className="inline-actions">
-                  {canEdit ? (
-                    <Button
-                      type="submit"
-                      disabled={
-                        !online || submitting !== null || recipientDirty
-                      }
-                    >
-                      {submitting === "question"
-                        ? "Saving…"
-                        : currentQuestion.answeredAt
-                          ? "Change answer"
-                          : "Save answer"}
-                    </Button>
-                  ) : null}
-                  {currentQuestion.answeredAt ? (
-                    <span className="metadata">
-                      Answered {formatTimestamp(currentQuestion.answeredAt)}
-                    </span>
-                  ) : null}
-                </div>
-              </form>
-            )}
-          </section>
-          <section className="detail-panel" aria-labelledby="comments-heading">
-            <h2 id="comments-heading">Comments</h2>
-            {comments.length === 0 ? (
-              <p className="metadata">No comments yet.</p>
-            ) : (
-              <ol className="comment-list">
-                {newestCommentsFirst.map((comment) => (
-                  <li
-                    className={`comment-item comment-${comment.authorType}`}
-                    key={comment.id}
-                  >
-                    <div className="activity-identity">
-                      <Badge>
-                        {commentAuthorLabel(comment, session.user.id)}
-                      </Badge>
-                      <Badge>{comment.authorType}</Badge>
-                      <Badge>{sourceLabels[comment.source]}</Badge>
-                    </div>
-                    <p className="description">{comment.body}</p>
-                    {comment.mentions?.length ? (
-                      <p className="mention-tags">
-                        {comment.mentions.map((person) => (
-                          <span className="badge" key={person.id}>
-                            @{person.name}
-                          </span>
-                        ))}
-                      </p>
-                    ) : null}
-                    <time
-                      className="activity-meta"
-                      dateTime={comment.createdAt}
-                    >
-                      {formatTimestamp(comment.createdAt)}
-                    </time>
-                  </li>
-                ))}
-              </ol>
-            )}
-            {canEdit ? (
-              <form className="form-stack" onSubmit={addComment}>
-                <Field label="Add comment" htmlFor="comment-body" required>
-                  <TextArea
-                    id="comment-body"
-                    disabled={submitting !== null}
-                    required
-                    maxLength={20000}
-                    value={commentBody}
-                    onChange={(event) =>
-                      setCommentBody(event.currentTarget.value)
-                    }
-                  />
-                </Field>
-                <details>
-                  <summary>Mention people ({mentions.length}/8)</summary>
-                  <p className="metadata">
-                    Choose project collaborators to notify. Typing a name in the
-                    comment alone does not notify or grant access.
-                  </p>
-                  <ul className="mention-list">
-                    {mentions.map((person) => (
-                      <li key={person.id}>
-                        @{person.name}
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          disabled={submitting !== null}
-                          onClick={() =>
-                            setMentions((current) =>
-                              current.filter((p) => p.id !== person.id),
-                            )
-                          }
-                        >
-                          Remove mention {person.name}
-                        </Button>
-                      </li>
-                    ))}
-                  </ul>
-                  <CollaboratorPicker
-                    projectId={issue.projectId}
-                    disabled={submitting !== null || mentions.length >= 8}
-                    onChoose={(person) =>
-                      setMentions((current) =>
-                        current.some((p) => p.id === person.id)
-                          ? current
-                          : [...current, { id: person.id, name: person.name }],
-                      )
-                    }
-                  />
-                </details>
-                <Button type="submit" disabled={!online || submitting !== null}>
-                  {submitting === "comment" ? "Adding…" : "Add comment"}
-                </Button>
-              </form>
-            ) : null}
-          </section>
-          <section
-            className="detail-panel"
-            aria-labelledby="repository-heading"
-          >
-            <h2 id="repository-heading">Repository context</h2>
-            {project.repositoryUrl ? (
-              <p className="mono">{project.repositoryUrl}</p>
-            ) : (
-              <p className="metadata">No repository context</p>
-            )}
-            {project.defaultBranch ? (
-              <p>
-                <strong>Default branch:</strong>{" "}
-                <span className="mono">{project.defaultBranch}</span>
-              </p>
-            ) : null}
-            {project.repositorySubdirectory ? (
-              <p>
-                <strong>Subdirectory:</strong>{" "}
-                <span className="mono">{project.repositorySubdirectory}</span>
-              </p>
-            ) : null}
-            <p className="metadata">
-              Issopen stores this context but does not access the repository.
-            </p>
-          </section>
-          <section
-            className="detail-panel"
-            aria-labelledby="code-results-heading"
-          >
-            <h2 id="code-results-heading">Code results</h2>
-            {links.length === 0 ? (
-              <p>No code results linked.</p>
-            ) : (
-              <ul className="code-links">
-                {links.map((link) => (
-                  <li className="code-link" key={link.id}>
-                    <Badge>{codeLinkLabels[link.type]}</Badge>
-                    <a
-                      className="mono"
-                      href={link.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {link.url}
-                      <span className="external-note">
-                        {" "}
-                        (opens in a new tab)
-                      </span>
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            )}
-            {canEdit ? (
-              <form className="form-stack" onSubmit={addLink}>
-                <Field label="Link type" htmlFor="link-type">
-                  <Select
-                    id="link-type"
-                    disabled={submitting !== null}
-                    value={linkType}
-                    onChange={(event) =>
-                      setLinkType(event.currentTarget.value as CodeLinkType)
-                    }
-                  >
-                    {codeLinkTypes.map((type) => (
-                      <option key={type} value={type}>
-                        {codeLinkLabels[type]}
-                      </option>
-                    ))}
-                  </Select>
-                </Field>
-                <Field label="URL" htmlFor="link-url" required>
-                  <TextInput
-                    id="link-url"
-                    disabled={submitting !== null}
-                    className="mono"
-                    type="url"
-                    required
-                    maxLength={2048}
-                    value={linkUrl}
-                    onChange={(event) => setLinkUrl(event.currentTarget.value)}
-                  />
-                </Field>
-                <Button type="submit" disabled={!online || submitting !== null}>
-                  {submitting === "link" ? "Adding…" : "Add code link"}
-                </Button>
-              </form>
-            ) : null}
-          </section>
+          <QuestionsPanel
+            issue={issue}
+            epic={epic}
+            questions={questions}
+            summary={questionSummary}
+            currentQuestion={currentQuestion}
+            questionIndex={questionIndex}
+            pendingEpicIssues={pendingEpicIssues}
+            currentEpicQuestionIndex={currentEpicQuestionIndex}
+            previousEpicQuestionIssue={previousEpicQuestionIssue ?? null}
+            nextEpicQuestionIssue={nextEpicQuestionIssue ?? null}
+            answerKind={answerKind}
+            answerOptionId={answerOptionId}
+            answerOtherText={answerOtherText}
+            questionError={questionError}
+            recipientDirty={recipientDirty}
+            canEdit={canEdit}
+            online={online}
+            submitting={submitting}
+            onQuestionIndexChange={setQuestionIndex}
+            onRecipientDirty={setRecipientDirty}
+            onRecipientSaved={(snapshot) => {
+              mutationEpoch.current += 1;
+              preservedAnswerId.current = answerDirty
+                ? (currentQuestion?.id ?? null)
+                : null;
+              setIssue(snapshot.issue);
+              setQuestions(snapshot.questions);
+              setQuestionSummary(snapshot.questionSummary);
+              setNotice("Question recipient updated");
+              void refreshActivity();
+            }}
+            onOptionChange={(optionId) => {
+              setAnswerDirty(true);
+              setAnswerKind("option");
+              setAnswerOptionId(optionId);
+            }}
+            onOtherSelect={() => {
+              setAnswerDirty(true);
+              setAnswerKind("other");
+            }}
+            onOtherTextChange={(text) => {
+              setAnswerDirty(true);
+              setAnswerOtherText(text);
+            }}
+            onSubmit={saveQuestionAnswer}
+          />
+          <CommentsPanel
+            comments={comments}
+            body={commentBody}
+            mentions={mentions}
+            projectId={issue.projectId}
+            viewerId={session.user.id}
+            canEdit={canEdit}
+            online={online}
+            submitting={submitting}
+            onBodyChange={setCommentBody}
+            onMentionsChange={setMentions}
+            onSubmit={addComment}
+          />
+          <RepositoryPanel project={project} />
+          <CodeResultsPanel
+            links={links}
+            linkType={linkType}
+            linkUrl={linkUrl}
+            canEdit={canEdit}
+            online={online}
+            submitting={submitting}
+            onTypeChange={setLinkType}
+            onUrlChange={setLinkUrl}
+            onSubmit={addLink}
+          />
           {canEdit && issue.status === "ready_for_review" ? (
-            <section className="review-panel" aria-labelledby="review-heading">
-              <h2 id="review-heading">Review result</h2>
-              {links.length === 0 ? (
-                <StatusBanner>No code result is linked yet.</StatusBanner>
-              ) : (
-                <p>
-                  Review the linked result before choosing an outcome. Issopen
-                  does not verify, merge, or deploy it.
-                </p>
-              )}
-              <div className="inline-actions">
-                <Button
-                  type="button"
-                  disabled={!online || Boolean(submitting)}
-                  onClick={() => void review("accept")}
-                >
-                  {submitting === "accept" ? "Accepting…" : "Accept result"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  disabled={!online || Boolean(submitting)}
-                  onClick={() => setRequestingChanges(true)}
-                >
-                  Request changes
-                </Button>
-              </div>
-              {requestingChanges ? (
-                <form
-                  className="form-stack"
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    void review("request");
-                  }}
-                >
-                  <Field label="Reason" htmlFor="review-reason" required>
-                    <TextArea
-                      id="review-reason"
-                      disabled={submitting !== null}
-                      required
-                      maxLength={1000}
-                      value={reason}
-                      onChange={(event) => setReason(event.currentTarget.value)}
-                    />
-                  </Field>
-                  <div className="inline-actions">
-                    <Button
-                      type="submit"
-                      disabled={!online || submitting !== null}
-                    >
-                      {submitting === "request"
-                        ? "Requesting…"
-                        : "Request changes"}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      disabled={submitting !== null}
-                      onClick={() => {
-                        setRequestingChanges(false);
-                        setReason("");
-                      }}
-                    >
-                      Keep reviewing
-                    </Button>
-                  </div>
-                </form>
-              ) : null}
-            </section>
+            <ReviewPanel
+              linkCount={links.length}
+              online={online}
+              submitting={submitting}
+              requestingChanges={requestingChanges}
+              reason={reason}
+              onAccept={() => void review("accept")}
+              onRequestStart={() => setRequestingChanges(true)}
+              onReasonChange={setReason}
+              onRequestSubmit={(event) => {
+                event.preventDefault();
+                void review("request");
+              }}
+              onCancelRequest={() => {
+                setRequestingChanges(false);
+                setReason("");
+              }}
+            />
           ) : null}
         </div>
-        <aside className="activity-panel" aria-labelledby="activity-heading">
-          <h2 id="activity-heading">Activity</h2>
-          {activity.length === 0 ? (
-            <p className="metadata">No activity yet</p>
-          ) : (
-            <ol className="activity-list">
-              {newestActivityFirst.map((item) => (
-                <li className="activity-item" key={item.id}>
-                  <p>{issueActivitySummary(item.summary, issue)}</p>
-                  <div className="activity-identity">
-                    <Badge>{actorLabel(item, session.user.id)}</Badge>
-                    <Badge>{item.actorType}</Badge>
-                    <Badge>{sourceLabels[item.source]}</Badge>
-                  </div>
-                  <time className="activity-meta" dateTime={item.createdAt}>
-                    {formatTimestamp(item.createdAt)}
-                  </time>
-                </li>
-              ))}
-            </ol>
-          )}
-        </aside>
+        <ActivityPanel
+          activity={activity}
+          issue={issue}
+          viewerId={session.user.id}
+        />
       </div>
       <p className="live-region" aria-live="polite" aria-atomic="true">
         {announcement}
