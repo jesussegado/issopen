@@ -12,6 +12,18 @@ una respuesta válida, no tiene claim ajeno y todas sus dependencias están
 satisfechas. Conserva cada motivo de exclusión, incluidos ciclo, referencia rota,
 estado, pregunta y claim. Un inventario vacío es un resultado válido.
 
+Para completar el plan usa `scripts/epic-planning.mjs`. Asigna a cada resultado
+una clave semántica estable: no identifiques duplicados sólo por el título. Marca
+la cobertura existente como completa o parcial con evidencia; reutiliza la
+completa, añade el plan canónico al final de la parcial sin borrar texto humano y
+crea en Backlog sólo el resultado ausente. Las descripciones creadas incluyen un
+marcador de intención y hash del plan para que repetir el encargo sea idempotente.
+Antes de **cada** escritura relee el inventario y exige el mismo fingerprint; una
+edición u otro planificador invalidan el borrador y obligan a fusionar. Relee tras
+cada escritura. Las dependencias se expresan por intención durante el borrador y
+se sustituyen por UUID reales después de crear los tickets; rechaza ciclos y
+referencias desconocidas.
+
 Antes de modificar código, configuración, documentación o despliegue debe existir
 un ticket equivalente dentro del Epic activo. Reutilízalo o planifica el faltante;
 las consultas y explicaciones no crean tickets. Si Issopen no está disponible,
