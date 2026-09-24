@@ -150,6 +150,19 @@ a {
   color: var(--text);
 }
 
+.github-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.github-link svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  fill: currentColor;
+}
+
 .header-cta {
   margin-left: 8px;
 }
