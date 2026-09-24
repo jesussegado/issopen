@@ -1,6 +1,6 @@
 ---
 name: issopen
-description: Consultar Epics y tickets de Issopen, planear mejoras con preguntas y ejecutar trabajo solicitado usando su MCP. Usar al pedir trabajo o seguimiento en Issopen, también desde un repositorio asociado; no redirigir tareas ajenas ni implementar por una petición de consulta.
+description: Consultar, planear y ejecutar tickets o un Epic explícito de Issopen mediante MCP, con preguntas, claims y revisión verificable. Usar al pedir trabajo o seguimiento en Issopen, también desde un repositorio asociado; no redirigir tareas ajenas ni implementar por una petición de consulta.
 ---
 
 # Issopen
@@ -35,6 +35,10 @@ prompt; debe llegar por el secret store o entorno separado aprobado por el usuar
   (`ready_for_review`); con `false` finaliza en Done, que requiere `issues:close`.
   Sin ese permiso deja un bloqueo atribuido y no declara el trabajo terminado.
   Sigue [ejecución y entrega](references/execution.md), incluida la liberación del claim.
+- **Epic continuo / work-epic** («trabaja este Epic hasta que no quede trabajo
+  elegible»): exige una referencia explícita al Epic, fija proyecto/Epic/revisión
+  durante la sesión y combina planificación con ejecución ticket-first. Lee
+  [contrato work-epic](references/work-epic.md) antes de cualquier escritura.
 
 Una petición que sólo dice «continúa» conserva el modo y alcance de la tarea
 previa; si éstos se han perdido, acláralos. No transforma planificación en código.
