@@ -40,3 +40,12 @@ Tras cada entrega relee el servidor. Continúa con trabajo independiente elegibl
 y termina cuando no quede ninguno, falte autoridad o decisión imprescindible,
 exista un conflicto/error no transitorio o el estado no progrese. Publica un
 resumen de completados, creados, bloqueados y pendientes, y no abandones claims.
+
+Usa `scripts/epic-execution.mjs` para seleccionar y avanzar un ticket. El orden
+es prioridad y número, siempre limitado a `eligibleIds`. Reclama y confirma el
+claim propio antes de In Progress. Tras implementar, registra una verificación
+real: si falla, añade una sola evidencia y conserva In Progress para el flujo de
+bloqueos; si pasa, enlaza código, comenta evidencia, aplica exactamente
+`project.workflow.completionStatus`, libera el claim y relee todo el Epic. Cada
+paso inspecciona el detalle actual y reconoce efectos ya aplicados, de modo que
+una respuesta perdida no repite enlaces, comentarios ni transición.

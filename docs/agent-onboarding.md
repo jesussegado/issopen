@@ -108,6 +108,13 @@ are ready; creation alone does not authorize implementation. If the MCP becomes
 unavailable, the agent stops the change and may retain only a secret-free local
 checkpoint. It must not silently continue outside Issopen.
 
+For each eligible ticket the agent confirms its own claim before moving to In
+Progress, verifies the result, links real code evidence, follows
+`project.workflow.completionStatus`, releases the claim and rereads the Epic.
+A failed verification remains In Progress with one attributed checkpoint and is
+never reported as completed. Replayed operations must reuse the same idempotency
+key and recognize evidence already stored by the server.
+
 ```text
 Use $issopen in work-epic mode for this explicit Epic. Reconcile missing tickets
 first, execute only eligible Ready work and continue until no eligible work

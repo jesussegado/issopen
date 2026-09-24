@@ -196,6 +196,8 @@ export function buildEpicInventory({
 
       return {
         id: issue.id,
+        projectId: issue.projectId,
+        epicId: issue.epicId,
         number: issue.number,
         version: issue.version,
         status: issue.status,
