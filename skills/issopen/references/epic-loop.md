@@ -49,3 +49,11 @@ bloqueos; si pasa, enlaza código, comenta evidencia, aplica exactamente
 `project.workflow.completionStatus`, libera el claim y relee todo el Epic. Cada
 paso inspecciona el detalle actual y reconoce efectos ya aplicados, de modo que
 una respuesta perdida no repite enlaces, comentarios ni transición.
+
+Cuando aparezca un bloqueo usa `scripts/epic-blockers.mjs`. Una decisión humana
+genera una pregunta bloqueante con recomendación y 2-3 opciones; dependencia,
+claim ajeno, falta de autoridad o problema técnico generan un comentario con
+diagnóstico, recomendación y condición de desbloqueo. Relee antes de publicar
+para no duplicar la misma pregunta/comentario. Después del checkpoint libera
+sólo el claim propio y continúa otro `eligibleId` independiente. No respondas la
+pregunta, no inventes estado Blocked y no esperes mediante polling.

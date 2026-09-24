@@ -115,6 +115,13 @@ A failed verification remains In Progress with one attributed checkpoint and is
 never reported as completed. Replayed operations must reuse the same idempotency
 key and recognize evidence already stored by the server.
 
+A missing human decision becomes one blocking question with a recommendation
+and bounded options, which drives the warning/count in Issopen. Technical,
+dependency and authorization blockers receive one attributed diagnostic with an
+explicit unblock condition. The agent releases only its own paused claim and
+continues independent eligible tickets; it never answers for the user, creates a
+synthetic Blocked column or polls for a response.
+
 ```text
 Use $issopen in work-epic mode for this explicit Epic. Reconcile missing tickets
 first, execute only eligible Ready work and continue until no eligible work
