@@ -31,8 +31,10 @@
 </p>
 
 <p align="center">
-  <img src="docs/assets/readme/issopen-board.png" width="100%" alt="Issopen project board with Epics and ticket workflow">
+  <img src="docs/assets/readme/issopen-board.png" width="100%" alt="Illustrative Issopen board for The One-Prompt App, with tickets about lost AI chat context">
 </p>
+
+<p align="center"><sub>Illustrative demo using a fictional project.</sub></p>
 
 ## Your issue tracker was built for people. Your next teammate isn't.
 
@@ -65,7 +67,7 @@ and create the ticket without breaking your flow. Images stay in a local draft
 until you explicitly send them.
 
 <p align="center">
-  <img src="docs/assets/readme/issopen-extension.png" width="760" alt="Issopen Chrome extension creating a ticket from an image">
+  <img src="docs/assets/readme/issopen-extension.png" width="760" alt="Illustrative Issopen Chrome extension drafting an issue after an AI forgot a decision from chat">
 </p>
 
 The extension is designed for visual QA, product feedback, audits and those
