@@ -4,8 +4,8 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Epic 10 ticket 131 deployed and ready for human review; starting 132
-last_updated: "2026-09-23T15:43:00Z"
-last_activity: 2026-09-23
+last_updated: "2026-09-24T16:40:53Z"
+last_activity: 2026-09-24
 progress:
   total_phases: 9
   completed_phases: 0
@@ -480,7 +480,7 @@ retained for rollback. No server/GitOps change. Parallel creation buttons
 Phase: 1 (Private Single-Owner Dogfooding MVP) — EXECUTING
 Plan: 5 of 5
 Status: Epic 3 planning delivered; awaiting human decisions and implementation request
-Last activity: 2026-09-17 - Completed quick260917-onb: secret-free agent onboarding, pinned skill 0.2.0 and personalized MCP setup deployed and verified in production. Roadmap phase progress unchanged.
+Last activity: 2026-09-24 - Completed quick260924-pel: English-only landing screenshots, deployed and verified; app and extension runtime unchanged. Roadmap phase progress unchanged.
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -606,6 +606,7 @@ Decisions are logged in PROJECT.md Key Decisions table. Current roadmap-level st
 
 | ID | Description | Date | Commits | Status | Directory |
 | --- | --- | --- | --- | --- | --- |
+| 260924-pel | Capturas de la landing sólo en inglés | 2026-09-24 | Fuente `1a3a8a0`; GitOps `c0c2dbb0` | Producción Synced/Healthy, 2/2; hashes públicos verificados | [260924-pel](./quick/260924-pel-translate-issopen-landing-copy-to-englis/) |
 | 260924-fav | Reutilizar el favicon blanco de Issopen en la landing | 2026-09-24 | Fuente `00ed55e` | Build y hash del asset verificados | — |
 | 260923-rf8 | Ticket 129: modularizar registro MCP por familias | 2026-09-23 | Fuente `e4e7499`, test `9c66447`; GitOps `4004f732` | Catálogo productivo de 18 tools idéntico; Synced/Healthy; ticket Ready for Human Review v7 sin claim | [260923-rf8](./quick/260923-rf8-ticket-129-modularizar-registro-mcp/) |
 | 260923-rf7 | Ticket 127: dividir TrackerService por capacidades | 2026-09-23 | Fuente `c99686e`; GitOps `f77145cd` | Gates completos y despliegue Synced/Healthy PASS; ticket Ready for Human Review v7 sin claim | [260923-rf7](./quick/260923-rf7-ticket-127-dividir-tracker-capacidades/) |
