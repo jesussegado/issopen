@@ -27,6 +27,18 @@ haya conflicto, usa este orden:
 4. `init-project.md`;
 5. convenciones del monorepo.
 
+### Sesiones Issopen `work-epic`: ticket primero
+
+Cuando el propietario active explícitamente el modo `work-epic`, todo cambio de
+código, configuración, documentación o despliegue debe reutilizar o crear primero
+un ticket dentro del Epic activo. No editar archivos ni estado externo hasta que
+el ticket tenga UUID confirmado, plan suficiente, respuestas vigentes, estado
+Ready y elegibilidad verificada mediante el MCP. Las consultas, explicaciones y
+lecturas no crean tickets. Si el MCP no está disponible, detener el cambio y dejar
+sólo un checkpoint local sin secretos; nunca continuar silenciosamente fuera del
+tracker. Una petición repetida reutiliza el mismo ticket por intención semántica,
+no crea otro por una variación del título.
+
 ## Estado actual
 
 23/09 ticket140: todas las pantallas de `App.tsx` se cargan con `React.lazy` y

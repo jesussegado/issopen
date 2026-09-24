@@ -67,6 +67,7 @@ it("publishes a session-free agent guide with a verified skill release", async (
   ).toBeInTheDocument();
   expect(screen.getByText(/hasta 10 claves activas/)).toBeInTheDocument();
   expect(screen.getByText(/Primary/)).toBeInTheDocument();
+  expect(screen.getByText("Trabajar un Epic")).toBeInTheDocument();
   await user.click(screen.getByRole("button", { name: "Copiar instalación" }));
   expect(writeText).toHaveBeenCalledWith(expect.stringContaining("sha256sum"));
   expect(writeText.mock.calls.at(-1)?.[0]).not.toMatch(/issopen_pat_/);

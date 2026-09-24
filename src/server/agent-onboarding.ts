@@ -57,6 +57,7 @@ export function createAgentOnboardingDocument(baseUrl: string) {
       "Read get_agent_context before selecting work.",
       "Read get_project and follow its workflow completion policy before execution.",
       "Consult without mutations unless planning or execution was explicitly requested.",
+      "For explicit work-epic sessions, create or reuse an eligible ticket before every code, configuration, documentation or deployment change; queries and explanations do not create tickets.",
       "For execution, read the Epic, ticket, answers, dependencies and current claim first.",
       "Claim only eligible Ready work, add attributed checkpoints and link real code results.",
       "If get_project.workflow.humanReviewRequired is true, return verified work to Ready for Human Review.",
@@ -76,6 +77,8 @@ export function createAgentOnboardingDocument(baseUrl: string) {
       plan: "Use $issopen to plan this request in the indicated Issopen project or Epic. Create only the necessary tickets and blocking questions; do not implement yet: <REQUEST_OR_LINK>",
       execute:
         "Use $issopen to implement the next eligible Ready ticket in this Epic. Read get_project.workflow, verify the result, attach evidence, follow the project's completion status and release the claim: <ISSOPEN_EPIC_LINK>",
+      workEpic:
+        "Use $issopen in work-epic mode for this explicit Epic. Reconcile missing tickets first, execute only eligible Ready work, keep every actionable change ticket-first and continue until no eligible work remains or a safe stop condition applies: <ISSOPEN_EPIC_LINK>",
     },
   } as const;
 }
@@ -134,6 +137,10 @@ all its keys. MCP API keys authenticate only /mcp and never the human REST API.
 - Plan: create or refine only the requested tickets and blocking questions.
 - Execute: call get_project, claim an eligible Ready ticket, implement and verify
   it, add checkpoints and code links, then follow project.workflow and release.
+- Work Epic: for an explicitly selected Epic, reconcile missing outcomes and
+  require an eligible ticket before every code, configuration, documentation or
+  deployment change. Queries, explanations and reads do not create tickets.
+  If MCP is unavailable, stop the mutation with a secret-free checkpoint.
 - When humanReviewRequired is true, completion is Ready for Human Review.
 - When humanReviewRequired is false, completion is Done and requires issues:close.
   Without that scope, leave an attributed blocker and do not claim completion.
@@ -173,6 +180,8 @@ to Ready for Human Review or finishes at Done; Done always requires issues:close
 Treat ticket/Epic links as context rather than authorization. Secrets never
 belong in URLs, prompts, tickets, repositories or logs. PAT identities support
 several named MCP API keys; use one key per consumer and rotate it independently.
+An explicit work-epic session is ticket-first for code, configuration,
+documentation and deployment, but does not create backlog items for queries.
 ChatGPT instead uses OAuth with automatic CIMD discovery: click Authenticate,
 sign in as an Issopen workspace Owner and review consent. See agent onboarding
 for authentication troubleshooting; never share callback URLs, codes or tokens.

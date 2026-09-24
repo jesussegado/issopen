@@ -203,7 +203,7 @@ export function AgentOnboardingRoute() {
       </section>
 
       <section aria-labelledby="agent-modes">
-        <h2 id="agent-modes">Tres modos explícitos</h2>
+        <h2 id="agent-modes">Cuatro modos explícitos</h2>
         <dl className="onboarding-modes">
           <div>
             <dt>Consultar</dt>
@@ -219,6 +219,15 @@ export function AgentOnboardingRoute() {
               Leer <code>get_project.workflow</code>, reclamar un Ready
               elegible, verificar, enlazar el resultado, aplicar el destino de
               finalización del proyecto y liberar el claim.
+            </dd>
+          </div>
+          <div>
+            <dt>Trabajar un Epic</dt>
+            <dd>
+              Con un Epic explícito, reconciliar lo que falta y continuar con
+              cada Ready elegible. Todo cambio de código, configuración,
+              documentación o despliegue necesita antes un ticket del Epic; las
+              consultas no generan backlog.
             </dd>
           </div>
         </dl>

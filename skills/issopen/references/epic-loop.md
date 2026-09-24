@@ -29,6 +29,13 @@ un ticket equivalente dentro del Epic activo. Reutilízalo o planifica el faltan
 las consultas y explicaciones no crean tickets. Si Issopen no está disponible,
 detén el cambio y conserva sólo un checkpoint local sin secretos.
 
+Aplica `scripts/ticket-first.mjs` antes de tocar archivos o estado externo. Un
+ticket recién creado permanece en Backlog: no implementes hasta que el inventario
+releído lo declare Ready y elegible. Conserva su UUID en la sesión para que una
+petición repetida reutilice el mismo resultado. El guard sólo permite continuar
+con `proceed_with_ticket`; `reconcile_ticket`, `prepare_ticket` y
+`checkpoint_and_stop` son condiciones de pausa, no permisos implícitos.
+
 Tras cada entrega relee el servidor. Continúa con trabajo independiente elegible
 y termina cuando no quede ninguno, falte autoridad o decisión imprescindible,
 exista un conflicto/error no transitorio o el estado no progrese. Publica un

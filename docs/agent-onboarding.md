@@ -94,6 +94,26 @@ The actual value is set separately in the process environment or secret store;
 it is never part of that command or `config.toml`. Restart the client after
 installing/configuring, then call `get_agent_context`.
 
+### Continuous Epic sessions
+
+Use `work-epic` only with an explicitly selected Epic. The skill reads every
+page, confirms ticket details, reconciles missing results by semantic intent and
+executes only eligible Ready work. Within that mode, every change to code,
+configuration, documentation or deployment must have a confirmed ticket in the
+active Epic before any edit. A query, explanation or read-only inspection does
+not create a ticket.
+
+A newly created ticket remains Backlog until its plan, decisions and dependencies
+are ready; creation alone does not authorize implementation. If the MCP becomes
+unavailable, the agent stops the change and may retain only a secret-free local
+checkpoint. It must not silently continue outside Issopen.
+
+```text
+Use $issopen in work-epic mode for this explicit Epic. Reconcile missing tickets
+first, execute only eligible Ready work and continue until no eligible work
+remains or a safe stop condition applies: <ISSOPEN_EPIC_LINK>
+```
+
 ChatGPT uses the same MCP URL with OAuth 2.1 and consent. It does not receive or
 reuse the Codex PAT.
 
