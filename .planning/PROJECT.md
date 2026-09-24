@@ -127,8 +127,9 @@ dentro de un único flujo trazable.
 - **Source available**: el código público usa PolyForm Noncommercial 1.0.0;
   permite usar, modificar y redistribuir con fines no comerciales. El uso
   comercial y el futuro servicio gestionado requieren una licencia separada.
-  No aceptar contribuciones de código hasta publicar términos que preserven la
-  capacidad de licenciamiento comercial.
+  Se aceptan contribuciones mediante pull request bajo `CONTRIBUTING.md`: el
+  autor conserva su copyright y concede al titular los derechos adicionales
+  necesarios para preservar la capacidad de licenciamiento comercial.
 - **Modelo de IA**: Issopen coordina agentes externos mediante MCP y BYO-AI — no
   ejecuta ni financia inferencia en el MVP.
 - **Primer corte**: la fase 1 es privada y single-owner, pero ofrece el bucle

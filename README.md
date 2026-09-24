@@ -18,9 +18,11 @@ the project owner. Contact `serviciosegado@gmail.com` for commercial licensing.
 This is not an OSI-approved open-source license because it restricts commercial
 fields of use.
 
-Code contributions are not accepted yet. The project will publish contribution
-terms before accepting third-party code so that future commercial licensing
-remains possible. Issues and non-code feedback are welcome.
+Code contributions are welcome through GitHub pull requests. Contributors keep
+the copyright in their work and agree to the additional license grant described
+in [CONTRIBUTING.md](CONTRIBUTING.md), which lets the project integrate the
+contribution while preserving future commercial licensing. Issues and non-code
+feedback are welcome too.
 
 ## Current scope
 

@@ -670,8 +670,9 @@ No ejecutes una fase sin contexto, plan verificable y criterios de aceptación.
   contrato probado frente a páginas hostiles.
 - Validar semántica y utilidad de las auditorías con usuarios en la fase 7.
 - La decisión de publicación del 24/09/2026 sustituye el objetivo AGPLv3 por
-  PolyForm Noncommercial 1.0.0. Antes de aceptar código externo hay que
-  publicar términos de contribución que preserven el licenciamiento comercial.
+  PolyForm Noncommercial 1.0.0. Se aceptan pull requests conforme a
+  `CONTRIBUTING.md`: cada autor conserva su copyright y concede al titular los
+  derechos adicionales necesarios para preservar el licenciamiento comercial.
 - Medir costes reales antes de publicar cuotas de Cloud Free en la fase 9.
 
 ## Arquitectura planificada y estado de implementación
@@ -976,8 +977,9 @@ dentro de un único flujo trazable.
 - **Source available**: el código público usa PolyForm Noncommercial 1.0.0;
   permite usar, modificar y redistribuir con fines no comerciales. El uso
   comercial y el futuro servicio gestionado requieren una licencia separada.
-  No aceptar contribuciones de código hasta publicar términos que preserven la
-  capacidad de licenciamiento comercial.
+  Se aceptan contribuciones mediante pull request bajo `CONTRIBUTING.md`: el
+  autor conserva su copyright y concede al titular los derechos adicionales
+  necesarios para preservar la capacidad de licenciamiento comercial.
 - **Modelo de IA**: Issopen coordina agentes externos mediante MCP y BYO-AI — no
   ejecuta ni financia inferencia en el MVP.
 - **Autoprogramación**: significa dogfooding agentico gobernado — Issopen
