@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="Issopen is the agent-native issue tracker where humans and AI agents plan, build, ask questions and ship from the same backlog."
+    >
+    <meta name="theme-color" content="#07110e">
+    <link rel="canonical" href="https://issopen.com/">
+    <link rel="icon" type="image/png" href="assets/issopen-mark.png">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Issopen">
+    <meta property="og:url" content="https://issopen.com/">
+    <meta property="og:title" content="Issopen — Give your AI agent a real backlog">
+    <meta
+      property="og:description"
+      content="Stop managing agents in chat. Give them structured work, visible questions and a human review gate."
+    >
+    <meta property="og:image" content="https://issopen.com/assets/issopen-board.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Issopen — Give your AI agent a real backlog">
+    <meta
+      name="twitter:description"
+      content="The shared workspace where humans decide and AI agents deliver."
+    >
+    <meta name="twitter:image" content="https://issopen.com/assets/issopen-board.png">
+    <title>Issopen — Give your AI agent a real backlog</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="nav-shell">
+        <a class="brand" href="/" aria-label="Issopen home">
+          <img src="assets/issopen-mark.png" width="34" height="34" alt="">
+          <span>Issopen</span>
+        </a>
+
+        <nav class="desktop-nav" aria-label="Main navigation">
+          <a href="#why">Why Issopen</a>
+          <a href="#workflow">How it works</a>
+          <a href="#control">Control</a>
+          <a href="#faq">FAQ</a>
+          <a href="https://github.com/jesussegado/issopen">GitHub</a>
+        </nav>
+
+        <a class="button button-small header-cta" href="https://app.issopen.com">
+          Open the app
+          <span aria-hidden="true">↗</span>
+        </a>
+
+        <details class="mobile-menu">
+          <summary aria-label="Open navigation">Menu</summary>
+          <nav aria-label="Mobile navigation">
+            <a href="#why">Why Issopen</a>
+            <a href="#workflow">How it works</a>
+            <a href="#control">Control</a>
+            <a href="#faq">FAQ</a>
+            <a href="https://github.com/jesussegado/issopen">GitHub</a>
+            <a href="https://app.issopen.com">Open the app ↗</a>
+          </nav>
+        </details>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="hero">
+        <div class="hero-grid" aria-hidden="true"></div>
+        <div class="hero-glow hero-glow-one" aria-hidden="true"></div>
+        <div class="hero-glow hero-glow-two" aria-hidden="true"></div>
+
+        <div class="container hero-copy">
+          <p class="eyebrow">
+            <span class="status-dot" aria-hidden="true"></span>
+            The agent-native issue tracker
+          </p>
+          <h1>
+            Your AI agent is ready to work.
+            <span>Stop managing it in a chat.</span>
+          </h1>
+          <p class="hero-lede">
+            Give it an Epic. Issopen turns the plan into a shared queue, lets
+            agents claim and complete work, pauses for your decisions and brings
+            every result back for human review.
+          </p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="https://app.issopen.com">
+              Give your agent a real backlog
+              <span aria-hidden="true">→</span>
+            </a>
+            <a class="button button-ghost" href="#workflow">
+              See the workflow
+              <span aria-hidden="true">↓</span>
+            </a>
+          </div>
+          <p class="hero-note">
+            MCP-native <span class="separator">·</span> Human-reviewed
+            <span class="separator">·</span> Self-hostable
+          </p>
+        </div>
+
+        <div class="container product-stage">
+          <div class="agent-orbit orbit-one" aria-hidden="true"></div>
+          <div class="agent-orbit orbit-two" aria-hidden="true"></div>
+
+          <div class="floating-card floating-card-agent">
+            <span class="floating-icon">⌁</span>
+            <span>
+              <strong>Codex claimed 42</strong>
+              <small>Working from the approved plan</small>
+            </span>
+          </div>
+
+          <div class="floating-card floating-card-review">
+            <span class="floating-icon">✓</span>
+            <span>
+              <strong>Ready for your review</strong>
+              <small>Commit and evidence attached</small>
+            </span>
+          </div>
+
+          <div class="product-window">
+            <div class="window-bar">
+              <span class="window-dots" aria-hidden="true">
+                <i></i><i></i><i></i>
+              </span>
+              <span class="window-address">app.issopen.com</span>
+              <span class="window-live">Agent online</span>
+            </div>
+            <img
+              src="assets/issopen-board.png"
+              width="1440"
+              height="1000"
+              alt="Issopen board showing an Epic and tickets moving through the workflow"
+            >
+          </div>
+        </div>
+      </section>
+
+      <section class="trust-strip" aria-label="Core product promise">
+        <div class="container trust-grid">
+          <p><strong class="trust-title">One backlog</strong><span class="trust-detail">No more context scattered across chats.</span></p>
+          <p><strong class="trust-title">Any MCP agent</strong><span class="trust-detail">Bring Codex, ChatGPT or your own client.</span></p>
+          <p><strong class="trust-title">You stay in control</strong><span class="trust-detail">Agents execute. Humans make the call.</span></p>
+        </div>
+      </section>
+
+      <section class="section problem-section" id="why">
+        <div class="container">
+          <div class="section-intro split-intro">
+            <div>
+              <p class="eyebrow">The chat trap</p>
+              <h2>A chat is a conversation.<br>It is not a workflow.</h2>
+            </div>
+            <p class="section-lede">
+              Every session starts with another explanation. Decisions vanish
+              into scrollback. Two agents can unknowingly do the same work.
+              When the answer arrives, nobody knows what was verified.
+            </p>
+          </div>
+
+          <div class="pain-grid">
+            <article class="pain-card">
+              <span class="card-index">01</span>
+              <h3>Context resets</h3>
+              <p>Your agent forgets the plan when the session ends. You become the copy-and-paste layer.</p>
+            </article>
+            <article class="pain-card">
+              <span class="card-index">02</span>
+              <h3>Work stays invisible</h3>
+              <p>No shared queue, no ownership and no reliable answer to “what is the agent doing?”</p>
+            </article>
+            <article class="pain-card">
+              <span class="card-index">03</span>
+              <h3>Questions block everything</h3>
+              <p>One missing decision stalls the whole conversation instead of only the affected ticket.</p>
+            </article>
+            <article class="pain-card pain-card-accent">
+              <span class="card-index">04</span>
+              <h3>Review becomes archaeology</h3>
+              <p>You hunt through messages, branches and screenshots just to understand what changed.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section manifesto" aria-labelledby="manifesto-title">
+        <div class="container manifesto-inner">
+          <p class="eyebrow">The shift is already happening</p>
+          <h2 class="manifesto-copy" id="manifesto-title">
+            The model gap is closing.
+            <span class="manifesto-accent">The workflow gap is not.</span>
+          </h2>
+          <p class="manifesto-support">
+            The teams that move fastest will not be the ones with the longest
+            prompts. They will be the ones whose agents wake up to a clear
+            queue, know when to ask and return work that is ready to review.
+          </p>
+        </div>
+      </section>
+
+      <section class="section workflow-section" id="workflow">
+        <div class="container">
+          <div class="section-intro centered-intro">
+            <p class="eyebrow">From intent to reviewed code</p>
+            <h2>Give your agent a place to work.</h2>
+            <p class="section-lede">
+              Issopen turns autonomy into a visible loop you can trust.
+            </p>
+          </div>
+
+          <ol class="workflow-list">
+            <li class="workflow-step">
+              <div class="step-number">01</div>
+              <div class="step-copy">
+                <p class="step-kicker">You set the direction</p>
+                <h3>Drop an outcome, not a giant prompt.</h3>
+                <p>
+                  Create an Epic, add the tickets you already know and answer
+                  the decisions that shape the work. The plan stays beside the
+                  execution instead of disappearing into a transcript.
+                </p>
+              </div>
+              <div class="step-visual epic-visual" aria-hidden="true">
+                <span class="visual-label">Epic 12</span>
+                <strong>Ship agent onboarding</strong>
+                <div class="progress-track"><i></i></div>
+                <div class="visual-meta"><span>6 of 8 complete</span><span>75%</span></div>
+              </div>
+            </li>
+
+            <li class="workflow-step">
+              <div class="step-number">02</div>
+              <div class="step-copy">
+                <p class="step-kicker">Your agent runs the queue</p>
+                <h3>It claims, builds, verifies and reports.</h3>
+                <p>
+                  Through MCP, the agent sees only the projects and actions you
+                  allowed. It claims one ticket, records progress, links code
+                  and keeps moving through independent work.
+                </p>
+              </div>
+              <div class="step-visual activity-visual" aria-hidden="true">
+                <span class="terminal-top"><i></i><i></i><i></i> agent loop</span>
+                <code><b>✓</b> context synced</code>
+                <code><b>✓</b> ticket 42 claimed</code>
+                <code><b>✓</b> checks passed</code>
+                <code><em>→</em> ready for human review</code>
+              </div>
+            </li>
+
+            <li class="workflow-step">
+              <div class="step-number">03</div>
+              <div class="step-copy">
+                <p class="step-kicker">You keep the final say</p>
+                <h3>Questions and results come back to you.</h3>
+                <p>
+                  When judgment is required, Issopen shows a warning, a focused
+                  question and the agent's recommendation. Completed work
+                  returns with the evidence you need to approve it.
+                </p>
+              </div>
+              <div class="step-visual question-visual" aria-hidden="true">
+                <span class="warning-pill">△ 1 decision needed</span>
+                <strong>Who should be able to close this Epic?</strong>
+                <span class="option option-selected">Owner only <small>Recommended</small></span>
+                <span class="option">Owner and project members</span>
+              </div>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="section capture-section">
+        <div class="container capture-grid">
+          <div class="capture-copy">
+            <p class="eyebrow">Capture the moment it breaks</p>
+            <h2>See it. Paste it. Turn it into work.</h2>
+            <p>
+              Product feedback loses energy every time someone says “I will
+              write the ticket later.” The Issopen Chrome extension turns a
+              screenshot into a structured issue while the context is still
+              fresh.
+            </p>
+            <ul class="check-list">
+              <li>Paste a screenshot or upload several images</li>
+              <li>Choose the project and Epic without leaving the page</li>
+              <li>Keep drafts local until you explicitly send them</li>
+            </ul>
+            <a class="text-link" href="https://app.issopen.com/extensions">
+              Explore the Chrome workflow <span aria-hidden="true">→</span>
+            </a>
+          </div>
+
+          <div class="extension-frame">
+            <div class="extension-rail" aria-hidden="true">
+              <span class="extension-dot"></span><span class="extension-dot"></span><span class="extension-dot"></span>
+            </div>
+            <img
+              src="assets/issopen-extension.png"
+              width="1440"
+              height="1000"
+              loading="lazy"
+              alt="Issopen Chrome extension confirming a newly created ticket with an attachment"
+            >
+          </div>
+        </div>
+      </section>
+
+      <section class="section control-section" id="control">
+        <div class="container">
+          <div class="section-intro split-intro">
+            <div>
+              <p class="eyebrow">Autonomy without surrender</p>
+              <h2>Let agents move fast.<br>Keep the boundaries explicit.</h2>
+            </div>
+            <p class="section-lede">
+              Issopen gives an agent enough access to do useful work, not a
+              master key to your workspace.
+            </p>
+          </div>
+
+          <div class="control-grid">
+            <article class="control-card control-card-large">
+              <span class="card-symbol">◎</span>
+              <h3>Scoped by project and capability</h3>
+              <p>
+                Decide which projects an identity can see and whether it may
+                read, write, claim, create, review or close work. Change those
+                permissions without rebuilding the integration.
+              </p>
+              <div class="permission-demo" aria-hidden="true">
+                <span class="permission permission-on">Read issues</span>
+                <span class="permission permission-on">Claim work</span>
+                <span class="permission permission-on">Link commits</span>
+                <span class="permission permission-off">Manage members</span>
+              </div>
+            </article>
+
+            <article class="control-card">
+              <span class="card-symbol">↺</span>
+              <h3>Every action leaves a trail</h3>
+              <p>Claims, comments, decisions, status changes and code links stay attributed and visible.</p>
+            </article>
+
+            <article class="control-card">
+              <span class="card-symbol">◇</span>
+              <h3>Humans own the finish line</h3>
+              <p>Require human review before Done. Agents deliver the evidence; your team decides.</p>
+            </article>
+
+            <article class="control-card control-card-wide">
+              <span class="card-symbol">⌁</span>
+              <h3>Built on MCP, not locked to one model</h3>
+              <p>
+                Connect Codex, ChatGPT or another compatible client. Your
+                backlog outlives any single chat, model or agent session.
+              </p>
+              <a class="text-link" href="https://app.issopen.com/agent-onboarding">
+                Read the agent onboarding guide <span aria-hidden="true">→</span>
+              </a>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section audience-section">
+        <div class="container">
+          <div class="section-intro centered-intro">
+            <p class="eyebrow">Built for the teams leaning forward</p>
+            <h2>AI can write the code.<br>Issopen makes it part of the team.</h2>
+          </div>
+
+          <div class="audience-grid">
+            <article>
+              <span>For founders</span>
+              <h3>Turn product intent into continuous execution.</h3>
+              <p>Keep the roadmap, decisions and agent output in one loop you can inspect at any time.</p>
+            </article>
+            <article>
+              <span>For product teams</span>
+              <h3>Move from visual feedback to assigned work instantly.</h3>
+              <p>Capture what is wrong, attach the evidence and let the right human or agent pick it up.</p>
+            </article>
+            <article>
+              <span>For developers</span>
+              <h3>Delegate the queue without delegating judgment.</h3>
+              <p>Let agents handle bounded tasks while architecture and final review stay with your team.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section opportunity-section">
+        <div class="container opportunity-inner">
+          <p class="eyebrow">Do not give your agent another blank chat</p>
+          <h2>Give it a queue.<br>Give it context.<br>Let it come back with proof.</h2>
+          <p>
+            The opportunity is not using AI once. It is building a system where
+            useful agent work can happen again tomorrow without starting over.
+          </p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="https://app.issopen.com">
+              Start working with your agent
+              <span aria-hidden="true">→</span>
+            </a>
+            <a class="button button-ghost" href="https://github.com/jesussegado/issopen">
+              View the source
+              <span aria-hidden="true">↗</span>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section class="section faq-section" id="faq">
+        <div class="container faq-grid">
+          <div class="faq-heading">
+            <p class="eyebrow">Questions worth asking</p>
+            <h2>Before you give an agent a backlog.</h2>
+          </div>
+
+          <div class="faq-list">
+            <details>
+              <summary>Does Issopen run or host the AI model?</summary>
+              <p>
+                No. You bring the agent or MCP client you already use. Issopen
+                coordinates work, permissions, decisions and review.
+              </p>
+            </details>
+            <details>
+              <summary>Can an agent change everything in my workspace?</summary>
+              <p>
+                Only if you explicitly grant those capabilities. Agent
+                identities are scoped by project and action, and their access
+                can be reduced or revoked.
+              </p>
+            </details>
+            <details>
+              <summary>What happens when the agent needs a decision?</summary>
+              <p>
+                It can add a visible question with a recommendation and bounded
+                options. You answer inside the ticket while independent work
+                can continue elsewhere in the Epic.
+              </p>
+            </details>
+            <details>
+              <summary>Can I use Issopen without an AI agent?</summary>
+              <p>
+                Yes. It is a complete project, Epic and ticket workflow for
+                humans. Agent collaboration is an additional teammate, not a
+                requirement.
+              </p>
+            </details>
+            <details>
+              <summary>Can I host Issopen myself?</summary>
+              <p>
+                Yes, for uses permitted by the PolyForm Noncommercial License.
+                Commercial use and managed deployments require a separate
+                license.
+              </p>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <section class="final-cta">
+        <div class="final-grid" aria-hidden="true"></div>
+        <div class="container final-cta-inner">
+          <img src="assets/issopen-mark.png" width="72" height="72" alt="">
+          <p class="eyebrow">The backlog is already waiting</p>
+          <h2>Put your agent on it.</h2>
+          <p>
+            Build the habit your team will wish it had started six months ago.
+          </p>
+          <a class="button button-primary button-large" href="https://app.issopen.com">
+            Open Issopen
+            <span aria-hidden="true">→</span>
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-grid">
+        <div class="footer-brand">
+          <a class="brand" href="/" aria-label="Issopen home">
+            <img src="assets/issopen-mark.png" width="34" height="34" alt="">
+            <span>Issopen</span>
+          </a>
+          <p>The shared workspace where humans decide and AI agents deliver.</p>
+        </div>
+        <nav aria-label="Product links">
+          <strong>Product</strong>
+          <a href="https://app.issopen.com">Open the app</a>
+          <a href="#workflow">How it works</a>
+          <a href="https://app.issopen.com/extensions">Chrome extension</a>
+        </nav>
+        <nav aria-label="Resource links">
+          <strong>Resources</strong>
+          <a href="https://app.issopen.com/agent-onboarding">Agent onboarding</a>
+          <a href="https://github.com/jesussegado/issopen">GitHub</a>
+          <a href="https://github.com/jesussegado/issopen/blob/main/CONTRIBUTING.md">Contribute</a>
+        </nav>
+        <nav aria-label="Legal links">
+          <strong>Legal</strong>
+          <a href="https://app.issopen.com/privacy">Privacy and data</a>
+          <a href="https://github.com/jesussegado/issopen/blob/main/LICENSE.md">License</a>
+          <a href="mailto:serviciosegado@gmail.com">Commercial use</a>
+        </nav>
+      </div>
+      <div class="container footer-bottom">
+        <span>© 2026 Issopen</span>
+        <span>Built for humans and the agents working beside them.</span>
+      </div>
+    </footer>
+  </body>
+</html>
