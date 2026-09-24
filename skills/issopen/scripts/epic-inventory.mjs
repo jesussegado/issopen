@@ -207,6 +207,9 @@ export function buildEpicInventory({
           id,
           version,
         })),
+        questionSummary: {
+          unansweredBlocking: review?.unansweredBlocking ?? null,
+        },
         commentCount: Array.isArray(detail.comments)
           ? detail.comments.length
           : null,
