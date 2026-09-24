@@ -480,7 +480,13 @@ retained for rollback. No server/GitOps change. Parallel creation buttons
 Phase: 1 (Private Single-Owner Dogfooding MVP) — EXECUTING
 Plan: 5 of 5
 Status: Epic 3 planning delivered; awaiting human decisions and implementation request
-Last activity: 2026-09-24 - Completed quick260924-pzj: GitHub marks added to all landing links, deployed and verified. Roadmap phase progress unchanged.
+Last activity: 2026-09-24 - Replaced README screenshots with English assets and audited remaining Spanish in the tracked GitHub tree (quick 260924-q65). The wider translation is pending; roadmap phase progress is unchanged.
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260924-q65 | Replace README screenshots with English assets and audit the tracked tree | 2026-09-24 | 27a529e | [260924-q65](./quick/260924-q65-replace-readme-screenshots-with-english-/) |
 
 Progress: [░░░░░░░░░░] 0%
 
