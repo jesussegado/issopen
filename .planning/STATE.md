@@ -606,6 +606,7 @@ Decisions are logged in PROJECT.md Key Decisions table. Current roadmap-level st
 
 | ID | Description | Date | Commits | Status | Directory |
 | --- | --- | --- | --- | --- | --- |
+| 260924-fav | Reutilizar el favicon blanco de Issopen en la landing | 2026-09-24 | Fuente `00ed55e` | Build y hash del asset verificados | — |
 | 260923-rf8 | Ticket 129: modularizar registro MCP por familias | 2026-09-23 | Fuente `e4e7499`, test `9c66447`; GitOps `4004f732` | Catálogo productivo de 18 tools idéntico; Synced/Healthy; ticket Ready for Human Review v7 sin claim | [260923-rf8](./quick/260923-rf8-ticket-129-modularizar-registro-mcp/) |
 | 260923-rf7 | Ticket 127: dividir TrackerService por capacidades | 2026-09-23 | Fuente `c99686e`; GitOps `f77145cd` | Gates completos y despliegue Synced/Healthy PASS; ticket Ready for Human Review v7 sin claim | [260923-rf7](./quick/260923-rf7-ticket-127-dividir-tracker-capacidades/) |
 | 260923-rf6 | Ticket 126: invariantes transaccionales compartidas del tracker | 2026-09-23 | Fuente `d5bba0d`; GitOps `165cda3e` | Gates completos y despliegue Synced/Healthy PASS; ticket Ready for Human Review v6 sin claim | [260923-rf6](./quick/260923-rf6-ticket-126-invariantes-transaccionales/) |
