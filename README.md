@@ -21,9 +21,9 @@
 </p>
 
 <p align="center">
-  <a href="https://issopen.serviciosegado.com"><strong>Open Issopen</strong></a>
+  <a href="https://app.issopen.com"><strong>Open Issopen</strong></a>
   ·
-  <a href="https://issopen.serviciosegado.com/agent-onboarding"><strong>Connect an agent</strong></a>
+  <a href="https://app.issopen.com/agent-onboarding"><strong>Connect an agent</strong></a>
   ·
   <a href="docs/self-hosting.md"><strong>Self-host</strong></a>
   ·
@@ -110,8 +110,8 @@ and capability, and it can be revoked.
 
 | I want to… | Go here |
 | --- | --- |
-| See the product | [Open the Issopen instance](https://issopen.serviciosegado.com) — access is invitation-based |
-| Connect ChatGPT, Codex or another MCP client | [Agent and MCP onboarding](https://issopen.serviciosegado.com/agent-onboarding) |
+| See the product | [Open the Issopen instance](https://app.issopen.com) — access is invitation-based |
+| Connect ChatGPT, Codex or another MCP client | [Agent and MCP onboarding](https://app.issopen.com/agent-onboarding) |
 | Run my own instance | [Self-hosting and operations](docs/self-hosting.md) |
 | Understand the Chrome extension | [Chrome extension guide](docs/chrome-extension.md) |
 | Review privacy and retention | [Privacy and data contract](docs/privacy.md) |

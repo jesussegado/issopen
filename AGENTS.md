@@ -1,5 +1,14 @@
 # AGENTS.md — Issopen
 
+## Dominios de producción — 2026-09-24
+
+`https://issopen.com` sirve la landing estática de `landing/`, empaquetada con
+`Dockerfile.landing`; `https://app.issopen.com` sirve la app, API, OAuth y MCP.
+`issopen.serviciosegado.com` sigue accesible para los clientes existentes. El
+enrutado, DNS, imagen por digest y rollback se gestionan en el repositorio
+`platform-gitops`, no aquí; consulta
+`apps/issopen/deploy/LANDING-APP-ROUTING.md` en ese repositorio.
+
 ## Frontera del repositorio
 
 Este es el repositorio de fuente independiente; su `.git` raíz y su
