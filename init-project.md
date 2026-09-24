@@ -1044,8 +1044,8 @@ Future UI:
 ```text
 Members
 
-👤 Luis
-👤 María
+👤 Alex
+👤 Morgan
 
 Agents
 

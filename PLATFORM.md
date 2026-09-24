@@ -1,9 +1,10 @@
-# Relación con la plataforma
+# Platform relationship
 
-Este es un repositorio privado e independiente de tipo `application` dentro de
-`~/Projects/platform/`. Su remoto canónico es
+This is an independent `application` source repository under
+`~/Projects/platform/`. Its canonical private remote is
 `ssh://git@192.168.2.165:2222/jsegado/issopen.git`.
 
-El estado deseado está separado en `~/Projects/platform/homelab/apps/issopen/`.
-El código produce artefactos o imágenes; `homelab` referencia versiones
-inmutables y nunca depende de este checkout local para reconciliar producción.
+The desired deployment state lives separately in
+`~/Projects/platform/homelab/apps/issopen/`. This source produces artifacts
+and images; `homelab` references immutable versions and never relies on this
+local checkout to reconcile production.
