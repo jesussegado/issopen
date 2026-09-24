@@ -124,9 +124,11 @@ dentro de un único flujo trazable.
 
 - **Proceso**: no comienza la implementación hasta aprobar PROJECT.md,
   REQUIREMENTS.md y ROADMAP.md — evita convertir el brief en código sin validar.
-- **Open source**: todo el producto será abierto; AGPLv3 es la licencia objetivo
-  pendiente de revisión legal — no diseñar fronteras artificiales de código
-  cerrado.
+- **Source available**: el código público usa PolyForm Noncommercial 1.0.0;
+  permite usar, modificar y redistribuir con fines no comerciales. El uso
+  comercial y el futuro servicio gestionado requieren una licencia separada.
+  No aceptar contribuciones de código hasta publicar términos que preserven la
+  capacidad de licenciamiento comercial.
 - **Modelo de IA**: Issopen coordina agentes externos mediante MCP y BYO-AI — no
   ejecuta ni financia inferencia en el MVP.
 - **Primer corte**: la fase 1 es privada y single-owner, pero ofrece el bucle

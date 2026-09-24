@@ -5,6 +5,23 @@ agents. Phase 1 starts with a single owner, a responsive web interface and one
 PostgreSQL database. Issopen records work and review; it does not edit a
 repository, run CI, merge or deploy code.
 
+## License and commercial use
+
+Issopen is public **source-available software** under the
+[PolyForm Noncommercial License 1.0.0](LICENSE.md). You may use, study, modify
+and redistribute it for the noncommercial purposes permitted by that license.
+Commercial use is not granted by the public license, including offering a paid
+hosted service or using Issopen with an anticipated commercial application.
+
+Commercial licenses and a managed Issopen service may be offered separately by
+the project owner. Contact `serviciosegado@gmail.com` for commercial licensing.
+This is not an OSI-approved open-source license because it restricts commercial
+fields of use.
+
+Code contributions are not accepted yet. The project will publish contribution
+terms before accepting third-party code so that future commercial licensing
+remains possible. Issues and non-code feedback are welcome.
+
 ## Current scope
 
 The local Phase 1 implementation includes:
