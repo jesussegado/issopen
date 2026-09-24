@@ -1014,9 +1014,10 @@ a {
 }
 
 .extension-frame img {
-  width: 170%;
+  width: 190%;
+  height: auto;
   max-width: none;
-  transform: translateX(-20.6%);
+  transform: translateX(-23.7%);
 }
 
 .control-section {
@@ -1640,6 +1641,11 @@ a {
 
   .capture-copy h2 {
     font-size: clamp(2.4rem, 12vw, 3.8rem);
+  }
+
+  .extension-frame img {
+    width: 220%;
+    transform: translateX(-27.3%);
   }
 
   .control-grid {
