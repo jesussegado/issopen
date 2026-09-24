@@ -57,3 +57,14 @@ diagnóstico, recomendación y condición de desbloqueo. Relee antes de publicar
 para no duplicar la misma pregunta/comentario. Después del checkpoint libera
 sólo el claim propio y continúa otro `eligibleId` independiente. No respondas la
 pregunta, no inventes estado Blocked y no esperes mediante polling.
+
+Para pausar, reanudar y terminar usa `scripts/epic-session.mjs`. El checkpoint
+guarda scope, versión/fingerprint del inventario, resumen, Git HEAD, fingerprint
+del worktree y tiempos de operaciones pendientes, nunca secretos ni un cursor de
+posición. Una sesión nueva relee Issopen y Git; si cambió una respuesta, claim,
+ticket, Epic o worktree, reconcilia y no ejecuta el `nextStep` cacheado. Pasadas
+24 horas comprueba primero si el efecto existe antes de generar otra clave.
+Continúa mientras haya `eligibleIds`, sin límite arbitrario. Detente con razón
+explícita ante cero elegibles, falta de autoridad, conflicto, error no transitorio,
+MCP caído o ausencia de progreso. Antes de parar libera todos los claims propios
+y resume IDs completados, creados, bloqueados, en revisión y pendientes.

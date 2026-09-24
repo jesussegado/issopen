@@ -122,6 +122,15 @@ explicit unblock condition. The agent releases only its own paused claim and
 continues independent eligible tickets; it never answers for the user, creates a
 synthetic Blocked column or polls for a response.
 
+The loop continues until no eligible Ready ticket remains. A checkpoint records
+the Epic snapshot and Git/worktree state, not a trusted local cursor. A later
+session rereads Issopen and Git before deriving the next action; changed answers,
+claims or files invalidate the cached suggestion. The loop stops explicitly for
+no eligible work, missing authority, conflict, non-transient error, MCP outage or
+no progress, releases every claim it owns and reports completed, created,
+blocked, review and pending IDs. It never becomes a daemon or keeps polling after
+the interactive session ends.
+
 ```text
 Use $issopen in work-epic mode for this explicit Epic. Reconcile missing tickets
 first, execute only eligible Ready work and continue until no eligible work
